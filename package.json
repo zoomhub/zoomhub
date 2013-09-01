@@ -1,0 +1,18 @@
+{
+  "name": "zooming-service",
+  "version": "0.0.0",
+  "description": "TODO",
+  "author": "TODO",
+  "main": "./app",
+  "dependencies": {
+
+  },
+  "devDependencies": {
+
+  },
+  "scripts": {
+    "test": "echo TODO"
+  },
+  "repository": "TODO",
+  "license": "MIT"
+}
