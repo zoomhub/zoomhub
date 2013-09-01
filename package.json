@@ -5,12 +5,13 @@
   "author": "TODO",
   "main": "./app",
   "dependencies": {
-
-  },
-  "devDependencies": {
-
+    "coffee-script": "~1.6.3",
+    "express": "~3.3.7",
+    "streamline": "~0.8.0",
+    "streamline-express": "~0.3.1"
   },
   "scripts": {
+    "start": "_coffee --cache app",
     "test": "echo TODO"
   },
   "repository": "TODO",
