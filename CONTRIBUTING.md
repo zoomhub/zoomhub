@@ -1,9 +1,3 @@
-
-## Discussion
-
-We should eventually have a mailing list. We don't yet.
-
-
 ## Development
 
 This app is built on [Node.js](http://nodejs.org/). Install the latest stable
@@ -33,6 +27,11 @@ They use [Chai](http://chaijs.com/) for assertions and
 Portions of this code use [CoffeeScript](http://coffeescript.org/) and/or
 [Streamline](https://github.com/Sage/streamlinejs) for now, but we're open to
 changing that as this project matures and expands.
+
+
+## Discussion
+
+We should eventually have a mailing list. We don't yet.
 
 
 ## Issues
