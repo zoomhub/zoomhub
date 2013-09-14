@@ -6,7 +6,14 @@ This is the beginning of an open-source codebase for a cloud zooming service,
 like [Zoom.it](http://zoom.it/).
 
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+
 ## API
+
+(This isn't implemented yet; this is just a WIP design/spec.)
 
 Staying close to the original Zoom.it API as a starting point, but none of
 this is finalized. See notes at the bottom.
@@ -91,11 +98,6 @@ Notes, and thoughts for improvement:
   with other kinds of URLs we may want to return. We may want to be specific
   and call this e.g. `sourceURL`. But it should be consistent between the
   response JSON and the request query string param.
-
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 
 ## License
