@@ -19,6 +19,13 @@ configs = module.exports =
     #
     PORT: 8000
 
+    #
+    # What format we should use with Express logger.
+    # The choices are 'dev', 'tiny', 'short', and 'default' (full).
+    # Details: http://www.senchalabs.org/connect/logger.html
+    #
+    EXPRESS_LOGGER_FORMAT: 'dev'
+
 
 # now go through each config and check if we have any env var overrides.
 # env vars are always strings, so use the default values to determine if
