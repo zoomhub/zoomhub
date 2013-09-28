@@ -1,6 +1,4 @@
-# Zooming Service
-
-(The real name needs to be determined.)
+# Zoomhub
 
 This is the beginning of an open-source codebase for a cloud zooming service,
 like [Zoom.it](http://zoom.it/).
