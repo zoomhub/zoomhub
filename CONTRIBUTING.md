@@ -31,11 +31,12 @@ changing that as this project matures and expands.
 
 ## Discussion
 
-We should eventually have a mailing list. We don't yet.
+You can join our [Google Group](https://groups.google.com/group/zoomhub) or
+email us at [zoomhub@googlegroups.com](mailto:zoomhub@googlegroups.com).
 
 
 ## Issues
 
-Feel free to file issues on this GitHub repo's issue tracker.
+Feel free to file issues in [GitHub Issues](https://github.com/zoomhub/zoomhub/issues).
 That's also where we're tracking TODOs and remaining work.
 
