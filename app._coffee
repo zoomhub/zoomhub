@@ -2,6 +2,7 @@ config = require './config'
 deepzoom = require 'deepzoomtools'
 express = require 'express'
 fs = require 'fs'
+jade = require 'jade'
 path = require 'path'
 request = require 'request'
 
@@ -15,6 +16,9 @@ STATIC_URL = '/static'
 express.static.mime.types.dzi = 'application/xml'
 app = require('streamline-express') express()
 
+# Template engine
+app.engine 'jade', jade.__express
+app.set 'view engine', 'jade'
 
 ## MIDDLEWARE:
 # (see http://www.senchalabs.org/connect/ for reference)
@@ -63,10 +67,13 @@ app.get '/content', (req, res, _) ->
     contentPath = path.join STATIC_PATH, "#{id}.jpg"
     writer = request(url).pipe fs.createWriteStream contentPath
     writer.on 'finish', (_) ->
-        deepzoom.create contentPath, (error) ->
-            if error?
-                console.error error
+        deepzoom.create contentPath, _
         res.json 200, {id, url}
+
+app.get '/:id', (req, res, _) ->
+    id = req.param 'id'
+    res.render 'view', {id}
+
 
 
 ## MAIN:
