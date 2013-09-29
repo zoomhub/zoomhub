@@ -5,13 +5,16 @@ fs = require 'fs'
 path = require 'path'
 request = require 'request'
 
+
+ID = 0
+STATIC_PATH = path.join __dirname, 'public'
+STATIC_URL = '/static'
+
+
 # Register DZI as XML
 express.static.mime.types.dzi = 'application/xml'
 app = require('streamline-express') express()
 
-ID = 0
-STATIC_PATH = path.join __dirname, 'public', 'static'
-STATIC_URL = '/static'
 
 ## MIDDLEWARE:
 # (see http://www.senchalabs.org/connect/ for reference)
