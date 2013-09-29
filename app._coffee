@@ -70,6 +70,11 @@ app.get '/content', (req, res, _) ->
         deepzoom.create contentPath, _
         res.json 200, {id, url}
 
+app.get '/:id', (req, res, _) ->
+    id = req.param 'id'
+    res.render 'view', {id}
+
+
 
 ## MAIN:
 
