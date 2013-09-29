@@ -63,9 +63,7 @@ app.get '/content', (req, res, _) ->
     contentPath = path.join STATIC_PATH, "#{id}.jpg"
     writer = request(url).pipe fs.createWriteStream contentPath
     writer.on 'finish', (_) ->
-        deepzoom.create contentPath, (error) ->
-            if error?
-                console.error error
+        deepzoom.create contentPath, _
         res.json 200, {id, url}
 
 
