@@ -1,13 +1,26 @@
 config = require './config'
+deepzoom = require 'deepzoomtools'
 express = require 'express'
+fs = require 'fs'
+path = require 'path'
+request = require 'request'
+
+# Register DZI as XML
+express.static.mime.types.dzi = 'application/xml'
 app = require('streamline-express') express()
 
+ID = 0
+STATIC_PATH = path.join __dirname, 'public', 'static'
+STATIC_URL = '/static'
 
 ## MIDDLEWARE:
 # (see http://www.senchalabs.org/connect/ for reference)
 
 # favicon reqs are very common; respond to those immediately:
 app.use express.favicon()   # will use default favicon since we don't specify
+
+# Ser
+app.use '/static', express.static STATIC_PATH
 
 # otherwise, log all requests:
 app.use express.logger config.EXPRESS_LOGGER_FORMAT
@@ -38,6 +51,19 @@ app.use express.errorHandler()
 app.get '/', (req, res, _) ->
     setTimeout _, 500   # mimic async operation
     res.json 'Hello world.'
+
+app.get '/content', (req, res, _) ->
+    url = req.query?.url
+    if not url?
+        res.json 400, {error: "Missing URL"}
+    id = ++ID
+    contentPath = path.join STATIC_PATH, "#{id}.jpg"
+    writer = request(url).pipe fs.createWriteStream contentPath
+    writer.on 'finish', (_) ->
+        deepzoom.create contentPath, (error) ->
+            if error?
+                console.error error
+        res.json 200, {id, url}
 
 
 ## MAIN:
