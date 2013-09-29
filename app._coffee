@@ -69,8 +69,14 @@ app.get '/content', (req, res, _) ->
     writer.on 'error', (err) ->
         return res.json 500, {error: err?.stack or err}
     writer.on 'finish', (_) ->
-        deepzoom.create contentPath, _
-        res.json 200, {id, url}
+        # TODO we need to explicitly catch errors here since the 'finish'
+        # handler isn't *actually* an async handler, so errors we "throw"
+        # here won't propagate to an error response. how to fix? domains?
+        try
+            deepzoom.create contentPath, _
+            return res.json 200, {id, url}
+        catch err
+            return res.json 500, {error: err?.stack or err}
 
 app.get '/:id', (req, res, _) ->
     id = req.param 'id'
