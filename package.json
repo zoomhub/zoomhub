@@ -8,6 +8,7 @@
     "coffee-script": "~1.6.3",
     "deepzoomtools": "git+ssh://git@github.com:gasi/node-deepzoomtools.git",
     "express": "~3.3.7",
+    "jade": "~0.35.0",
     "node-dev": "~2.0.2",
     "request": "~2.27.0",
     "streamline": "~0.8.0",
