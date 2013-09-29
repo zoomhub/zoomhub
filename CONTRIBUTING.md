@@ -28,6 +28,23 @@ Portions of this code use [CoffeeScript](http://coffeescript.org/) and/or
 [Streamline](https://github.com/Sage/streamlinejs) for now, but we're open to
 changing that as this project matures and expands.
 
+To debug via [node-inspector](https://github.com/node-inspector/node-inspector),
+run:
+
+```
+npm run debugger
+```
+
+The CoffeeScript and Streamline code will show up as compiled JS currently;
+while source maps get generated internally, they don't get outputted to files
+currently (which the debugger needs) when you run the code directly.
+Bugs are open to fix that!
+
+To support no-hassle debugging, the server runs in Node's `--debug` mode
+always right now. We'll figure out a way to turn that on/off down the road.
+
+To set a breakpoint from code, you can just write the `debugger` keyword.
+
 
 ## Discussion
 

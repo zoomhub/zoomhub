@@ -10,6 +10,7 @@
     "express": "~3.3.7",
     "jade": "~0.35.0",
     "node-dev": "~2.0.2",
+    "node-inspector": "~0.5.0",
     "request": "~2.27.0",
     "streamline": "~0.8.0",
     "streamline-express": "~0.3.1"
@@ -20,7 +21,8 @@
     "supertest": "~0.7.1"
   },
   "scripts": {
-    "start": "node-dev node_modules/.bin/_coffee --cache app",
+    "debugger": "open 'http://127.0.0.1:8080/debug?port=5858' && node-inspector",
+    "start": "node-dev --debug node_modules/.bin/_coffee --cache app",
     "test": "mocha"
   },
   "repository": "TODO",
