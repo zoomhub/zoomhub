@@ -2,6 +2,7 @@ config = require './config'
 deepzoom = require 'deepzoomtools'
 express = require 'express'
 fs = require 'fs'
+jade = require 'jade'
 path = require 'path'
 request = require 'request'
 
@@ -15,6 +16,9 @@ STATIC_URL = '/static'
 express.static.mime.types.dzi = 'application/xml'
 app = require('streamline-express') express()
 
+# Template engine
+app.engine 'jade', jade.__express
+app.set 'view engine', 'jade'
 
 ## MIDDLEWARE:
 # (see http://www.senchalabs.org/connect/ for reference)
