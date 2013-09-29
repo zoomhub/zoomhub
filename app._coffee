@@ -1,6 +1,6 @@
+config = require './config'
 express = require 'express'
 app = require('streamline-express') express()
-config = require './config'
 
 
 ## MIDDLEWARE:
