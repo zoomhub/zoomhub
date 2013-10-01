@@ -5,6 +5,7 @@ fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
 request = require 'request'
+tiler = require './src/tiler'
 
 
 ID = 0
@@ -77,6 +78,14 @@ app.get '/content', (req, res, _) ->
             return res.json 200, {id, url}
         catch err
             return res.json 500, {error: err?.stack or err}
+
+app.get '/tiler-test', (req, res, _) ->
+    imagePath = path.join STATIC_PATH, '1.jpg'
+    tiler.start imagePath, (err) ->
+        if err
+            res.json 500, {error: err?.stack or err}
+        else
+            res.json 200, {success: true}
 
 app.get '/:id', (req, res, _) ->
     id = req.param 'id'
