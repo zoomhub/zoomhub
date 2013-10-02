@@ -9,6 +9,7 @@ tiler = require './src/tiler'
 
 
 ID = 0
+PRIVATE_PATH = path.join __dirname, 'private'
 STATIC_PATH = path.join __dirname, 'public'
 STATIC_URL = '/static'
 
@@ -80,12 +81,12 @@ app.get '/content', (req, res, _) ->
             return res.json 500, {error: err?.stack or err}
 
 app.get '/tiler-test', (req, res, _) ->
-    imagePath = path.join STATIC_PATH, '1.jpg'
     tiler.start imagePath, (err) ->
         if err
             res.json 500, {error: err?.stack or err}
         else
             res.json 200, {success: true}
+    imagePath = path.join PRIVATE_PATH, '1.jpg'
 
 app.get '/:id', (req, res, _) ->
     id = req.param 'id'
