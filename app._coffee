@@ -88,7 +88,7 @@ app.get '/tiler-test', (req, res, _) ->
     catch err
         res.json 500, {error: err?.stack or err}
 
-app.get '/:id', (req, res, _) ->
+app.get 'view/:id', (req, res, _) ->
     id = req.param 'id'
     res.render 'view', {id}
 
