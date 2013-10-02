@@ -7,15 +7,17 @@ catch err
 
 DZI_PATH = path.join __dirname, '..', 'public', 'dzi'
 
-exports.start = (sourcePath, callback) ->
+exports.start = (sourcePath, _) ->
     console.log "[tiler] Loading #{sourcePath}"
     image = im sourcePath
+    size = image.size _
+    console.log size
     image.resize 50, 50
     outputPath = path.join DZI_PATH, 'tiler-test.jpg'
     console.log "[tiler] Writing to #{outputPath}"
-    image.write outputPath, (err) ->
-        if err
-            console.log "[tiler] Error writing #{outputPath}: #{err}"
-        else
-            console.log "[tiler] Successfully wrote #{outputPath}"
-        callback err
+    try
+        image.write outputPath, _
+        console.log "[tiler] Successfully wrote #{outputPath}"
+    catch err
+        console.log "[tiler] Error writing #{outputPath}: #{err}"
+        throw err

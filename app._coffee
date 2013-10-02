@@ -81,12 +81,12 @@ app.get '/content', (req, res, _) ->
             return res.json 500, {error: err?.stack or err}
 
 app.get '/tiler-test', (req, res, _) ->
-    tiler.start imagePath, (err) ->
-        if err
-            res.json 500, {error: err?.stack or err}
-        else
-            res.json 200, {success: true}
     imagePath = path.join PRIVATE_PATH, '1.jpg'
+    try
+        tiler.start imagePath, _
+        res.json 200, {success: true}
+    catch err
+        res.json 500, {error: err?.stack or err}
 
 app.get '/:id', (req, res, _) ->
     id = req.param 'id'
