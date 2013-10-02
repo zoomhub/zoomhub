@@ -83,7 +83,7 @@ app.get '/content', (req, res, _) ->
 app.get '/tiler-test', (req, res, _) ->
     imagePath = path.join PRIVATE_PATH, '1.jpg'
     try
-        tiler.start imagePath, _
+        tiler.start imagePath, '1', _
         res.json 200, {success: true}
     catch err
         res.json 500, {error: err?.stack or err}
