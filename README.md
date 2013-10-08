@@ -1,7 +1,7 @@
 # Zoomhub
 
 This is the beginning of an open-source codebase for a cloud zooming service,
-like [Zoom.it](http://zoom.it/).
+like [Zoom.it][].
 
 
 ## Contributing
@@ -120,3 +120,4 @@ The MIT License. See [LICENSE][] file.
 
 [ansible-installation]: http://www.ansibleworks.com/docs/intro_installation.html
 [LICENSE]: LICENSE
+[Zoom.it]: http://zoom.it/
