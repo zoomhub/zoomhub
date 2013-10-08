@@ -9,6 +9,12 @@ like [Zoom.it](http://zoom.it/).
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 
+
+## Optional Prerequisites
+
+-   [Ansible][ansible-installation] for deployment.
+
+
 ## API
 
 (This isn't implemented yet; this is just a WIP design/spec.)
@@ -98,6 +104,18 @@ Notes, and thoughts for improvement:
   response JSON and the request query string param.
 
 
+## Administation
+
+`zh` is a script for managing ZoomHub. Currently, we support the following
+commands:
+
+-   `./zh ping`: Ping production machines.
+
+
 ## License
 
 MIT.
+
+
+
+[ansible-installation]: http://www.ansibleworks.com/docs/intro_installation.html
