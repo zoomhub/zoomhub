@@ -114,8 +114,9 @@ commands:
 
 ## License
 
-MIT.
+The MIT License. See [LICENSE][] file.
 
 
 
 [ansible-installation]: http://www.ansibleworks.com/docs/intro_installation.html
+[LICENSE]: LICENSE
