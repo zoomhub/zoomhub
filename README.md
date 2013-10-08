@@ -9,6 +9,11 @@ like [Zoom.it][].
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 
+## Setup
+
+-   [Install Node.js][node-installation].
+-   Install dependencies: `./zh install`
+
 
 ## Optional Prerequisites
 
@@ -109,6 +114,7 @@ Notes, and thoughts for improvement:
 `zh` is a script for managing ZoomHub. Currently, we support the following
 commands:
 
+-   `./zh install`: Install dependencies.
 -   `./zh ping`: Ping production machines.
 
 
@@ -120,4 +126,5 @@ The MIT License. See [LICENSE][] file.
 
 [ansible-installation]: http://www.ansibleworks.com/docs/intro_installation.html
 [LICENSE]: LICENSE
+[node-installation]: http://nodejs.org/download/
 [Zoom.it]: http://zoom.it/
