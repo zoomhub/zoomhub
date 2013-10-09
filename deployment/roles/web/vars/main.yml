@@ -1,0 +1,4 @@
+---
+service: zoomhub
+node_path: /usr/bin/nodejs
+app_path: /home/zoomhub/server.js

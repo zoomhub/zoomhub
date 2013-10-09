@@ -4,3 +4,6 @@ npm-debug.log
 
 # Sublime Text:
 *.sublime-workspace
+
+# Private
+/deployment/hosts

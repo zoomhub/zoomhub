@@ -116,6 +116,7 @@ commands:
 
 -   `./zh install`: Install dependencies.
 -   `./zh ping`: Ping production machines.
+-   `./zh deploy`: Deploy to server.
 
 
 ## License

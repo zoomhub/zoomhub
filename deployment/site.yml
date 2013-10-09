@@ -1,0 +1,9 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: configure and deploy the webservers and application code
+  hosts: webservers
+  remote_user: root
+  sudo: yes
+  roles:
+    - web
