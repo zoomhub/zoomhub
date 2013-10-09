@@ -116,8 +116,9 @@ commands:
 
 -   `./zh install`: Install dependencies.
 -   `./zh ping`: Ping production machines.
--   `./zh deploy`: Deploy to server.
-
+-   `./zh deploy`: Deploy to server. **TODO:** Copy `./deployment/hosts.sample`
+                   to `./deployment/host` and replace `localhost` with your
+                   server IP.
 
 ## License
 
