@@ -11,7 +11,7 @@ respawn limit 5 60 #try 5 times within 60 seconds, or giveup
 
 script
     echo $$ > /var/run/{{ service }}.pid
-    exec sudo -u {{ node_user }} NODE_ENV=production forever {{ app_path }} >> {{ log_path }} 2>&1
+    exec sudo -u {{ node_user }} NODE_ENV=production {{ node_path }} {{ app_path }} >> {{ log_path }} 2>&1
 end script
 
 pre-start script

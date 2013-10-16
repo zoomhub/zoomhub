@@ -52,9 +52,6 @@
 - name: copy app
   copy: src=../../../../server.js dest={{ app_path }} owner={{ service }} mode=0644
 
-- name: install forever
-  npm: name=forever version=0.10.9 state=present global=yes
-
 - name: create the service upstart
   template: src=service.conf.j2 dest=/etc/init/{{ service }}.conf
 
