@@ -9,6 +9,9 @@
 - name: install g++
   apt: pkg=g++ state=present
 
+- name: install Git
+  apt: pkg=git state=present
+
 - name: install make
   apt: pkg=make state=present
 
