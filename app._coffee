@@ -58,6 +58,8 @@ app.use express.errorHandler()
 app.get '/', (req, res, _) ->
     res.send 'ZoomHub'
 
+app.get '/health', (req, res, _) ->
+    res.send 'up'
 
 app.get '/content', (req, res, _) ->
     url = req.query?.url
