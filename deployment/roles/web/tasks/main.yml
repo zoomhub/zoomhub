@@ -43,8 +43,20 @@
 - name: apply iptables rules
   shell: iptables-restore < /etc/iptables.rules
 
+- name: create app directory
+  file: state=directory path={{ app_dir }}
+
+- name: create log directory
+  file: state=directory path={{ log_dir }}
+
 - name: copy app
-  copy: src=../../../../server.js dest=/home/{{ service }}/server.js owner={{ service }} mode=0644
+  copy: src=../../../../server.js dest={{ app_path }} owner={{ service }} mode=0644
+
+- name: install forever
+  npm: name=forever version=0.10.9 state=present global=yes
+
+- name: create the service upstart
+  template: src=service.conf.j2 dest=/etc/init/{{ service }}.conf
 
 - name: run app
-  shell: "/usr/bin/nodejs {{ app_path }}"
+  service: name={{ service }} state=started
