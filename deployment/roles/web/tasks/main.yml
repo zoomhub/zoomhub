@@ -37,7 +37,7 @@
 - name: install Node.js
   apt: pkg=nodejs=0.10.20-1chl1~precise1 state=present
 
-- name: Create the iptables file
+- name: create the iptables file
   template: src=iptables.rules.j2 dest=/etc/iptables.rules
 
 - name: apply iptables rules
