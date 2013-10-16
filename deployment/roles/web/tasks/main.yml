@@ -44,10 +44,10 @@
   shell: iptables-restore < /etc/iptables.rules
 
 - name: create app directory
-  file: state=directory path={{ app_dir }}
+  file: state=directory path={{ app_root }}
 
 - name: create log directory
-  file: state=directory path={{ log_dir }}
+  file: state=directory path={{ log_root }}
 
 - name: copy app
   copy: src=../../../../server.js dest={{ app_path }} owner={{ service }} mode=0644
