@@ -1,4 +1,8 @@
 ---
 service: zoomhub
-node_path: /usr/bin/nodejs
-app_path: /home/zoomhub/server.js
+node_user: root
+node_path: /usr/bin/node
+app_dir: /var/apps
+app_path: '{{ app_dir }}/app.js'
+log_dir: '/var/log/{{ service }}'
+log_path: '/var/log/{{ service }}/{{ service }}.log'
