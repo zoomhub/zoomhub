@@ -1,6 +1,6 @@
 ---
 service: zoomhub
-description: ZoomHub let’s you make your images zoomable.
+description: Cloud zooming service.
 app_user: root
 apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git

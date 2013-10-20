@@ -1,7 +1,7 @@
 {
   "name": "zooming-service",
   "version": "0.0.0",
-  "description": "TODO",
+  "description": "Cloud zooming service",
   "author": "TODO",
   "main": "./app",
   "dependencies": {
