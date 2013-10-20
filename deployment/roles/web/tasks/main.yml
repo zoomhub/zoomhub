@@ -46,8 +46,8 @@
 - name: apply iptables rules
   shell: iptables-restore < /etc/iptables.rules
 
-- name: create app directory
-  file: state=directory path={{ app_root }}
+- name: create apps root directory
+  file: state=directory path={{ apps_root }}
 
 - name: create log directory
   file: state=directory path={{ log_root }}

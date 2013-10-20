@@ -2,7 +2,8 @@
 service: zoomhub
 node_user: root
 node_path: /usr/bin/node
-app_root: /var/apps
+apps_root: /var/apps
+app_root: '{{ apps_root }}/{{ service }}'
 app_path: '{{ app_root }}/app.js'
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
