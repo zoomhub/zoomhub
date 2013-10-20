@@ -59,5 +59,8 @@
   git: repo={{ app_repo }} dest={{ app_root }} version={{ app_version }}
        force=no
 
+- name: npm update
+  npm: path={{ app_root }}
+
 - name: run app
   service: name={{ service }} state=started
