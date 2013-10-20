@@ -1,12 +1,11 @@
 ---
 service: zoomhub
 description: ZoomHub let’s you make your images zoomable.
-node_user: root
-node_path: /usr/bin/node
+app_user: root
 apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
-app_path: '{{ app_root }}/app.js'
 app_version: HEAD
+app_command: 'NODE_ENV=production {{ app_root }}/node_modules/.bin/_coffee --fibers --cache {{ app_root }}/app'
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
