@@ -44,6 +44,9 @@
     "start": "node-dev --debug node_modules/.bin/_coffee --fibers --cache app",
     "test": "mocha"
   },
-  "repository": "TODO",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zoomhub/zoomhub.git"
+  },
   "license": "MIT"
 }
