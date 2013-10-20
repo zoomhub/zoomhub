@@ -1,5 +1,6 @@
 ---
 service: zoomhub
+description: ZoomHub let’s you make your images zoomable.
 node_user: root
 node_path: /usr/bin/node
 apps_root: /var/apps
