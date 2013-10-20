@@ -6,7 +6,7 @@
   "main": "./app",
   "dependencies": {
     "coffee-script": "~1.6.3",
-    "deepzoomtools": "https://github.com/openzoom/node-deepzoomtools/tarball/master",
+    "deepzoomtools": "openzoom/node-deepzoomtools",
     "express": "~3.3.7",
     "fibers": "~1.0.1",
     "jade": "~0.35.0",
