@@ -6,6 +6,6 @@ apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
 app_version: master
-app_command: 'NODE_ENV=production {{ app_root }}/node_modules/.bin/_coffee --fibers --cache {{ app_root }}/app'
+app_command: 'NODE_ENV=production PORT=80 {{ app_root }}/node_modules/.bin/_coffee --fibers --cache {{ app_root }}/app'
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
