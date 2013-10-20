@@ -1,6 +1,12 @@
+# Mac OS X
+.DS_Store
+
 # npm:
 node_modules/
 npm-debug.log
 
 # Sublime Text:
 *.sublime-workspace
+
+# Private
+/deployment/hosts

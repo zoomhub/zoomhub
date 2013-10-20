@@ -1,12 +1,23 @@
 # Zoomhub
 
 This is the beginning of an open-source codebase for a cloud zooming service,
-like [Zoom.it](http://zoom.it/).
+like [Zoom.it].
 
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+See [CONTRIBUTING.md] for details.
+
+
+## Setup
+
+-   [Install Node.js][node-installation].
+-   Install dependencies: `./zh install`
+
+
+## Optional Prerequisites
+
+-   [Ansible][ansible-installation] for deployment.
 
 
 ## API
@@ -98,6 +109,25 @@ Notes, and thoughts for improvement:
   response JSON and the request query string param.
 
 
+## Administation
+
+`zh` is a script for managing ZoomHub. Currently, we support the following
+commands:
+
+-   `./zh install`: Install dependencies.
+-   `./zh ping`: Ping production machines.
+-   `./zh deploy`: Deploy to server. **TODO:** Copy `./deployment/hosts.sample`
+                   to `./deployment/host` and replace `localhost` with your
+                   server IP.
+
 ## License
 
-MIT.
+The MIT License. See [LICENSE][] file.
+
+
+
+[ansible-installation]: http://www.ansibleworks.com/docs/intro_installation.html
+[CONTRIBUTING.md]: CONTRIBUTING.md
+[LICENSE]: LICENSE
+[node-installation]: http://nodejs.org/download/
+[Zoom.it]: http://zoom.it/

@@ -1,12 +1,30 @@
 {
   "name": "zooming-service",
-  "version": "0.0.0",
-  "description": "TODO",
-  "author": "TODO",
+  "version": "0.0.1",
+  "description": "Cloud zooming service",
+  "author": "ZoomHub <zoomhub@googlegroups.com>",
+  "contributors": [
+    {
+      "name": "Aseem Kishore",
+      "email": "aseem.kishore@gmail.com"
+    },
+    {
+      "name": "Daniel Gasienica",
+      "email": "daniel@gasienica.ch"
+    },
+    {
+      "name": "Ian Gilman",
+      "email": "ian@iangilman.com"
+    },
+    {
+      "name": "Ken Perkins",
+      "email": "ken.perkins@rackspace.com"
+    }
+  ],
   "main": "./app",
   "dependencies": {
     "coffee-script": "~1.6.3",
-    "deepzoomtools": "git+ssh://git@github.com:gasi/node-deepzoomtools.git",
+    "deepzoomtools": "openzoom/node-deepzoomtools",
     "express": "~3.3.7",
     "fibers": "~1.0.1",
     "jade": "~0.35.0",
@@ -26,6 +44,9 @@
     "start": "node-dev --debug node_modules/.bin/_coffee --fibers --cache app",
     "test": "mocha"
   },
-  "repository": "TODO",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zoomhub/zoomhub.git"
+  },
   "license": "MIT"
 }

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+
+# Commands
+case "$1" in
+install)
+    npm install
+    ;;
+ping)
+    ansible -i deployment/hosts all -m ping
+    ;;
+deploy)
+    ansible-playbook -v -i deployment/hosts -k deployment/site.yml
+    ;;
+*)
+    echo "Unknown command: $1. Try: ping|deploy"
+    ;;
+esac
