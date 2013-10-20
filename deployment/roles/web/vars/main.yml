@@ -4,7 +4,9 @@ description: ZoomHub let’s you make your images zoomable.
 node_user: root
 node_path: /usr/bin/node
 apps_root: /var/apps
+app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
 app_path: '{{ app_root }}/app.js'
+app_version: HEAD
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
