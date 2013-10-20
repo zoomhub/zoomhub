@@ -15,7 +15,7 @@ script
 end script
 
 pre-start script
-    mkdir -p /var/log/nodejs
+    mkdir -p {{ log_root }}
     echo "\n[`date -u +%Y-%m-%dT%T.%3NZ`] (sys) Starting" >> {{ log_path }}
 end script
 
