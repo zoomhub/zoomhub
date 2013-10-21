@@ -66,4 +66,4 @@
   npm: path={{ app_root }}
 
 - name: run app
-  service: name={{ service }} state=started
+  service: name={{ service }} state=restarted
