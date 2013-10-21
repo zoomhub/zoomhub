@@ -74,17 +74,19 @@ app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
     contentPath = path.join STATIC_PATH, "#{id}.jpg"
     writer = request(url).pipe fs.createWriteStream contentPath
     writer.on 'error', (err) ->
-        return res.json 500, {error: err?.stack or err}
+        return res.json 500, {error: err?.stack ? err}
+
     writer.on 'finish', (_) ->
+        res.json 200, {id, url}
+
         # TODO we need to explicitly catch errors here since the 'finish'
         # handler isn't *actually* an async handler, so errors we "throw"
         # here won't propagate to an error response. how to fix? domains?
         try
             DeepZoomImage.create _, contentPath, contentPath, DEFAULT_TILE_SIZE,
               DEFAULT_TILE_OVERLAP, DEFAULT_FORMAT
-            return res.json 200, {id, url}
         catch err
-            return res.json 500, {error: err?.stack or err}
+            console.error {error: err?.stack ? err}
 
 app.get '/:id', (req, res, _) ->
     id = req.param 'id'
