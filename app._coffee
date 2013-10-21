@@ -66,8 +66,8 @@ app.get '/', (req, res, _) ->
 app.get '/health', (req, res, _) ->
     res.send 'up'
 
-app.get '/content', (req, res, _) ->
-    url = req.query?.url
+app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
+    url = req.params[0]
     if not url?
         return res.json 400, {error: "Missing URL"}
     id = ++ID
