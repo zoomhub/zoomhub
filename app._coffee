@@ -1,12 +1,17 @@
 config = require './config'
-deepzoom = require 'deepzoomtools'
+DeepZoomImage = require 'deepzoomtools'
 express = require 'express'
 fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
 request = require 'request'
 
+# Deep Zoom settings
+DEFAULT_TILE_SIZE = 254
+DEFAULT_TILE_OVERLAP = 1
+DEFAULT_FORMAT = 'jpg'
 
+# Constants
 ID = 0
 STATIC_PATH = path.join __dirname, 'public'
 STATIC_URL = '/static'
@@ -75,7 +80,8 @@ app.get '/content', (req, res, _) ->
         # handler isn't *actually* an async handler, so errors we "throw"
         # here won't propagate to an error response. how to fix? domains?
         try
-            deepzoom.create contentPath, _
+            DeepZoomImage.create _, contentPath, contentPath, DEFAULT_TILE_SIZE,
+              DEFAULT_TILE_OVERLAP, DEFAULT_FORMAT
             return res.json 200, {id, url}
         catch err
             return res.json 500, {error: err?.stack or err}
