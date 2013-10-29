@@ -111,14 +111,16 @@ Notes, and thoughts for improvement:
 
 ## Administation
 
+***TODO:** Copy `./deployment/hosts.sample` to `./deployment/host` and replace
+`localhost` with your server IP.*
+
 `zh` is a script for managing ZoomHub. Currently, we support the following
 commands:
 
 -   `./zh install`: Install dependencies.
 -   `./zh ping`: Ping production machines.
--   `./zh setup`: Setup server. **TODO:** Copy `./deployment/hosts.sample`
-                  to `./deployment/host` and replace `localhost` with your
-                  server IP.
+-   `./zh setup`: Setup server(s).
+-   `./zh deploy`: Deploy latest code from Git.
 
 ## License
 

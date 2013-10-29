@@ -9,6 +9,9 @@ install)
 ping)
     ansible -i deployment/hosts all -m ping
     ;;
+deploy)
+    ansible-playbook -i deployment/hosts -k deployment/deploy.yml
+    ;;
 setup)
     ansible-playbook -i deployment/hosts -k deployment/setup.yml
     ;;
