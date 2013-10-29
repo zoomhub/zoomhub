@@ -16,6 +16,6 @@ setup)
     ansible-playbook -i deployment/hosts -k deployment/setup.yml
     ;;
 *)
-    echo "Unknown command: $1. Try: ping|deploy"
+    echo "Unknown command: $1. Try: ping|deploy|setup"
     ;;
 esac

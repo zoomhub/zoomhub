@@ -22,6 +22,7 @@ app = require('streamline-express') express()
 # Template engine
 app.engine 'jade', jade.__express
 app.set 'view engine', 'jade'
+app.set 'views', path.join __dirname, 'views'
 
 
 ## MIDDLEWARE:
