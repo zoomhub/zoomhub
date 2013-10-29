@@ -9,8 +9,8 @@ install)
 ping)
     ansible -i deployment/hosts all -m ping
     ;;
-deploy)
-    ansible-playbook -v -i deployment/hosts -k deployment/site.yml
+setup)
+    ansible-playbook -v -i deployment/hosts -k deployment/setup.yml
     ;;
 *)
     echo "Unknown command: $1. Try: ping|deploy"

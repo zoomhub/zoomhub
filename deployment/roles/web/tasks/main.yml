@@ -57,13 +57,3 @@
 
 - name: create the service upstart
   template: src=service.conf.j2 dest=/etc/init/{{ service }}.conf
-
-- name: get app source
-  git: repo={{ app_repo }} dest={{ app_root }} version={{ app_version }}
-       force=no
-
-- name: npm update
-  npm: path={{ app_root }}
-
-- name: run app
-  service: name={{ service }} state=restarted
