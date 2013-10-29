@@ -32,7 +32,8 @@
     "node-inspector": "~0.5.0",
     "request": "~2.27.0",
     "streamline": "~0.8.0",
-    "streamline-express": "~0.3.1"
+    "streamline-express": "~0.3.1",
+    "gm": "~1.13.1"
   },
   "devDependencies": {
     "chai": "~1.7.2",

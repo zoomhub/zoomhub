@@ -5,6 +5,7 @@ fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
 request = require 'request'
+tiler = require './src/tiler'
 
 # Deep Zoom settings
 DEFAULT_TILE_SIZE = 254
@@ -13,6 +14,7 @@ DEFAULT_FORMAT = 'jpg'
 
 # Constants
 ID = 0
+PRIVATE_PATH = path.join __dirname, 'private'
 STATIC_PATH = path.join __dirname, 'public'
 STATIC_URL = '/static'
 
@@ -89,7 +91,15 @@ app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
         catch err
             console.error {error: err?.stack ? err}
 
-app.get '/:id', (req, res, _) ->
+app.get '/tiler-test', (req, res, _) ->
+    imagePath = path.join PRIVATE_PATH, '1.jpg'
+    try
+        tiler.start imagePath, '1', _
+        res.json 200, {success: true}
+    catch err
+        res.json 500, {error: err?.stack or err}
+
+app.get 'view/:id', (req, res, _) ->
     id = req.param 'id'
     res.render 'view', {id}
 
