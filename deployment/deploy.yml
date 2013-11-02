@@ -12,7 +12,7 @@
          force=no
 
   - name: npm update
-    npm: path={{ app_root }}
+    npm: path={{ app_root }} state=latest
 
   - name: run app
     service: name={{ service }} state=restarted
