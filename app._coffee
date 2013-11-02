@@ -99,8 +99,6 @@ app.get '/:id', (req, res, _) ->
 
 if module is require.main
     app.listen config.PORT
-    console.log """
-        Zooming service listening at http://localhost:#{config.PORT}/ ...
-    """
+    console.log "ZoomHub running at #{config.BASE_URL}:#{config.PORT}/"
 else
     module.exports = app
