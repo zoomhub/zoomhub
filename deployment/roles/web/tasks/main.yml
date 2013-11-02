@@ -1,5 +1,4 @@
 ---
-
 - name: create user
   action: user name={{ service }}
 
