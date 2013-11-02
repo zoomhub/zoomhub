@@ -12,12 +12,19 @@
 # Instead, set those values as environment variables on the running server.
 #
 
+PORT = 8000
+
 configs = module.exports =
 
     #
     # What port the app should run on.
     #
-    PORT: 8000
+    PORT: PORT
+
+    #
+    # Base URL of web app
+    #
+    BASE_URL: "http://localhost:#{PORT}"
 
     #
     # What format we should use with Express logger.
