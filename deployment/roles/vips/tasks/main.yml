@@ -68,8 +68,16 @@
   git: repo=https://github.com/jcupitt/libvips.git dest=/tmp/libvips version=7.36
 
 # Build
+# Install with prefix in order to not having to rely on $PATH environment
+# variable which causes issues with Upstart scripts.
+# Reference: https://github.com/jcupitt/libvips/issues/31#issuecomment-9145077
 - name: build
-  shell: 'cd /tmp/libvips/; ./bootstrap.sh; ./configure; make; sudo make install'
+  shell: |
+    cd /tmp/libvips/
+    ./bootstrap.sh
+    ./configure --prefix={{ app_user_home }}/vips
+    make
+    sudo make install
 
 - name: clean up
   file: path=/tmp/libvips state=absent
@@ -81,7 +89,7 @@
               state=present
   with_items:
     - { regexp: '^export VIPSHOME',
-        line: 'export VIPSHOME=/usr/local' }
+        line: 'export VIPSHOME={{ app_user_home }}/vips' }
     - { regexp: '^export LD_LIBRARY_PATH=[$]LD_LIBRARY_PATH:[$]VIPSHOME/lib',
         line: 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VIPSHOME/lib' }
     - { regexp: '^export PATH=[$]PATH:[$]VIPSHOME/bin',
