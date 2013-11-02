@@ -120,7 +120,7 @@ commands:
 -   `./zh install`: Install dependencies.
 -   `./zh ping`: Ping production machines.
 -   `./zh setup`: Setup server(s).
--   `./zh deploy`: Deploy latest code from Git.
+-   `./zh deploy`: Deploy latest app code from Git.
 
 ## License
 
