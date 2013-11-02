@@ -5,3 +5,4 @@
   sudo: yes
   roles:
     - web
+    - vips
