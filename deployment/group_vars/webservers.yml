@@ -1,8 +1,8 @@
 ---
 service: zoomhub
 description: Cloud zooming service.
-app_user: root
-app_user_home: /root
+admin_user: zoomhub
+admin_home: "/home/{{ admin_user }}"
 apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'

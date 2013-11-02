@@ -1,9 +1,9 @@
 ---
 - name: create user
-  action: user name={{ service }}
+  action: user name={{ admin_user }}
 
 - name: add SSH key
-  authorized_key: user={{ service }} key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  authorized_key: user={{ admin_user }} key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
 
 - name: install g++
   apt: pkg=g++ state=present

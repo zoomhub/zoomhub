@@ -75,7 +75,7 @@
   shell: |
     cd /tmp/libvips/
     ./bootstrap.sh
-    ./configure --prefix={{ app_user_home }}/vips
+    ./configure --prefix={{ admin_home }}/vips
     make
     sudo make install
 
@@ -83,13 +83,13 @@
   file: path=/tmp/libvips state=absent
 
 - name: enable VIPS in .bashrc
-  lineinfile: dest='{{ app_user_home }}/.bashrc'
+  lineinfile: dest='{{ admin_home }}/.bashrc'
               regexp='{{ item.regexp }}'
               line='{{ item.line }}'
               state=present
   with_items:
     - { regexp: '^export VIPSHOME',
-        line: 'export VIPSHOME={{ app_user_home }}/vips' }
+        line: 'export VIPSHOME={{ admin_home }}/vips' }
     - { regexp: '^export LD_LIBRARY_PATH=[$]LD_LIBRARY_PATH:[$]VIPSHOME/lib',
         line: 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VIPSHOME/lib' }
     - { regexp: '^export PATH=[$]PATH:[$]VIPSHOME/bin',
