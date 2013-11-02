@@ -78,7 +78,7 @@ app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
         return res.json 500, {error: err?.stack ? err}
 
     writer.on 'finish', (_) ->
-        res.json 200, {id, url}
+        res.json 200, {id, url, self: "#{config.BASE_URL}/#{id}"}
 
         # TODO we need to explicitly catch errors here since the 'finish'
         # handler isn't *actually* an async handler, so errors we "throw"
