@@ -1,0 +1,94 @@
+---
+# Build libvips from source
+# Prerequisites: http://www.vips.ecs.soton.ac.uk/index.php?title=Build_on_Ubuntu
+- name: install build-essential
+  apt: pkg=build-essential state=present
+
+- name: install libxml2-dev
+  apt: pkg=libxml2-dev state=present
+
+- name: install libfftw3-dev
+  apt: pkg=libfftw3-dev state=present
+
+- name: install gettext
+  apt: pkg=gettext state=present
+
+- name: install libgtk2.0-dev
+  apt: pkg=libgtk2.0-dev state=present
+
+- name: install python-dev
+  apt: pkg=python-dev state=present
+
+- name: install liblcms1-dev
+  apt: pkg=liblcms1-dev state=present
+
+# FIXME: Couldn’t find library
+# - name: install liboil-dev
+#   apt: pkg=liboil-dev state=present
+
+- name: install libmagickwand-dev
+  apt: pkg=libmagickwand-dev state=present
+
+- name: install libopenexr-dev
+  apt: pkg=libopenexr-dev state=present
+
+- name: install libcfitsio3-dev
+  apt: pkg=libcfitsio3-dev state=present
+
+- name: install gobject-introspection
+  apt: pkg=gobject-introspection state=present
+
+- name: install flex
+  apt: pkg=flex state=present
+
+- name: install bison
+  apt: pkg=bison state=present
+
+# Prerequisites for build from Git sources
+- name: install automake
+  apt: pkg=automake state=present
+
+- name: install libtool
+  apt: pkg=libtool state=present
+
+- name: install swig
+  apt: pkg=swig state=present
+
+- name: install gtk-doc-tools
+  apt: pkg=gtk-doc-tools state=present
+
+- name: install libglib2.0-dev
+  apt: pkg=libglib2.0-dev state=present
+
+- name: install git
+  apt: pkg=git state=present
+
+# Get sources
+- name: get source
+  git: repo=https://github.com/jcupitt/libvips.git dest=/tmp/libvips version=7.36
+
+# Build
+- name: build
+  shell: 'cd /tmp/libvips/; ./bootstrap.sh; ./configure; make; sudo make install'
+
+- name: clean up
+  file: path=/tmp/libvips state=absent
+
+- name: enable VIPS in .bashrc
+  lineinfile: dest='{{ app_user_home }}/.bashrc'
+              regexp='{{ item.regexp }}'
+              line='{{ item.line }}'
+              state=present
+  with_items:
+    - { regexp: '^export VIPSHOME',
+        line: 'export VIPSHOME=/usr/local' }
+    - { regexp: '^export LD_LIBRARY_PATH=[$]LD_LIBRARY_PATH:[$]VIPSHOME/lib',
+        line: 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VIPSHOME/lib' }
+    - { regexp: '^export PATH=[$]PATH:[$]VIPSHOME/bin',
+        line: 'export PATH=$PATH:$VIPSHOME/bin' }
+    - { regexp: '^export PKG_CONFIG_PATH=[$]PKG_CONFIG_PATH:[$]VIPSHOME/lib/pkgconfig',
+        line: 'export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$VIPSHOME/lib/pkgconfig' }
+    - { regexp: '^export MANPATH=[$]MANPATH:[$]VIPSHOME/man',
+        line: 'export MANPATH=$MANPATH:$VIPSHOME/man' }
+    - { regexp: '^export PYTHONPATH=[$]VIPSHOME/lib/python2.7/site-packages',
+        line: 'export PYTHONPATH=$VIPSHOME/lib/python2.7/site-packages' }
