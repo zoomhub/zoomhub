@@ -4,6 +4,9 @@
   remote_user: root
   sudo: yes
   tasks:
+  - name: create the service upstart
+    template: src=roles/web/templates/service.conf.j2 dest=/etc/init/{{ service }}.conf
+
   - name: get app source
     git: repo={{ app_repo }} dest={{ app_root }} version={{ app_version }}
          force=no

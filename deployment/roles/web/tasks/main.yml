@@ -53,6 +53,3 @@
 
 - name: create log directory
   file: state=directory path={{ log_root }}
-
-- name: create the service upstart
-  template: src=service.conf.j2 dest=/etc/init/{{ service }}.conf
