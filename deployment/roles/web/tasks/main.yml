@@ -1,28 +1,4 @@
 ---
-- name: install g++
-  apt: pkg=g++ state=present
-
-- name: install Git
-  apt: pkg=git state=present
-
-- name: install make
-  apt: pkg=make state=present
-
-- name: install software-properties-common
-  apt: pkg=software-properties-common state=present
-
-- name: install python
-  apt: pkg=python state=present
-
-- name: install python-software-properties
-  apt: pkg=python-software-properties state=present
-
-- name: install python-pycurl
-  apt: pkg=python-pycurl state=present
-
-- name: add Chris Lea PPA for Node.js
-  apt_repository: repo='ppa:chris-lea/node.js'
-
 - name: update apt-get cache
   apt:  update_cache=yes cache_valid_time=3600
 
@@ -30,8 +6,22 @@
 - name: upgrade apt-get
   apt:  upgrade=dist
 
+- name: ensure Node.js prerequisites are installed
+  apt: pkg={{ item }} state=present
+  with_items:
+    - g++
+    - git
+    - make
+    - software-properties-common
+    - python
+    - python-software-properties
+    - python-pycurl
+
+- name: add Chris Lea PPA for Node.js
+  apt_repository: repo='ppa:chris-lea/node.js'
+
 - name: install Node.js
-  apt: pkg=nodejs=0.10.21-1chl1~precise1 state=present
+  apt: pkg=nodejs=0.10.21-1chl1~precise1 update_cache=yes state=present
 
 - name: install ImageMagick
   apt: pkg=imagemagick state=present
