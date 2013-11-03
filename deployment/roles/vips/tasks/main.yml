@@ -46,7 +46,7 @@
 - name: clean up
   file: path=/tmp/libvips state=absent
 
-- name: enable VIPS in .bashrc
+- name: setup environment variables
   lineinfile: dest='{{ admin_home }}/.bashrc'
               regexp='{{ item.regexp }}'
               line='{{ item.line }}'

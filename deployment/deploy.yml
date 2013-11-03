@@ -1,5 +1,5 @@
 ---
-- name: deploy latest application code
+- name: deploy latest app code
   hosts: webservers
   remote_user: zoomhub
   sudo: yes
