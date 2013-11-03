@@ -5,4 +5,5 @@
   sudo: yes
   roles:
     - web
+    - imagemagick
     - vips

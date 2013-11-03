@@ -23,9 +23,6 @@
 - name: install Node.js
   apt: pkg=nodejs=0.10.21-1chl1~precise1 update_cache=yes state=present
 
-- name: install ImageMagick
-  apt: pkg=imagemagick state=present
-
 - name: update iptables rules file
   template: src=iptables.rules.j2 dest=/etc/iptables.rules
 
