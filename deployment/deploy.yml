@@ -1,7 +1,7 @@
 ---
 - name: deploy latest application code
   hosts: webservers
-  remote_user: root
+  remote_user: zoomhub
   sudo: yes
   tasks:
   - name: create the service upstart
