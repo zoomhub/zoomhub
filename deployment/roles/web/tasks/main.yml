@@ -39,6 +39,7 @@
 
 - name: create apps root directory
   file: state=directory path={{ apps_root }}
+        owner={{ admin_user }} group={{ admin_group }} recurse=yes
 
 - name: create log directory
   file: state=directory path={{ log_root }}
