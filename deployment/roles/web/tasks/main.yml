@@ -37,6 +37,14 @@
   shell: iptables -t nat -A PREROUTING -i eth0 -p tcp
                   --dport 80 -j REDIRECT --to {{ app_port }}
 
+# # Reference: http://www.debian-administration.org/articles/386
+# - name: authbind
+#   apt: pkg=authbind state=present
+
+# - name: ensure authbind port 80 configuration
+#   file: path=/etc/authbind/byport/80 state=touch
+#         owner={{ admin_user }} group={{ admin_group }} mode=0755
+
 - name: create apps root directory
   file: state=directory path={{ apps_root }}
 
