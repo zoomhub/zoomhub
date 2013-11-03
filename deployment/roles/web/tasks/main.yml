@@ -26,10 +26,10 @@
 - name: install ImageMagick
   apt: pkg=imagemagick state=present
 
-- name: create the iptables file
+- name: update iptables rules file
   template: src=iptables.rules.j2 dest=/etc/iptables.rules
 
-- name: apply iptables rules
+- name: update iptables rules
   shell: iptables-restore < /etc/iptables.rules
 
 - name: create apps root directory
