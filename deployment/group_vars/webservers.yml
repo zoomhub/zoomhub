@@ -8,7 +8,7 @@ apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
 app_version: master
-app_port: 80
+app_port: 3000
 app_env:
   - NODE_ENV=production
   - PORT={{ app_port }}
