@@ -99,6 +99,6 @@ app.get '/:id', (req, res, _) ->
 
 if module is require.main
     app.listen config.PORT
-    console.log "ZoomHub running at #{config.BASE_URL}:#{config.PORT}/"
+    console.log "ZoomHub running at #{config.BASE_URL}"
 else
     module.exports = app
