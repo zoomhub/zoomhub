@@ -1,87 +1,59 @@
 ---
 # Build libvips from source
 # Prerequisites: http://www.vips.ecs.soton.ac.uk/index.php?title=Build_on_Ubuntu
-- name: install build-essential
-  apt: pkg=build-essential state=present
+- name: build tools
+  apt: pkg={{ item }} state=present
+  with_items:
+    - build-essential
+    - libxml2-dev
+    - libfftw3-dev
+    - gettext
+    - libgtk2.0-dev
+    - python-dev
+    - liblcms1-dev
+    # FIXME: Couldn’t find library
+    # - liboil-dev
+    - libmagickwand-dev
+    - libopenexr-dev
+    - libcfitsio3-dev
+    - gobject-introspection
+    - flex
+    - bison
 
-- name: install libxml2-dev
-  apt: pkg=libxml2-dev state=present
-
-- name: install libfftw3-dev
-  apt: pkg=libfftw3-dev state=present
-
-- name: install gettext
-  apt: pkg=gettext state=present
-
-- name: install libgtk2.0-dev
-  apt: pkg=libgtk2.0-dev state=present
-
-- name: install python-dev
-  apt: pkg=python-dev state=present
-
-- name: install liblcms1-dev
-  apt: pkg=liblcms1-dev state=present
-
-# FIXME: Couldn’t find library
-# - name: install liboil-dev
-#   apt: pkg=liboil-dev state=present
-
-- name: install libmagickwand-dev
-  apt: pkg=libmagickwand-dev state=present
-
-- name: install libopenexr-dev
-  apt: pkg=libopenexr-dev state=present
-
-- name: install libcfitsio3-dev
-  apt: pkg=libcfitsio3-dev state=present
-
-- name: install gobject-introspection
-  apt: pkg=gobject-introspection state=present
-
-- name: install flex
-  apt: pkg=flex state=present
-
-- name: install bison
-  apt: pkg=bison state=present
-
-# Prerequisites for build from Git sources
-- name: install automake
-  apt: pkg=automake state=present
-
-- name: install libtool
-  apt: pkg=libtool state=present
-
-- name: install swig
-  apt: pkg=swig state=present
-
-- name: install gtk-doc-tools
-  apt: pkg=gtk-doc-tools state=present
-
-- name: install libglib2.0-dev
-  apt: pkg=libglib2.0-dev state=present
-
-- name: install git
-  apt: pkg=git state=present
+- name: tools for build from Git sources
+  apt: pkg={{ item }} state=present
+  with_items:
+    - automake
+    - libtool
+    - swig
+    - gtk-doc-tools
+    - libglib2.0-dev
+    - git
 
 # Get sources
 - name: get source
   git: repo=https://github.com/jcupitt/libvips.git dest=/tmp/libvips version=7.36
 
 # Build
+# Install with prefix in order to not having to rely on $PATH environment
+# variable which causes issues with Upstart scripts.
+# Reference: https://github.com/jcupitt/libvips/issues/31#issuecomment-9145077
 - name: build
-  shell: 'cd /tmp/libvips/; ./bootstrap.sh; ./configure; make; sudo make install'
+  shell: chdir=/tmp/libvips/ creates={{ admin_home }}/vips/bin/vips
+         ./bootstrap.sh; ./configure --prefix={{ admin_home }}/vips;
+         make; sudo make install
 
 - name: clean up
   file: path=/tmp/libvips state=absent
 
-- name: enable VIPS in .bashrc
-  lineinfile: dest='{{ app_user_home }}/.bashrc'
+- name: setup environment variables
+  lineinfile: dest='{{ admin_home }}/.bashrc'
               regexp='{{ item.regexp }}'
               line='{{ item.line }}'
               state=present
   with_items:
     - { regexp: '^export VIPSHOME',
-        line: 'export VIPSHOME=/usr/local' }
+        line: 'export VIPSHOME={{ admin_home }}/vips' }
     - { regexp: '^export LD_LIBRARY_PATH=[$]LD_LIBRARY_PATH:[$]VIPSHOME/lib',
         line: 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VIPSHOME/lib' }
     - { regexp: '^export PATH=[$]PATH:[$]VIPSHOME/bin',

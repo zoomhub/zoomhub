@@ -1,55 +1,45 @@
 ---
-- name: create user
-  action: user name={{ service }}
-
-- name: add SSH key
-  authorized_key: user={{ service }} key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-
-- name: install g++
-  apt: pkg=g++ state=present
-
-- name: install Git
-  apt: pkg=git state=present
-
-- name: install make
-  apt: pkg=make state=present
-
-- name: install software-properties-common
-  apt: pkg=software-properties-common state=present
-
-- name: install python
-  apt: pkg=python state=present
-
-- name: install python-software-properties
-  apt: pkg=python-software-properties state=present
-
-- name: install python-pycurl
-  apt: pkg=python-pycurl state=present
-
-- name: add Chris Lea PPA for Node.js
-  apt_repository: repo='ppa:chris-lea/node.js'
-
+# References:
+# - https://chrislea.com/2013/03/15/upgrading-from-node-js-0-8-x-to-0-10-0-from-my-ppa/
+# - http://git.io/hvzTnA
 - name: update apt-get cache
   apt:  update_cache=yes cache_valid_time=3600
 
-# Reference: https://chrislea.com/2013/03/15/upgrading-from-node-js-0-8-x-to-0-10-0-from-my-ppa/
 - name: upgrade apt-get
   apt:  upgrade=dist
 
-- name: install Node.js
-  apt: pkg=nodejs=0.10.21-1chl1~precise1 state=present
+- name: Node.js prerequisites
+  apt: pkg={{ item }} state=present
+  with_items:
+    - g++
+    - git
+    - make
+    - software-properties-common
+    - python
+    - python-software-properties
+    - python-pycurl
 
-- name: install ImageMagick
-  apt: pkg=imagemagick state=present
+- name: Chris Lea PPA for Node.js
+  apt_repository: repo='ppa:chris-lea/node.js'
 
-- name: create the iptables file
+- name: Node.js
+  apt: pkg=nodejs=0.10.21-1chl1~precise1 update_cache=yes state=present
+
+- name: update iptables rules file
   template: src=iptables.rules.j2 dest=/etc/iptables.rules
 
-- name: apply iptables rules
+- name: update iptables rules
   shell: iptables-restore < /etc/iptables.rules
+
+# Undo with `sudo iptables -t nat -F`
+# Reference: http://www.debian-administration.org/articles/386
+- name: map port 80 to app port
+  shell: iptables -t nat -A PREROUTING -i eth0 -p tcp
+                  --dport 80 -j REDIRECT --to {{ app_port }}
 
 - name: create apps root directory
   file: state=directory path={{ apps_root }}
+        owner={{ admin_user }} group={{ admin_group }} recurse=yes
 
 - name: create log directory
   file: state=directory path={{ log_root }}

@@ -1,0 +1,41 @@
+---
+- name: boostrap web servers
+  hosts: webservers
+  remote_user: root
+  sudo: yes
+  tasks:
+    - name: create group
+      user: name={{ admin_group }} state=present
+
+    - name: ensure sudoers.d is enabled
+      lineinfile: dest=/etc/sudoers state=present backup=yes
+                  regexp='^#includedir /etc/sudoers.d'
+                  line='#includedir /etc/sudoers.d'
+
+    - name: set up password-less sudo for admin users
+      copy: content='%{{ admin_group }} ALL=(ALL) NOPASSWD:ALL'
+            dest=/etc/sudoers.d/{{ admin_group }}
+            owner=root group=root mode=0440
+
+    # Reference: http://mmoya.org/blog/2013/06/11/looking-up-encrypted-passwords-in-ansible/
+    - name: create user
+      user: name={{ admin_user }} password={{ item }}
+            group="{{ admin_group }}" state=present
+      with_password: credentials/userpassword encrypt=sha256_crypt
+
+
+    # Reference: http://edvanbeinum.com/no-autocomplete-new-users-ubuntu-server/
+    - name: ensure user has bash as shell
+      command: chsh -s /bin/bash {{ admin_user }}
+
+    - name: add SSH key
+      authorized_key:
+        user={{ admin_user }}
+        key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: ensure .ssh folder has right permissions
+      file: path={{ admin_home }}/.ssh state=directory recurse=yes
+            owner={{ admin_user }} group={{ admin_group }} mode=0700
+
+    - name: ensure authorized_keys has right permissions
+      file: path={{ admin_home }}/.ssh/authorized_keys state=file mode=0600

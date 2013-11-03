@@ -1,8 +1,9 @@
 ---
 - name: setup web servers
   hosts: webservers
-  remote_user: root
+  remote_user: zoomhub
   sudo: yes
   roles:
     - web
+    - imagemagick
     - vips

@@ -18,6 +18,8 @@ See [CONTRIBUTING.md] for details.
 ## Optional Prerequisites
 
 -   [Ansible][ansible-installation] for deployment.
+-   [pip] for installing `passlib` (see below).
+-   Python `passlib` for generating passwords: `pip install passlib`.
 
 
 ## API
@@ -111,16 +113,23 @@ Notes, and thoughts for improvement:
 
 ## Administation
 
-***TODO:** Copy `./deployment/hosts.sample` to `./deployment/host` and replace
-`localhost` with your server IP.*
+### Prerequisites
+
+-   Copy `deployment/hosts.sample` to `deployment/host` and replace
+    `localhost` with your server IP.
+-   Copy `credentials/userpassword.sample` to
+    `deployment/credentials/userpassword` and paste in your password.
+
+### Commands
 
 `zh` is a script for managing ZoomHub. Currently, we support the following
 commands:
 
 -   `./zh install`: Install dependencies.
+-   `./zh bootstrap`: Bootstrap server(s); only required once per user.
 -   `./zh ping`: Ping production machines.
 -   `./zh setup`: Setup server(s).
--   `./zh deploy`: Deploy latest code from Git.
+-   `./zh deploy`: Deploy latest app code from Git.
 
 ## License
 
@@ -132,4 +141,5 @@ The MIT License. See [LICENSE][] file.
 [CONTRIBUTING.md]: CONTRIBUTING.md
 [LICENSE]: LICENSE
 [node-installation]: http://nodejs.org/download/
+[pip]: https://pypi.python.org/pypi/pip
 [Zoom.it]: http://zoom.it/
