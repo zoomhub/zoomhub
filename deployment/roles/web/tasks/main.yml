@@ -29,6 +29,8 @@
 - name: update iptables rules
   shell: iptables-restore < /etc/iptables.rules
 
+# Undo with `sudo iptables -t nat -F`
+# Reference: http://www.debian-administration.org/articles/386
 - name: map port 80 to {{ app_port }}
   shell: iptables -t nat -A PREROUTING -i eth0 -p tcp
                   --dport 80 -j REDIRECT --to {{ app_port }}
