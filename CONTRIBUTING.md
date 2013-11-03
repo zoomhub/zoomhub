@@ -3,19 +3,19 @@
 This app is built on [Node.js](http://nodejs.org/). Install the latest stable
 build (v0.10.x currently), which should install npm, then run:
 
-```
+```bash
 npm install
 ```
 
 To start the server, run:
 
-```
+```bash
 npm start
 ```
 
 To run the tests, run:
 
-```
+```bash
 npm test
 ```
 
