@@ -1,8 +1,10 @@
 ---
+# References:
+# - https://chrislea.com/2013/03/15/upgrading-from-node-js-0-8-x-to-0-10-0-from-my-ppa/
+# - http://git.io/hvzTnA
 - name: update apt-get cache
   apt:  update_cache=yes cache_valid_time=3600
 
-# Reference: https://chrislea.com/2013/03/15/upgrading-from-node-js-0-8-x-to-0-10-0-from-my-ppa/
 - name: upgrade apt-get
   apt:  upgrade=dist
 
