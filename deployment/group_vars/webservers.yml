@@ -8,6 +8,11 @@ apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
 app_version: master
-app_command: "NODE_ENV=production PORT=80 BASE_URL='http://zoomhub.net' {{ app_root }}/node_modules/.bin/_coffee --fibers --cache {{ app_root }}/app"
+app_port: 80
+app_env:
+  - NODE_ENV=production
+  - PORT={{ app_port }}
+  - BASE_URL='http://zoomhub.net'
+app_command: "{{ app_root }}/node_modules/.bin/_coffee --fibers --cache {{ app_root }}/app"
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
