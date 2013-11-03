@@ -15,5 +15,8 @@
   - name: npm update
     npm: path={{ app_root }} state=latest
 
+  - name: remove Streamline.js cache
+    file: path={{ admin_home}}/.streamline state=absent
+
   - name: run app
     service: name={{ service }} state=restarted
