@@ -1,0 +1,16 @@
+---
+# Install Redis
+- name: Chris Lea PPA for Redis
+  apt_repository: repo='ppa:chris-lea/redis-server'
+
+- name: Redis
+  apt: pkg=redis-server=2:2.6.16-1chl1~precise1 update_cache=yes state=present
+
+- name: Redis configuration
+  template: src=redis.conf.j2 dest=/etc/redis/redis.conf
+
+- name: Redis upstart configuration
+  template: src=upstart.conf.j2 dest=/etc/init/redis-server.conf
+
+- name: remove legacy init.d script
+  file: path=/etc/init.d/redis-server state=absent
