@@ -103,7 +103,7 @@ Notes, and thoughts for improvement:
   detail), but we could rethink that. Relates to prev point too.
 
 - The JSON format is different than a typical XML-to-JSON conversion format,
-  e.g. what OpenSeadragon supports, because this is sipmler and more natural.
+  e.g. what OpenSeadragon supports, because this is simpler and more natural.
   Is that fine?
 
 - Calling the source URL just `url` is nice and simple, but doesn't play nice
