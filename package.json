@@ -1,5 +1,6 @@
 {
   "name": "zoomhub",
+  "private": true,
   "version": "0.0.1",
   "description": "Cloud zooming service",
   "author": "ZoomHub <zoomhub@googlegroups.com>",
