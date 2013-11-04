@@ -49,7 +49,10 @@ In both cases, response JSON:
 
 ```
 - id (string)
-- url (string; the original source URL)
+- self (string; URL of content metadata)
+- urls
+  - source (string; the original source URL)
+  - view (string; URL for viewing)
 - dzi (object, or null if still in progress or failed)
 - error (object, or null if still in progress or succeeded)
 - percent (double; from 0 to 100)
