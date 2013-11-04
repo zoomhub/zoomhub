@@ -1,4 +1,4 @@
-# Zoomhub
+# ZoomHub
 
 This is the beginning of an open-source codebase for a cloud zooming service,
 like [Zoom.it].
@@ -12,6 +12,7 @@ See [CONTRIBUTING.md] for details.
 ## Setup
 
 -   [Install Node.js][node-installation].
+-   [Install Redis][redis].
 -   Install dependencies: `./zh install`
 
 
@@ -48,10 +49,13 @@ In both cases, response JSON:
 
 ```
 - id (string)
-- url (string; the original source URL)
+- self (string; URL of content metadata)
+- urls
+  - source (string; the original source URL)
+  - view (string; URL for viewing)
 - dzi (object, or null if still in progress or failed)
 - error (object, or null if still in progress or succeeded)
-- percent (double; from 0 to 100)
+- progress (number; from 0 to 1)
 ```
 
 DZI objects:
@@ -61,7 +65,7 @@ DZI objects:
 - width (int)
 - height (int)
 - tileSize (int)
-- tileFormat (string; 'png' or 'jpeg')
+- tileFormat (string; 'png' or 'jpg')
 - tileOverlap (int)
 ```
 
@@ -94,7 +98,7 @@ Notes, and thoughts for improvement:
 - An advantage over calling it `dzi` instead of e.g. `result` is that it'll
   let us eventually return `dzc` too. E.g. every URL will always generate a
   DZI, but a link to a Flickr album may also generate a DZC. Maybe we should
-  namespace both `error` and `percent` to this too, e.g. `dzcPercent`.
+  namespace both `error` and `progress` to this too, e.g. `dzcProgress`.
 
 - Kept the generic "content" namespace to support that scenario above, as
   well as to support the concept of clients ultimately just wanting content
@@ -102,7 +106,7 @@ Notes, and thoughts for improvement:
   detail), but we could rethink that. Relates to prev point too.
 
 - The JSON format is different than a typical XML-to-JSON conversion format,
-  e.g. what OpenSeadragon supports, because this is sipmler and more natural.
+  e.g. what OpenSeadragon supports, because this is simpler and more natural.
   Is that fine?
 
 - Calling the source URL just `url` is nice and simple, but doesn't play nice
@@ -142,4 +146,5 @@ The MIT License. See [LICENSE][] file.
 [LICENSE]: LICENSE
 [node-installation]: http://nodejs.org/download/
 [pip]: https://pypi.python.org/pypi/pip
+[redis]: http://redis.io/
 [Zoom.it]: http://zoom.it/

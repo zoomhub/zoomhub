@@ -1,10 +1,17 @@
 ## Development
 
-This app is built on [Node.js](http://nodejs.org/). Install the latest stable
-build (v0.10.x currently), which should install npm, then run:
+This app is built on [Node.js] and [Redis]. Install [Redis] and the latest
+stable build of [Node.js] (v0.10.x currently), which should install npm, then
+run:
 
 ```bash
 npm install
+```
+
+Start [Redis] server in separate Terminal window:
+
+```bash
+redis-server
 ```
 
 To start the server, run:
@@ -57,3 +64,6 @@ email us at [zoomhub@googlegroups.com](mailto:zoomhub@googlegroups.com).
 Feel free to file issues in [GitHub Issues](https://github.com/zoomhub/zoomhub/issues).
 That's also where we're tracking TODOs and remaining work.
 
+
+[Node.js]: http://nodejs.org/
+[Redis]: http://redis.io/
