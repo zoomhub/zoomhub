@@ -1,11 +1,11 @@
 # Mac OS X
 .DS_Store
 
-# npm:
-node_modules/
+# npm
+/node_modules
 npm-debug.log
 
-# Sublime Text:
+# Sublime Text
 *.sublime-workspace
 
 # Private
