@@ -108,7 +108,9 @@ app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
     destination = processor.process source, _
 
 app.get '/:id', (req, res, _) ->
-    id = req.param 'id'
+    id = parseInt req.params.id, 10
+    if not id? or isNaN id
+        return res.send 404
     res.render 'view', {id}
 
 
