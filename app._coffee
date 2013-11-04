@@ -73,6 +73,20 @@ app.get '/', (req, res, _) ->
 app.get '/health', (req, res, _) ->
     res.send 'up'
 
+app.get '/content/:id', (req, res, _) ->
+    id = parseInt req.params.id, 10
+    if not id? or isNaN id
+        return res.json 404, error:
+            code: 404
+            message: "Not found"
+
+    content = Content.getById id, _
+    if content?
+        res.json 200, content
+    res.json 404, error:
+        code: 404
+        message: "Not found"
+
 app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
     url = req.params[0]
     if not url?
