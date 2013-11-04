@@ -81,11 +81,11 @@ app.get '/content/:id', (req, res, _) ->
       message: 'Not found'
 
   content = Content.getById id, _
-  if content?
-    res.json 200, content
-  res.json 404, error:
-    code: 404
-    message: 'Not found'
+  if not content?
+    return res.json 404, error:
+      code: 404
+      message: 'Not found'
+  res.json 200, content
 
 app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
   url = req.params[0]
