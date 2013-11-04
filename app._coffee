@@ -1,21 +1,27 @@
 config = require './config'
-DeepZoomImage = require 'deepzoomtools'
+Content = require './lib/content'
 express = require 'express'
+Fetcher = require './lib/fetcher'
 fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
-request = require 'request'
+Processor = require './lib/processor'
 
-# Deep Zoom settings
-DEFAULT_TILE_SIZE = 254
-DEFAULT_TILE_OVERLAP = 1
-DEFAULT_FORMAT = 'jpg'
 
 # Constants
-ID = 0
 STATIC_PATH = path.join __dirname, 'public'
 STATIC_URL = '/static'
 
+# Fetcher
+FETCHER_PATH = path.join STATIC_PATH, 'source'
+fetcher = new Fetcher FETCHER_PATH
+
+# Processor
+DZI_PATH = path.join STATIC_PATH, 'dzi'
+processor = new Processor DZI_PATH
+
+
+## APP:
 
 app = require('streamline-express') express()
 
@@ -70,26 +76,22 @@ app.get '/health', (req, res, _) ->
 app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
     url = req.params[0]
     if not url?
-        return res.json 400, {error: "Missing URL"}
-    id = ++ID
-    contentPath = path.join STATIC_PATH, "#{id}.jpg"
-    writer = request(url).pipe fs.createWriteStream contentPath
-    writer.on 'error', (err) ->
-        return res.json 500, {error: err?.stack ? err}
+        return res.json 400, error:
+            message: 'Missing URL'
 
-    writer.on 'finish', (_) ->
-        res.json 200, {id, url, self: "#{config.BASE_URL}/#{id}"}
+    content = Content.getByURL url, _
+    if content?
+        return res.redirect content.urls.view
 
-        # TODO we need to explicitly catch errors here since the 'finish'
-        # handler isn't *actually* an async handler, so errors we "throw"
-        # here won't propagate to an error response. how to fix? domains?
-        try
-            DeepZoomImage.create _, contentPath, contentPath, DEFAULT_TILE_SIZE,
-              DEFAULT_TILE_OVERLAP, DEFAULT_FORMAT
-        catch err
-            if error?.code is 1
-                return console.log "ID #{id} is already taken"
-            console.error {error: err?.stack ? err}
+    content = Content.fromURL url, _
+    # Redirect to view URL
+    res.redirect content.urls.view
+
+    # Fetch source
+    source = fetcher.fetch content, _
+
+    # Create DZI
+    destination = processor.process source, _
 
 app.get '/:id', (req, res, _) ->
     id = req.param 'id'
