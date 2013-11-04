@@ -98,8 +98,8 @@ app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
     return res.redirect content.urls.view
 
   content = Content.fromURL url, _
-  # Redirect to view URL
-  res.redirect content.urls.view
+  # Redirect to metadata
+  res.redirect content.self
 
   # Fetch source
   source = fetcher.fetch content, _
