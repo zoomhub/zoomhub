@@ -2,7 +2,6 @@
 - name: deploy latest app code
   hosts: webservers
   remote_user: zoomhub
-  sudo: yes
   tasks:
   - name: update service upstart script
     template: src=roles/web/templates/service.conf.j2
@@ -19,4 +18,5 @@
     file: path={{ admin_home}}/.streamline state=absent
 
   - name: run app
+    sudo: yes
     service: name={{ service }} state=restarted

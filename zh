@@ -14,10 +14,10 @@ bootstrap)
     ansible-playbook -i deployment/hosts -k deployment/bootstrap.yml
     ;;
 setup)
-    ansible-playbook -i deployment/hosts -s deployment/setup.yml
+    ansible-playbook -i deployment/hosts deployment/setup.yml
     ;;
 deploy)
-    ansible-playbook -i deployment/hosts -s deployment/deploy.yml
+    ansible-playbook -i deployment/hosts deployment/deploy.yml
     ;;
 *)
     echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"
