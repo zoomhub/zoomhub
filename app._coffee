@@ -112,7 +112,6 @@ app.get '/:id', (req, res, _) ->
     res.render 'view', {id}
 
 
-
 ## MAIN:
 
 if module is require.main
