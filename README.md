@@ -55,7 +55,7 @@ In both cases, response JSON:
   - view (string; URL for viewing)
 - dzi (object, or null if still in progress or failed)
 - error (object, or null if still in progress or succeeded)
-- percent (double; from 0 to 100)
+- progress (number; from 0 to 1)
 ```
 
 DZI objects:
@@ -98,7 +98,7 @@ Notes, and thoughts for improvement:
 - An advantage over calling it `dzi` instead of e.g. `result` is that it'll
   let us eventually return `dzc` too. E.g. every URL will always generate a
   DZI, but a link to a Flickr album may also generate a DZC. Maybe we should
-  namespace both `error` and `percent` to this too, e.g. `dzcPercent`.
+  namespace both `error` and `progress` to this too, e.g. `dzcProgress`.
 
 - Kept the generic "content" namespace to support that scenario above, as
   well as to support the concept of clients ultimately just wanting content
