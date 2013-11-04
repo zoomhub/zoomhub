@@ -25,6 +25,7 @@ getURLKey = (url) ->
 # Public API
 module.exports = class Content
   constructor: (@id, url) ->
+    @self = "#{config.BASE_URL}/content/#{@id}"
     @urls =
       source: url
       view: "#{config.BASE_URL}/#{@id}"
