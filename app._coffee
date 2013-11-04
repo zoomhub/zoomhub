@@ -111,7 +111,10 @@ app.get '/:id', (req, res, _) ->
   id = parseInt req.params.id, 10
   if not id? or isNaN id
     return res.send 404
-  res.render 'view', {id}
+  content = Content.getById id, _
+  if not content?
+    return res.send 404
+  res.render 'view', {content}
 
 
 ## MAIN:
