@@ -62,7 +62,7 @@ DZI objects:
 - width (int)
 - height (int)
 - tileSize (int)
-- tileFormat (string; 'png' or 'jpeg')
+- tileFormat (string; 'png' or 'jpg')
 - tileOverlap (int)
 ```
 
