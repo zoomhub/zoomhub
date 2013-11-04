@@ -87,6 +87,8 @@ app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
             DeepZoomImage.create _, contentPath, contentPath, DEFAULT_TILE_SIZE,
               DEFAULT_TILE_OVERLAP, DEFAULT_FORMAT
         catch err
+            if error?.code is 1
+                return console.log "ID #{id} is already taken"
             console.error {error: err?.stack ? err}
 
 app.get '/:id', (req, res, _) ->
