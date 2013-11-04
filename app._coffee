@@ -9,11 +9,12 @@ Processor = require './lib/processor'
 
 
 # Constants
+PIPELINE_PATH = path.join __dirname, 'pipeline'
 STATIC_PATH = path.join __dirname, 'public'
 STATIC_URL = '/static'
 
 # Fetcher
-FETCHER_PATH = path.join STATIC_PATH, 'source'
+FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
 fetcher = new Fetcher FETCHER_PATH
 
 # Processor
