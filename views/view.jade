@@ -6,9 +6,29 @@ html(lang="en")
      = ' ' + content.id
     style.
         html, body {
+            font-family: Helvetica, Arial, sans-serif;
             background-color: #000;
             margin: 0;
             height: 100%;
+            color: #fff;
+        }
+
+        a {
+          color: #999;
+          text-decoration: none;
+        }
+
+        a:hover {
+          color: #666;
+        }
+
+        #metadata {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          background-color: #222;
+          padding: 0.8em 1.5em;
+          text-align: right;
         }
 
         #container {
@@ -17,6 +37,8 @@ html(lang="en")
         }
   body
     #container
+    #metadata
+        a(href=content.self) Metadata
     script(src='/static/js/openseadragon.min.js')
     script.
         var viewer = OpenSeadragon({
