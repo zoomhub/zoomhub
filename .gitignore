@@ -14,4 +14,4 @@ npm-debug.log
 
 # Static files
 /public/dzi
-/public/source
+/pipeline/fetcher
