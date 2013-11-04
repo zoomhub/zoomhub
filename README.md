@@ -12,6 +12,7 @@ See [CONTRIBUTING.md] for details.
 ## Setup
 
 -   [Install Node.js][node-installation].
+-   [Install Redis][redis].
 -   Install dependencies: `./zh install`
 
 
@@ -142,4 +143,5 @@ The MIT License. See [LICENSE][] file.
 [LICENSE]: LICENSE
 [node-installation]: http://nodejs.org/download/
 [pip]: https://pypi.python.org/pypi/pip
+[redis]: http://redis.io/
 [Zoom.it]: http://zoom.it/
