@@ -11,13 +11,14 @@ ping)
     ;;
 bootstrap)
     echo "Enter root password when prompted"
-    ansible-playbook -i deployment/hosts -k deployment/bootstrap.yml
+    ansible-playbook --inventory-file deployment/hosts \
+                     --ask-pass deployment/bootstrap.yml
     ;;
 setup)
-    ansible-playbook -i deployment/hosts deployment/setup.yml
+    ansible-playbook --inventory-file deployment/hosts deployment/setup.yml
     ;;
 deploy)
-    ansible-playbook -i deployment/hosts deployment/deploy.yml
+    ansible-playbook --inventory-file deployment/hosts deployment/deploy.yml
     ;;
 *)
     echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"
