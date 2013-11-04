@@ -68,56 +68,56 @@ app.use express.errorHandler()
 ## ROUTES:
 
 app.get '/', (req, res, _) ->
-    res.send 'ZoomHub'
+  res.send 'ZoomHub'
 
 app.get '/health', (req, res, _) ->
-    res.send 'up'
+  res.send 'up'
 
 app.get '/content/:id', (req, res, _) ->
-    id = parseInt req.params.id, 10
-    if not id? or isNaN id
-        return res.json 404, error:
-            code: 404
-            message: "Not found"
+  id = parseInt req.params.id, 10
+  if not id? or isNaN id
+    return res.json 404, error:
+      code: 404
+      message: 'Not found'
 
-    content = Content.getById id, _
-    if content?
-        res.json 200, content
-    res.json 404, error:
-        code: 404
-        message: "Not found"
+  content = Content.getById id, _
+  if content?
+    res.json 200, content
+  res.json 404, error:
+    code: 404
+    message: 'Not found'
 
 app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
-    url = req.params[0]
-    if not url?
-        return res.json 400, error:
-            message: 'Missing URL'
+  url = req.params[0]
+  if not url?
+    return res.json 400, error:
+      message: 'Missing URL'
 
-    content = Content.getByURL url, _
-    if content?
-        return res.redirect content.urls.view
+  content = Content.getByURL url, _
+  if content?
+    return res.redirect content.urls.view
 
-    content = Content.fromURL url, _
-    # Redirect to view URL
-    res.redirect content.urls.view
+  content = Content.fromURL url, _
+  # Redirect to view URL
+  res.redirect content.urls.view
 
-    # Fetch source
-    source = fetcher.fetch content, _
+  # Fetch source
+  source = fetcher.fetch content, _
 
-    # Create DZI
-    destination = processor.process source, _
+  # Create DZI
+  destination = processor.process source, _
 
 app.get '/:id', (req, res, _) ->
-    id = parseInt req.params.id, 10
-    if not id? or isNaN id
-        return res.send 404
-    res.render 'view', {id}
+  id = parseInt req.params.id, 10
+  if not id? or isNaN id
+    return res.send 404
+  res.render 'view', {id}
 
 
 ## MAIN:
 
 if module is require.main
-    app.listen config.PORT
-    console.log "ZoomHub running at #{config.BASE_URL}"
+  app.listen config.PORT
+  console.log "ZoomHub running at #{config.BASE_URL}"
 else
-    module.exports = app
+  module.exports = app
