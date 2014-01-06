@@ -89,7 +89,7 @@ app.get '/content/:id', (req, res, _) ->
   res.json 200, content
 
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
-  url = req.url.replace /^\//, ''
+  url = req.url[1..]
   if not url?
     return res.json 400, error:
       message: 'Missing URL'
