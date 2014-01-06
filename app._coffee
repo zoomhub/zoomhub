@@ -88,8 +88,8 @@ app.get '/content/:id', (req, res, _) ->
       message: 'Not found'
   res.json 200, content
 
-app.get /^\/(https?:\/\/.+)/, (req, res, _) ->
-  url = req.params[0]
+app.get /^\/https?:\/\/.+/, (req, res, _) ->
+  url = req.url[1..]
   if not url?
     return res.json 400, error:
       message: 'Missing URL'
