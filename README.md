@@ -119,7 +119,7 @@ Notes, and thoughts for improvement:
 
 ### Prerequisites
 
--   Copy `deployment/hosts.sample` to `deployment/host` and replace
+-   Copy `deployment/hosts.sample` to `deployment/hosts` and replace
     `localhost` with your server IP.
 -   Copy `credentials/userpassword.sample` to
     `deployment/credentials/userpassword` and paste in your password.
