@@ -68,6 +68,26 @@ app.use express.errorHandler()
 
 ## ROUTES:
 
+# Helper for the two different routes for URLs
+app.locals.handleUrl = (res, url, _) ->
+  if not url?
+      return res.json 400, error:
+        message: 'Please give us the full URL, including the "http://" or "https://".'
+
+    content = Content.getByURL url, _
+    if content?
+      return res.redirect content.shareUrl
+
+    content = Content.fromURL url, _
+    # Redirect to metadata
+    res.redirect content.self
+
+    # Fetch source
+    source = fetcher.fetch content, _
+
+    # Create DZI
+    destination = processor.process source, _
+
 app.get '/', (req, res, _) ->
   res.send 'ZoomHub'
 
@@ -88,25 +108,12 @@ app.get '/content/:id', (req, res, _) ->
       message: 'Not found'
   res.json 200, content
 
+# For compatibility with zoom.it
+app.get '/v1/content/:url?', (req, res, _) ->
+  app.locals.handleUrl res, req.query.url, _
+
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
-  url = req.url[1..]
-  if not url?
-    return res.json 400, error:
-      message: 'Missing URL'
-
-  content = Content.getByURL url, _
-  if content?
-    return res.redirect content.shareUrl
-
-  content = Content.fromURL url, _
-  # Redirect to metadata
-  res.redirect content.self
-
-  # Fetch source
-  source = fetcher.fetch content, _
-
-  # Create DZI
-  destination = processor.process source, _
+  app.locals.handleUrl res, req.url[1..], _
 
 app.get '/:id', (req, res, _) ->
   id = parseInt req.params.id, 10
