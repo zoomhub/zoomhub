@@ -8,7 +8,7 @@ module.exports = class Fetcher
   constructor: (@path) ->
 
   fetch: (content, callback) ->
-    source = content.urls.source
+    source = content.url
     destination = path.join @path, content.id.toString()
 
     writer = request(source).pipe fs.createWriteStream destination

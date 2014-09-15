@@ -96,7 +96,7 @@ app.get /^\/https?:\/\/.+/, (req, res, _) ->
 
   content = Content.getByURL url, _
   if content?
-    return res.redirect content.urls.view
+    return res.redirect content.shareUrl
 
   content = Content.fromURL url, _
   # Redirect to metadata

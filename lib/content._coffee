@@ -25,11 +25,21 @@ getURLKey = (url) ->
 # Public API
 module.exports = class Content
   constructor: (@id, url) ->
+    @url = url
     @self = "#{config.BASE_URL}/content/#{@id}"
-    @urls =
-      source: url
-      view: "#{config.BASE_URL}/#{@id}"
+    @shareUrl = "#{config.BASE_URL}/#{@id}"
+    @embedHtml = "<script src='#{@shareUrl}.js?width=auto&height=400px'></script>"
+    @dzi =
+      url: "FIND ME IN THE CACHE"
+      width: "IMPLEMENT WIDTH"
+      height: "IMPLEMENT HEIGHT"
+      tileSize: "IMPLEMENT TILE SIZE"
+      tileOverlap: "IMPLEMENT TILE OVERLAP"
+      tileFormat: "IMPLEMENT TILE FORMAT"
     @type = 'dzi'
+    @ready = "IMPLEMENT READY"
+    @failed = "IMPLEMENT FAILED"
+    @progress = "IMPLEMENT PROGRESS"
 
 
   @getById: (id, _) ->
