@@ -6,6 +6,7 @@ fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
 Processor = require './lib/processor'
+Embed = require './lib/embed'
 
 
 # Constants
@@ -21,6 +22,8 @@ fetcher = new Fetcher FETCHER_PATH
 DZI_PATH = path.join STATIC_PATH, 'dzi'
 processor = new Processor DZI_PATH
 
+# Embed
+embed = new Embed DZI_PATH
 
 ## APP:
 
@@ -115,6 +118,16 @@ app.get '/v1/content/:url?', (req, res, _) ->
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
   app.locals.handleUrl res, req.url[1..], _
 
+app.get '/:id.:ext', (req, res, _) ->
+  ext = req.params.ext
+  id = parseInt req.params.id, 10
+  if not id? or isNaN id
+    return res.send 404
+  if ext? and ext== 'js'
+    return res.send embed.generate id, _
+  else
+    res.redirect "/#{req.params.id}"
+
 app.get '/:id', (req, res, _) ->
   id = parseInt req.params.id, 10
   if not id? or isNaN id
@@ -123,7 +136,6 @@ app.get '/:id', (req, res, _) ->
   if not content?
     return res.send 404
   res.render 'view', {content}
-
 
 ## MAIN:
 
