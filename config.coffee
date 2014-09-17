@@ -27,6 +27,16 @@ configs = module.exports =
     BASE_URL: "http://localhost:#{PORT}"
 
     #
+    # URL fragment for static assets
+    #
+    STATIC_DIR: "/static"
+
+    #
+    # Subdirectory for DZIs under the static asset tree
+    #
+    DZI_DIR: "/dzi"
+
+    #
     # What format we should use with Express logger.
     # The choices are 'dev', 'tiny', 'short', and 'default' (full).
     # Details: http://www.senchalabs.org/connect/logger.html

@@ -12,18 +12,17 @@ Embed = require './lib/embed'
 # Constants
 PIPELINE_PATH = path.join __dirname, 'pipeline'
 STATIC_PATH = path.join __dirname, 'public'
-STATIC_URL = '/static'
 
 # Fetcher
 FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
 fetcher = new Fetcher FETCHER_PATH
 
 # Processor
-DZI_PATH = path.join STATIC_PATH, 'dzi'
+DZI_PATH = path.join STATIC_PATH, config.DZI_DIR
 processor = new Processor DZI_PATH
 
 # Embed
-embed = new Embed STATIC_PATH
+embed = new Embed DZI_PATH
 
 ## APP:
 
