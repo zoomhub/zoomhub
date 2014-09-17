@@ -1,5 +1,7 @@
 fs = require 'fs'
 path = require 'path'
+config = require '../config'
+dziparser = require './dziparser'
 
 seadragon_path = '/js/openseadragon.min.js'
 
@@ -13,17 +15,19 @@ inject_viewer = "var el = document.createElement('div');
                     tileSources: tileSource
                 });"
 
-createTileSourceBlock = (dzi) ->
+createTileSourceBlock = (base_path, dzi, _) ->
+    attribs = dziparser.parse path.join(base_path, 'dzi', "#{dzi}.dzi"), _
+    console.log attribs
     "var tileSource = {
         Image: {
             xmlns: 'http://schemas.microsoft.com/deepzoom/2008',
-            Url: '/static/dzi/#{dzi}.dzi',
-            Format: 'TODO',
-            Overlap: 'TODO',
-            TileSize: 'TODO',
+            Url: '#{config.STATIC_DIR}#{config.DZI_DIR}/#{dzi}.dzi',
+            Format: '#{attribs.tileFormat}',
+            Overlap: '#{attribs.tileOverlap}',
+            TileSize: '#{attribs.tileSize}',
             Size: {
-                Height: 'TODO',
-                Width: 'TODO'
+                Height: '#{attribs.height}',
+                Width: '#{attribs.width}'
             }
         }
     };"
@@ -34,5 +38,5 @@ module.exports = class Embed
 
   generate: (@id, _) ->
     result = fs.readFile (path.join @path, seadragon_path), _
-    result += createTileSourceBlock @id
+    result += createTileSourceBlock @path, @id, _
     result += inject_viewer

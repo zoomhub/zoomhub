@@ -29,16 +29,17 @@ module.exports = class Content
     @self = "#{config.BASE_URL}/content/#{@id}"
     @shareUrl = "#{config.BASE_URL}/#{@id}"
     @embedHtml = "<script src='#{@shareUrl}.js?width=auto&height=400px'></script>"
+    @type = 'dzi'
     @dzi =
       url: "#{config.BASE_URL}#{config.STATIC_DIR}#{config.DZI_DIR}/#{@id}.dzi"
-      width: "IMPLEMENT WIDTH"
-      height: "IMPLEMENT HEIGHT"
-      tileSize: "IMPLEMENT TILE SIZE"
-      tileOverlap: "IMPLEMENT TILE OVERLAP"
-      tileFormat: "IMPLEMENT TILE FORMAT"
-    @type = 'dzi'
+    # TODO: implement these.
+    #  width: "IMPLEMENT WIDTH"
+    #  height: "IMPLEMENT HEIGHT"
+    #  tileSize: "IMPLEMENT TILE SIZE"
+    #  tileOverlap: "IMPLEMENT TILE OVERLAP"
+    #  tileFormat: "IMPLEMENT TILE FORMAT"
 
-  # TODO: implement progress/status for zoomhub
+  # TODO: implement progress/status
   #  @ready = "IMPLEMENT READY"
   #  @failed = "IMPLEMENT FAILED"
   #  @progress = "IMPLEMENT PROGRESS"
