@@ -23,7 +23,7 @@ DZI_PATH = path.join STATIC_PATH, 'dzi'
 processor = new Processor DZI_PATH
 
 # Embed
-embed = new Embed DZI_PATH
+embed = new Embed STATIC_PATH
 
 ## APP:
 
