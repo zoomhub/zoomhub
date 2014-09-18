@@ -17,11 +17,10 @@ inject_viewer = "var el = document.createElement('div');
 
 createTileSourceBlock = (base_path, dzi, _) ->
     attribs = dziparser.parse path.join(base_path, 'dzi', "#{dzi}.dzi"), _
-    console.log attribs
     "var tileSource = {
         Image: {
             xmlns: 'http://schemas.microsoft.com/deepzoom/2008',
-            Url: '#{config.STATIC_DIR}#{config.DZI_DIR}/#{dzi}.dzi',
+            Url: '#{config.STATIC_DIR}#{config.DZI_DIR}/#{dzi}_files/',
             Format: '#{attribs.tileFormat}',
             Overlap: '#{attribs.tileOverlap}',
             TileSize: '#{attribs.tileSize}',
