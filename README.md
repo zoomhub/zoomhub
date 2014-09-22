@@ -33,7 +33,8 @@ this is finalized. See notes at the bottom.
 Fetching content:
 
 ```
-GET /content?url=<url>
+GET /content/<url> or GET /v1/content?url=<url>
+- the latter is for Zoom.it compatibility
 - be sure to percent-encode the URL
 - 3xx to /content/:id, w/ info in body for convenience
 - 400 if the URL is malformed
@@ -50,18 +51,21 @@ In both cases, response JSON:
 ```
 - id (string)
 - self (string; URL of content metadata)
-- urls
-  - source (string; the original source URL)
-  - view (string; URL for viewing)
+- url (string; the original source URL)
+- shareUrl (string; URL for viewing)
+- embedHtml (string; a script tag to paste into your webpage to embed the resulting image)
+- type (string: is only ever 'dzi' right now; 'dzc' may be possible later.)
 - dzi (object, or null if still in progress or failed)
-- error (object, or null if still in progress or succeeded)
-- progress (number; from 0 to 1)
 ```
 
 DZI objects:
 
 ```
 - url (string; to .dzi XML file)
+```
+
+Other DZI object attributes that we'd like to include but aren't yet:
+```
 - width (int)
 - height (int)
 - tileSize (int)
@@ -69,7 +73,7 @@ DZI objects:
 - tileOverlap (int)
 ```
 
-Error objects:
+Future error objects:
 
 ```
 - code (string; semantic code that'll be documented here)
@@ -113,6 +117,12 @@ Notes, and thoughts for improvement:
   with other kinds of URLs we may want to return. We may want to be specific
   and call this e.g. `sourceURL`. But it should be consistent between the
   response JSON and the request query string param.
+
+
+## Embedding with OpenSeadragon
+As it currently stands, the embed code needs to read an existing DZI. From the
+information contained in the DZI, it instantiates an OpenSeadragon viewer and
+attaches that to its own element in the DOM of the webpage that the embed is placed in.
 
 
 ## Administation
