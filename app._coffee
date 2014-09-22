@@ -6,21 +6,23 @@ fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
 Processor = require './lib/processor'
+Embed = require './lib/embed'
 
 
 # Constants
 PIPELINE_PATH = path.join __dirname, 'pipeline'
 STATIC_PATH = path.join __dirname, 'public'
-STATIC_URL = '/static'
 
 # Fetcher
 FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
 fetcher = new Fetcher FETCHER_PATH
 
 # Processor
-DZI_PATH = path.join STATIC_PATH, 'dzi'
+DZI_PATH = path.join STATIC_PATH, config.DZI_DIR
 processor = new Processor DZI_PATH
 
+# Embed
+embed = new Embed STATIC_PATH
 
 ## APP:
 
@@ -68,6 +70,26 @@ app.use express.errorHandler()
 
 ## ROUTES:
 
+# Helper for the two different routes for URLs
+app.locals.handleUrl = (res, url, _) ->
+  if not url?
+      return res.json 400, error:
+        message: 'Please give us the full URL, including the "http://" or "https://".'
+
+    content = Content.getByURL url, _
+    if content?
+      return res.redirect content.shareUrl
+
+    content = Content.fromURL url, _
+    # Redirect to metadata
+    res.redirect content.self
+
+    # Fetch source
+    source = fetcher.fetch content, _
+
+    # Create DZI
+    destination = processor.process source, _
+
 app.get '/', (req, res, _) ->
   res.send 'ZoomHub'
 
@@ -88,25 +110,22 @@ app.get '/content/:id', (req, res, _) ->
       message: 'Not found'
   res.json 200, content
 
+# For compatibility with zoom.it
+app.get '/v1/content/:url?', (req, res, _) ->
+  app.locals.handleUrl res, req.query.url, _
+
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
-  url = req.url[1..]
-  if not url?
-    return res.json 400, error:
-      message: 'Missing URL'
+  app.locals.handleUrl res, req.url[1..], _
 
-  content = Content.getByURL url, _
-  if content?
-    return res.redirect content.urls.view
-
-  content = Content.fromURL url, _
-  # Redirect to metadata
-  res.redirect content.self
-
-  # Fetch source
-  source = fetcher.fetch content, _
-
-  # Create DZI
-  destination = processor.process source, _
+app.get '/:id.:ext', (req, res, _) ->
+  ext = req.params.ext
+  id = parseInt req.params.id, 10
+  if not id? or isNaN id
+    return res.send 404
+  if ext? and ext== 'js'
+    return res.send embed.generate id, _
+  else
+    res.redirect "/#{req.params.id}"
 
 app.get '/:id', (req, res, _) ->
   id = parseInt req.params.id, 10
@@ -116,7 +135,6 @@ app.get '/:id', (req, res, _) ->
   if not content?
     return res.send 404
   res.render 'view', {content}
-
 
 ## MAIN:
 

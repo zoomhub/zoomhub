@@ -25,11 +25,24 @@ getURLKey = (url) ->
 # Public API
 module.exports = class Content
   constructor: (@id, url) ->
+    @url = url
     @self = "#{config.BASE_URL}/content/#{@id}"
-    @urls =
-      source: url
-      view: "#{config.BASE_URL}/#{@id}"
+    @shareUrl = "#{config.BASE_URL}/#{@id}"
+    @embedHtml = "<script src='#{@shareUrl}.js?width=auto&height=400px'></script>"
     @type = 'dzi'
+    @dzi =
+      url: "#{config.BASE_URL}#{config.STATIC_DIR}#{config.DZI_DIR}/#{@id}.dzi"
+    # TODO: implement these.
+    #  width: "IMPLEMENT WIDTH"
+    #  height: "IMPLEMENT HEIGHT"
+    #  tileSize: "IMPLEMENT TILE SIZE"
+    #  tileOverlap: "IMPLEMENT TILE OVERLAP"
+    #  tileFormat: "IMPLEMENT TILE FORMAT"
+
+  # TODO: implement progress/status
+  #  @ready = "IMPLEMENT READY"
+  #  @failed = "IMPLEMENT FAILED"
+  #  @progress = "IMPLEMENT PROGRESS"
 
 
   @getById: (id, _) ->
