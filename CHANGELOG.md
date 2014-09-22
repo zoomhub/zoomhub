@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 0.0.3 - September 22, 2014
+- Add DZIParser and Embed modules to read created DZIs and create OpenSeadragon
+    embed js, respectively.
+- Change the ZoomHub APIs to match the zoom.it APIs more closely.
+
 ## 0.0.2 — November 3, 2013
 
 -   [ZH-22]: Persist metadata using [Redis].
