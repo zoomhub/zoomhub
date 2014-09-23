@@ -144,6 +144,7 @@ commands:
 -   `./zh ping`: Ping production machines.
 -   `./zh setup`: Setup server(s).
 -   `./zh deploy`: Deploy latest app code from Git.
+-   `./zh run`: Run app locally.
 
 ## License
 
