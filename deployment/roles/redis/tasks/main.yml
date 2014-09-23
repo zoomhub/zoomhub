@@ -3,6 +3,9 @@
 - name: Chris Lea PPA for Redis
   apt_repository: repo='ppa:chris-lea/redis-server'
 
+- name: Redis Tools
+  apt: pkg=redis-tools=2:2.8.17-1chl1~precise1 update_cache=yes state=present
+
 - name: Redis
   apt: pkg=redis-server=2:2.6.16-1chl1~precise1 update_cache=yes state=present
 
