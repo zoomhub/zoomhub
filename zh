@@ -6,8 +6,11 @@ case "$1" in
 install)
     npm install
     ;;
+run)
+    ./node_modules/.bin/_coffee app._coffee
+    ;;
 ping)
-    ansible -i deployment/hosts all -m ping
+    ansible --user zoomhub --inventory-file deployment/hosts all -m ping
     ;;
 bootstrap)
     echo "Enter root password when prompted"
