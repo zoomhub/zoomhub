@@ -6,6 +6,9 @@ case "$1" in
 install)
     npm install
     ;;
+run)
+    ./node_modules/.bin/_coffee app._coffee
+    ;;
 ping)
     ansible -i deployment/hosts all -m ping
     ;;
