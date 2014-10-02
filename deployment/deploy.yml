@@ -4,6 +4,7 @@
   remote_user: zoomhub
   tasks:
   - name: update service upstart script
+    sudo: true
     template: src=roles/web/templates/service.conf.j2
               dest=/etc/init/{{ service }}.conf
 
