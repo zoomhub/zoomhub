@@ -7,7 +7,7 @@
   apt: pkg=redis-tools=2:2.8.17-1chl1~precise1 update_cache=yes state=present
 
 - name: Redis
-  apt: pkg=redis-server=2:2.6.16-1chl1~precise1 update_cache=yes state=present
+  apt: pkg=redis-server=2:2.8.17-1chl1~precise1 update_cache=yes state=present
 
 - name: Redis configuration
   template: src=redis.conf.j2 dest=/etc/redis/redis.conf

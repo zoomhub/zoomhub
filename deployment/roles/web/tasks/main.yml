@@ -23,7 +23,7 @@
   apt_repository: repo='ppa:chris-lea/node.js'
 
 - name: Node.js
-  apt: pkg=nodejs=0.10.21-1chl1~precise1 update_cache=yes state=present
+  apt: pkg=nodejs=0.10.32-1chl1~precise1 update_cache=yes state=present
 
 - name: update iptables rules file
   template: src=iptables.rules.j2 dest=/etc/iptables.rules

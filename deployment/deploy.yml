@@ -4,6 +4,7 @@
   remote_user: zoomhub
   tasks:
   - name: update service upstart script
+    sudo: true
     template: src=roles/web/templates/service.conf.j2
               dest=/etc/init/{{ service }}.conf
 
@@ -17,13 +18,10 @@
   - name: remove Streamline.js cache
     file: path={{ admin_home}}/.streamline state=absent
 
-  - name: run app
-    sudo: yes
-    service: name={{ service }} state=restarted
-    notify:
-      - start redis
-
-  handlers:
   - name: start redis
     sudo: yes
     service: name=redis-server state=started
+
+  - name: run app
+    sudo: yes
+    service: name={{ service }} state=restarted
