@@ -127,7 +127,7 @@ app.get '/:id.:ext', (req, res, _) ->
   id = parseInt req.params.id, 10
   if not id? or isNaN id
     return res.send 404
-  if ext? and ext== 'js'
+  if ext? and ext is 'js'
     return res.send embed.generate id, _
   else
     res.redirect "/#{req.params.id}"
