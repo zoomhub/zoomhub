@@ -1,9 +1,26 @@
 # ZoomHub
 
+## 0.0.4 - October 1, 2014
+
+-   Upgrade `coffee-script` to 1.8.0.
+-   Use more `default` Express logger format for more detailed logs in
+    production, incl. timestamps.
+-   Switch from [`streamline-express`][npm-streamline-express] to
+    [`express-streamline`][npm-express-streamline].
+-   Use `npm start` for `./zh run`.
+-   Fix Node.js PPA version: `0.10.32-1chl1~precise1`.
+-   Fix Redis setup:
+    -   Upgrade PPA dependency: `2:2.8.17-1chl1~precise1`
+    -   Start Redis before web server.
+    -   Fix path to Redis database file: `/var/lib/redis/`.
+    -   Fix path to `redis-server` executable: `/usr/bin/redis-server`
+    -   Change path to log file: `/var/log/redis/redis-server.log`.
+
 ## 0.0.3 - September 22, 2014
-- Add DZIParser and Embed modules to read created DZIs and create OpenSeadragon
-    embed js, respectively.
-- Change the ZoomHub APIs to match the zoom.it APIs more closely.
+
+-   Add `DZIParser` and `Embed` modules to read created DZIs and create
+    OpenSeadragon embed JS, respectively.
+-   Change the ZoomHub APIs to match the zoom.it APIs more closely.
 
 ## 0.0.2 — November 3, 2013
 
@@ -29,6 +46,8 @@
 [Ansible]: http://www.ansibleworks.com/
 [deepzoomtools]: https://github.com/openzoom/node-deepzoomtools
 [LICENSE]: LICENSE
+[npm-express-streamline]: https://www.npmjs.org/package/express-streamline
+[npm-streamline-express]: https://www.npmjs.org/package/streamline-express
 [Rackspace]: http://www.rackspace.com/
 [Redis]: http://redis.io/
 [VIPS]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS

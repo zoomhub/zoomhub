@@ -1,7 +1,7 @@
 {
   "name": "zoomhub",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Cloud zooming service",
   "author": "ZoomHub <zoomhub@googlegroups.com>",
   "contributors": [
@@ -24,22 +24,22 @@
   ],
   "main": "./app",
   "dependencies": {
-    "coffee-script": "~1.6.3",
-    "deepzoomtools": "0.0.4",
-    "express": "~3.3.7",
-    "fibers": "~1.0.1",
-    "jade": "~0.35.0",
-    "node-dev": "~2.0.2",
-    "node-inspector": "~0.5.0",
-    "redis": "~0.9.0",
-    "request": "~2.27.0",
-    "streamline": "~0.8.0",
-    "streamline-express": "~0.3.1",
-    "xml2js": "~0.2.8"
+    "coffee-script": "^1.8.0",
+    "deepzoomtools": "0.0.5",
+    "express": "^3.3.7",
+    "express-streamline": "^0.5.1",
+    "fibers": "^1.0.1",
+    "jade": "^0.35.0",
+    "redis": "^0.9.0",
+    "request": "^2.27.0",
+    "streamline": "^0.10.16",
+    "xml2js": "^0.2.8"
   },
   "devDependencies": {
     "chai": "~1.7.2",
     "mocha": "~1.12.1",
+    "node-dev": "^2.0.2",
+    "node-inspector": "^0.5.0",
     "supertest": "~0.7.1"
   },
   "scripts": {

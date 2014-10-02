@@ -1,12 +1,14 @@
+require 'coffee-script/register'
+
 config = require './config'
 Content = require './lib/content'
-express = require 'express'
+Embed = require './lib/embed'
+express = require 'express-streamline'
 Fetcher = require './lib/fetcher'
 fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
 Processor = require './lib/processor'
-Embed = require './lib/embed'
 
 
 # Constants
@@ -26,7 +28,7 @@ embed = new Embed STATIC_PATH
 
 ## APP:
 
-app = require('streamline-express') express()
+app = express()
 
 # Template engine
 app.engine 'jade', jade.__express
@@ -70,25 +72,30 @@ app.use express.errorHandler()
 
 ## ROUTES:
 
-# Helper for the two different routes for URLs
-app.locals.handleUrl = (res, url, _) ->
+# Helper for the two different routes for URLs:
+handleURL = (res, url, _) ->
   if not url?
-      return res.json 400, error:
-        message: 'Please give us the full URL, including the "http://" or "https://".'
+      res.json 400, error:
+        message: 'Please give us the full URL,
+          including `http://` or `https://`.'
+      return false
 
-    content = Content.getByURL url, _
-    if content?
-      return res.redirect content.shareUrl
+  content = Content.getByURL url, _
+  if content?
+    res.redirect content.shareUrl
+    return false
 
-    content = Content.fromURL url, _
-    # Redirect to metadata
-    res.redirect content.self
+  content = Content.fromURL url, _
+  # Redirect to metadata
+  res.redirect content.self
 
-    # Fetch source
-    source = fetcher.fetch content, _
+  # Async operations:
 
-    # Create DZI
-    destination = processor.process source, _
+  # Fetch source
+  source = fetcher.fetch content, _
+
+  # Create DZI
+  destination = processor.process source, _
 
 app.get '/', (req, res, _) ->
   res.send 'ZoomHub'
@@ -112,17 +119,17 @@ app.get '/content/:id', (req, res, _) ->
 
 # For compatibility with zoom.it
 app.get '/v1/content/:url?', (req, res, _) ->
-  app.locals.handleUrl res, req.query.url, _
+  handleURL res, req.query.url, _
 
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
-  app.locals.handleUrl res, req.url[1..], _
+  handleURL res, req.url[1..], _
 
 app.get '/:id.:ext', (req, res, _) ->
   ext = req.params.ext
   id = parseInt req.params.id, 10
   if not id? or isNaN id
     return res.send 404
-  if ext? and ext== 'js'
+  if ext? and ext is 'js'
     return res.send embed.generate id, _
   else
     res.redirect "/#{req.params.id}"

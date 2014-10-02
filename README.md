@@ -140,11 +140,11 @@ attaches that to its own element in the DOM of the webpage that the embed is pla
 commands:
 
 -   `./zh install`: Install dependencies.
+-   `./zh run`: Run app locally.
 -   `./zh bootstrap`: Bootstrap server(s); only required once per user.
 -   `./zh ping`: Ping production machines.
 -   `./zh setup`: Setup server(s).
 -   `./zh deploy`: Deploy latest app code from Git.
--   `./zh run`: Run app locally.
 
 ## License
 
