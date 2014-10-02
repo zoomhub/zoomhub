@@ -78,20 +78,22 @@ handleURL = (res, url, _) ->
           including `http://` or `https://`.'
       return false
 
-    content = Content.getByURL url, _
-    if content?
-      res.redirect content.shareUrl
-      return false
+  content = Content.getByURL url, _
+  if content?
+    res.redirect content.shareUrl
+    return false
 
-    content = Content.fromURL url, _
-    # Redirect to metadata
-    res.redirect content.self
+  content = Content.fromURL url, _
+  # Redirect to metadata
+  res.redirect content.self
 
-    # Fetch source
-    source = fetcher.fetch content, _
+  # Async operations:
 
-    # Create DZI
-    destination = processor.process source, _
+  # Fetch source
+  source = fetcher.fetch content, _
+
+  # Create DZI
+  destination = processor.process source, _
 
 app.get '/', (req, res, _) ->
   res.send 'ZoomHub'
