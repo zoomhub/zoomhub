@@ -1,7 +1,7 @@
 config = require './config'
 Content = require './lib/content'
 Embed = require './lib/embed'
-express = require 'express'
+express = require 'express-streamline'
 Fetcher = require './lib/fetcher'
 fs = require 'fs'
 jade = require 'jade'
@@ -26,7 +26,7 @@ embed = new Embed STATIC_PATH
 
 ## APP:
 
-app = require('streamline-express') express()
+app = express()
 
 # Template engine
 app.engine 'jade', jade.__express
@@ -73,12 +73,14 @@ app.use express.errorHandler()
 # Helper for the two different routes for URLs
 app.locals.handleUrl = (res, url, _) ->
   if not url?
-      return res.json 400, error:
+      res.json 400, error:
         message: 'Please give us the full URL, including the "http://" or "https://".'
+      return false
 
     content = Content.getByURL url, _
     if content?
-      return res.redirect content.shareUrl
+      res.redirect content.shareUrl
+      return false
 
     content = Content.fromURL url, _
     # Redirect to metadata
