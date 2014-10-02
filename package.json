@@ -24,18 +24,17 @@
   ],
   "main": "./app",
   "dependencies": {
-    "coffee-script": "~1.6.3",
+    "coffee-script": "^1.6.3",
     "deepzoomtools": "0.0.4",
-    "express": "~3.3.7",
-    "fibers": "~1.0.1",
-    "jade": "~0.35.0",
-    "node-dev": "~2.0.2",
-    "node-inspector": "~0.5.0",
-    "redis": "~0.9.0",
-    "request": "~2.27.0",
-    "streamline": "~0.10.16",
-    "streamline-express": "~0.3.1",
-    "xml2js": "~0.2.8"
+    "express": "^3.3.7",
+    "fibers": "^1.0.1",
+    "jade": "^0.35.0",
+    "node-inspector": "^0.5.0",
+    "redis": "^0.9.0",
+    "request": "^2.27.0",
+    "streamline": "^0.10.16",
+    "streamline-express": "^0.3.1",
+    "xml2js": "^0.2.8"
   },
   "devDependencies": {
     "chai": "~1.7.2",
