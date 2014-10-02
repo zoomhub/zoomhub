@@ -7,7 +7,7 @@ install)
     npm install
     ;;
 run)
-    ./node_modules/.bin/_coffee app._coffee
+    npm start
     ;;
 ping)
     ansible --user zoomhub --inventory-file deployment/hosts all -m ping
