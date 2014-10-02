@@ -24,7 +24,7 @@
   ],
   "main": "./app",
   "dependencies": {
-    "coffee-script": "^1.6.3",
+    "coffee-script": "^1.8.0",
     "deepzoomtools": "0.0.4",
     "express": "^3.3.7",
     "express-streamline": "^0.5.1",

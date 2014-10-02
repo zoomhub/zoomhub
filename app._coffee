@@ -1,3 +1,5 @@
+require 'coffee-script/register'
+
 config = require './config'
 Content = require './lib/content'
 Embed = require './lib/embed'
