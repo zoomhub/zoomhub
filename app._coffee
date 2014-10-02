@@ -74,7 +74,8 @@ app.use express.errorHandler()
 handleURL = (res, url, _) ->
   if not url?
       res.json 400, error:
-        message: 'Please give us the full URL, including the "http://" or "https://".'
+        message: 'Please give us the full URL,
+          including `http://` or `https://`.'
       return false
 
     content = Content.getByURL url, _
