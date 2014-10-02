@@ -70,8 +70,8 @@ app.use express.errorHandler()
 
 ## ROUTES:
 
-# Helper for the two different routes for URLs
-app.locals.handleUrl = (res, url, _) ->
+# Helper for the two different routes for URLs:
+handleURL = (res, url, _) ->
   if not url?
       res.json 400, error:
         message: 'Please give us the full URL, including the "http://" or "https://".'
@@ -114,10 +114,10 @@ app.get '/content/:id', (req, res, _) ->
 
 # For compatibility with zoom.it
 app.get '/v1/content/:url?', (req, res, _) ->
-  app.locals.handleUrl res, req.query.url, _
+  handleURL res, req.query.url, _
 
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
-  app.locals.handleUrl res, req.url[1..], _
+  handleURL res, req.url[1..], _
 
 app.get '/:id.:ext', (req, res, _) ->
   ext = req.params.ext
