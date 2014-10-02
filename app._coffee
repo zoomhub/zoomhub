@@ -1,12 +1,12 @@
 config = require './config'
 Content = require './lib/content'
+Embed = require './lib/embed'
 express = require 'express'
 Fetcher = require './lib/fetcher'
 fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
 Processor = require './lib/processor'
-Embed = require './lib/embed'
 
 
 # Constants
