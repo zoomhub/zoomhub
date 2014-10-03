@@ -11,7 +11,7 @@
 # Important: don't place any production values or sensitive secrets here!
 # Instead, set those values as environment variables on the running server.
 #
-
+path = require 'path'
 PORT = 8000
 
 configs = module.exports =
@@ -30,6 +30,11 @@ configs = module.exports =
     # URL fragment for static assets
     #
     STATIC_DIR: "/static"
+
+    #
+    # File system path for static assets
+    #
+    STATIC_PATH: path.join __dirname, 'public'
 
     #
     # Subdirectory for DZIs under the static asset tree
