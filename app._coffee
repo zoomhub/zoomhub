@@ -13,18 +13,17 @@ Processor = require './lib/processor'
 
 # Constants
 PIPELINE_PATH = path.join __dirname, 'pipeline'
-STATIC_PATH = path.join __dirname, 'public'
 
 # Fetcher
 FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
 fetcher = new Fetcher FETCHER_PATH
 
 # Processor
-DZI_PATH = path.join STATIC_PATH, config.DZI_DIR
+DZI_PATH = path.join config.STATIC_PATH, config.DZI_DIR
 processor = new Processor DZI_PATH
 
 # Embed
-embed = new Embed STATIC_PATH
+embed = new Embed config.STATIC_PATH
 
 ## APP:
 
@@ -44,7 +43,7 @@ app.use express.favicon()   # will use default favicon since we don't specify
 
 # serve static files (and register DZI as an XML type):
 express.static.mime.types.dzi = 'application/xml'
-app.use '/static', express.static STATIC_PATH
+app.use '/static', express.static config.STATIC_PATH
 
 # otherwise, log all requests:
 app.use express.logger config.EXPRESS_LOGGER_FORMAT
