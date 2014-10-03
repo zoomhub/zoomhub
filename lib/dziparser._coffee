@@ -14,12 +14,11 @@ module.exports = class DZIParser
         tileFormat: dzi.Image.$.Format
         width: size.Width
         height: size.Height
+        ready: true
     catch error
-      if error.code == ENOENT # The DZI hasnt' been created yet, so use defaults
+      if error.code is 'ENOENT' # The DZI hasnt' been created yet, so use defaults
         result =
           tileSize: processor.DEFAULT_TILE_SIZE
           tileOverlap: processor.DEFAULT_TILE_OVERLAP
           tileFormat: processor.DEFAULT_FORMAT
-    finally
-      return result
-
+          ready: false
