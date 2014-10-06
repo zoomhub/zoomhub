@@ -27,6 +27,11 @@ configs = module.exports =
     BASE_URL: "http://localhost:#{PORT}"
 
     #
+    # The directory containing our data files.
+    #
+    DATA_DIR: "#{__dirname}/data"
+
+    #
     # URL path for static assets
     #
     STATIC_DIR: "/static"
