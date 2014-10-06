@@ -27,7 +27,7 @@ configs = module.exports =
     BASE_URL: "http://localhost:#{PORT}"
 
     #
-    # URL fragment for static assets
+    # URL path for static assets
     #
     STATIC_DIR: "/static"
 
