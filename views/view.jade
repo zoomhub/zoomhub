@@ -38,7 +38,8 @@ html(lang="en")
   body
     #container
     #metadata
-        a(href=content.self) Metadata
+        // HACK: Hardcoding knowledge of URL from app._coffee.
+        a(href='/v1/content/#{content.id}.json') Metadata
     script(src='/static/js/openseadragon.min.js')
     script.
         var viewer = OpenSeadragon({
