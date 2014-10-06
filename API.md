@@ -8,7 +8,7 @@ for as much back-compat as we want to retain.
 ### Formats
 
 The API returns data in **JSON** format.
-***XML is no longer supported.*** *(Sorry!)*
+***XML is no longer supported.*** *Sorry!*
 
 The API supports both a **RESTful** and **non-RESTful** response format.
 ([Zoom.it archived docs on this][zoomit-api-formats])
@@ -26,9 +26,9 @@ The API also supports **[JSONP](http://en.wikipedia.org/wiki/JSONP)**,
 which is always returned in the non-RESTful format.
 To request JSONP, add a `?callback` parameter to API URLs.
 
-***TODO:** We need to implement both the non-RESTful format and JSONP.*
+***TODO:*** *We need to implement both the non-RESTful format and JSONP.*
 
-***TODO:** We should also add CORS support, as an alternative to JSONP.*
+***TODO:*** *We should also add CORS support, as an alternative to JSONP.*
 
 ### Objects
 
@@ -102,7 +102,7 @@ variety of other input types:
 - PDF files
 - Web pages (with special support for certain sites, e.g. Flickr)
 
-***TODO:** Add support for these things again.*
+***TODO:*** *Add support for these things again.*
 
 
 ## v2 (WIP)
