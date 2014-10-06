@@ -97,7 +97,7 @@ handleURL = (res, url, _) ->
   destination = processor.process source, _
 
 app.get '/', (req, res, _) ->
-  res.send 'ZoomHub'
+  res.render 'home'
 
 app.get '/health', (req, res, _) ->
   res.send 'up'
