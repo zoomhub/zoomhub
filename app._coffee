@@ -1,27 +1,9 @@
 config = require './config'
-Content = require './lib/content'
-Embed = require './lib/embed'
 express = require 'express-streamline'
-Fetcher = require './lib/fetcher'
-fs = require 'fs'
 jade = require 'jade'
 path = require 'path'
-Processor = require './lib/processor'
+routes = require './lib/routes'
 
-
-# Constants
-PIPELINE_PATH = path.join __dirname, 'pipeline'
-
-# Fetcher
-FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
-fetcher = new Fetcher FETCHER_PATH
-
-# Processor
-DZI_PATH = path.join config.STATIC_PATH, config.DZI_DIR
-processor = new Processor DZI_PATH
-
-# Embed
-embed = new Embed config.STATIC_PATH
 
 ## APP:
 
@@ -69,81 +51,37 @@ app.use express.errorHandler()
 
 ## ROUTES:
 
-# Helper for the two different routes for URLs:
-handleURL = (res, url, _) ->
-  if not url?
-      res.json 400, error:
-        message: 'Please give us the full URL,
-          including `http://` or `https://`.'
-      return false
+# Meta:
 
-  content = Content.getByURL url, _
-  if content?
-    res.redirect content.shareUrl
-    return false
+app.get '/health', routes.getHealth
 
-  content = Content.fromURL url, _
-  # Redirect to metadata
-  res.redirect content.self
+# API: (TODO: These should be under an api vhost!)
 
-  # Async operations:
+app.get '/content/:id', routes.getContentById
 
-  # Fetch source
-  source = fetcher.fetch content, _
+# Zoom.it back-compat:
+app.get '/v1/content/:id', routes.getContentById
 
-  # Create DZI
-  destination = processor.process source, _
+# Zoom.it back-compat (assumes ?url query string):
+app.get '/v1/content', routes.getContentByURL
 
-app.get '/', (req, res, _) ->
-  res.render 'home'
+# UI:
 
-app.get '/health', (req, res, _) ->
-  res.send 'up'
-
-app.get '/content/:id', (req, res, _) ->
-  id = parseInt req.params.id, 10
-  if not id? or isNaN id
-    return res.json 404, error:
-      code: 404
-      message: 'Not found'
-
-  content = Content.getById id, _
-  if not content?
-    return res.json 404, error:
-      code: 404
-      message: 'Not found'
-  res.json 200, content
-
-# For compatibility with zoom.it
-app.get '/v1/content/:url?', (req, res, _) ->
-  handleURL res, req.query.url, _
+app.get '/', routes.getHomepage     # this includes ?url support
 
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
-  handleURL res, req.url[1..], _
+    req.params.url = req.url[1..]   # req.url includes the query string
+    routes.submitURL req, res, _
 
-app.get '/:id.:ext', (req, res, _) ->
-  ext = req.params.ext
-  id = parseInt req.params.id, 10
-  if not id? or isNaN id
-    return res.send 404
-  if ext? and ext is 'js'
-    return res.send embed.generate id, _
-  else
-    res.redirect "/#{req.params.id}"
+app.get '/:id.js', routes.getEmbed
 
-app.get '/:id', (req, res, _) ->
-  id = parseInt req.params.id, 10
-  if not id? or isNaN id
-    return res.send 404
-  content = Content.getById id, _
-  if not content?
-    return res.send 404
-  res.render 'view', {content}
+app.get '/:id', routes.getViewer
+
 
 ## MAIN:
 
 if module is require.main
-  app.listen config.PORT
-  console.log "ZoomHub running at #{config.BASE_URL}"
+    app.listen config.PORT
+    console.log "ZoomHub running at #{config.BASE_URL}"
 else
-  module.exports = app
+    module.exports = app
