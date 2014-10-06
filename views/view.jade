@@ -45,5 +45,5 @@ html(lang="en")
         var viewer = OpenSeadragon({
             id: 'container',
             prefixUrl: '/static/js/images/',
-            tileSources: '/static/dzi/#{content.id}.dzi'
+            tileSources: !{JSON.stringify(content.dzi.url)}
         });
