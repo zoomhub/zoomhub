@@ -66,7 +66,6 @@ embed = new Embed config.STATIC_PATH
 
     # Get or create this content, enqueueing it for conversion if it's new.
     # But support us rejecting new content, e.g. if we're overloaded.
-    # TODO: Implement config for rejecting new content.
     #
     # TODO: This logic should probably be abstracted in the Content class,
     # since it's core business logic, used by (and currently duplicated by)
@@ -75,12 +74,12 @@ embed = new Embed config.STATIC_PATH
     #
     content = Content.getByURL url, _
     if not content
-        if false
-            errorAPI res, 503, Errors.SERVICE_UNAVAILABLE
-            return
-        else
+        if config.ALLOW_NEW_CONTENT
             content or= Content.fromURL url, _
             enqueueForConversion content
+        else
+            errorAPI res, 503, Errors.SERVICE_UNAVAILABLE
+            return
 
     # HACK: Hardcoding knowledge of URL from app._coffee.
     redirectAPI res, 301, "/v1/content/#{content.id}", content
@@ -147,7 +146,6 @@ embed = new Embed config.STATIC_PATH
 
     # Get or create this content, enqueueing it for conversion if it's new.
     # But support us rejecting new content, e.g. if we're overloaded.
-    # TODO: Implement config for rejecting new content.
     #
     # TODO: This logic should probably be abstracted in the Content class,
     # since it's core business logic, used by (and currently duplicated by)
@@ -156,12 +154,12 @@ embed = new Embed config.STATIC_PATH
     #
     content = Content.getByURL url, _
     if not content
-        if false
-            errorHTML res, 503, Errors.SERVICE_UNAVAILABLE
-            return
-        else
+        if config.ALLOW_NEW_CONTENT
             content or= Content.fromURL url, _
             enqueueForConversion content
+        else
+            errorHTML res, 503, Errors.SERVICE_UNAVAILABLE
+            return
 
     # HACK: Hardcoding knowledge of URL from app._coffee.
     res.redirect 301, "/#{content.id}"

@@ -42,6 +42,12 @@ configs = module.exports =
     DZI_DIR: "/dzi"
 
     #
+    # Whether to allow new content or not.
+    # Set to false when under load or having issues.
+    #
+    ALLOW_NEW_CONTENT: true
+
+    #
     # What format we should use with Express logger.
     # The choices are 'dev', 'tiny', 'short', and 'default' (full).
     # Details: http://www.senchalabs.org/connect/logger.html
@@ -62,6 +68,7 @@ for key, defaultValue of configs
             when 'number'
                 val = parseInt val, 10
             when 'boolean'
-                ;   # TODO what bool format do we want to use?
+                val = val.toLowerCase() not in [
+                    '1', 'true', 'on', 'yes', 'enabled']
 
         configs[key] = val
