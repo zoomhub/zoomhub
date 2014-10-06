@@ -13,7 +13,32 @@ ping)
     ansible --user zoomhub --inventory-file deployment/hosts all -m ping
     ;;
 bootstrap)
-    echo "Enter root password when prompted"
+    # Pre-req: sshpass
+    if ! [ $(which sshpass) ]; then
+        echo "Installing sshpass..."
+        # Via: http://www.hashbangcode.com/blog/installing-sshpass-osx-mavericks
+        curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz \
+            && tar xvzf sshpass-1.05.tar.gz
+        rm sshpass-1.05.tar.gz
+        cd sshpass-1.05
+        ./configure
+        make
+        echo "Running sudo command; enter your sudo password when prompted."
+        sudo make install
+        cd - > /dev/null
+        rm -rf sshpass-1.05
+    fi
+
+    # Pre-req: passlib
+    if ! [ $(pip freeze | grep passlib) ]; then
+        echo "Installing passlib..."
+        # Via: https://pythonhosted.org/passlib/install.html
+        # HACK: Doing so as sudo because I seem to need that on my computer.
+        echo "Running sudo command; enter your sudo password when prompted."
+        sudo pip install passlib
+    fi
+
+    echo "Bootstrapping server; enter server’s root password when prompted."
     ansible-playbook --inventory-file deployment/hosts \
                      --ask-pass deployment/bootstrap.yml
     ;;
