@@ -26,7 +26,7 @@ getURLKey = (url) ->
 module.exports = class Content
   constructor: (@id, url) ->
     @url = url
-    @self = "#{config.BASE_URL}/content/#{@id}"
+    @self = "#{config.BASE_URL}/v1/content/#{@id}"
     @shareUrl = "#{config.BASE_URL}/#{@id}"
     @embedHtml = "<script src='#{@shareUrl}.js?width=auto&height=400px'></script>"
     @type = 'dzi'
