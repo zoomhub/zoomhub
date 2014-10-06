@@ -15,18 +15,18 @@ inject_viewer = "var el = document.createElement('div');
                     tileSources: tileSource
                 });"
 
-createTileSourceBlock = (base_path, dzi, _) ->
-    path_fragment = path.join config.DZI_DIR, "#{dzi}"
-    attribs = dziparser.parse path.join(base_path, "#{path_fragment}.dzi"), _
+createTileSourceBlock = (basePath, dzi, _) ->
+    pathFragment = path.join config.DZI_DIR, "#{dzi}"
+    attribs = dziparser.parse path.join(basePath, "#{pathFragment}.dzi"), _
 
     if not attribs.ready
-        path_fragment = '/queued'
-        attribs = dziparser.parse path.join(base_path, "#{path_fragment}.dzi"), _
+        pathFragment = '/queued'
+        attribs = dziparser.parse path.join(basePath, "#{pathFragment}.dzi"), _
 
     "var tileSource = {
         Image: {
             xmlns: 'http://schemas.microsoft.com/deepzoom/2008',
-            Url: '#{config.STATIC_DIR}#{path_fragment}_files/',
+            Url: '#{config.STATIC_DIR}#{pathFragment}_files/',
             Format: '#{attribs.tileFormat}',
             Overlap: '#{attribs.tileOverlap}',
             TileSize: '#{attribs.tileSize}',
