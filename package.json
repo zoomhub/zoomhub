@@ -44,7 +44,7 @@
   },
   "scripts": {
     "debugger": "open 'http://127.0.0.1:8080/debug?port=5858' && node-inspector",
-    "start": "node-dev --debug node_modules/.bin/_coffee --fibers --cache app",
+    "start": "node-dev --debug node_modules/.bin/_coffee --cache app",
     "test": "mocha"
   },
   "repository": {
