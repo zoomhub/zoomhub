@@ -52,29 +52,18 @@ app.use express.errorHandler()
 ## ROUTES:
 
 # Meta:
-
 app.get '/health', routes.getHealth
 
 # API: (TODO: These should be under an api vhost!)
-
-app.get '/content/:id', routes.getContentById
-
-# Zoom.it back-compat:
 app.get '/v1/content/:id', routes.getContentById
-
-# Zoom.it back-compat (assumes ?url query string):
-app.get '/v1/content', routes.getContentByURL
+app.get '/v1/content', routes.getContentByURL   # expects ?url param
 
 # UI:
-
 app.get '/', routes.getHomepage     # this includes ?url support
-
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
     req.params.url = req.url[1..]   # req.url includes the query string
     routes.submitURL req, res, _
-
 app.get '/:id.js', routes.getEmbed
-
 app.get '/:id', routes.getViewer
 
 
