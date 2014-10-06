@@ -5,9 +5,11 @@
 config = require '../config'
 Content = require './content'
 Embed = require './embed'
+Errors = require './errors'
 Fetcher = require './fetcher'
 path = require 'path'
 Processor = require './processor'
+URL = require 'url'
 
 # Constants
 PIPELINE_PATH = path.join __dirname, '..', 'pipeline'
@@ -34,31 +36,54 @@ embed = new Embed config.STATIC_PATH
 
 #
 # Pre-reqs:
-# - req.params.id
+# - `id` param
 #
 @getContentById = (req, res, _) ->
-    id = parseInt req.params.id, 10
-    if not id? or isNaN id
-        return res.json 404, error:
-            code: 404
-            message: 'Not found'
+    id = req.param 'id'
+    if not id
+        errorAPI res, 404, Errors.MISSING_ID_OR_URL
+        return
 
     content = Content.getById id, _
     if not content?
-        return res.json 404, error:
-            code: 404
-            message: 'Not found'
-    res.json 200, content
+        errorAPI res, 404, Errors.NO_CONTENT_WITH_ID.replace '{ID}', id
+        return
 
+    res.json 200, content
 
 #
 # Pre-reqs:
-# - req.params.url
+# - `url` param
 #
 @getContentByURL = (req, res, _) ->
-    # FIXME: This sometimes redirects to the view page; this route should
-    # always return API data and redirect to the content API route.
-    handleURL res, req.params.url, _
+    url = req.param 'url'
+    if not url
+        errorAPI res, 404, Errors.MISSING_ID_OR_URL
+        return
+    if not validateURL url
+        errorAPI res, 400, Errors.MALFORMED_URL
+        return
+
+    # Get or create this content, enqueueing it for conversion if it's new.
+    # But support us rejecting new content, e.g. if we're overloaded.
+    # TODO: Implement config for rejecting new content.
+    #
+    # TODO: This logic should probably be abstracted in the Content class,
+    # since it's core business logic, used by (and currently duplicated by)
+    # both our API and our website. But in order to do that, we'd want it to
+    # throw semantic error codes, so that error handling can remain custom.
+    #
+    content = Content.getByURL url, _
+    if not content
+        if false
+            errorAPI res, 503, Errors.SERVICE_UNAVAILABLE
+            return
+        else
+            content or= Content.fromURL url, _
+            enqueueForConversion content
+
+    # HACK: Hardcoding knowledge of URL from app._coffee.
+    redirectAPI res, 301, "/v1/content/#{content.id}", content
 
 
 ## UI:
@@ -66,69 +91,143 @@ embed = new Embed config.STATIC_PATH
 #
 # Pre-reqs: (none)
 #
-# TODO: Zoom.it back-compat of ?url query string support.
+# But supports passing a URL for conversion, via ?url query string param.
+# This was part of Zoom.it's original UI / informal website API.
 #
-@getHomepage = (req, res, _) ->
-    res.render 'home'
+@getHomepage = (req, res, _) =>
+    if req.query.url
+        @submitURL req, res, _
+    else
+        res.render 'home'
 
 #
 # Pre-reqs:
-# - req.params.id
+# - `id` param
 #
 @getEmbed = (req, res, _) ->
-    id = parseInt req.params.id, 10
-    if not id? or isNaN id
-        return res.send 404
+    id = req.param 'id'
+    if not id
+        errorHTML res, 404, Errors.MISSING_ID_OR_URL
+        return
+
+    res.type 'application/javascript'
     res.send embed.generate id, _
 
 
 #
 # Pre-reqs:
-# - req.params.id
+# - `id` param
 #
 @getViewer = (req, res, _) ->
-    id = parseInt req.params.id, 10
-    if not id? or isNaN id
-        return res.send 404
+    id = req.param 'id'
+    if not id
+        errorHTML res, 404, Errors.MISSING_ID_OR_URL
+        return
+
     content = Content.getById id, _
     if not content?
-        return res.send 404
+        errorHTML res, 404, Errors.NO_CONTENT_WITH_ID.replace '{ID}', id
+        return
+
     res.render 'view', {content}
 
 
 #
 # Pre-reqs:
-# - req.params.url
+# - `url` param
 #
 @submitURL = (req, res, _) ->
-    # FIXME: This sometimes returns API JSON; this route should always
-    # redirect to the view page.
-    handleURL res, req.params.url, _
+    url = req.param 'url'
+    if not url
+        errorHTML res, 404, Errors.MISSING_ID_OR_URL
+        return
+    if not validateURL url
+        errorHTML res, 400, Errors.MALFORMED_URL
+        return
+
+    # Get or create this content, enqueueing it for conversion if it's new.
+    # But support us rejecting new content, e.g. if we're overloaded.
+    # TODO: Implement config for rejecting new content.
+    #
+    # TODO: This logic should probably be abstracted in the Content class,
+    # since it's core business logic, used by (and currently duplicated by)
+    # both our API and our website. But in order to do that, we'd want it to
+    # throw semantic error codes, so that error handling can remain custom.
+    #
+    content = Content.getByURL url, _
+    if not content
+        if false
+            errorHTML res, 503, Errors.SERVICE_UNAVAILABLE
+            return
+        else
+            content or= Content.fromURL url, _
+            enqueueForConversion content
+
+    # HACK: Hardcoding knowledge of URL from app._coffee.
+    res.redirect 301, "/#{content.id}"
 
 
 ## HELPERS:
 
-# Helper for the two different routes for URLs:
-handleURL = (res, url, _) ->
-    if not url?
-        res.json 400, error:
-            message: 'Please give us the full URL,
-                including `http://` or `https://`.'
-        return false
+#
+# Return an API error response with the given status code and message.
+#
+errorAPI = (res, status, message) ->
+    res.status status
+    res.type 'text/plain'
+    res.send message
 
-    content = Content.getByURL url, _
-    if content?
-        res.redirect content.shareUrl
-        return false
+#
+# Render an HTML error page with the given status code and message.
+#
+errorHTML = (res, status, message) ->
+    # TODO: Render nice error view instead of this plaintext error message.
+    res.send status, message
 
-    content = Content.fromURL url, _
-    # Redirect to metadata
-    res.redirect content.self
+#
+# Return a redirect API response with a JSON body for convenience.
+#
+redirectAPI = (res, status, location, body={}) ->
+    res.status status
+    res.set 'Location', location
+    res.json body
 
-    # Async operations:
+#
+# Returns whether the given URL is well-formed or not.
+#
+# TODO: This should probably be encapsulated in the Content class,
+# as validation is core business logic, not just for our API layer.
+#
+validateURL = (url) ->
+    # Use Node's built-in URL parser, and duck-type / feature-detect:
+    uri = URL.parse url
+    uri.protocol in ['http:', 'https:'] and !!uri.host and !!uri.path
+        # TODO: Do we also want to reject e.g. localhost, etc.?
+        # If we do that, we should differentiate via semantic error codes.
 
-    # Fetch source
+#
+# Enqueues the given content for conversion.
+#
+# TODO: Should this be abstracted away in a more business logic layer?
+# Rather than this file which defines API & website routes?
+#
+enqueueForConversion = (content) ->
+    # TODO: We should properly use a queue and workers for conversion!
+    # For now, converting directly on our web servers.
+    convertContent content, (err) ->
+        if err
+            console.error "(Async) Error converting content!
+                (ID: #{content.id}) #{err.stack or err}"
+        else
+            console.log "(Async) Successfully converted content.
+                (ID: #{content.id})"
+
+#
+# Converts the given content.
+#
+# TODO: Should this be abstracted away in a more business logic layer?
+# Rather than this file which defines API & website routes?
+#
+convertContent = (content, _) ->
     source = fetcher.fetch content, _
-
-    # Create DZI
     destination = processor.process source, _
