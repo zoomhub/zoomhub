@@ -2,7 +2,10 @@
 #
 # To the existing content-by-id data:
 #
-# - Adds an `id` property.
+# - Adds an `id` property, matching the filename (minus uppercase transform).
+#
+# - Adds our `ready`, `failed`, and `progress` properties.
+#   Assumes all content we're processing finished successfully.
 #
 # - Adds content-by-url symlinks.
 #
@@ -46,7 +49,13 @@ for idFileName in FS.readdir DIR_BY_ID_PATH, _
     # Add an `id` property to the data, by reading, modifying, then writing it.
     # Use a new object to ensure that the `id` property is the first property.
     # Also add a stub for the `url` property to ensure that it's second.
-    data = {id, url: null}
+    # Update: we now also add our `ready`, `failed`, and `progress` props.
+    data =
+        id: id
+        url: null
+        ready: true
+        failed: false
+        progress: 1
     for prop, val of require idPath     # require() auto-parses JSON!
         data[prop] = val
     FS.writeFile idPath, (JSON.stringify data, null, 4), _
