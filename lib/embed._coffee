@@ -11,17 +11,9 @@ SEADRAGON_JS_PATH = Path.join config.STATIC_PATH, 'js', 'openseadragon.min.js'
 QUEUED_DZI_XML_PATH = Path.join config.STATIC_PATH, 'queued.dzi'
 QUEUED_DZI_XML_URL = config.BASE_URL + config.STATIC_DIR + '/queued.dzi'
 
-VIEWER_JS = """
-    var el = document.createElement('div');
-    el.setAttribute('id', '__seadragon1');
-    document.body.appendChild(el);
+VIEWER_IMAGES_URL = config.BASE_URL + config.STATIC_DIR + '/js/images/'
 
-    var viewer = OpenSeadragon({
-        id: '__seadragon1',
-        prefixUrl: '/static/js/images/',
-        tileSources: tileSource
-    });
-"""
+CLASS_NAME = '__seadragon'
 
 
 ## HELPERS
@@ -29,7 +21,10 @@ VIEWER_JS = """
 getTilesURL = (xmlURL) ->
     xmlURL.replace '.dzi', '_files/'
 
-createTileSourceBlock = (basePath, dzi, _) ->
+getRandomId = ->
+    "#{Math.random()}"[2..]
+
+createTileSourceBlock = (dzi, opts={}, _) ->
     # HACK: If the DZI isn't ready yet, use our stand-in "queued" DZI:
     if not dzi?.url
         dzi = dziparser.parse QUEUED_DZI_XML_PATH, _
@@ -46,14 +41,51 @@ createTileSourceBlock = (basePath, dzi, _) ->
                 Width: dzi.width
                 Height: dzi.height
 
-    return "var tileSource = #{JSON.stringify tileSource, null, 4};"
+    # Embed snippet:
+    #
+    # - We use document.write, to support writing into any container, rather
+    #   than assuming the user always wants this directly inside <body>.
+    #
+    # - We don't create any local variables today, but to be future-proof and
+    #   robust, we do all our work inside a closure, to avoid pollution.
+    #
+    # - We generate a random ID to support multiple embeds in the page,
+    #   but we also support supplying an ID. TODO: The old Zoom.it embed used
+    #   an incremental ID so it was predictable; can we support that too?
+    #
+    # - We have a default width & height, but support supplying those too.
+    #   The rest of the styles are copied from the old Zoom.it embed.
+    #   TODO: Do we need those anymore with OpenSeadragon though?
+    #
+    {id, width, height} = opts
+    id or= "#{CLASS_NAME}#{getRandomId()}"
+    width or= 'auto'
+    height or= '400px'
+
+    style = "
+        border: 1px solid black; background: black; color: white;
+        width: #{width}; height: #{height}; margin: 0; padding: 0;
+    "
+    html = "
+        <div class='#{CLASS_NAME}' id='#{id}' style='#{style}'></div>
+    "
+    viewerInfo =
+        id: id
+        prefixUrl: VIEWER_IMAGES_URL
+        tileSources: tileSource     # note the plural/singular discrepancy!
+
+    return """
+        (function () {
+            document.write(#{JSON.stringify html});
+            OpenSeadragon(#{JSON.stringify viewerInfo});
+        })();
+    """
 
 
 ## PUBLIC
 
-@generate = (content, _) ->
+@generate = (content, _, opts={}) ->
     result = [
         fs.readFile SEADRAGON_JS_PATH, _
-        createTileSourceBlock @path, content.dzi, _
-        VIEWER_JS
+        createTileSourceBlock content.dzi, opts, _
     ].join ';\n'
