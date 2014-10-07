@@ -17,6 +17,6 @@ app_env:
   - HOME={{ admin_home }}
   - PATH=/home/zoomhub/vips/bin:\$PATH
   - EXPRESS_LOGGER_FORMAT=default
-app_command: 'npm start'
+app_command: '/usr/bin/npm start'
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
