@@ -35,11 +35,11 @@ To request JSONP, add a `?callback` parameter to API URLs.
 **DZI** objects have the form:
 
 - `url` (string; the URL to the DZI; should *not* be cached/saved)
-- `width` (int; ***TODO***)
-- `height` (int; ***TODO***)
-- `tileSize` (int; ***TODO***)
-- `tileOverlap` (int; ***TODO***)
-- `tileFormat` (string; ***TODO***)
+- `width` (int)
+- `height` (int)
+- `tileSize` (int)
+- `tileOverlap` (int)
+- `tileFormat` (string)
 
 **Content** objects have the form:
 

@@ -4,6 +4,7 @@
 
 config = require '../config'
 Content = require './content'
+DZIParser = require './dziparser'
 Embed = require './embed'
 Errors = require './errors'
 Fetcher = require './fetcher'
@@ -230,7 +231,8 @@ convertContent = (content, _) ->
     try
         source = fetcher.fetch content, _
         destination = processor.process source, _
-        content.markReady _
+        dzi = DZIParser.parse destination, _
+        content.markReady dzi, _
     catch err
         content.markFailed _
         throw err
