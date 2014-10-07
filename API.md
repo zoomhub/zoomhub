@@ -35,19 +35,19 @@ To request JSONP, add a `?callback` parameter to API URLs.
 **DZI** objects have the form:
 
 - `url` (string; the URL to the DZI; should *not* be cached/saved)
-- `width` (int; ***TODO***)
-- `height` (int; ***TODO***)
-- `tileSize` (int; ***TODO***)
-- `tileOverlap` (int; ***TODO***)
-- `tileFormat` (string; ***TODO***)
+- `width` (int)
+- `height` (int)
+- `tileSize` (int)
+- `tileOverlap` (int)
+- `tileFormat` (string)
 
 **Content** objects have the form:
 
 - `id` (string; the ZoomHub ID; case-sensitive alphanumeric)
 - `url` (string; the original source URL)
-- `ready` (boolean; ***TODO***)
-- `failed` (boolean; ***TODO***)
-- `progress` (double; between 0 and 1; **TODO**)
+- `ready` (boolean)
+- `failed` (boolean)
+- `progress` (double; between 0 and 1; ***NOTE:*** *This isn't actually wired up yet.*)
 - `shareUrl` (string; the URL for viewing)
 - `embedHtml` (string; HTML snippet for this content's embeddable viewer)
 - `title` (optional string; ***TODO?***)

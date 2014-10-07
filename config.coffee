@@ -27,6 +27,18 @@ configs = module.exports =
     BASE_URL: "http://localhost:#{PORT}"
 
     #
+    # What type of data store to use. Options: 'files', 'redis'.
+    # TODO: This probably needs expansion. E.g. if Redis, what URL?
+    # (Currently defaults to localhost:6379, with no password.)
+    #
+    DATA_STORE: 'files'
+
+    #
+    # The directory containing our data files.
+    #
+    DATA_DIR: "#{__dirname}/data"
+
+    #
     # URL path for static assets
     #
     STATIC_DIR: "/static"
@@ -45,7 +57,10 @@ configs = module.exports =
     # Whether to allow new content or not.
     # Set to false when under load or having issues.
     #
-    ALLOW_NEW_CONTENT: true
+    # NOTE: Set to false right now since our new ID generation is still via
+    # Redis, which doesn't know about our flat file data store.
+    #
+    ALLOW_NEW_CONTENT: false
 
     #
     # What format we should use with Express logger.
