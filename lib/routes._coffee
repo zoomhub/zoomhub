@@ -113,7 +113,7 @@ processor = new Processor DZI_PATH
         return
 
     res.type 'application/javascript'
-    res.send Embed.generate content, _
+    res.send Embed.generate content, _, req.query
 
 
 #
