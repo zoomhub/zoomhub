@@ -4,6 +4,7 @@
 
 config = require '../config'
 Content = require './content'
+DZIParser = require './dziparser'
 Embed = require './embed'
 Errors = require './errors'
 Fetcher = require './fetcher'
@@ -75,7 +76,7 @@ embed = new Embed config.STATIC_PATH
     content = Content.getByURL url, _
     if not content
         if config.ALLOW_NEW_CONTENT
-            content or= Content.fromURL url, _
+            content or= Content.createFromURL url, _
             enqueueForConversion content
         else
             errorAPI res, 503, Errors.SERVICE_UNAVAILABLE
@@ -155,7 +156,7 @@ embed = new Embed config.STATIC_PATH
     content = Content.getByURL url, _
     if not content
         if config.ALLOW_NEW_CONTENT
-            content or= Content.fromURL url, _
+            content or= Content.createFromURL url, _
             enqueueForConversion content
         else
             errorHTML res, 503, Errors.SERVICE_UNAVAILABLE
@@ -227,5 +228,11 @@ enqueueForConversion = (content) ->
 # Rather than this file which defines API & website routes?
 #
 convertContent = (content, _) ->
-    source = fetcher.fetch content, _
-    destination = processor.process source, _
+    try
+        source = fetcher.fetch content, _
+        destination = processor.process source, _
+        dzi = DZIParser.parse destination, _
+        content.markReady dzi, _
+    catch err
+        content.markFailed _
+        throw err

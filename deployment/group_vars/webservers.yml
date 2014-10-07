@@ -13,6 +13,7 @@ app_env:
   - NODE_ENV=production
   - PORT={{ app_port }}
   - BASE_URL='http://zoomhub.net'
+  - DATA_DIR=/var/data/zoomhub
   - HOME={{ admin_home }}
   - PATH=/home/zoomhub/vips/bin:\$PATH
   - EXPRESS_LOGGER_FORMAT=default
