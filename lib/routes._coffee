@@ -75,7 +75,7 @@ embed = new Embed config.STATIC_PATH
     content = Content.getByURL url, _
     if not content
         if config.ALLOW_NEW_CONTENT
-            content or= Content.fromURL url, _
+            content or= Content.createFromURL url, _
             enqueueForConversion content
         else
             errorAPI res, 503, Errors.SERVICE_UNAVAILABLE
@@ -155,7 +155,7 @@ embed = new Embed config.STATIC_PATH
     content = Content.getByURL url, _
     if not content
         if config.ALLOW_NEW_CONTENT
-            content or= Content.fromURL url, _
+            content or= Content.createFromURL url, _
             enqueueForConversion content
         else
             errorHTML res, 503, Errors.SERVICE_UNAVAILABLE
