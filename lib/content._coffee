@@ -47,11 +47,11 @@ getRedisKeyForId = (id) ->
 getRedisKeyForURL = (url) ->
     "content:url:#{hashURL url}"
 
-# Convenience helper to read JSON async'ly (non-blocking, unlike `require`),
-# and be robust to the file not being present, returning null in that case.
-readJSON = (path, _) ->
+# Convenience helper to read a file async'ly (non-blocking, unlike `require`),
+# but return null (rather than throw) if the file doesn't exist.
+readFile = (path, _) ->
     try
-        JSON.parse FS.readFile path, 'utf8', _
+        FS.readFile path, 'utf8', _
     catch err
         if err.code is 'ENOENT'
             null
@@ -61,61 +61,124 @@ readJSON = (path, _) ->
 
 ## PUBLIC
 
+#
+# This class represents a piece of ZoomHub content.
+# A piece of ZoomHub content associates a source URL with a unique ID,
+# along with info about the input data, conversion progress, and output.
+#
+# This info is what we store in our database, but it's also what we return to
+# clients of our API. Importantly, these two use cases are different --
+# we don't want to return all info to clients, and conversely, we return extra
+# data to clients that's easily derivable and shouldn't be stored.
+#
+# To achieve both these use cases, this class stores the database data as a
+# private object, and exposes property getters on top of it for API clients.
+# Importantly, the database data is non-enumerable, so it doesn't get included
+# in JSON.stringify.
+#
 module.exports = class Content
-    constructor: (@id, @url) ->
-        @ready = false
-        @failed = false
-        @progress = 0
 
-        # HACK: These hardcode knowledge of our URLs, embed API, etc.
-        @shareUrl = "#{config.BASE_URL}/#{@id}"
-        @embedHtml = "<script src='#{@shareUrl}.js?width=auto&height=400px'></script>"
-        @dzi =
-            url: "#{config.BASE_URL}#{config.STATIC_DIR}#{config.DZI_DIR}/#{@id}.dzi"
-            # # TODO: implement these.
-            # width: "IMPLEMENT WIDTH"
-            # height: "IMPLEMENT HEIGHT"
-            # tileSize: "IMPLEMENT TILE SIZE"
-            # tileOverlap: "IMPLEMENT TILE OVERLAP"
-            # tileFormat: "IMPLEMENT TILE FORMAT"
+    #
+    # Private constructor. Takes database data.
+    #
+    constructor: (_data={}) ->
+        Object.defineProperty @, '_data',
+            value: _data
+            enumerable: false
+
+        # TODO: Can we have some code that declares/specifies what this
+        # database looks like? For now, see public property getters below.
+        # In addition to those, we also have `mime` and `size` internally.
+        # The `dzi` property is a nested object containing `width`, `height`,
+        # `tileSize`, `tileOverlap`, and `tileFormat`.
+
+    ## Properties:
+
+    #
+    # Helper to define a group of property getters.
+    #
+    get = (props) =>
+        for prop, getter of props
+            Object.defineProperty @::, prop,
+                get: getter
+                enumerable: true
+                configurable: true
+
+    # Public properties (e.g. to API clients):
+    get id: -> @_data.id
+    get url: -> @_data.url
+    get ready: -> @_data.ready ? false
+    get failed: -> @_data.failed ? false
+    get progress: -> @_data.progress ? 0
+
+    # HACK: These hardcode knowledge of our URLs, embed API, etc.
+    get shareUrl: -> "#{config.BASE_URL}/#{@id}"
+    get embedHtml: -> "<script src='#{@shareUrl}.js?width=auto&height=400px'></script>"
+
+    # HACK: We clone the `dzi` object to add an `url` property to it.
+    # This also hardcodes knowledge of our URLs.
+    # TODO: We should save our DZIs with their own custom ID (and store that
+    # here in our database), to support cache purge/refresh/etc.
+    get dzi: ->
+        raw = @_data.dzi
+        return raw if not raw
+        clone = {}
+        clone.url = "#{config.BASE_URL}#{config.STATIC_DIR}#{config.DZI_DIR}/#{@id}.dzi"
+        clone[prop] = val for prop, val of raw
+        clone
+
+    ## Instance methods:
+
+    toJSON: ->
+        # The native JSON.stringify doesn't pick up property getters on our
+        # *prototype*, which is where they're defined.
+        # So help it out by telling it all of our public/enumerable props.
+        obj = {}
+        obj[prop] = val for prop, val of @
+        obj
 
     # TODO:
     # - markProgress
     # - others?
 
-    markReady: (_) ->
-        @ready = true
-        @failed = false
-        @progress = 1
-        @save _
+    markReady: (dzi, _) ->
+        @_data.ready = true
+        @_data.failed = false
+        @_data.progress = 1
+        @_data.dzi = dzi
+        @_save _
 
     markFailed: (_) ->
-        @ready = false
-        @failed = true
-        @save _
+        @_data.ready = false
+        @_data.failed = true
+        # let `progress` remain where it was
+        delete @_data.dzi
+        @_save _
 
-    save: (_) ->
+    _save: (_) ->
         # TODO: Can we have saves be precise and isolated?
         # E.g. a change to `progress` would *only* save `progress`,
         # being robust to any concurrent change to other properties.
         if USE_REDIS
-            client.mset (getRedisKeyForId @id), @stringify(), _
+            client.mset (getRedisKeyForId @id), @_stringifyData(), _
         else
-            FS.writeFile (getFilePathForId @id), @stringify(), _
+            FS.writeFile (getFilePathForId @id), @_stringifyData(), _
 
-    # Convenience shortcut to JSON.stringify:
-    stringify: ->
-        JSON.stringify @, null, (if USE_REDIS then 0 else 4)
+    _stringifyData: ->
+        JSON.stringify @_data, null, (if USE_REDIS then 0 else 4)
             # TEMP: For debugging, pretty-printing JSON in flat file case.
 
     @getById: (id, _) ->
-        if USE_REDIS
-            if json = redisClient.get (getRedisKeyForId id), _
-                JSON.parse json
+        json =
+            if USE_REDIS
+                redisClient.get (getRedisKeyForId id), _
             else
-                null
+                readFile (getFilePathForId id), _
+
+        if json
+            new Content JSON.parse json
         else
-            readJSON (getFilePathForId id), _   # returns null if no file
+            null
 
     @getByURL: (url, _) ->
         if USE_REDIS
@@ -126,24 +189,30 @@ module.exports = class Content
         else
             # note that our URL files are symlinks to the ID files, and
             # node's FS.readFile() follows symlinks natively. sweet!
-            readJSON (getFilePathForURL url), _
+            if json = readFile (getFilePathForURL url), _
+                new Content JSON.parse json
+            else
+                null
 
     @createFromURL: (url, _) ->
         # TODO: Change this to an optimistic random ID (w/ retry on collision).
         # We need to make sure our writes support proper rollback too though.
         id = (redisClient.incr NEXT_ID_KEY, _).toString()
-        content = new Content id, url
+        content = new Content {id, url}
 
         if USE_REDIS
             idKey = getRedisKeyForId id
             urlKey = getRedisKeyForURL url
-            client.mset idKey, content.stringify(), urlKey, id, _
+
+            client.mset idKey, content._stringifyData(), urlKey, id, _
+
         else
             idPath = getFilePathForId id
             urlPath = getFilePathForURL url
             urlToIdPath =
                 Path.join DIR_PATH_FROM_URL_TO_ID, Path.basename idPath
-            FS.writeFile idPath, content.stringify(), _
+
+            FS.writeFile idPath, content._stringifyData(), _
             FS.symlink urlToIdPath, urlPath, _
 
         content
