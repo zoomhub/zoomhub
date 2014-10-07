@@ -97,5 +97,6 @@ for idFileName, i in idFileNames
         percent = 100 * (i + 1) / totalNumIds
         remaining = totalNumIds - (i + 1)
         echo "#{percent.toFixed 2}% processed; #{remaining} files remaining."
+        nextLogTime = Date.now() + 1000 * 60
 
 echo 'All done!'
