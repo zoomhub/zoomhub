@@ -23,9 +23,6 @@ fetcher = new Fetcher FETCHER_PATH
 DZI_PATH = path.join config.STATIC_PATH, config.DZI_DIR
 processor = new Processor DZI_PATH
 
-# Embed
-embed = new Embed config.STATIC_PATH
-
 
 ## META:
 
@@ -110,8 +107,13 @@ embed = new Embed config.STATIC_PATH
         errorHTML res, 404, Errors.MISSING_ID_OR_URL
         return
 
+    content = Content.getById id, _
+    if not content?
+        errorHTML res, 404, Errors.NO_CONTENT_WITH_ID.replace '{ID}', id
+        return
+
     res.type 'application/javascript'
-    res.send embed.generate id, _
+    res.send Embed.generate content, _
 
 
 #
