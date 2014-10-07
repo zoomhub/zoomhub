@@ -11,14 +11,14 @@ module.exports = class Fetcher
     source = content.url
     destination = path.join @path, content.id.toString()
 
-    writer = request(source).pipe fs.createWriteStream destination
-    writer.on 'readable', ->
-      console.log 'readable'
-    writer.on 'data', (chunk) ->
-      console.log 'data', chunk
+    reader = request source
+    reader.on 'error', (error) ->
+      callback error
+
+    writer = fs.createWriteStream destination
     writer.on 'error', (error) ->
       callback error
     writer.on 'finish', (error) ->
-      if error?
-        return callback error
-      callback null, destination
+      callback error, destination
+
+    reader.pipe writer
