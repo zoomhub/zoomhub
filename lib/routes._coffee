@@ -227,5 +227,10 @@ enqueueForConversion = (content) ->
 # Rather than this file which defines API & website routes?
 #
 convertContent = (content, _) ->
-    source = fetcher.fetch content, _
-    destination = processor.process source, _
+    try
+        source = fetcher.fetch content, _
+        destination = processor.process source, _
+        content.markReady _
+    catch err
+        content.markFailed _
+        throw err

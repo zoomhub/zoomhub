@@ -63,6 +63,10 @@ readJSON = (path, _) ->
 
 module.exports = class Content
     constructor: (@id, @url) ->
+        @ready = false
+        @failed = false
+        @progress = 0
+
         # HACK: These hardcode knowledge of our URLs, embed API, etc.
         @shareUrl = "#{config.BASE_URL}/#{@id}"
         @embedHtml = "<script src='#{@shareUrl}.js?width=auto&height=400px'></script>"
@@ -75,10 +79,34 @@ module.exports = class Content
             # tileOverlap: "IMPLEMENT TILE OVERLAP"
             # tileFormat: "IMPLEMENT TILE FORMAT"
 
-      # # TODO: implement progress/status
-      # @ready = "IMPLEMENT READY"
-      # @failed = "IMPLEMENT FAILED"
-      # @progress = "IMPLEMENT PROGRESS"
+    # TODO:
+    # - markProgress
+    # - others?
+
+    markReady: (_) ->
+        @ready = true
+        @failed = false
+        @progress = 1
+        @save _
+
+    markFailed: (_) ->
+        @ready = false
+        @failed = true
+        @save _
+
+    save: (_) ->
+        # TODO: Can we have saves be precise and isolated?
+        # E.g. a change to `progress` would *only* save `progress`,
+        # being robust to any concurrent change to other properties.
+        if USE_REDIS
+            client.mset (getRedisKeyForId @id), @stringify(), _
+        else
+            FS.writeFile (getFilePathForId @id), @stringify(), _
+
+    # Convenience shortcut to JSON.stringify:
+    stringify: ->
+        JSON.stringify @, null, (if USE_REDIS then 0 else 4)
+            # TEMP: For debugging, pretty-printing JSON in flat file case.
 
     @getById: (id, _) ->
         if USE_REDIS
@@ -105,19 +133,17 @@ module.exports = class Content
         # We need to make sure our writes support proper rollback too though.
         id = (redisClient.incr NEXT_ID_KEY, _).toString()
         content = new Content id, url
-        json = JSON.stringify content, null, (if USE_REDIS then 0 else 4)
-            # TEMP: For debugging, pretty-printing JSON in flat file case.
 
         if USE_REDIS
             idKey = getRedisKeyForId id
             urlKey = getRedisKeyForURL url
-            client.mset idKey, json, urlKey, id, _
+            client.mset idKey, content.stringify(), urlKey, id, _
         else
             idPath = getFilePathForId id
             urlPath = getFilePathForURL url
             urlToIdPath =
                 Path.join DIR_PATH_FROM_URL_TO_ID, Path.basename idPath
-            FS.writeFile idPath, json, _
+            FS.writeFile idPath, content.stringify(), _
             FS.symlink urlToIdPath, urlPath, _
 
         content
