@@ -35,15 +35,33 @@ html(lang="en")
             width: 100%;
             height: 100%;
         }
+
+        // HACK: See below.
+        .__seadragon {
+            height: 100% !important;
+        }
   body
-    #container
+    // HACK: Using the embed directly for now, to get all of its features,
+    // e.g. not having to load the XML on the client-side.
+    // Unfortunately, that means we have to do things like !important above.
+    //
+    // TODO: It'd be better to create a shared viewer component that can be
+    // used both by the embed script and here.
+    // That'll also save a client-side request, as we already know the content
+    // info on the server-side here (but aren't using it currently).
+    //
+    !{content.embedHtml}
+    //- #container
+
     #metadata
         // HACK: Hardcoding knowledge of URL from app._coffee.
         a(href='/v1/content/#{content.id}.json') Metadata
-    script(src='/static/js/openseadragon.min.js')
-    script.
-        var viewer = OpenSeadragon({
-            id: 'container',
-            prefixUrl: '/static/js/images/',
-            tileSources: !{JSON.stringify(content.dzi.url)}
-        });
+
+    // HACK: See above.
+    //- script(src='/static/js/openseadragon.min.js')
+    //- script.
+    //-     var viewer = OpenSeadragon({
+    //-         id: 'container',
+    //-         prefixUrl: '/static/js/images/',
+    //-         tileSources: !{JSON.stringify(content.dzi.url)}
+    //-     });
