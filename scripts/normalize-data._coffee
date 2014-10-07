@@ -7,7 +7,8 @@
 # - Adds our `ready`, `failed`, and `progress` properties.
 #   Assumes all content we're processing finished successfully.
 #
-# - Moves the image info into a `dzi` container, if it isn't already.
+# - Moves the image info into a `dzi` container, if it exists.
+#   Update: we had a bug here, so also fixes that bug.
 #
 # - Fixes the `tileSize` and `tileOverlap` properties from strings to ints.
 #
@@ -16,6 +17,7 @@
 
 config = require '../config'
 crypto = require 'crypto'
+echo = console.log
 FS = require 'fs'
 Path = require 'path'
 
@@ -42,8 +44,17 @@ getIdForFilePath = (path) ->
     path = path.replace /_([A-Z])/g, '$1'
     Path.basename path, Path.extname path
 
-# Now go through each existing content by ID, and process it:
-for idFileName in FS.readdir DIR_BY_ID_PATH, _
+# Now query all the IDs we have:
+echo 'Querying content files...'
+idFileNames = FS.readdir DIR_BY_ID_PATH, _
+totalNumIds = idFileNames.length
+echo "#{totalNumIds} files found."
+
+# Now go through each ID,and process it, outputting percentage every minute:
+echo 'Processing...'
+nextLogTime = Date.now() + 1000 * 60
+
+for idFileName, i in idFileNames
     # Skip non-content files:
     continue if (Path.extname idFileName) isnt '.json'
 
@@ -53,12 +64,15 @@ for idFileName in FS.readdir DIR_BY_ID_PATH, _
     # Massage the data by reading it, modifying it, then writing it back.
     # NOTE: This assumes full knowledge of the starting data.
     data = require idPath   # require() auto-parses JSON!
+    ready = (!!data.width and !!data.height) or
+        # if we're re-running this after our conversion:
+        (!!data.dzi?.width and !!data.dzi?.height)
     data =
         id: id
         url: data.url
-        ready: true
-        failed: false
-        progress: 1
+        ready: ready
+        failed: not ready
+        progress: if ready then 1 else 0
         mime: data.mime
         size: data.size
         dzi: data.dzi or {  # braces needed otherwise CS syntax error
@@ -68,6 +82,7 @@ for idFileName in FS.readdir DIR_BY_ID_PATH, _
             tileOverlap: parseInt data.tileOverlap, 10
             tileFormat: data.tileFormat
         }
+    delete data.dzi if not ready    # fix bug we made
     FS.writeFile idPath, (JSON.stringify data, null, 4), _
 
     # Generate a content-by-url symlink.
@@ -77,3 +92,10 @@ for idFileName in FS.readdir DIR_BY_ID_PATH, _
         FS.symlink urlToIdPath, urlPath, _
     catch err
         throw err unless err.code is 'EEXIST'
+
+    if Date.now() >= nextLogTime
+        percent = 100 * (i + 1) / totalNumIds
+        remaining = totalNumIds - (i + 1)
+        echo "#{percent.toFixed 2}% processed; #{remaining} files remaining."
+
+echo 'All done!'
