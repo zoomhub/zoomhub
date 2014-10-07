@@ -12,7 +12,7 @@ respawn limit 5 60 #try 5 times within 60 seconds, or giveup
 script
     cd {{ app_root }}
     echo $$ > /var/run/{{ service }}.pid
-    exec sudo -u {{ admin_user }} env {{ app_env | join(' ') }} {{ app_command }} >> {{ log_path }} 2>&1
+    exec sudo env {{ app_env | join(' ') }} {{ app_command }} >> {{ log_path }} 2>&1
 end script
 
 pre-start script
