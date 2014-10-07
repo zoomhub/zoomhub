@@ -7,6 +7,8 @@
 # - Adds our `ready`, `failed`, and `progress` properties.
 #   Assumes all content we're processing finished successfully.
 #
+# - Moves the image info into a `dzi` container, if it isn't already.
+#
 # - Adds content-by-url symlinks.
 #
 
@@ -46,18 +48,24 @@ for idFileName in FS.readdir DIR_BY_ID_PATH, _
     id = getIdForFilePath idFileName
     idPath = getFilePathForId id  # full path, not just file name
 
-    # Add an `id` property to the data, by reading, modifying, then writing it.
-    # Use a new object to ensure that the `id` property is the first property.
-    # Also add a stub for the `url` property to ensure that it's second.
-    # Update: we now also add our `ready`, `failed`, and `progress` props.
+    # Massage the data by reading it, modifying it, then writing it back.
+    # NOTE: This assumes full knowledge of the starting data.
+    data = require idPath   # require() auto-parses JSON!
     data =
         id: id
-        url: null
+        url: data.url
         ready: true
         failed: false
         progress: 1
-    for prop, val of require idPath     # require() auto-parses JSON!
-        data[prop] = val
+        mime: data.mime
+        size: data.size
+        dzi: data.dzi or {  # braces needed otherwise CS syntax error
+            width: data.width
+            height: data.height
+            tileSize: data.tileSize
+            tileOverlap: data.tileOverlap
+            tileFormat: data.tileFormat
+        }
     FS.writeFile idPath, (JSON.stringify data, null, 4), _
 
     # Generate a content-by-url symlink.
