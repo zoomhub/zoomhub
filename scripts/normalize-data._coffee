@@ -9,6 +9,8 @@
 #
 # - Moves the image info into a `dzi` container, if it isn't already.
 #
+# - Fixes the `tileSize` and `tileOverlap` properties from strings to ints.
+#
 # - Adds content-by-url symlinks.
 #
 
@@ -62,8 +64,8 @@ for idFileName in FS.readdir DIR_BY_ID_PATH, _
         dzi: data.dzi or {  # braces needed otherwise CS syntax error
             width: data.width
             height: data.height
-            tileSize: data.tileSize
-            tileOverlap: data.tileOverlap
+            tileSize: parseInt data.tileSize, 10
+            tileOverlap: parseInt data.tileOverlap, 10
             tileFormat: data.tileFormat
         }
     FS.writeFile idPath, (JSON.stringify data, null, 4), _

@@ -20,8 +20,8 @@ Example data follows.
     "dzi": {
         "width": 208,
         "height": 208,
-        "tileSize": "254",
-        "tileOverlap": "1",
+        "tileSize": 254,
+        "tileOverlap": 1,
         "tileFormat": "jpg"
     }
 }
@@ -41,8 +41,8 @@ Example data follows.
     "dzi": {
         "width": 1824,
         "height": 1368,
-        "tileSize": "254",
-        "tileOverlap": "1",
+        "tileSize": 254,
+        "tileOverlap": 1,
         "tileFormat": "jpg"
     }
 }
