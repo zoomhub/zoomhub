@@ -17,6 +17,6 @@ app_env:
   - HOME={{ admin_home }}
   - PATH=/home/zoomhub/vips/bin:\$PATH
   - EXPRESS_LOGGER_FORMAT=default
-app_command: "{{ app_root }}/node_modules/.bin/_coffee --fibers --cache {{ app_root }}/app"
+app_command: "{{ app_root }}/node_modules/.bin/_coffee --cache {{ app_root }}/app"
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
