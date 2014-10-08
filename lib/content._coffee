@@ -24,7 +24,7 @@ USE_REDIS = config.DATA_STORE is 'redis'
 # TODO: We should only instantiate this if we're using Redis, but we currently
 # do rely on Redis for the "next ID" (see above), even in the flat file case.
 # TODO: We should also support auth'ed Redis, which is an async connection.
-redisClient = redis.createClient()
+redisClient = redis.createClient() if USE_REDIS
 
 # We hash URLs, to avoid character or length errors.
 hashURL = (url) ->
@@ -197,6 +197,9 @@ module.exports = class Content
     @createFromURL: (url, _) ->
         # TODO: Change this to an optimistic random ID (w/ retry on collision).
         # We need to make sure our writes support proper rollback too though.
+        if not redisClient
+          throw new Error 'redis client not initialized'
+
         id = (redisClient.incr NEXT_ID_KEY, _).toString()
         content = new Content {id, url}
 
