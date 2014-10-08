@@ -33,6 +33,9 @@ DIR_PATH_FROM_URL_TO_ID = Path.relative DIR_BY_URL_PATH, DIR_BY_ID_PATH
 # How many files to process in parallel:
 NUM_PARALLEL = 100
 
+# How frequently to log progress:
+LOG_FREQUENCY_SECS = 60
+
 getFilePathForId = (id) ->
     # NOTE: Since file systems are typically case-insensitive (even though
     # they're case-aware), prefix capital letters with an underscore.
@@ -63,7 +66,7 @@ echo "#{totalNumIds} files found."
 # Since we're going to be I/O bound here, we parallelize heavily.
 echo 'Processing...'
 funnel = flows.funnel NUM_PARALLEL
-nextLogTime = Date.now() + 1000 * 60
+nextLogTime = Date.now() + 1000 * LOG_FREQUENCY_SECS
 
 while idFileNames.length then funnel _, (_) ->
     # Grab an ID file and remove it from our array (to reduce memory usage).
@@ -110,6 +113,6 @@ while idFileNames.length then funnel _, (_) ->
         remaining = idFileNames.length
         percent = 100 * (totalNumIds - remaining) / totalNumIds
         echo "#{percent.toFixed 2}% processed; #{remaining} files remaining."
-        nextLogTime = Date.now() + 1000 * 60
+        nextLogTime = Date.now() + 1000 * LOG_FREQUENCY_SECS
 
 echo 'All done!'
