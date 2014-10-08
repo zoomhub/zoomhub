@@ -112,7 +112,8 @@ while idFileNames.length then funnel _, (_) ->
     if Date.now() >= nextLogTime
         remaining = idFileNames.length
         percent = 100 * (totalNumIds - remaining) / totalNumIds
-        echo "#{percent.toFixed 2}% processed; #{remaining} files remaining."
+        echo "#{percent.toFixed 2}% processed; #{remaining} files remaining.
+            (Last processed: #{id} / #{idFileName})"
         nextLogTime = Date.now() + 1000 * LOG_FREQUENCY_SECS
 
 echo 'All done!'
