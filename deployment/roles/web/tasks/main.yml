@@ -46,3 +46,9 @@
 
 - name: create data directory
   file: state=directory path={{ data_root }}
+
+- name: create data directory for ids
+  file: state=directory path={{ data_ids_root }}
+
+- name: create data directory for urls
+  file: state=directory path={{ data_url_root }}

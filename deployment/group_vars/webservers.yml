@@ -19,4 +19,6 @@ app_env:
 app_command: "{{ app_root }}/node_modules/.bin/_coffee --cache {{ app_root }}/app"
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
-data_root: '/var/data'
+data_root: '/var/data/{{ service }}'
+data_id_root: '/var/data/{{ service }}/content-by-id'
+data_url_root: '/var/data/{{ service }}/content-by-url'
