@@ -30,7 +30,7 @@ var interval = setInterval(function () {
     blobs: metrics.blobs,
     files: metrics.files,
     size: prettyBytes(metrics.size),
-    time: metrics.end / 1000 + 's'
+    time: (new Date().getTime() - metrics.start) / 1000 + 's'
   });
 }, 30000);
 
