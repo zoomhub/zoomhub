@@ -19,7 +19,6 @@
 #
 
 config = require '../config'
-CP = require 'child_process'
 crypto = require 'crypto'
 echo = console.log
 FS = require 'fs'
@@ -48,63 +47,26 @@ getIdForFilePath = (path) ->
     path = path.replace /_([A-Z])/g, '$1'
     Path.basename path, Path.extname path
 
-# For any async errors we encounter -- fail fast:
-handleError = (err) ->
-    throw err if err
-
-#
-# IMPORTANT: Listing all the files into memory via FS.readdir consumes a *ton*
-# of memory, so we use Bash to do that, and process the result as a stream.
-#
-# Calls the given function for each file, and the final callback when done.
-# The function is called as (fileName, i, _).
-# Note that any unhandled errors from the function will fail fast and crash.
-#
-# FIXME: Our processing of the data likely won't keep up with the speed of
-# ls output, which means we might get a very large fan-out of processing...
-# which means we'd still be taking up a ton of memory. Can we synchronize?
-#
-listFiles = (path, each, done) ->
-    ls = CP.spawn 'ls', ['-f', path]
-
-    i = 0   # keep a running count, like array index
-    ls.stdout.setEncoding 'utf8'
-    ls.stdout.on 'data', (stdout) ->
-        return if not stdout
-        for file in stdout.split '\n'
-            each file, i, handleError
-            i++
-
-    err = ''    # aggregate stderr output in case of error
-    ls.stderr.setEncoding 'utf8'
-    ls.stderr.on 'data', (stderr) ->
-        err += stderr
-
-    ls.on 'close', (code) ->
-        if code
-            done new Error "Error listing files (exit code #{code}): #{err}"
-        else
-            done null
-
-# Now list all the IDs once to count the total...
+# Now query all the IDs we have:
 echo 'Querying content files...'
-totalNumIds = 0
-listFiles DIR_BY_ID_PATH, (-> totalNumIds++), _
+idFileNames = FS.readdir DIR_BY_ID_PATH, _
+totalNumIds = idFileNames.length
 echo "#{totalNumIds} files found."
 
-# Then list them again to actually process them, outputting progress every min:
+# Now go through each ID,and process it, outputting percentage every minute:
 echo 'Processing...'
 nextLogTime = Date.now() + 1000 * 60
-listFiles DIR_BY_ID_PATH, (idFileName, i, _) ->
+
+for idFileName, i in idFileNames
     # Skip non-content files:
-    return if (Path.extname idFileName) isnt '.json'
+    continue if (Path.extname idFileName) isnt '.json'
 
     id = getIdForFilePath idFileName
     idPath = getFilePathForId id  # full path, not just file name
 
     # Massage the data by reading it, modifying it, then writing it back.
     # NOTE: This assumes full knowledge of the starting data.
-    data = JSON.parse FS.readFile idPath, 'utf8', _
+    data = require idPath   # require() auto-parses JSON!
     failed = not (data.width and data.height and data.tileSize) and
         # if we're re-running this after our conversion:
         not (data.dzi?.width and data.dzi?.height and data.dzi?.tileSize)
@@ -139,7 +101,5 @@ listFiles DIR_BY_ID_PATH, (idFileName, i, _) ->
         remaining = totalNumIds - (i + 1)
         echo "#{percent.toFixed 2}% processed; #{remaining} files remaining."
         nextLogTime = Date.now() + 1000 * 60
-, _
 
-process.on 'exit', ->
-    echo 'All done!'
+echo 'All done!'
