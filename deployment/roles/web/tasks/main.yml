@@ -43,3 +43,6 @@
 
 - name: create log directory
   file: state=directory path={{ log_root }}
+
+- name: create data directory
+  file: state=directory path={{ data_root }}

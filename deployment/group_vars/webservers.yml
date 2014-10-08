@@ -7,7 +7,7 @@ admin_group: zoomhub
 apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
-app_version: master
+app_version: migrate-content
 app_port: 3000
 app_env:
   - NODE_ENV=production
@@ -19,3 +19,4 @@ app_env:
 app_command: "{{ app_root }}/node_modules/.bin/_coffee --cache {{ app_root }}/app"
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
+data_root: '/var/data'
