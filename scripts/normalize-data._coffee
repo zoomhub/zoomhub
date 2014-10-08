@@ -21,6 +21,7 @@
 config = require '../config'
 crypto = require 'crypto'
 echo = console.log
+flows = require 'streamline/lib/util/flows'
 FS = require 'fs'
 Path = require 'path'
 
@@ -28,6 +29,9 @@ DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'content-by-id'
 DIR_BY_URL_PATH = Path.join config.DATA_DIR, 'content-by-url'
 
 DIR_PATH_FROM_URL_TO_ID = Path.relative DIR_BY_URL_PATH, DIR_BY_ID_PATH
+
+# How many files to process in parallel:
+NUM_PARALLEL = 100
 
 getFilePathForId = (id) ->
     # NOTE: Since file systems are typically case-insensitive (even though
@@ -47,19 +51,25 @@ getIdForFilePath = (path) ->
     path = path.replace /_([A-Z])/g, '$1'
     Path.basename path, Path.extname path
 
-# Now query all the IDs we have:
+# Now query all the IDs we have.
+# NOTE: This takes up a metric shit ton of memory if lots of files.
+# To compensate, we remove filenames from this array as we process them.
 echo 'Querying content files...'
 idFileNames = FS.readdir DIR_BY_ID_PATH, _
 totalNumIds = idFileNames.length
 echo "#{totalNumIds} files found."
 
-# Now go through each ID,and process it, outputting percentage every minute:
+# Now go through each ID,and process it, outputting percentage every minute.
+# Since we're going to be I/O bound here, we parallelize heavily.
 echo 'Processing...'
+funnel = flows.funnel NUM_PARALLEL
 nextLogTime = Date.now() + 1000 * 60
 
-for idFileName, i in idFileNames
-    # Skip non-content files:
-    continue if (Path.extname idFileName) isnt '.json'
+while idFileNames.length then funnel _, (_) ->
+    # Grab an ID file and remove it from our array (to reduce memory usage).
+    # Skip non-content files.
+    idFileName = idFileNames.pop()
+    return if (Path.extname idFileName) isnt '.json'
 
     id = getIdForFilePath idFileName
     idPath = getFilePathForId id  # full path, not just file name
@@ -97,8 +107,8 @@ for idFileName, i in idFileNames
         throw err unless err.code is 'EEXIST'
 
     if Date.now() >= nextLogTime
-        percent = 100 * (i + 1) / totalNumIds
-        remaining = totalNumIds - (i + 1)
+        remaining = idFileNames.length
+        percent = 100 * (totalNumIds - remaining) / totalNumIds
         echo "#{percent.toFixed 2}% processed; #{remaining} files remaining."
         nextLogTime = Date.now() + 1000 * 60
 
