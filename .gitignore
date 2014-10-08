@@ -10,8 +10,12 @@ npm-debug.log
 
 # Private
 /deployment/hosts
+/deployment/hosts.staging
 /deployment/credentials/userpassword
 
 # Static files
 /public/dzi
 /pipeline/fetcher
+
+# Database (sample data)
+/data/

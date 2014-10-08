@@ -11,6 +11,8 @@ respawn limit 5 60 #try 5 times within 60 seconds, or giveup
 
 script
     echo $$ > /var/run/{{ service }}.pid
+    echo "[`date -u +%Y-%m-%dT%T.%3NZ`] (sys)" \
+        exec sudo -u {{ admin_user }} env {{ app_env | join(' ') }} {{ app_command }} >> {{ log_path }} 2>&1
     exec sudo -u {{ admin_user }} env {{ app_env | join(' ') }} {{ app_command }} >> {{ log_path }} 2>&1
 end script
 
