@@ -5,7 +5,10 @@
 # - Adds an `id` property, matching the filename (minus uppercase transform).
 #
 # - Adds our `ready`, `failed`, and `progress` properties.
-#   Assumes all content we're processing finished successfully.
+#   Sets all content to a "queued" state (`ready: false`, `progress: 0`);
+#   we can mark as finished once we've copied imagery over too.
+#   FIXME: This is *not* safely idempotent once we copy images over!
+#   But there isn't any better way to do this, as we already have ready: true.
 #
 # - Moves the image info into a `dzi` container, if it exists.
 #   Update: we had a bug here, so also fixes that bug.
@@ -64,15 +67,15 @@ for idFileName, i in idFileNames
     # Massage the data by reading it, modifying it, then writing it back.
     # NOTE: This assumes full knowledge of the starting data.
     data = require idPath   # require() auto-parses JSON!
-    ready = (!!data.width and !!data.height) or
+    failed = not (data.width and data.height and data.tileSize) and
         # if we're re-running this after our conversion:
-        (!!data.dzi?.width and !!data.dzi?.height)
+        not (data.dzi?.width and data.dzi?.height and data.dzi?.tileSize)
     data =
         id: id
         url: data.url
-        ready: ready
-        failed: not ready
-        progress: if ready then 1 else 0
+        ready: false        # FIXME: Remove these hardcodings after we've
+        failed: failed      # corrected production data with this script.
+        progress: 0         # We should then respect the input data.
         mime: data.mime
         size: data.size
         dzi: data.dzi or {  # braces needed otherwise CS syntax error
@@ -81,8 +84,8 @@ for idFileName, i in idFileNames
             tileSize: parseInt data.tileSize, 10
             tileOverlap: parseInt data.tileOverlap, 10
             tileFormat: data.tileFormat
-        }
-    delete data.dzi if not ready    # fix bug we made
+        } if not failed
+    delete data.dzi if failed   # fix bug we made
     FS.writeFile idPath, (JSON.stringify data, null, 4), _
 
     # Generate a content-by-url symlink.
