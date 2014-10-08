@@ -21,8 +21,7 @@ URL_HASH_ENCODING = 'hex'
 # TEMP: Simple implementation for just two data stores: Redis and flat files.
 USE_REDIS = config.DATA_STORE is 'redis'
 
-# TODO: We should only instantiate this if we're using Redis, but we currently
-# do rely on Redis for the "next ID" (see above), even in the flat file case.
+# TODO: Make the !USE_REDIS behavior more robust than just not creating a client
 # TODO: We should also support auth'ed Redis, which is an async connection.
 redisClient = redis.createClient() if USE_REDIS
 
