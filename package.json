@@ -24,23 +24,32 @@
   ],
   "main": "./app",
   "dependencies": {
+    "async": "0.9.x",
     "coffee-script": "^1.8.0",
+    "commander": "2.3.0",
     "deepzoomtools": "0.0.5",
     "express": "^3.3.7",
     "express-streamline": "^0.5.1",
     "fibers": "^1.0.1",
+    "hiredis": "0.1.17",
     "jade": "^0.35.0",
+    "pipe-lines": "*",
+    "pkgcloud": "git://github.com/pkgcloud/pkgcloud.git#newStorageApi",
+    "pretty-bytes": "*",
     "redis": "^0.9.0",
-    "request": "^2.27.0",
+    "request": "^2.45.0",
     "streamline": "^0.10.16",
+    "winston": "0.8.1",
     "xml2js": "^0.2.8"
   },
   "devDependencies": {
     "chai": "~1.7.2",
+    "ez-streams": "^0.1.6",
     "mocha": "~1.12.1",
     "node-dev": "^2.0.2",
     "node-inspector": "^0.5.0",
-    "supertest": "~0.7.1"
+    "supertest": "~0.7.1",
+    "xml2js": "^0.2.8"
   },
   "scripts": {
     "debugger": "open 'http://127.0.0.1:8080/debug?port=5858' && node-inspector",
