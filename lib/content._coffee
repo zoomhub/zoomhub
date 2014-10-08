@@ -197,7 +197,7 @@ module.exports = class Content
         # TODO: Change this to an optimistic random ID (w/ retry on collision).
         # We need to make sure our writes support proper rollback too though.
         if not redisClient
-          throw new Error 'redis client not initialized'
+          throw new Error 'Content.createFromURL() not implemented yet w/out Redis.'
 
         id = (redisClient.incr NEXT_ID_KEY, _).toString()
         content = new Content {id, url}
