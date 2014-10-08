@@ -1,152 +1,135 @@
 #!/usr/bin/env node
 
-var blobLoader = require('./blob-loader'),
-    idLoader = require('./id-loader'),
-    pkgcloud = require('pkgcloud'),
-    request = require('request'),
-    async = require('async'),
-    http = require('http'),
-    https = require('https'),
-    program = require('commander'),
-    fs = require('fs');
+var async = require('async'),
+    cloudApp = require('./cloud-app'),
+    fork = require('child_process').fork,
+    logging = require('./logging'),
+    prettyBytes = require('pretty-bytes'),
+    redis = require('redis');
 
-http.globalAgent.maxSockets = Infinity;
-https.globalAgent.maxSockets = Infinity;
+var programOpts = cloudApp.loadProgram(process.argv),
+    redisClient = redis.createClient(),
+    log = logging.getLogger(process.env.IMPORT_LOG_LEVEL || 'debug'),
+    workers = [];
 
-program
-    .version('0.0.1')
-    .option('-u, --username [username]', 'Username')
-    .option('-p, --password [password]', 'Password')
-    .option('-r, --region [region]', 'Region')
-    .option('--useInternal')
-    .option('--topFiles [path]')
-    .parse(process.argv);
-
-var client = pkgcloud.providers.rackspace.storage.createClient({
-  username: program.username,
-  password: program.password,
-  useInternal: program.useInternal,
-  region: program.region
-});
-
-var path = '/var/data/zoomhub/content-by-id',
-    processed = {};
-
-try {
-  processed = require('./processed.json');
-}
-catch (e) {
-
+for (var i = 0; i < require('os').cpus().length; i++) {
+  workers.push(i);
 }
 
-client.on('log::error', function (message, object) {
-  if (object) {
-    console.log(this.event.split('::')[1] + ': ' + message);
-    console.dir(object);
-  }
-  else {
-    console.log(this.event.split('::')[1] + ': ' + message);
-  }
-});
+var metrics = {
+  blobs: 0,
+  files: 0,
+  size: 0,
+  start: new Date().getTime()
+};
 
-console.log('Loading Ids');
+log.info('Starting ' + require('os').cpus().length + ' processes');
 
-idLoader.getIds(program.topFiles, function (err, files) {
-  if (err) {
-    console.error(err);
-    process.exit(1);
-  }
+var interval = setInterval(function () {
+  log.info({
+    blobs: metrics.blobs,
+    files: metrics.files,
+    size: prettyBytes(metrics.size),
+    time: metrics.end / 1000 + 's'
+  });
+}, 30000);
 
-  var stats = {
-    ids: 0,
+async.forEachLimit(workers, workers.length, function(worker, next) {
+
+  var workerMetrics = {
     blobs: 0,
-    data: 0
+    files: 0,
+    size: 0,
+    start: new Date().getTime()
   };
 
-  console.log('Loaded ' + files.length + ' IDs');
-
-  setInterval(function () {
-    console.dir(stats);
-  }, 30000);
-
-  async.forEachLimit(files, 5, function (file, next) {
-    stats.ids++;
-    console.log('Loading: ' + file);
-    if (processed[file]) {
-      console.log('Already Processed: ' + file);
-      return next();
-    }
-    blobLoader.getBlobs(file, function (err, response) {
+  function importImage(callback) {
+    redisClient.spop('ids-to-import', function(err, id) {
       if (err) {
-        console.log('Skipping: ' + file);
-        console.error(err);
-        return next();
+        callback(err);
+        return;
       }
 
-      var destDzi = client.upload({
-        container: 'content',
-        remote: response.dziPath.replace('/content/', '/dzis/'),
-        contentType: 'application/xml'
-      });
-
-      destDzi.on('error', function (err) {
-        //console.log('Error: ' + blob);
-        next(err);
-      });
-
-      destDzi.on('success', function (upload) {
-        async.forEachLimit(response.blobs, 10, function (blob, blobNext) {
-          stats.blobs++;
-          var sourceBlob = request(blob);
-
-          var destBlob = client.upload({
-            container: 'content',
-            remote: sourceBlob.uri.pathname.replace('/content/', '/dzis/')
-          });
-
-          sourceBlob.on('response', function (response) {
-            stats.data += parseInt(response.headers['content-length']);
-            response.headers = {
-              'content-type': response.headers['content-type'],
-              'content-length': response.headers['content-length']
-            };
-          });
-
-          destBlob.on('error', function (err) {
-            //console.log('Error: ' + blob);
-            blobNext(err);
-          });
-
-          destBlob.on('success', function (upload) {
-            //console.log('Success: ' + blob);
-            blobNext();
-          });
-
-          sourceBlob.pipe(destBlob);
-
-        }, function (err) {
-          if (err) {
-            next(err);
-            return;
-          }
-
-          processed[file] = true;
-          var update = fs.createWriteStream('./processed.json');
-
-          update.end(JSON.stringify(processed), function () {
-            next(err);
-          });
+      if (!id) {
+        workerMetrics.end = new Date().getTime() - workerMetrics.start;
+        log.info('Process ' + worker + ' finished', {
+          blobs: workerMetrics.blobs,
+          files: workerMetrics.files,
+          size: prettyBytes(workerMetrics.size),
+          time: workerMetrics.end / 1000 + 's'
         });
+
+        callback();
+        return;
+      }
+
+      var args = ['--id', id,
+        '-u', programOpts.cloudOptions.username,
+        '-p', programOpts.cloudOptions.password,
+        '-r', programOpts.cloudOptions.region];
+
+      if (programOpts.cloudOptions.useInternal) {
+        args.push('--useInternal');
+      }
+
+      // spawn the process
+      var childProcess = fork('scripts/importer/import-id.js', args);
+
+      childProcess.on('close', function(code) {
+        if (code != 0) {
+          // first, re-add the id to the queue
+          redisClient.sadd('ids-to-import', id, function (err2) {
+            if (err2) {
+              log.error('Unable to requeue "' + id + '"', err2);
+            }
+
+            log.error('Error processing "' + id + '"'. err);
+            callback(err);
+          });
+
+          return;
+        }
+
+        metrics.files++;
+        workerMetrics.files++;
+
+        importImage(callback);
       });
 
-      destDzi.end(response.dzi);
-
+      childProcess.on('message', function(data) {
+        switch (data.type) {
+          case 'error':
+            log.error(data.message, data.payload);
+            break;
+          case 'log':
+            log[data.level](data.message, data.payload);
+            break;
+          case 'metrics::size':
+            metrics.size += data.size;
+            workerMetrics.size += data.size;
+            break;
+          case 'metrics::blob':
+            metrics.blobs++;
+            workerMetrics.blobs++;
+            break;
+        }
+      });
     });
-  }, function (err) {
-    if (err) {
-      console.error(err);
-    }
-    console.dir(stats);
-  });
-});
+  }
 
+  importImage(next);
+
+}, function(err) {
+  if (err) {
+    log.error(err);
+  }
+
+  metrics.end = new Date().getTime() - metrics.start;
+  log.info('Completed processing jobs in queue', {
+    blobs: metrics.blobs,
+    files: metrics.files,
+    size: prettyBytes(metrics.size),
+    time: metrics.end / 1000 + 's'
+  });
+  process.exit(err ? 1 : 0);
+});

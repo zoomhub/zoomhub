@@ -1,5 +1,4 @@
-var fs = require('fs'),
-    PipeLines = require('pipe-lines');
+var PipeLines = require('pipe-lines');
 
 /**
  * getIds
@@ -8,7 +7,7 @@ var fs = require('fs'),
  * @param path
  * @param callback
  */
-exports.getIds = function (path, callback) {
+exports.getIds = function (stream, callback) {
   var ids = [];
 
   var pipe = new PipeLines();
@@ -16,8 +15,6 @@ exports.getIds = function (path, callback) {
   pipe.on('data', function (data) {
     ids.push(data.toString().split(':')[0]);
   });
-
-  var stream = fs.createReadStream(path);
 
   stream.on('error', function (err) {
     callback(err);

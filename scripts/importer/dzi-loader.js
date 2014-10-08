@@ -11,7 +11,7 @@ var parser = new xml2js.Parser({
   strict: false
 });
 
-exports.getBlobs = function (id, callback) {
+exports.loadDzi = function (id, callback) {
 
   var source = 'http://cache.zoom.it/content/' + id + '.dzi';
 
@@ -28,8 +28,6 @@ exports.getBlobs = function (id, callback) {
 
     parser.parseString(body, function (err, result) {
       if (err || result.ERROR) {
-        console.dir(result);
-        console.log(id);
         return callback(err ? err : new Error('blob not found'));
       }
 
