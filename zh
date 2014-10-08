@@ -1,5 +1,9 @@
 #!/bin/bash
 
+hosts=$2
+if [ -z $2 ]; then
+  hosts=deployment/hosts
+fi
 
 # Commands
 case "$1" in
@@ -10,7 +14,7 @@ run)
     npm start
     ;;
 ping)
-    ansible --user zoomhub --inventory-file deployment/hosts all -m ping
+    ansible --user zoomhub --inventory-file ${hosts} all -m ping
     ;;
 bootstrap)
     # Pre-req: sshpass
@@ -39,14 +43,14 @@ bootstrap)
     fi
 
     echo "Bootstrapping server; enter server’s root password when prompted."
-    ansible-playbook --inventory-file deployment/hosts \
+    ansible-playbook --inventory-file ${hosts} \
                      --ask-pass deployment/bootstrap.yml
     ;;
 setup)
-    ansible-playbook --inventory-file deployment/hosts deployment/setup.yml
+    ansible-playbook --inventory-file ${hosts} deployment/setup.yml
     ;;
 deploy)
-    ansible-playbook --inventory-file deployment/hosts deployment/deploy.yml
+    ansible-playbook --inventory-file ${hosts} deployment/deploy.yml
     ;;
 *)
     echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"
