@@ -118,6 +118,12 @@ module.exports = class Content
     # TODO: We should save our DZIs with their own custom ID (and store that
     # here in our database), to support cache purge/refresh/etc.
     get dzi: ->
+        # Our database files have the DZI info every for image, but we haven't
+        # necessarily copied every image's DZI *files*, so we shouldn't return
+        # the `dzi` property until we do. Fortunately, we track whether we've
+        # copied the files or not with the `ready` property.
+        return if not @ready
+
         raw = @_data.dzi
         return raw if not raw
         clone = {}
