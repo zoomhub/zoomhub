@@ -17,6 +17,18 @@
 #
 # - Adds content-by-url symlinks.
 #
+# Note: for perf and resumability, deletes files from the input dir as it goes.
+# This is the reason for step 1 below, creating a copy.
+#
+# Usage:
+#
+# 1. Unzip zoomhub.zip to a folder named `input-by-id`. (Do this even if this
+#    data has already been unzipped to a `content-by-id` directory.)
+#
+# 2. Run this script.
+#
+# 3. If the script exits prematurely, without outputting "done", re-run.
+#
 
 config = require '../config'
 crypto = require 'crypto'
@@ -25,10 +37,13 @@ flows = require 'streamline/lib/util/flows'
 FS = require 'fs'
 Path = require 'path'
 
-DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'content-by-id'
-DIR_BY_URL_PATH = Path.join config.DATA_DIR, 'content-by-url'
+INPUT_DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'input-by-id'
 
-DIR_PATH_FROM_URL_TO_ID = Path.relative DIR_BY_URL_PATH, DIR_BY_ID_PATH
+OUTPUT_DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'content-by-id'
+OUTPUT_DIR_BY_URL_PATH = Path.join config.DATA_DIR, 'content-by-url'
+
+OUTPUT_DIR_REL_PATH_FROM_URL_TO_ID =
+    Path.relative OUTPUT_DIR_BY_URL_PATH, OUTPUT_DIR_BY_ID_PATH
 
 # How many files to process in parallel:
 NUM_PARALLEL = 100
@@ -36,21 +51,27 @@ NUM_PARALLEL = 100
 # How frequently to log progress:
 LOG_FREQUENCY_SECS = 60
 
-getFilePathForId = (id) ->
+_getFilePathForId = (id, dir) ->
     # NOTE: Since file systems are typically case-insensitive (even though
     # they're case-aware), prefix capital letters with an underscore.
     id = id.replace /([A-Z])/g, '_$1'
-    Path.join DIR_BY_ID_PATH, "#{id}.json"
+    Path.join dir, "#{id}.json"
 
-getFilePathForURL = (url) ->
+getInputFilePathForId = (id) ->
+    _getFilePathForId id, INPUT_DIR_BY_ID_PATH
+
+getOutputFilePathForId = (id) ->
+    _getFilePathForId id, OUTPUT_DIR_BY_ID_PATH
+
+getOutputFilePathForURL = (url) ->
     # Hash the URL, to avoid character or length errors.
     hash = crypto.createHash 'sha256'
     hash.update url
     hash = hash.digest 'hex'
-    Path.join DIR_BY_URL_PATH, "#{hash}.json"
+    Path.join OUTPUT_DIR_BY_URL_PATH, "#{hash}.json"
 
 getIdForFilePath = (path) ->
-    # Reverses the transform done in `getFilePathForId` above.
+    # Reverses the transform done in `_getFilePathForId` above.
     path = path.replace /_([A-Z])/g, '$1'
     Path.basename path, Path.extname path
 
@@ -58,7 +79,7 @@ getIdForFilePath = (path) ->
 # NOTE: This takes up a metric shit ton of memory if lots of files.
 # To compensate, we remove filenames from this array as we process them.
 echo 'Querying content files...'
-idFileNames = FS.readdir DIR_BY_ID_PATH, _
+idFileNames = FS.readdir INPUT_DIR_BY_ID_PATH, _
 totalNumIds = idFileNames.length
 echo "#{totalNumIds} files found."
 
@@ -75,11 +96,12 @@ while idFileNames.length then funnel _, (_) ->
     return if (Path.extname idFileName) isnt '.json'
 
     id = getIdForFilePath idFileName
-    idPath = getFilePathForId id  # full path, not just file name
+    inputIdPath = getInputFilePathForId id
+    outputIdPath = getOutputFilePathForId id
 
     # Massage the data by reading it, modifying it, then writing it back.
     # NOTE: This assumes full knowledge of the starting data.
-    data = JSON.parse FS.readFile idPath, 'utf8', _
+    data = JSON.parse FS.readFile inputIdPath, 'utf8', _
     failed = not (data.width and data.height and data.tileSize) and
         # if we're re-running this after our conversion:
         not (data.dzi?.width and data.dzi?.height and data.dzi?.tileSize)
@@ -99,13 +121,15 @@ while idFileNames.length then funnel _, (_) ->
             tileFormat: data.tileFormat
         } if not failed
     delete data.dzi if failed   # fix bug we made
-    FS.writeFile idPath, (JSON.stringify data, null, 4), _
+    FS.writeFile outputIdPath, (JSON.stringify data, null, 4), _
+    FS.unlink inputIdPath, _
 
     # Generate a content-by-url symlink.
-    urlPath = getFilePathForURL data.url
-    urlToIdPath = Path.join DIR_PATH_FROM_URL_TO_ID, Path.basename idPath
+    outputUrlPath = getOutputFilePathForURL data.url
+    outputUrlToIdPath = Path.join \
+        OUTPUT_DIR_REL_PATH_FROM_URL_TO_ID, Path.basename outputIdPath
     try
-        FS.symlink urlToIdPath, urlPath, _
+        FS.symlink outputUrlToIdPath, outputUrlPath, _
     catch err
         throw err unless err.code is 'EEXIST'
 
