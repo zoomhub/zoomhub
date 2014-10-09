@@ -79,7 +79,7 @@ while idFileNames.length then funnel _, (_) ->
 
     # Massage the data by reading it, modifying it, then writing it back.
     # NOTE: This assumes full knowledge of the starting data.
-    data = require idPath   # require() auto-parses JSON!
+    data = JSON.parse FS.readFile idPath, 'utf8', _
     failed = not (data.width and data.height and data.tileSize) and
         # if we're re-running this after our conversion:
         not (data.dzi?.width and data.dzi?.height and data.dzi?.tileSize)
