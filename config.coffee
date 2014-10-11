@@ -27,6 +27,11 @@ configs = module.exports =
     BASE_URL: "http://localhost:#{PORT}"
 
     #
+    # Base URL of CDN DZI content location
+    #
+    CDN_URL: "http://content.zoomhub.net/dzis"
+
+    #
     # What type of data store to use. Options: 'files', 'redis'.
     # TODO: This probably needs expansion. E.g. if Redis, what URL?
     # (Currently defaults to localhost:6379, with no password.)
