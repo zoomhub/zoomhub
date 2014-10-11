@@ -127,7 +127,7 @@ module.exports = class Content
         raw = @_data.dzi
         return raw if not raw
         clone = {}
-        clone.url = "#{config.BASE_URL}#{config.STATIC_DIR}#{config.DZI_DIR}/#{@id}.dzi"
+        clone.url = "#{config.CDN_URL}#{config.CDN_DZI_DIR}/#{@id}.dzi"
         clone[prop] = val for prop, val of raw
         clone
 
