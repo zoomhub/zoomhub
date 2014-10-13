@@ -11,7 +11,7 @@ SEADRAGON_JS_PATH = Path.join config.STATIC_PATH, 'js', 'openseadragon.min.js'
 QUEUED_DZI_XML_PATH = Path.join config.STATIC_PATH, 'queued.dzi'
 QUEUED_DZI_XML_URL = config.BASE_URL + config.STATIC_DIR + '/queued.dzi'
 
-VIEWER_IMAGES_URL = config.BASE_URL + config.STATIC_DIR + '/js/images/'
+VIEWER_IMAGES_URL = config.BASE_URL + config.STATIC_DIR + '/images/'
 
 CLASS_NAME = '__seadragon'
 
