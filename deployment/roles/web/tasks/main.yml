@@ -25,17 +25,31 @@
 - name: Node.js
   apt: pkg=nodejs=0.10.32-1chl1~precise1 update_cache=yes state=present
 
-- name: update iptables rules file
-  template: src=iptables.rules.j2 dest=/etc/iptables.rules
+# Make sure the firewall comes back after a system restart
+- name: Install persistent iptables
+  apt: pkg=iptables-persistent
 
+# Copy our default rules into the standard location for iptables-persistent
+- name: update iptables rules file
+  template: src=iptables.rules.j2 dest=/etc/iptables/rules.v4
+
+# load the rules in
 - name: update iptables rules
-  shell: iptables-restore < /etc/iptables.rules
+  shell: iptables-restore < /etc/iptables/rules.v4
 
 # Undo with `sudo iptables -t nat -F`
 # Reference: http://www.debian-administration.org/articles/386
 - name: map port 80 to app port
   shell: iptables -t nat -A PREROUTING -i eth0 -p tcp
                   --dport 80 -j REDIRECT --to {{ app_port }}
+
+# Persist rules with our nat change
+- name: Persist the rules
+  shell: iptables-save > /etc/iptables/rules.v4
+
+# run the service to load the saved rules into the manifest
+- name: run the iptables-persistent service
+  service: name=iptables-persistent state=started
 
 - name: create apps root directory
   file: state=directory path={{ apps_root }}
