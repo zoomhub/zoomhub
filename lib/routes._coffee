@@ -91,11 +91,21 @@ processor = new Processor DZI_PATH
 # But supports passing a URL for conversion, via ?url query string param.
 # This was part of Zoom.it's original UI / informal website API.
 #
-@getHomepage = (req, res, _) =>
+@getHomePage = (req, res, _) =>
     if req.query.url
         @submitURL req, res, _
     else
         res.render 'home'
+
+#
+# Pre-reqs: (none)
+#
+# This is for various Zoom.it content pages, e.g. create, about, FAQ, etc.
+#
+@getContentPage = (req, res, _) ->
+    # TEMP: Since we haven't implemented any of these pages, just redirect.
+    # Our logs will tell us which pages are getting requested.
+    res.redirect '/'
 
 #
 # Pre-reqs:
