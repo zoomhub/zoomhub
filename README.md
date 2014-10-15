@@ -1,4 +1,5 @@
 # ZoomHub
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/zoomhub/zoomhub?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This is the beginning of an open-source codebase for a cloud zooming service,
 like [Zoom.it].
