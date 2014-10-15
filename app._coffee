@@ -1,7 +1,8 @@
 # DO NOT REMOVE
-#
-# require 'newrelic' is needed to bootstrap instrumentation into zoomhub
-require 'newrelic'
+# This is needed to bootstrap instrumentation into zoomhub.
+# But it causes an error if not configured (e.g. locally), so check.
+if process.env['NEW_RELIC_APP_NAME']
+    require 'newrelic'
 
 config = require './config'
 express = require 'express-streamline'
