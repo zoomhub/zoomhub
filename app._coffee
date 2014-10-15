@@ -1,4 +1,8 @@
+# DO NOT REMOVE
+#
+# require 'newrelic' is needed to bootstrap instrumentation into zoomhub
 require 'newrelic'
+
 config = require './config'
 express = require 'express-streamline'
 jade = require 'jade'
