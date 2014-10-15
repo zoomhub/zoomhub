@@ -47,10 +47,10 @@ bootstrap)
                      --ask-pass deployment/bootstrap.yml
     ;;
 setup)
-    ansible-playbook --inventory-file ${hosts} deployment/setup.yml
+    ansible-playbook --inventory-file ${hosts} deployment/setup.yml --ask-vault-pass
     ;;
 deploy)
-    ansible-playbook --inventory-file ${hosts} deployment/deploy.yml
+    ansible-playbook --inventory-file ${hosts} deployment/deploy.yml --ask-vault-pass
     ;;
 *)
     echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"

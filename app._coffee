@@ -1,3 +1,4 @@
+require 'newrelic'
 config = require './config'
 express = require 'express-streamline'
 jade = require 'jade'

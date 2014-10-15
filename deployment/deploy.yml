@@ -2,6 +2,8 @@
 - name: deploy latest app code
   hosts: webservers
   remote_user: zoomhub
+  vars_files:
+    - [ 'secrets.yml', 'secrets.vault.yml' ]
   tasks:
   - name: update service upstart script
     sudo: true

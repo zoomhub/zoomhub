@@ -8,6 +8,8 @@ apps_root: /var/apps
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
 app_version: master
+app_environment: production
+new_relic_app_name: '{{ service }}-{{ app_environment }}'
 app_port: 3000
 app_env:
   - NODE_ENV=production
@@ -16,6 +18,9 @@ app_env:
   - DATA_DIR=/var/data/zoomhub
   - HOME={{ admin_home }}
   - EXPRESS_LOGGER_FORMAT=default
+  - NEW_RELIC_APP_NAME={{ new_relic_app_name }}
+  - NEW_RELIC_LICENSE_KEY={{ newrelic_key }}
+  - NEW_RELIC_NO_CONFIG_FILE=true
 app_command: "{{ app_root }}/node_modules/.bin/_coffee --cache {{ app_root }}/app"
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
