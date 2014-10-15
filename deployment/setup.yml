@@ -3,7 +3,7 @@
   hosts: webservers
   remote_user: zoomhub
   vars_files:
-    - vars.yml
+    - [ 'vars.yml', 'vars.default.yml' ]
     - secrets.vault.yml
   sudo: yes
   roles:
