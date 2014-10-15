@@ -59,10 +59,13 @@ app.get '/v1/content/:id', routes.getContentById
 app.get '/v1/content', routes.getContentByURL   # expects ?url param
 
 # UI:
-app.get '/', routes.getHomepage     # this includes ?url support
+app.get '/', routes.getHomePage     # this includes ?url support
+app.get '/pages/*', routes.getContentPage
+
 app.get /^\/https?:\/\/.+/, (req, res, _) ->
     req.params.url = req.url[1..]   # req.url includes the query string
     routes.submitURL req, res, _
+
 app.get '/:id.js', routes.getEmbed
 app.get '/:id', routes.getViewer
 
