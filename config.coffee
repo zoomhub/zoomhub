@@ -29,7 +29,7 @@ configs = module.exports =
     #
     # Base URL of remote DZI content location
     #
-    REMOTE_URL: "http://content.zoomhub.net/dzis"
+    REMOTE_URL: "content.zoomhub.net"
 
     #
     # What type of data store to use. Options: 'files', 'redis'.
