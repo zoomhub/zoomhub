@@ -2,6 +2,8 @@
 - name: setup web servers
   hosts: webservers
   remote_user: zoomhub
+  vars_files:
+  - [ 'secrets.yml', 'secrets.vault.yml' ]
   sudo: yes
   roles:
     - web
