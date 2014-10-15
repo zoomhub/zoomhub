@@ -3,6 +3,23 @@ html(lang="en")
   head
     title
       | Zoom.it
+    link(rel="stylesheet", type="text/css", href="/static/lib/normalize.css")
+    link(rel="stylesheet/less", type="text/css", href="/static/style/main.less")
+    script(src="/static/lib/less-1.7.5.min.js")
   body
-    #container
-      | Zoom.it is under new management; please pardon our dust! For more information, see <a href="https://github.com/zoomhub/zoomhub">https://github.com/zoomhub/zoomhub</a>.
+    .container
+      p
+        | <span class="big">Zoom.it</span> is under new management; please pardon our dust!
+      p
+        | No longer part of Microsoft, Zoom.it is now an open-source project. See <a href="http://zoomhub.org">ZoomHub.org</a> for more information, including <a href="https://github.com/zoomhub/zoomhub/blob/master/API.md">API docs</a>.
+      p
+        | We're <strong>not converting new images</strong> during the transition, but existing images (and their pages and embeds) should work.
+      p
+        | Contact us:
+      ul
+        li
+          | Twitter: <a href="https://twitter.com/zoomhub/">@zoomhub</a>
+        li
+          | Google Groups: <a href="https://groups.google.com/group/zoomhub">ZoomHub</a>
+        li
+          | GitHub: <a href="https://github.com/zoomhub/zoomhub/issues/">ZoomHub Issues</a>
