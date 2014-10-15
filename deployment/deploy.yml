@@ -4,7 +4,7 @@
   remote_user: zoomhub
   vars_files:
     - vars.yml
-    - [ 'secrets.vault.yml' ]
+    - secrets.vault.yml
   tasks:
   - name: update service upstart script
     sudo: true
