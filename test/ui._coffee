@@ -2,11 +2,11 @@ app = require('supertest') require('../app')
 expect = require('chai').expect
 
 
-@['UI'] =
+describe 'UI', ->
 
-    'Homepage':
+    describe 'Homepage', ->
 
-        'should return Zoom.it copy': (_) ->
+        it 'should return Zoom.it copy', (_) ->
             {text} = app.get('/')
                 .expect(200)
                 .end _
