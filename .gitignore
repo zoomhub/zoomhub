@@ -10,6 +10,8 @@ npm-debug.log
 
 # Private
 /deployment/hosts
+/deployment/vars.yml
+/deployment/secrets.yml
 /deployment/hosts.staging
 /deployment/credentials/userpassword
 
