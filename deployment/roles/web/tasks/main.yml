@@ -57,3 +57,4 @@
 
 - name: create log directory
   file: state=directory path={{ log_root }}
+
