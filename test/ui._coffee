@@ -1,5 +1,5 @@
-app = require('supertest') require('../app')
-expect = require('chai').expect
+app = (require 'supertest')(require '../app')
+{expect} = require 'chai'
 
 
 describe 'UI', ->
@@ -7,9 +7,7 @@ describe 'UI', ->
     describe 'Homepage', ->
 
         it 'should return Zoom.it copy', (_) ->
-            {text} = app.get('/')
-                .expect(200)
+            app.get '/'
+                .expect 200
+                .expect /Zoom\.it/i
                 .end _
-
-            expect(text).to.match /Zoom\.it/i
-
