@@ -10,6 +10,13 @@ redis = require 'redis'
 DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'content-by-id'
 DIR_BY_URL_PATH = Path.join config.DATA_DIR, 'content-by-url'
 
+# TODO: this is a short term fix to support the content by url code-path
+# we should remove this when we move to a proper database
+try
+    DATABASE = require Path.join DIR_BY_URL_PATH, 'data.json'
+catch e
+    DATABASE = {}
+
 DIR_PATH_FROM_URL_TO_ID = Path.relative DIR_BY_URL_PATH, DIR_BY_ID_PATH
 
 # TODO: We should be generating random IDs instead of incrementing them.
@@ -37,7 +44,10 @@ getFilePathForId = (id) ->
     Path.join DIR_BY_ID_PATH, "#{id}.json"
 
 getFilePathForURL = (url) ->
-    Path.join DIR_BY_URL_PATH, "#{hashURL url}.json"
+    if idFile = DATABASE["#{hashURL url}.json"]
+        Path.join DIR_BY_ID_PATH, idFile.replace '../content-by-id', ''
+    else
+        ''
 
 getRedisKeyForId = (id) ->
     "content:id:#{id}"
