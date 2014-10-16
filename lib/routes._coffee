@@ -56,7 +56,7 @@ processor = new Processor DZI_PATH
 @getContentByURL = (req, res, _) ->
     url = req.param 'url'
     if not url
-        errorAPI res, 404, Errors.MISSING_ID_OR_URL
+        errorAPI res, 400, Errors.MISSING_ID_OR_URL
         return
     if not validateURL url
         errorAPI res, 400, Errors.MALFORMED_URL
@@ -92,7 +92,7 @@ processor = new Processor DZI_PATH
 # This was part of Zoom.it's original UI / informal website API.
 #
 @getHomePage = (req, res, _) =>
-    if req.query.url
+    if req.query.url?
         @submitURL req, res, _
     else
         res.render 'home'
@@ -138,6 +138,8 @@ processor = new Processor DZI_PATH
 
     content = Content.getById id, _
     if not content?
+        # FIXME: We should still be returning the embed JS here;
+        # it should just display this error message.
         errorHTML res, 404, Errors.NO_CONTENT_WITH_ID.replace '{ID}', id
         return
 
@@ -151,7 +153,7 @@ processor = new Processor DZI_PATH
 @submitURL = (req, res, _) ->
     url = req.param 'url'
     if not url
-        errorHTML res, 404, Errors.MISSING_ID_OR_URL
+        errorHTML res, 400, Errors.MISSING_ID_OR_URL
         return
     if not validateURL url
         errorHTML res, 400, Errors.MALFORMED_URL
