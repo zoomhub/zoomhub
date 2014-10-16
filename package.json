@@ -4,24 +4,6 @@
   "version": "0.0.4",
   "description": "Cloud zooming service",
   "author": "ZoomHub <zoomhub@googlegroups.com>",
-  "contributors": [
-    {
-      "name": "Aseem Kishore",
-      "email": "aseem.kishore@gmail.com"
-    },
-    {
-      "name": "Daniel Gasienica",
-      "email": "daniel@gasienica.ch"
-    },
-    {
-      "name": "Ian Gilman",
-      "email": "ian@iangilman.com"
-    },
-    {
-      "name": "Ken Perkins",
-      "email": "ken.perkins@rackspace.com"
-    }
-  ],
   "main": "./app",
   "dependencies": {
     "coffee-script": "^1.8.0",
