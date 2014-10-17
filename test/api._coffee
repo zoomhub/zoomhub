@@ -65,15 +65,20 @@ expectResponse = (act, exp={}) ->
         delete exp.content  # so it's not deep-equaled below
         expect(act).to.not.have.key 'dzi'
         expect(act).to.not.have.key 'error'
-    if act.dzi
+    else if act.dzi
         expect(act).to.not.have.key 'content'
         expectDzi act.dzi, exp.dzi
         delete exp.dzi  # so it's not deep-equaled below
         expect(act).to.not.have.key 'error'
-    if act.error
+    else if act.error
         expect(act).to.not.have.key 'content'
         expect(act).to.not.have.key 'dzi'
         _expectStringMatching act.error, /.+/
+    else
+        throw new AssertionError "
+            Expected response to have one of `content`, `dzi`, or `error`;
+            none found: #{JSON.stringify act, null, 4}
+        "
 
     _expectPartial act, exp
 
