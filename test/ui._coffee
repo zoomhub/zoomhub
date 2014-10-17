@@ -17,6 +17,7 @@ urls = require './fixtures/urls'
 # Matches e.g. '/Abc123' and captures the ID:
 VIEW_PAGE_REGEX = /// ^/ (\w+) $ ///
 
+# This gets set to a known ID when we create or derive one:
 EXISTING_ID = null
 
 
