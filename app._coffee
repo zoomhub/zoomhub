@@ -43,7 +43,9 @@ app.use express.bodyParser()
 # (we don't need this yet either, but it's also easy and harmless)
 app.use express.compress()
 
-# TODO we'll want middleware to implement CORS eventually.
+# simple impl. of CORS -- allow all origins:
+app.use (req, res, _) ->
+    res.set 'Access-Control-Allow-Origin', '*'
 
 # then run our routes, before the error handler in case there are errors:
 app.use app.router
