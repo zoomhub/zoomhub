@@ -8,6 +8,7 @@ DZIParser = require './dziparser'
 Embed = require './embed'
 Errors = require './errors'
 Fetcher = require './fetcher'
+http = require 'http'
 path = require 'path'
 Processor = require './processor'
 URL = require 'url'
@@ -39,15 +40,17 @@ processor = new Processor DZI_PATH
 @getContentById = (req, res, _) ->
     id = req.param 'id'
     if not id
-        errorAPI res, 404, Errors.MISSING_ID_OR_URL
-        return
+        return respondAPI res,
+            status: 404
+            error: Errors.MISSING_ID_OR_URL
 
     content = Content.getById id, _
     if not content?
-        errorAPI res, 404, Errors.NO_CONTENT_WITH_ID.replace '{ID}', id
-        return
+        return respondAPI res,
+            status: 404
+            error: Errors.NO_CONTENT_WITH_ID.replace '{ID}', id
 
-    res.json 200, content
+    respondAPI res, {status: 200, content}
 
 #
 # Pre-reqs:
@@ -56,11 +59,13 @@ processor = new Processor DZI_PATH
 @getContentByURL = (req, res, _) ->
     url = req.param 'url'
     if not url
-        errorAPI res, 400, Errors.MISSING_ID_OR_URL
-        return
+        return respondAPI res,
+            status: 400
+            error: Errors.MISSING_ID_OR_URL
     if not validateURL url
-        errorAPI res, 400, Errors.MALFORMED_URL
-        return
+        return respondAPI res,
+            status: 400
+            error: Errors.MALFORMED_URL
 
     # Get or create this content, enqueueing it for conversion if it's new.
     # But support us rejecting new content, e.g. if we're overloaded.
@@ -76,11 +81,15 @@ processor = new Processor DZI_PATH
             content or= Content.createFromURL url, _
             enqueueForConversion content
         else
-            errorAPI res, 503, Errors.SERVICE_UNAVAILABLE
-            return
+            return respondAPI res,
+                status: 503
+                error: Errors.SERVICE_UNAVAILABLE
 
     # HACK: Hardcoding knowledge of URL from app._coffee.
-    redirectAPI res, 301, "/v1/content/#{content.id}", content
+    respondAPI res,
+        status: 301
+        redirect: "/v1/content/#{content.id}"
+        content: content
 
 
 ## UI:
@@ -183,12 +192,42 @@ processor = new Processor DZI_PATH
 ## HELPERS:
 
 #
-# Return an API error response with the given status code and message.
+# Returns whether the given request seeks a RESTful or non-RESTful response.
 #
-errorAPI = (res, status, message) ->
-    res.status status
-    res.type 'text/plain'
-    res.send message
+isRESTful = (req) ->
+    # We're RESTful by default, so unless this is a non-RESTful one...
+    # (TODO: Should we be returning an error on unrecognized ?formats?)
+    not (req.query.format or req.query.callback)
+
+#
+# Helper to send API responses in the requested RESTful or non-RESTful format.
+#
+respondAPI = (res, props={}) ->
+    {status, redirect, error, content, dzi} = props
+
+    if isRESTful res.req
+        res.status status
+        res.set 'Location', redirect if redirect
+
+        if error
+            res.type 'text/plain'
+            res.send error
+        else
+            res.json content or dzi
+
+    else
+        # our public API specifies a `statusText` prop:
+        props.statusText = http.STATUS_CODES[status]
+
+        # our public API calls it `redirectLocation`, a little less elegant:
+        if redirect
+            props.redirectLocation = redirect
+            delete props.redirect
+
+        # support JSONP ?callback in the non-RESTful mode:
+        res.jsonp props
+
+    return  # explicitly a void method
 
 #
 # Render an HTML error page with the given status code and message.
@@ -196,14 +235,6 @@ errorAPI = (res, status, message) ->
 errorHTML = (res, status, message) ->
     # TODO: Render nice error view instead of this plaintext error message.
     res.send status, message
-
-#
-# Return a redirect API response with a JSON body for convenience.
-#
-redirectAPI = (res, status, location, body={}) ->
-    res.status status
-    res.set 'Location', location
-    res.json body
 
 #
 # Returns whether the given URL is well-formed or not.

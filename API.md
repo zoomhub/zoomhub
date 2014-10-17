@@ -26,10 +26,6 @@ The API also supports **[JSONP](http://en.wikipedia.org/wiki/JSONP)**,
 which is always returned in the non-RESTful format.
 To request JSONP, add a `?callback` parameter to API URLs.
 
-***TODO:*** *We need to implement both the non-RESTful format and JSONP.*
-
-***TODO:*** *We should also add CORS support, as an alternative to JSONP.*
-
 ### Objects
 
 **DZI** objects have the form:
