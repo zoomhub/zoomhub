@@ -20,6 +20,7 @@ TYPE_TEXT = 'text/plain; charset=utf-8'
 # Matches e.g. '/v1/content/Abc123' and captures the ID:
 CONTENT_BY_ID_REGEX = /// ^/v1/content/ (\w+) $ ///
 
+# This gets set to a known ID when we create or derive one:
 EXISTING_ID = null
 
 #
