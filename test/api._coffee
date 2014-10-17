@@ -290,3 +290,12 @@ describe 'API /v1/content', ->
                 status: 400
                 statusText: /Bad Request/i
                 error: /Missing/i
+
+    describe 'CORS', ->
+
+        it 'should allow all origins', (_) ->
+            app.get '/v1/content?url=&format=json'
+                .set 'Origin', 'http://example.com'
+                .expect 200
+                .expect 'Access-Control-Allow-Origin', '*'
+                .end _
