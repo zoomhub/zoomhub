@@ -6,6 +6,11 @@ case-insensitive filesystems.)
 
 Example data follows.
 
+**TEMP:** We are temporarily checking these files into the git repo,
+in order to test lookups of existing URLs (that are known in the local db).
+We can/should remove these files (and update our tests) once we have
+new content acceptance hooked up.
+
 `100.json`:
 
 ```json

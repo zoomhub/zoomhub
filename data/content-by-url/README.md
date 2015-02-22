@@ -30,3 +30,11 @@ JSON dictionary. Save this to `data.json`:
     "f47ebb016118ec8733629bf2bee23d3838dec72f03c4e72de871b5f5cab99e29.json": "../content-by-id/100.json"
 }
 ```
+
+**TEMP:** We are temporarily checking this data file into the git repo,
+in order to test lookups of existing content (that are known in the local db).
+We can/should remove these files (and update our tests) once we have
+new content acceptance hooked up.
+
+**TODO:** We should also update this checked-in data file to symlinks
+once we [return to symlinks](https://github.com/zoomhub/zoomhub/issues/95).
