@@ -44,6 +44,12 @@ configs = module.exports =
     CONTENT_DZIS_PREFIX: 'dzis-dev/'
 
     #
+    # The Cloud Files region, S3 region, etc. where our content lives.
+    # E.g. http://www.rackspace.com/knowledge_center/article/about-regions
+    #
+    CONTENT_REGION: 'IAD'
+
+    #
     # The string API key for our Rackspace account.
     # This should *not* be checked in unencrypted!
     # Provide this via an environment variable.
