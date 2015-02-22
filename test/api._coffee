@@ -102,9 +102,21 @@ expectContent = (act, exp={}) ->
     _expectAbsoluteURL act.shareUrl
     _expectStringMatching act.embedHtml, /// ^<script .+></script>$ ///
 
-    if act.ready or act.dzi
+    # content should either be `ready`, `failed`, or neither:
+    if act.ready or act.dzi     # both should be true together
+        expect(act.ready).to.equal true
+        expect(act.failed).to.equal false
+        expect(act.progress).to.equal 1
         expectDZI act.dzi, exp.dzi
         delete exp.dzi  # so it's not deep-equaled below
+    else if act.failed
+        expect(act.ready).to.equal false
+        expect(act.failed).to.equal true
+        expect(act).to.not.have.key 'dzi'
+    else
+        expect(act.ready).to.equal false
+        expect(act.failed).to.equal false
+        expect(act).to.not.have.key 'dzi'
 
     _expectPartial act, exp
 
