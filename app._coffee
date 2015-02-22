@@ -29,7 +29,7 @@ app.use express.favicon()   # will use default favicon since we don't specify
 
 # serve static files (and register DZI as an XML type):
 express.static.mime.types.dzi = 'application/xml'
-app.use config.STATIC_DIR, express.static config.STATIC_PATH
+app.use config.STATIC_URL_PATH, express.static config.STATIC_FILE_PATH
 
 # otherwise, log all requests:
 app.use express.logger config.EXPRESS_LOGGER_FORMAT
