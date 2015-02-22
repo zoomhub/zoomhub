@@ -3,73 +3,46 @@
 [![Build Status](https://travis-ci.org/zoomhub/zoomhub.svg?branch=master)](https://travis-ci.org/zoomhub/zoomhub)
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/zoomhub/zoomhub?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-This is the beginning of an open-source codebase for a cloud zooming service,
-like [Zoom.it].
+An open-source cloud service for viewing arbitrarily hi-res zoomable images.
+
+Inspired by, and has taken over, the similar former Microsoft service
+**[Zoom.it](http://zoom.it/)**.
+This is a full from-scratch rewrite, brought to you by the same developers who
+built the original Zoom.it.
 
 
-## Contributing
+## Usage
 
-See [CONTRIBUTING.md] for details.
+This service is running live at **[zoom.it](http://zoom.it/)**.
+We aren't accepting any new content for now, but all old Zoom.it content
+should continue to work.
 
+This service also includes a REST API, available at **`api.zoom.it`**
+(e.g. [`/v1/content/4rcn`](http://api.zoom.it/v1/content/4rcn)),
+which includes most of the functionality from the original Zoom.it API.
+For details and API documentation, see **[API.md](./API.md)**.
 
-## Setup
+You can also run this code and host the service on your own.
+The codebase is still a work-in-progress, and probably a bit tied to our own
+deployment currently, but we can try to help you if you need.
 
--   [Install Node.js][node-installation].
--   [Install Redis][redis].
--   Install dependencies: `./zh install`
-
-
-## Optional Prerequisites
-
--   [Ansible][ansible-installation] for deployment.
--   [pip] for installing `passlib` (see below).
--   Python `passlib` for generating passwords: `pip install passlib`.
-
-
-## API
-
-See: [API »](./API.md)
+If you wish to run this on your own, or to contribute to our development,
+please see **[CONTRIBUTING.md](./CONTRIBUTING.md)** for instructions.
 
 
-## Embedding with OpenSeadragon
+## Discussion
 
-As it currently stands, the embed code needs to read an existing DZI. From the
-information contained in the DZI, it instantiates an OpenSeadragon viewer and
-attaches that to its own element in the DOM of the webpage that the embed is placed in.
+You can join our [Google Group](https://groups.google.com/group/zoomhub)
+or email us at [zoomhub@googlegroups.com](mailto:zoomhub@googlegroups.com).
 
 
-## Administation
+## Issues
 
-### Prerequisites
-
--   Copy `deployment/hosts.sample` to `deployment/hosts` and replace
-    `localhost` with your server IP.
--   Copy `credentials/userpassword.sample` to
-    `deployment/credentials/userpassword` and paste in your password.
-
-### Commands
-
-`zh` is a script for managing ZoomHub. Currently, we support the following
-commands:
-
--   `./zh install`: Install dependencies.
--   `./zh run`: Run app locally.
--   `./zh bootstrap`: Bootstrap server(s); only required once per user.
--   `./zh ping`: Ping production machines.
--   `./zh setup`: Setup server(s).
--   `./zh deploy`: Deploy latest app code from Git.
+Feel free to file bugs, request features, and ask questions on
+[GitHub Issues](https://github.com/zoomhub/zoomhub/issues).
+That's also where we're tracking TODOs and remaining work.
 
 
 ## License
 
-The MIT License. See [LICENSE][] file.
-
-
-
-[ansible-installation]: http://www.ansibleworks.com/docs/intro_installation.html
-[CONTRIBUTING.md]: CONTRIBUTING.md
-[LICENSE]: LICENSE
-[node-installation]: http://nodejs.org/download/
-[pip]: https://pypi.python.org/pypi/pip
-[redis]: http://redis.io/
-[Zoom.it]: http://zoom.it/
+This code is open-source under the [MIT license](./LICENSE).
