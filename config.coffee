@@ -50,6 +50,11 @@ configs = module.exports =
     CONTENT_REGION: 'IAD'
 
     #
+    # The username for the account that owns our content storage.
+    #
+    RACKSPACE_USERNAME: 'zoomingservice'
+
+    #
     # The string API key for our Rackspace account.
     # This should *not* be checked in unencrypted!
     # Provide this via an environment variable.
