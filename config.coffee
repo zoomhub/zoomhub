@@ -27,9 +27,9 @@ configs = module.exports =
     BASE_URL: "http://localhost:#{PORT}"
 
     #
-    # Base URL of remote DZI content location
+    # Base URL of our CDN'ed content.
     #
-    REMOTE_URL: 'content.zoomhub.net'
+    CONTENT_CDN_URL: 'http://content.zoomhub.net'
 
     #
     # What type of data store to use. Options: 'files', 'redis'.

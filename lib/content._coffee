@@ -3,6 +3,7 @@ crypto = require 'crypto'
 FS = require 'fs'
 Path = require 'path'
 redis = require 'redis'
+URL = require 'url'
 
 
 ## HELPERS
@@ -137,7 +138,7 @@ module.exports = class Content
         raw = @_data.dzi
         return raw if not raw
         clone = {}
-        clone.url = "http://#{config.REMOTE_URL}/dzis/#{@id}.dzi"
+        clone.url = URL.resolve config.CONTENT_CDN_URL, "dzis/#{@id}.dzi"
         clone[prop] = val for prop, val of raw
         clone
 
