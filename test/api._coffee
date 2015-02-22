@@ -220,6 +220,7 @@ describe 'API /v1/content', ->
         # TODO: Need reliable existing image across local dev envs.
         it.skip 'should redirect existing HTTP URLs to view page', (_) ->
             resp = app.get "/v1/content?url=#{encodeURIComponent urls.IMAGE}"
+                .redirects 0
                 .expect 301
                 .expect 'Location', CONTENT_BY_ID_REGEX
                 .expect 'Content-Type', TYPE_JSON
