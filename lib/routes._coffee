@@ -75,6 +75,10 @@ processor = new Processor DZI_DIR_PATH
     # both our API and our website. But in order to do that, we'd want it to
     # throw semantic error codes, so that error handling can remain custom.
     #
+    # TODO: Should this get-or-create also be atomic? At the very least,
+    # we may want to guard against race conditions from concurrent calls,
+    # since the "create" step involves creating a new (random) ID.
+    #
     content = Content.getByURL url, _
     if not content
         if config.ALLOW_NEW_CONTENT
