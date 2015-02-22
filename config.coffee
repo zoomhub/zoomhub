@@ -35,7 +35,7 @@ configs = module.exports =
     # The prefix to attach to all DZI file paths in our content storage.
     # If this is a directory, it should include the trailing slash.
     #
-    CONTENT_DZIS_PREFIX: 'dzis/'
+    CONTENT_DZIS_PREFIX: 'dzis-dev/'
 
     #
     # The string API key for our Rackspace account.
