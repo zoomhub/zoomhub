@@ -1,6 +1,5 @@
 fs = require 'fs'
 xml2js = require 'xml2js'
-processor = require './processor'
 
 #Public API
 module.exports = class DZIParser
