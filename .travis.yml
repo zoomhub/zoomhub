@@ -2,6 +2,12 @@ language: node_js
 node_js:
   - '0.10'
 
+# Don't CI feature branches, but note that this *does* CI PR merge commits --
+# including before they're made.
+branches:
+  only:
+    - master
+
 notifications:
   webhooks:
     urls:
