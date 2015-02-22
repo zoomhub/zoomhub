@@ -32,6 +32,12 @@ configs = module.exports =
     CONTENT_CDN_URL: 'http://content.zoomhub.net'
 
     #
+    # The name of the storage container holding our content.
+    # E.g. on Rackspace Cloud Files, or Azure Blob Storage, or Amazon S3, etc.
+    #
+    CONTENT_CONTAINER_NAME: 'content'
+
+    #
     # The prefix to attach to all DZI file paths in our content storage.
     # If this is a directory, it should include the trailing slash.
     #
