@@ -13,7 +13,16 @@ replaceProtocol = (url, str) ->
 
 ## Public
 
-@IMAGE = 'http://openseadragon.github.io/example-images/highsmith/09250_150px.jpg'
+# TEMP: Using URLs that we *know* we have (even locally) or don't have.
+# Ideally, we wouldn't rely on external URLs for our tests, but we have to for
+# now since we don't have new URL acceptance hooked up yet.
+@IMAGE_NEW =
+    'http://openseadragon.github.io/example-images/highsmith/09250_150px.jpg'
+@IMAGE_CONVERTED =
+    'http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg'
+@IMAGE_QUEUED =
+    'http://wdh.blob.core.windows.net/deepzoom-sources/hampi/HampiCB/02-Lakshmi,%20The%20Temple%20Elephant/09-Lakshmi%20and%20little%20girl.jpg'
+# TODO: IMAGE_FAILED? Etc.
 
 @WEBPAGE = 'http://www.example.com/'
 
@@ -27,9 +36,9 @@ replaceProtocol = (url, str) ->
 
 @MALFORMED = 'lasjdoasj)(¨‚Ô‚ˆÔ∏ŒÂ;sd)'
 
-@NO_PROTOCOL = replaceProtocol @IMAGE, ''   # www.example.com/...
+@NO_PROTOCOL = replaceProtocol @IMAGE_NEW, ''   # www.example.com/...
 
-@NON_HTTP = replaceProtocol @IMAGE, 'ftp://'    # ftp://www.example.com/...
+@NON_HTTP = replaceProtocol @IMAGE_NEW, 'ftp://'    # ftp://www.example.com/...
 
 #
 # Helper to randomize the given URL, to generate a new (unseen) one.

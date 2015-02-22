@@ -14,7 +14,7 @@ ln -s ../content-by-id/100_U.json \
 ln -s ../content-by-id/4rcn.json \
     02e584171d18e29140e98f0d3a1793317c433b4473e743112444118ad125aa18.json
 ln -s ../content-by-id/hdfm.json \
-    6657e8324c34b05a98587e09d376b3b72f2b4e26e95a24bdf626bf9837f83f80.json
+    ca896364115afba10473c4e86b43c939a6265f0afb3c26a74d0fa861678e24df.json
 ```
 
 TEMP: [For now][01d9bf3], we actually store these symlinks as one giant
@@ -26,7 +26,15 @@ JSON dictionary. Save this to `data.json`:
 {
     "02e584171d18e29140e98f0d3a1793317c433b4473e743112444118ad125aa18.json": "../content-by-id/4rcn.json",
     "62cc9aec7e8bf5b3c7ecb452ac1e8e41848757279f0acb76475cb0dd5a2311bf.json": "../content-by-id/100_U.json",
-    "6657e8324c34b05a98587e09d376b3b72f2b4e26e95a24bdf626bf9837f83f80.json": "../content-by-id/hdfm.json",
+    "ca896364115afba10473c4e86b43c939a6265f0afb3c26a74d0fa861678e24df.json": "../content-by-id/hdfm.json",
     "f47ebb016118ec8733629bf2bee23d3838dec72f03c4e72de871b5f5cab99e29.json": "../content-by-id/100.json"
 }
 ```
+
+**TEMP:** We are temporarily checking this data file into the git repo,
+in order to test lookups of existing content (that are known in the local db).
+We can/should remove these files (and update our tests) once we have
+new content acceptance hooked up.
+
+**TODO:** We should also update this checked-in data file to symlinks
+once we [return to symlinks](https://github.com/zoomhub/zoomhub/issues/95).
