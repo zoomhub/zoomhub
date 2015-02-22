@@ -246,3 +246,74 @@ module.exports = class Content
             FS.symlink urlToIdPath, urlPath, _
 
         content
+
+
+## TEMP
+
+#
+# Traverse our giant in-memory dictionary of URL symlinks, and persist the
+# symlinks to disk instead. Do this in the background, async'ly.
+#
+# As we go, we also remove the symlinks from our in-memory dictionary,
+# and on a timer, keep flushing the trimmed results to disk, for resumability.
+#
+# https://github.com/zoomhub/zoomhub/issues/95
+#
+# NOTE: During development, this will trigger a node-dev restart every time we
+# update the file on disk. That's okay for now.
+#
+
+FLUSH_INTERVAL = 60 * 1000  # every min, since JSON.stringify could be expensive
+
+doneExtracting = false
+numExtracted = 0
+numFailed = 0
+
+# Allows a symlink to already exist, in case we need to resume mid-progress.
+trySymlink = (urlToIdPath, urlPath, _) ->
+    try
+        FS.symlink urlToIdPath, urlPath, _
+    catch err
+        throw err unless err.code is 'EEXIST'
+
+tryExtractEntry = (urlFilename, urlToIdPath, _) ->
+    try
+        urlPath = Path.join DIR_BY_URL_PATH, urlFilename
+        trySymlink urlToIdPath, urlPath, _
+        delete URL_TO_ID_PATHS[urlFilename]
+        numExtracted++
+    catch err
+        numFailed++
+        console.error '(Async) Error extracting URL-to-ID entry!
+            urlFilename=%j, urlToIdPath=%j, error=%s',
+            urlFilename, urlToIdPath, err.stack or err
+
+tryUpdateFile = (_) ->
+    try
+        # Explicitly stringifying with newlines, for easier handling of large file:
+        json = JSON.stringify URL_TO_ID_PATHS, null, 2
+        FS.writeFile URL_TO_ID_DATA_FILE_PATH, json, _
+        console.log '(Async) Updated URL-to-ID data file.
+            numExtracted=%d, numFailed=%d', numExtracted, numFailed
+    catch err
+        console.log '(Async) Error updating URL-to-ID data file!
+            numExtracted=%d, numFailed=%d, error=%s',
+            numExtracted, numFailed, err.stack or err
+
+# This pattern is for defining a Streamline function but executing it async'ly.
+# Normally, we should be handling async errors, but we know our function above
+# already does that. This loop will run async'ly in the background.
+do (_=!_) ->
+    for urlFilename, urlToIdPath of URL_TO_ID_PATHS
+        tryExtractEntry urlFilename, urlToIdPath, _
+
+    doneExtracting = true
+    console.log '(Async) Done extracting URL-to-ID entries!
+        numExtracted=%d, numFailed=%d', numExtracted, numFailed
+
+# This loop will also run async'ly in the background, in parallel.
+do (_=!_) ->
+    loop
+        setTimeout _, FLUSH_INTERVAL
+        tryUpdateFile _
+        break if doneExtracting
