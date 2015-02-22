@@ -1,17 +1,11 @@
 ## Development
 
-This app is built on [Node.js] and [Redis]. Install [Redis] and the latest
-stable build of [Node.js] (v0.10.x currently), which should install npm, then
-run:
+This app is built on [Node.js](http://nodejs.org/), currently v0.10.
 
 ```bash
+git clone https://github.com/zoomhub/zoomhub.git
+cd zoomhub
 npm install
-```
-
-Start [Redis] server in separate Terminal window:
-
-```bash
-redis-server
 ```
 
 To start the server, run:
@@ -35,6 +29,8 @@ Portions of this code use [CoffeeScript](http://coffeescript.org/) and/or
 [Streamline](https://github.com/Sage/streamlinejs) for now, but we're open to
 changing that as this project matures and expands.
 
+### Debugging
+
 To debug via [node-inspector](https://github.com/node-inspector/node-inspector),
 run:
 
@@ -53,17 +49,23 @@ always right now. We'll figure out a way to turn that on/off down the road.
 To set a breakpoint from code, you can just write the `debugger` keyword.
 
 
-## Discussion
+## Administation
 
-You can join our [Google Group](https://groups.google.com/group/zoomhub) or
-email us at [zoomhub@googlegroups.com](mailto:zoomhub@googlegroups.com).
+### Prerequisites
 
+-   Install [Ansible](http://docs.ansible.com/).
+-   Install [pip](https://pypi.python.org/pypi/pip).
+-   Copy `deployment/hosts.sample` to `deployment/hosts` and replace
+    `localhost` with your server IP.
+-   Copy `credentials/userpassword.sample` to
+    `deployment/credentials/userpassword` and paste in your password.
 
-## Issues
+### Commands
 
-Feel free to file issues in [GitHub Issues](https://github.com/zoomhub/zoomhub/issues).
-That's also where we're tracking TODOs and remaining work.
+`zh` is a script for managing ZoomHub. Currently, we support the following
+commands:
 
-
-[Node.js]: http://nodejs.org/
-[Redis]: http://redis.io/
+-   `./zh bootstrap`: Bootstrap server(s); only required once per user.
+-   `./zh ping`: Ping production machines.
+-   `./zh setup`: Setup server(s).
+-   `./zh deploy`: Deploy latest app code from Git.
