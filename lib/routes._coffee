@@ -7,22 +7,10 @@ Content = require './content'
 DZIParser = require './dziparser'
 Embed = require './embed'
 Errors = require './errors'
-Fetcher = require './fetcher'
 http = require 'http'
 path = require 'path'
-Processor = require './processor'
 URL = require 'url'
-
-# Constants
-PIPELINE_PATH = path.join __dirname, '..', 'pipeline'
-
-# Fetcher
-FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
-fetcher = new Fetcher FETCHER_PATH
-
-# Processor
-DZI_DIR_PATH = path.join config.STATIC_FILE_PATH, config.DZI_SUBDIR_PATH
-processor = new Processor DZI_DIR_PATH
+Worker = require './worker'
 
 
 ## META:
@@ -262,26 +250,7 @@ validateURL = (url) ->
 enqueueForConversion = (content) ->
     # TODO: We should properly use a queue and workers for conversion!
     # For now, converting directly on our web servers.
-    convertContent content, (err) ->
-        if err
-            console.error "(Async) Error converting content!
-                (ID: #{content.id}) #{err.stack or err}"
-        else
-            console.log "(Async) Successfully converted content.
-                (ID: #{content.id})"
-
-#
-# Converts the given content.
-#
-# TODO: Should this be abstracted away in a more business logic layer?
-# Rather than this file which defines API & website routes?
-#
-convertContent = (content, _) ->
-    try
-        source = fetcher.fetch content, _
-        destination = processor.process source, _
-        dzi = DZIParser.parse destination, _
-        content.markReady dzi, _
-    catch err
-        content.markFailed _
-        throw err
+    Worker.process content, (err) ->
+        # The worker takes care of logging, and promises not to throw errors,
+        # so the only thing we should do here is fail fast if any error.
+        throw err if err

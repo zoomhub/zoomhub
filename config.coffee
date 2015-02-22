@@ -54,11 +54,6 @@ configs = module.exports =
     STATIC_FILE_PATH: path.join __dirname, 'public'
 
     #
-    # Subdirectory for DZIs under the static asset tree
-    #
-    DZI_SUBDIR_PATH: '/dzi'
-
-    #
     # Whether to allow new content or not.
     # Set to false when under load or having issues.
     #
