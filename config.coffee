@@ -32,6 +32,13 @@ configs = module.exports =
     CONTENT_CDN_URL: 'http://content.zoomhub.net'
 
     #
+    # The string API key for our Rackspace account.
+    # This should *not* be checked in unencrypted!
+    # Provide this via an environment variable.
+    #
+    RACKSPACE_API_KEY: null
+
+    #
     # What type of data store to use. Options: 'files', 'redis'.
     # TODO: This probably needs expansion. E.g. if Redis, what URL?
     # (Currently defaults to localhost:6379, with no password.)

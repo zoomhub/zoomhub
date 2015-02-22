@@ -23,6 +23,7 @@ app_env:
   - NEW_RELIC_NO_CONFIG_FILE=true
   # TODO figure out a permanent location for the newrelic log
   - NEW_RELIC_LOG=/home/zoomhub/newrelic.log
+  - RACKSPACE_API_KEY={{ rackspace_api_key }}
 app_command: "{{ app_root }}/node_modules/.bin/_coffee --cache {{ app_root }}/app"
 log_root: '/var/log/{{ service }}'
 log_path: '/var/log/{{ service }}/{{ service }}.log'
