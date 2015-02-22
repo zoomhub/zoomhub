@@ -7,7 +7,7 @@
   "main": "./app",
   "dependencies": {
     "coffee-script": "^1.8.0",
-    "deepzoomtools": "0.0.5",
+    "deepzoomtools": "^0.0.8",
     "express": "^3.3.7",
     "express-streamline": "^0.5.1",
     "fs-extra": "^0.16.3",
