@@ -29,7 +29,7 @@ configs = module.exports =
     #
     # Base URL of remote DZI content location
     #
-    REMOTE_URL: "content.zoomhub.net"
+    REMOTE_URL: 'content.zoomhub.net'
 
     #
     # What type of data store to use. Options: 'files', 'redis'.
@@ -46,17 +46,17 @@ configs = module.exports =
     #
     # URL path for static assets
     #
-    STATIC_DIR: "/static"
+    STATIC_URL_PATH: '/static'
 
     #
     # File system path for static assets
     #
-    STATIC_PATH: path.join __dirname, 'public'
+    STATIC_FILE_PATH: path.join __dirname, 'public'
 
     #
     # Subdirectory for DZIs under the static asset tree
     #
-    DZI_DIR: "/dzi"
+    DZI_SUBDIR_PATH: '/dzi'
 
     #
     # Whether to allow new content or not.

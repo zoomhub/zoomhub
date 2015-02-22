@@ -21,8 +21,8 @@ FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
 fetcher = new Fetcher FETCHER_PATH
 
 # Processor
-DZI_PATH = path.join config.STATIC_PATH, config.DZI_DIR
-processor = new Processor DZI_PATH
+DZI_DIR_PATH = path.join config.STATIC_FILE_PATH, config.DZI_SUBDIR_PATH
+processor = new Processor DZI_DIR_PATH
 
 
 ## META:

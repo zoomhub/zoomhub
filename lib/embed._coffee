@@ -6,10 +6,11 @@ dziparser = require './dziparser'
 
 ## CONSTANTS
 
-SEADRAGON_JS_PATH = Path.join config.STATIC_PATH, 'lib', 'openseadragon', 'openseadragon.min.js'
+SEADRAGON_JS_FILE_PATH = Path.join config.STATIC_FILE_PATH,
+    'lib', 'openseadragon', 'openseadragon.min.js'
 
-QUEUED_DZI_XML_PATH = Path.join config.STATIC_PATH, 'queued.dzi'
-QUEUED_DZI_XML_URL = config.BASE_URL + config.STATIC_DIR + '/queued.dzi'
+QUEUED_DZI_XML_FILE_PATH = Path.join config.STATIC_FILE_PATH, 'queued.dzi'
+QUEUED_DZI_XML_URL = config.BASE_URL + config.STATIC_URL_PATH + '/queued.dzi'
 
 VIEWER_IMAGES_URL = 'http://' + config.REMOTE_URL + '/openseadragon-images/'
 
@@ -27,7 +28,7 @@ getRandomId = ->
 createTileSourceBlock = (dzi, opts={}, _) ->
     # HACK: If the DZI isn't ready yet, use our stand-in "queued" DZI:
     if not dzi?.url
-        dzi = dziparser.parse QUEUED_DZI_XML_PATH, _
+        dzi = dziparser.parse QUEUED_DZI_XML_FILE_PATH, _
         dzi.url = QUEUED_DZI_XML_URL
 
     tileSource =
@@ -86,6 +87,6 @@ createTileSourceBlock = (dzi, opts={}, _) ->
 
 @generate = (content, _, opts={}) ->
     result = [
-        fs.readFile SEADRAGON_JS_PATH, _
+        fs.readFile SEADRAGON_JS_FILE_PATH, _
         createTileSourceBlock content.dzi, opts, _
     ].join ';\n'
