@@ -38,6 +38,7 @@ describe 'UI', ->
         # TEMP
         it 'should redirect to the homepage for now', (_) ->
             app.get '/pages/about'
+                .redirects 0
                 .expect 302
                 .expect 'Location', '/'
                 .end _
@@ -47,6 +48,7 @@ describe 'UI', ->
         # TEMP
         it 'should redirect to the homepage for now', (_) ->
             app.get '/pages/create'
+                .redirects 0
                 .expect 302
                 .expect 'Location', '/'
                 .end _
@@ -87,6 +89,7 @@ describe 'UI', ->
         # TODO: Need reliable existing image across local dev envs.
         it.skip 'should redirect existing HTTP URLs to view page', (_) ->
             resp = app.get "/?url=#{encodeURIComponent urls.IMAGE}"
+                .redirects 0
                 .expect 301
                 .expect 'Location', VIEW_PAGE_REGEX
                 .end _
