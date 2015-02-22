@@ -22,8 +22,9 @@ TYPE_TEXT = 'text/plain; charset=utf-8'
 # Matches e.g. '/v1/content/Abc123' and captures the ID:
 CONTENT_BY_ID_REGEX = /// ^/v1/content/ (\w+) $ ///
 
-# This gets set to a known ID when we create or derive one:
-EXISTING_ID = null
+# These get set to known IDs when we create or derive them:
+EXISTING_CONVERTED_ID = null
+EXISTING_QUEUED_ID = null
 
 #
 # Asserts that the given actual *text string* is a valid JSONP response,
@@ -211,39 +212,81 @@ describe 'API /v1/content', ->
 
         # TEMP
         it 'should reject new HTTP URLs for now', (_) ->
-            app.get "/v1/content?url=#{encodeURIComponent urls.randomize urls.IMAGE}"
+            app.get "/v1/content?url=#{encodeURIComponent urls.randomize urls.IMAGE_NEW}"
                 .expect 503
                 .expect 'Content-Type', TYPE_TEXT
                 .expect /Please wait/i
                 .end _
 
         # TODO: Need reliable existing image across local dev envs.
-        it.skip 'should redirect existing HTTP URLs to view page', (_) ->
-            resp = app.get "/v1/content?url=#{encodeURIComponent urls.IMAGE}"
+        it 'should redirect existing (converted) HTTP URLs to ID', (_) ->
+            resp = app.get "/v1/content?url=#{encodeURIComponent urls.IMAGE_CONVERTED}"
                 .redirects 0
                 .expect 301
                 .expect 'Location', CONTENT_BY_ID_REGEX
                 .expect 'Content-Type', TYPE_JSON
                 .end _
 
-            EXISTING_ID = (resp.headers.location.match CONTENT_BY_ID_REGEX)[1]
+            EXISTING_CONVERTED_ID =
+                (resp.headers.location.match CONTENT_BY_ID_REGEX)[1]
 
             # the response body should also be the info for convenience:
             expectContent resp.body,
-                id: EXISTING_ID
-                url: urls.IMAGE
+                id: EXISTING_CONVERTED_ID
+                url: urls.IMAGE_CONVERTED
+
+            expect(resp.body.ready).to.equal true
+            # expectContent takes care of expecting `dzi`, etc., in this case.
+
+        # TODO: Need reliable existing image across local dev envs.
+        it 'should redirect existing (queued) HTTP URLs to ID', (_) ->
+            resp = app.get "/v1/content?url=#{encodeURIComponent urls.IMAGE_QUEUED}"
+                .redirects 0
+                .expect 301
+                .expect 'Location', CONTENT_BY_ID_REGEX
+                .expect 'Content-Type', TYPE_JSON
+                .end _
+
+            EXISTING_QUEUED_ID =
+                (resp.headers.location.match CONTENT_BY_ID_REGEX)[1]
+
+            # the response body should also be the info for convenience:
+            expectContent resp.body,
+                id: EXISTING_QUEUED_ID
+                url: urls.IMAGE_QUEUED
+
+            expect(resp.body.ready).to.equal false
+            expect(resp.body.failed).to.equal false
 
     describe 'Get by ID', ->
 
         # TODO: Need reliable existing image across local dev envs.
-        it.skip 'should return viewer for existing image', (_) ->
-            resp = app.get "/v1/content/#{EXISTING_ID}"
+        it 'should return info for existing (converted) image', (_) ->
+            resp = app.get "/v1/content/#{EXISTING_CONVERTED_ID}"
                 .expect 200
                 .expect 'Content-Type', TYPE_JSON
                 .end _
 
             expectContent resp.body,
-                id: EXISTING_ID
+                id: EXISTING_CONVERTED_ID
+                url: urls.IMAGE_CONVERTED
+
+            expect(resp.body.ready).to.equal true
+            # expectContent takes care of expecting `dzi`, etc., in this case.
+
+        # TODO: Need reliable existing image across local dev envs.
+        it 'should return info for existing (queued) image', (_) ->
+            resp = app.get "/v1/content/#{EXISTING_QUEUED_ID}"
+                .expect 200
+                .expect 'Content-Type', TYPE_JSON
+                .end _
+
+            expectContent resp.body,
+                id: EXISTING_QUEUED_ID
+                url: urls.IMAGE_QUEUED
+
+            expect(resp.body.ready).to.equal false
+            expect(resp.body.failed).to.equal false
 
         it 'should return 404 for non-existent image', (_) ->
             app.get '/v1/content/99999999'
@@ -255,8 +298,8 @@ describe 'API /v1/content', ->
     describe 'Non-RESTful', ->
 
         # TODO: Need reliable existing image across local dev envs.
-        it.skip 'should properly wrap 200 success responses', (_) ->
-            {body} = app.get "/v1/content/#{EXISTING_ID}?format=json"
+        it 'should properly wrap 200 success responses', (_) ->
+            {body} = app.get "/v1/content/#{EXISTING_CONVERTED_ID}?format=json"
                 .expect 200
                 .expect 'Content-Type', TYPE_JSON
                 .end _
@@ -265,12 +308,13 @@ describe 'API /v1/content', ->
                 status: 200
                 statusText: /OK/i
                 content:
-                    id: EXISTING_ID
+                    id: EXISTING_CONVERTED_ID
+                    url: urls.IMAGE_CONVERTED
 
         # TODO: Need reliable existing image across local dev envs.
-        it.skip 'should properly wrap 301 redirect responses', (_) ->
+        it 'should properly wrap 301 redirect responses', (_) ->
             {body} = app.get "/v1/content\
-                    ?url=#{encodeURIComponent urls.IMAGE}&format=json"
+                    ?url=#{encodeURIComponent urls.IMAGE_QUEUED}&format=json"
                 .expect 200
                 .expect 'Content-Type', TYPE_JSON
                 .end _
@@ -280,7 +324,8 @@ describe 'API /v1/content', ->
                 statusText: /Moved Permanently/i
                 redirectLocation: CONTENT_BY_ID_REGEX
                 content:
-                    url: urls.IMAGE
+                    id: EXISTING_QUEUED_ID
+                    url: urls.IMAGE_QUEUED
 
         it 'should properly wrap 400 error responses', (_) ->
             {body} = app.get '/v1/content?url=&format=json'

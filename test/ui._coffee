@@ -14,11 +14,14 @@ urls = require './fixtures/urls'
 
 ## Helpers
 
+TYPE_JS = 'application/javascript; charset=utf-8'
+
 # Matches e.g. '/Abc123' and captures the ID:
 VIEW_PAGE_REGEX = /// ^/ (\w+) $ ///
 
-# This gets set to a known ID when we create or derive one:
-EXISTING_ID = null
+# These get set to known IDs when we create or derive them:
+EXISTING_CONVERTED_ID = null
+EXISTING_QUEUED_ID = null
 
 
 ## Tests
@@ -81,44 +84,80 @@ describe 'UI', ->
 
         # TEMP
         it 'should reject new HTTP URLs for now', (_) ->
-            app.get "/?url=#{encodeURIComponent urls.randomize urls.IMAGE}"
+            app.get "/?url=#{encodeURIComponent urls.randomize urls.IMAGE_NEW}"
                 .expect 503
                 .expect /Please wait/i
                 .end _
 
         # TODO: Need reliable existing image across local dev envs.
-        it.skip 'should redirect existing HTTP URLs to view page', (_) ->
-            resp = app.get "/?url=#{encodeURIComponent urls.IMAGE}"
+        it 'should redirect existing (converted) HTTP URLs to view page', (_) ->
+            resp = app.get "/?url=#{encodeURIComponent urls.IMAGE_CONVERTED}"
                 .redirects 0
                 .expect 301
                 .expect 'Location', VIEW_PAGE_REGEX
                 .end _
 
-            EXISTING_ID = (resp.headers.location.match VIEW_PAGE_REGEX)[1]
+            EXISTING_CONVERTED_ID =
+                (resp.headers.location.match VIEW_PAGE_REGEX)[1]
+
+        # TODO: Need reliable existing image across local dev envs.
+        it 'should redirect existing (queued) HTTP URLs to view page', (_) ->
+            resp = app.get "/?url=#{encodeURIComponent urls.IMAGE_QUEUED}"
+                .redirects 0
+                .expect 301
+                .expect 'Location', VIEW_PAGE_REGEX
+                .end _
+
+            EXISTING_QUEUED_ID =
+                (resp.headers.location.match VIEW_PAGE_REGEX)[1]
 
     describe 'View page', ->
 
         # TODO: Need reliable existing image across local dev envs.
-        it.skip 'should return viewer for existing image', (_) ->
-            app.get "/#{EXISTING_ID}"
+        it 'should return viewer for existing (converted) image', (_) ->
+            app.get "/#{EXISTING_CONVERTED_ID}"
                 .expect 200
-                .expect /// #{EXISTING_ID} ///  # anywhere, e.g. <title>
+                .expect /// #{EXISTING_CONVERTED_ID} ///    # anywhere, e.g. <title>
                 .end _
+
+            # TODO: How do we assert that this view page actually has a viewer
+            # with the image? Selenium?
+
+        # TODO: Need reliable existing image across local dev envs.
+        it 'should return viewer for existing (queued) image', (_) ->
+            app.get "/#{EXISTING_QUEUED_ID}"
+                .expect 200
+                .expect /// #{EXISTING_QUEUED_ID} ///   # anywhere, e.g. <title>
+                .end _
+
+            # TODO: How do we assert that this view page actually shows a
+            # "queued" message and/or progress bar? Selenium?
 
         it 'should return 404 for non-existent image', (_) ->
             app.get '/99999999'
                 .expect 404
-                .expect /No content/i
+                .expect /No content with ID/i
                 .end _
 
     describe 'Embed', ->
 
         # TODO: Need reliable existing image across local dev envs.
-        it.skip 'should return JS for existing image', (_) ->
-            app.get "/#{EXISTING_ID}.js"
+        it 'should return JS for existing (converted) image', (_) ->
+            app.get "/#{EXISTING_CONVERTED_ID}.js"
                 .expect 200
-                .expect 'Content-Type', 'application/javascript'
-                .expect /// "#{EXISTING_ID}" ///  # e.g. as JSON
+                .expect 'Content-Type', TYPE_JS
+                .expect /// #{EXISTING_CONVERTED_ID} ///    # anywhere
+                .end _
+
+            # TODO: How do we assert that this embed script actually works,
+            # and shows this image? Selenium?
+
+        # TODO: Need reliable existing image across local dev envs.
+        it 'should return JS for existing (queued) image', (_) ->
+            app.get "/#{EXISTING_QUEUED_ID}.js"
+                .expect 200
+                .expect 'Content-Type', TYPE_JS
+                .expect /queued/    # HACK: We show a static queued.dzi for now.
                 .end _
 
         # TEMP: We should be returning JS instead; known FIXME in the code.
@@ -126,5 +165,5 @@ describe 'UI', ->
         it 'should return 404 for non-existent image', (_) ->
             app.get '/99999999.js'
                 .expect 404
-                .expect /No content/i
+                .expect /No content with ID/i
                 .end _
