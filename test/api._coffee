@@ -132,7 +132,7 @@ expectDZI = (act, exp={}) ->
     for prop in ['width', 'height', 'tileSize', 'tileOverlap']
         _expectNumberWithin act[prop], 0, Infinity
 
-    _expectStringMatching act.tileFormat, /^(png|jpeg)$/
+    _expectStringMatching act.tileFormat, /^(png|jpg|jpeg)$/
 
     _expectPartial act, exp
 
