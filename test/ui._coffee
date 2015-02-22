@@ -9,6 +9,7 @@
 
 app = (require 'supertest')(require '../app')
 {expect} = require 'chai'
+ids = require './fixtures/ids'
 urls = require './fixtures/urls'
 
 
@@ -18,10 +19,6 @@ TYPE_JS = 'application/javascript; charset=utf-8'
 
 # Matches e.g. '/Abc123' and captures the ID:
 VIEW_PAGE_REGEX = /// ^/ (\w+) $ ///
-
-# These get set to known IDs when we create or derive them:
-EXISTING_CONVERTED_ID = null
-EXISTING_QUEUED_ID = null
 
 
 ## Tests
@@ -97,8 +94,8 @@ describe 'UI', ->
                 .expect 'Location', VIEW_PAGE_REGEX
                 .end _
 
-            EXISTING_CONVERTED_ID =
-                (resp.headers.location.match VIEW_PAGE_REGEX)[1]
+            id = (resp.headers.location.match VIEW_PAGE_REGEX)[1]
+            expect(id).to.equal ids.IMAGE_CONVERTED
 
         # TODO: Need reliable existing image across local dev envs.
         it 'should redirect existing (queued) HTTP URLs to view page', (_) ->
@@ -108,16 +105,16 @@ describe 'UI', ->
                 .expect 'Location', VIEW_PAGE_REGEX
                 .end _
 
-            EXISTING_QUEUED_ID =
-                (resp.headers.location.match VIEW_PAGE_REGEX)[1]
+            id = (resp.headers.location.match VIEW_PAGE_REGEX)[1]
+            expect(id).to.equal ids.IMAGE_QUEUED
 
     describe 'View page', ->
 
         # TODO: Need reliable existing image across local dev envs.
         it 'should return viewer for existing (converted) image', (_) ->
-            app.get "/#{EXISTING_CONVERTED_ID}"
+            app.get "/#{ids.IMAGE_CONVERTED}"
                 .expect 200
-                .expect /// #{EXISTING_CONVERTED_ID} ///    # anywhere, e.g. <title>
+                .expect /// #{ids.IMAGE_CONVERTED} ///  # anywhere, e.g. <title>
                 .end _
 
             # TODO: How do we assert that this view page actually has a viewer
@@ -125,9 +122,9 @@ describe 'UI', ->
 
         # TODO: Need reliable existing image across local dev envs.
         it 'should return viewer for existing (queued) image', (_) ->
-            app.get "/#{EXISTING_QUEUED_ID}"
+            app.get "/#{ids.IMAGE_QUEUED}"
                 .expect 200
-                .expect /// #{EXISTING_QUEUED_ID} ///   # anywhere, e.g. <title>
+                .expect /// #{ids.IMAGE_QUEUED} ///     # anywhere, e.g. <title>
                 .end _
 
             # TODO: How do we assert that this view page actually shows a
@@ -143,10 +140,10 @@ describe 'UI', ->
 
         # TODO: Need reliable existing image across local dev envs.
         it 'should return JS for existing (converted) image', (_) ->
-            app.get "/#{EXISTING_CONVERTED_ID}.js"
+            app.get "/#{ids.IMAGE_CONVERTED}.js"
                 .expect 200
                 .expect 'Content-Type', TYPE_JS
-                .expect /// #{EXISTING_CONVERTED_ID} ///    # anywhere
+                .expect /// #{ids.IMAGE_CONVERTED} ///  # anywhere
                 .end _
 
             # TODO: How do we assert that this embed script actually works,
@@ -154,7 +151,7 @@ describe 'UI', ->
 
         # TODO: Need reliable existing image across local dev envs.
         it 'should return JS for existing (queued) image', (_) ->
-            app.get "/#{EXISTING_QUEUED_ID}.js"
+            app.get "/#{ids.IMAGE_QUEUED}.js"
                 .expect 200
                 .expect 'Content-Type', TYPE_JS
                 .expect /queued/    # HACK: We show a static queued.dzi for now.
