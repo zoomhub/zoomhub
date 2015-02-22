@@ -32,6 +32,12 @@ configs = module.exports =
     CONTENT_CDN_URL: 'http://content.zoomhub.net'
 
     #
+    # The prefix to attach to all DZI file paths in our content storage.
+    # If this is a directory, it should include the trailing slash.
+    #
+    CONTENT_DZIS_PREFIX: 'dzis/'
+
+    #
     # The string API key for our Rackspace account.
     # This should *not* be checked in unencrypted!
     # Provide this via an environment variable.
