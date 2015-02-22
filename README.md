@@ -43,6 +43,30 @@ Feel free to file bugs, request features, and ask questions on
 That's also where we're tracking TODOs and remaining work.
 
 
+## Credits
+
+Special thanks to:
+
+- **Bill Crow** and **David Vos** for keeping Zoom.it alive at Microsoft
+  through the years, and helping us transition it when its time came.
+  They moved mountains to get us both the data and the domain.
+
+- **[Rackspace](http://www.rackspace.com/)** for hosting and running this
+  service free of charge. Rackspace ♥︎ open-source, and open-source ♥︎ Rackspace.
+
+- **[OpenSeadragon](http://openseadragon.github.io/)** for providing the
+  zooming viewer.
+
+- **[VIPS](http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS)** for
+  providing blazing-fast DZI generation.
+
+- All of our **[contributors](https://github.com/zoomhub/zoomhub/graphs/contributors)**
+  for their time and energy.
+  This project is entirely a labor of love, and all of us have our own day jobs.
+  Maintaining any open-source project is work, but running a live, production
+  service on top of that is something even more.
+
+
 ## License
 
 This code is open-source under the [MIT license](./LICENSE).
