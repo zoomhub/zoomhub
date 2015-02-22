@@ -37,9 +37,8 @@ bootstrap)
     if ! [ $(pip freeze | grep passlib) ]; then
         echo "Installing passlib..."
         # Via: https://pythonhosted.org/passlib/install.html
-        # HACK: Doing so as sudo because I seem to need that on my computer.
-        echo "Running sudo command; enter your sudo password when prompted."
-        sudo pip install passlib
+        echo 'If the next step doesn’t work, re-run this command with `sudo`.'
+        pip install passlib
     fi
 
     echo "Bootstrapping server; enter server’s root password when prompted."
