@@ -20,9 +20,18 @@ VM = require 'vm'
 TYPE_JS = 'text/javascript; charset=utf-8'
 TYPE_JSON = 'application/json; charset=utf-8'
 TYPE_TEXT = 'text/plain; charset=utf-8'
+TYPE_XML = 'application/xml'
+
+TYPE_IMAGES =
+    png: 'image/png'
+    jpg: 'image/jpeg'
+    jpeg: 'image/jpeg'
 
 # Matches e.g. '/v1/content/Abc123' and captures the ID:
 CONTENT_BY_ID_REGEX = /// ^/v1/content/ (\w+) $ ///
+
+# We'll set this to a converted DZI object when we get one from the API:
+DZI_CONVERTED = null
 
 #
 # Asserts that the given actual *text string* is a valid JSONP response,
@@ -131,7 +140,9 @@ expectDZI = (act, exp={}) ->
     for prop in ['width', 'height', 'tileSize', 'tileOverlap']
         _expectNumberWithin act[prop], 0, Infinity
 
-    _expectStringMatching act.tileFormat, /^(png|jpg|jpeg)$/
+    _expectStringMatching act.tileFormat, ///
+        ^ ( #{(Object.keys TYPE_IMAGES).join '|'} ) $
+    /// # e.g. ^(png|jpg|jpeg)$
 
     _expectPartial act, exp
 
@@ -272,6 +283,9 @@ describe 'API /v1/content', ->
             expect(resp.body.ready).to.equal true
             # expectContent takes care of expecting `dzi`, etc., in this case.
 
+            # Save the returned DZI object, for us to test further below:
+            DZI_CONVERTED = resp.body.dzi
+
         # TODO: Need reliable existing image across local dev envs.
         it 'should return info for existing (queued) image', (_) ->
             resp = app.get "/v1/content/#{ids.IMAGE_QUEUED}"
@@ -360,3 +374,41 @@ describe 'API /v1/content', ->
                 .expect 200
                 .expect 'Access-Control-Allow-Origin', '*'
                 .end _
+
+    describe '(Generated DZIs)', ->
+
+        it 'should be downloadable when returned as ready', (_) ->
+            {url, width, height, tileSize, tileOverlap, tileFormat} = DZI_CONVERTED
+
+            resp = Request.get url, _
+
+            {statusCode, headers, body} = resp
+
+            expect(statusCode).to.equal 200
+            expect(headers['content-type']).to.equal TYPE_XML
+
+            # HACK: For simplicity, hardcoding the exact format of the XML:
+            expect(body).to.be.a 'string'
+            expect(body).to.equal """
+                <?xml version="1.0" encoding="utf-8"?>
+                <Image TileSize="#{tileSize}" Overlap="#{tileOverlap}"
+                 Format="#{tileFormat}" ServerFormat="Default"
+                 xmlns="http://schemas.microsoft.com/deepzoom/2009">
+                <Size Width="#{width}" Height="#{height}" /></Image>
+            """.replace /\n/g, ''
+
+        it 'should have downloadable tiles too', (_) ->
+            # For simplicity, just download the level 0 tile.
+            # Guaranteed to be there for any size image, and even better,
+            # we know internally it's the last tile to be generated.
+            {url, tileFormat} = DZI_CONVERTED
+            tileURL = url.replace /[.]\w+$/, "_files/0/0_0.#{tileFormat}"
+
+            resp = Request.get tileURL, _
+
+            {statusCode, headers, body} = resp
+
+            expect(statusCode).to.equal 200
+            expect(headers['content-type']).to.equal TYPE_IMAGES[tileFormat]
+
+            # No simple way to test the actual image itself; not bothering.
