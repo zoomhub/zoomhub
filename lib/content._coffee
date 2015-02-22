@@ -10,12 +10,14 @@ redis = require 'redis'
 DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'content-by-id'
 DIR_BY_URL_PATH = Path.join config.DATA_DIR, 'content-by-url'
 
-# TODO: this is a short term fix to support the content by url code-path
-# we should remove this when we move to a proper database
+# TODO: this is a short term fix to support the content by url code-path.
+# we should remove this when we move to a proper database.
+# https://github.com/zoomhub/zoomhub/issues/95
+URL_TO_ID_DATA_FILE_PATH = Path.join DIR_BY_URL_PATH, 'data.json'
 try
-    DATABASE = require Path.join DIR_BY_URL_PATH, 'data.json'
+    URL_TO_ID_PATHS = require URL_TO_ID_DATA_FILE_PATH
 catch e
-    DATABASE = {}
+    URL_TO_ID_PATHS = {}
 
 DIR_PATH_FROM_URL_TO_ID = Path.relative DIR_BY_URL_PATH, DIR_BY_ID_PATH
 
@@ -43,11 +45,22 @@ getFilePathForId = (id) ->
     id = id.replace /([A-Z])/g, '_$1'
     Path.join DIR_BY_ID_PATH, "#{id}.json"
 
-getFilePathForURL = (url) ->
-    if idFile = DATABASE["#{hashURL url}.json"]
-        Path.join DIR_BY_ID_PATH, idFile.replace '../content-by-id', ''
-    else
-        ''
+getFilePathForURL = (url, cb) ->
+    # Prefer symlink, but it might not exist yet, so check first, and
+    # fallback to the in-memory dictionary if it doesn't.
+    # https://github.com/zoomhub/zoomhub/issues/95
+    name = "#{hashURL url}.json"
+    path = Path.join DIR_BY_URL_PATH, name
+    FS.exists path, (exists) ->
+        if exists
+            cb null, path
+        else if idPath = URL_TO_ID_PATHS[name]
+            cb null, Path.join DIR_BY_ID_PATH, idPath.replace '../content-by-id', ''
+        else
+            # If this isn't in our dictionary, we should be doing whatever we'd
+            # do without a dictionary at all -- still return the symlink path.
+            # This function's job is not to say whether the symlinks exists.
+            cb null, path
 
 getRedisKeyForId = (id) ->
     "content:id:#{id}"
@@ -203,7 +216,7 @@ module.exports = class Content
         else
             # note that our URL files are symlinks to the ID files, and
             # node's FS.readFile() follows symlinks natively. sweet!
-            if json = readFile (getFilePathForURL url), _
+            if json = readFile (getFilePathForURL url, _), _
                 new Content JSON.parse json
             else
                 null
@@ -225,7 +238,7 @@ module.exports = class Content
 
         else
             idPath = getFilePathForId id
-            urlPath = getFilePathForURL url
+            urlPath = getFilePathForURL url, _
             urlToIdPath =
                 Path.join DIR_PATH_FROM_URL_TO_ID, Path.basename idPath
 
