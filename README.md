@@ -18,13 +18,11 @@ We aren't accepting any new content for now, but all old Zoom.it content
 should continue to work.
 
 This service also includes a REST API, available at **`api.zoom.it`**
-(e.g. [`/v1/content/4rcn`](http://api.zoom.it/v1/content/4rcn)),
-which includes most of the functionality from the original Zoom.it API.
+(e.g. [`/v1/content/4rcn`](http://api.zoom.it/v1/content/4rcn)).
 For details and API documentation, see **[API.md](./API.md)**.
 
 You can also run this code and host the service on your own.
-The codebase is still a work-in-progress, and probably a bit tied to our own
-deployment currently, but we can try to help you if you need.
+The codebase is still a work-in-progress, but we can try to help if you need.
 
 If you wish to run this on your own, or to contribute to our development,
 please see **[CONTRIBUTING.md](./CONTRIBUTING.md)** for instructions.
