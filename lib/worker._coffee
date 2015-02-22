@@ -57,8 +57,12 @@ BASE_TEMP_DIR = Path.join OS.tmpdir(), 'zoomhub-worker'
         echo 'Creating temp dir... id=%j', id
         dir = makeTempDir _
 
-        # Download the content to a file (within our temp dir) named by the ID:
-        file = Path.join dir, content.id
+        # Download the content to a file (within our temp dir) named by the ID.
+        #
+        # NOTE: We explicitly add an arbitrary extension, due to this VIPS bug:
+        # https://github.com/jcupitt/libvips/issues/242
+        #
+        file = Path.join dir, content.id + '.raw'
         echo 'Downloading content to temp dir... id=%j, file=%j', id, file
         downloadFile content.url, file, _
 
