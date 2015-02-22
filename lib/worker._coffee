@@ -20,6 +20,8 @@
 
 config = require '../config'
 crypto = require 'crypto'
+DeepZoomImage = require 'deepzoomtools'
+DZIParser = require './dziparser'
 FS = require 'fs-extra'
 OS = require 'os'
 Path = require 'path'
@@ -56,14 +58,17 @@ BASE_TEMP_DIR = Path.join OS.tmpdir(), 'zoomhub-worker'
         dir = makeTempDir _
 
         # Download the content to a file (within our temp dir) named by the ID:
-        src = Path.join dir, content.id
-        echo 'Downloading content to temp dir... id=%j, file=%j', id, src
-        downloadFile content.url, src, _
+        file = Path.join dir, content.id
+        echo 'Downloading content to temp dir... id=%j, file=%j', id, file
+        downloadFile content.url, file, _
 
-        # TODO
+        echo 'Generating DZI for content... id=%j', id
+        dzi = createDZI file, _
 
-        # destination = processor.process source, _
-        # dzi = DZIParser.parse destination, _
+        echo 'Parsing the generated DZI... id=%j', id
+        dzi = DZIParser.parse dzi, _
+
+        # TODO: Upload!
 
         # erro 'Success! Marking content as ready... id=%j', id
         # content.markReady dzi, _
@@ -82,7 +87,6 @@ BASE_TEMP_DIR = Path.join OS.tmpdir(), 'zoomhub-worker'
             FS.remove dir, _ if dir
 
         echo 'Finished processing content. id=%j', id
-
 
 
 ## HELPERS:
@@ -120,6 +124,18 @@ downloadFile = (url, file, cb) ->
      file.on 'finish', cb
 
      req.pipe file
+
+# Automatically derives and returns the name of the destination DZI.
+# TODO: Find some way to report progress here.
+createDZI = (src, _) ->
+    dir = Path.dirname src
+    ext = Path.extname src
+    base = Path.basename src, ext
+    dest = Path.join dir, "#{base}.dzi"
+
+    DeepZoomImage.create _, src, dest
+
+    dest
 
 
 ## MAIN:
