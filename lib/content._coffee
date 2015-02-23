@@ -4,6 +4,7 @@ FS = require 'fs'
 Path = require 'path'
 redis = require 'redis'
 URL = require 'url'
+Worker = require './worker'
 
 
 ## HELPERS
@@ -214,7 +215,7 @@ module.exports = class Content
         # TODO: Change this to an optimistic random ID (w/ retry on collision).
         # We need to make sure our writes support proper rollback too though.
         if not redisClient
-          throw new Error 'Content.createFromURL() not implemented yet w/out Redis.'
+            throw new Error 'Content.createFromURL() not implemented yet w/out Redis.'
 
         id = (redisClient.incr NEXT_ID_KEY, _).toString()
         content = new Content {id, url}
@@ -233,5 +234,15 @@ module.exports = class Content
 
             FS.writeFile idPath, content._stringifyData(), _
             FS.symlink urlToIdPath, urlPath, _
+
+        # Either way now, enqueue this content for conversion:
+        #
+        # TODO: We should properly use a queue and workers for conversion!
+        # For now, converting directly on our web servers.
+        #
+        Worker.process content, (err) ->
+            # The worker logs any errors, and promises not to throw them,
+            # so the only thing we do here is fail-fast.
+            throw err if err
 
         content
