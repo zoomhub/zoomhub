@@ -1,6 +1,9 @@
 fs = require 'fs'
 xml2js = require 'xml2js'
 
+toInt = (str) ->
+    parseInt str, 10
+
 #Public API
 module.exports = class DZIParser
     @parse = (path, _) ->
@@ -10,8 +13,8 @@ module.exports = class DZIParser
         $image = dzi.Image.$
         $size = dzi.Image.Size[0].$
 
-        tileSize: $image.TileSize
-        tileOverlap: $image.Overlap
+        tileSize: toInt $image.TileSize
+        tileOverlap: toInt $image.Overlap
         tileFormat: $image.Format
-        width: $size.Width
-        height: $size.Height
+        width: toInt $size.Width
+        height: toInt $size.Height
