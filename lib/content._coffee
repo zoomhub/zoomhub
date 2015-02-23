@@ -3,6 +3,8 @@ crypto = require 'crypto'
 FS = require 'fs'
 Path = require 'path'
 redis = require 'redis'
+URL = require 'url'
+Worker = require './worker'
 
 
 ## HELPERS
@@ -27,6 +29,8 @@ URL_HASH_ENCODING = 'hex'
 
 # TEMP: Simple implementation for just two data stores: Redis and flat files.
 USE_REDIS = config.DATA_STORE is 'redis'
+
+WORKER_TIMEOUT_MS = 1000 * 60 * 5   # Five mins
 
 # TODO: We should also support auth'ed Redis, which is an async connection.
 redisClient = redis.createClient() if USE_REDIS
@@ -65,6 +69,27 @@ readFile = (path, _) ->
             null
         else
             throw err
+
+enqueueForConversion = (content, _) ->
+    return if content._isActive
+
+    # TODO: We should properly use a queue and workers for conversion!
+    # For now, converting directly on our web servers (but still async'ly).
+    Worker.process content, (err) ->
+        # The worker logs any errors, and promises not to throw them,
+        # so the only thing we do here is fail-fast.
+        throw err if err
+
+    content._markActive _
+
+# TEMP: Enqueues the given content for conversion if we're processing old
+# content and this one hasn't been processed yet -- including not failed yet.
+# Returns the content always.
+enqueueIfNeeded = (_, content) ->
+    if config.PROCESS_OLD_CONTENT and not (content.ready or content.failed)
+        enqueueForConversion content, _
+
+    content
 
 
 ## PUBLIC
@@ -137,12 +162,22 @@ module.exports = class Content
         raw = @_data.dzi
         return raw if not raw
         clone = {}
-        clone.url = "http://#{config.REMOTE_URL}/dzis/#{@id}.dzi"
+        clone.url = URL.resolve config.CONTENT_CDN_URL,
+            "#{config.CONTENT_DZIS_PREFIX}#{@id}.dzi"
         clone[prop] = val for prop, val of raw
         clone
 
+    # Private properties
+    get _isActive: ->
+        # Return true if this content is actively being worked on by a worker,
+        # but be robust to worker timeout:
+        age = Date.now() - Date.parse @_data.activeAt
+        @_data.active and age < WORKER_TIMEOUT_MS
+
     ## Instance methods:
 
+    # NOTE: This is for public consumption, *not* for saving to our db!
+    # See the `_stringifyData` method for saving to our db.
     toJSON: ->
         # The native JSON.stringify doesn't pick up property getters on our
         # *prototype*, which is where they're defined.
@@ -151,11 +186,21 @@ module.exports = class Content
         obj[prop] = val for prop, val of @
         obj
 
-    # TODO:
-    # - markProgress
-    # - others?
+    # Mark that this content is actively being processed (internally) now.
+    _markActive: (_) ->
+        @_data.active = true
+        @_data.activeAt = new Date().toISOString()
+        # let `finishedAt` remain where it was previously, for debugging
+        @_data.ready = false
+        @_data.failed = false
+        @_data.progress = 0
+        delete @_data.dzi
+        @_save _
 
     markReady: (dzi, _) ->
+        @_data.active = false
+        # let `activeAt` remain where it was, for debugging
+        @_data.finishedAt = new Date().toISOString()
         @_data.ready = true
         @_data.failed = false
         @_data.progress = 1
@@ -163,11 +208,18 @@ module.exports = class Content
         @_save _
 
     markFailed: (_) ->
+        @_data.active = false
+        # let `activeAt` remain where it was, for debugging
+        @_data.finishedAt = new Date().toISOString()
         @_data.ready = false
         @_data.failed = true
-        # let `progress` remain where it was
-        delete @_data.dzi
+        # let `progress` remain where it was, for debugging
+        # let `dzi` remain where it was, for debugging
         @_save _
+
+    # TODO:
+    # - markProgress
+    # - others?
 
     _save: (_) ->
         # TODO: Can we have saves be precise and isolated?
@@ -190,7 +242,7 @@ module.exports = class Content
                 readFile (getFilePathForId id), _
 
         if json
-            new Content JSON.parse json
+            enqueueIfNeeded _, new Content JSON.parse json
         else
             null
 
@@ -204,7 +256,7 @@ module.exports = class Content
             # note that our URL files are symlinks to the ID files, and
             # node's FS.readFile() follows symlinks natively. sweet!
             if json = readFile (getFilePathForURL url), _
-                new Content JSON.parse json
+                enqueueIfNeeded _, new Content JSON.parse json
             else
                 null
 
@@ -212,7 +264,7 @@ module.exports = class Content
         # TODO: Change this to an optimistic random ID (w/ retry on collision).
         # We need to make sure our writes support proper rollback too though.
         if not redisClient
-          throw new Error 'Content.createFromURL() not implemented yet w/out Redis.'
+            throw new Error 'Content.createFromURL() not implemented yet w/out Redis.'
 
         id = (redisClient.incr NEXT_ID_KEY, _).toString()
         content = new Content {id, url}
@@ -231,5 +283,8 @@ module.exports = class Content
 
             FS.writeFile idPath, content._stringifyData(), _
             FS.symlink urlToIdPath, urlPath, _
+
+        # Either way now:
+        enqueueForConversion content, _
 
         content

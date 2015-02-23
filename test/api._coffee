@@ -247,26 +247,6 @@ describe 'API /v1/content', ->
             expect(resp.body.ready).to.equal true
             # expectContent takes care of expecting `dzi`, etc., in this case.
 
-        # TODO: Need reliable existing image across local dev envs.
-        it 'should redirect existing (queued) HTTP URLs to ID', (_) ->
-            resp = app.get "/v1/content?url=#{encodeURIComponent urls.IMAGE_QUEUED}"
-                .redirects 0
-                .expect 301
-                .expect 'Location', CONTENT_BY_ID_REGEX
-                .expect 'Content-Type', TYPE_JSON
-                .end _
-
-            id = (resp.headers.location.match CONTENT_BY_ID_REGEX)[1]
-            expect(id).to.equal ids.IMAGE_QUEUED
-
-            # the response body should also be the info for convenience:
-            expectContent resp.body,
-                id: ids.IMAGE_QUEUED
-                url: urls.IMAGE_QUEUED
-
-            expect(resp.body.ready).to.equal false
-            expect(resp.body.failed).to.equal false
-
     describe 'Get by ID', ->
 
         # TODO: Need reliable existing image across local dev envs.
@@ -285,20 +265,6 @@ describe 'API /v1/content', ->
 
             # Save the returned DZI object, for us to test further below:
             DZI_CONVERTED = resp.body.dzi
-
-        # TODO: Need reliable existing image across local dev envs.
-        it 'should return info for existing (queued) image', (_) ->
-            resp = app.get "/v1/content/#{ids.IMAGE_QUEUED}"
-                .expect 200
-                .expect 'Content-Type', TYPE_JSON
-                .end _
-
-            expectContent resp.body,
-                id: ids.IMAGE_QUEUED
-                url: urls.IMAGE_QUEUED
-
-            expect(resp.body.ready).to.equal false
-            expect(resp.body.failed).to.equal false
 
         it 'should return 404 for non-existent image', (_) ->
             app.get '/v1/content/99999999'
@@ -322,22 +288,6 @@ describe 'API /v1/content', ->
                 content:
                     id: ids.IMAGE_CONVERTED
                     url: urls.IMAGE_CONVERTED
-
-        # TODO: Need reliable existing image across local dev envs.
-        it 'should properly wrap 301 redirect responses', (_) ->
-            {body} = app.get "/v1/content\
-                    ?url=#{encodeURIComponent urls.IMAGE_QUEUED}&format=json"
-                .expect 200
-                .expect 'Content-Type', TYPE_JSON
-                .end _
-
-            expectResponse body,
-                status: 301
-                statusText: /Moved Permanently/i
-                redirectLocation: CONTENT_BY_ID_REGEX
-                content:
-                    id: ids.IMAGE_QUEUED
-                    url: urls.IMAGE_QUEUED
 
         it 'should properly wrap 400 error responses', (_) ->
             {body} = app.get '/v1/content?url=&format=json'
@@ -387,15 +337,21 @@ describe 'API /v1/content', ->
             expect(statusCode).to.equal 200
             expect(headers['content-type']).to.equal TYPE_XML
 
-            # HACK: For simplicity, hardcoding the exact format of the XML:
+            # TODO: Might be good to actually properly parse the XML sometime,
+            # but just approximating for now:
             expect(body).to.be.a 'string'
-            expect(body).to.equal """
-                <?xml version="1.0" encoding="utf-8"?>
-                <Image TileSize="#{tileSize}" Overlap="#{tileOverlap}"
-                 Format="#{tileFormat}" ServerFormat="Default"
-                 xmlns="http://schemas.microsoft.com/deepzoom/2009">
-                <Size Width="#{width}" Height="#{height}" /></Image>
-            """.replace /\n/g, ''
+            for regex in [
+                /^<\?xml version="1.0" encoding="utf-8"\?>/i
+                /<Image\s/
+                /// TileSize="#{tileSize}" ///
+                /// Overlap="#{tileOverlap}" ///
+                /// Format="#{tileFormat}" ///
+                /<Size\s/
+                /// Width="#{width}" ///
+                /// Height="#{height}" ///
+                /<\/Image>\s*$/
+            ]
+                expect(body).to.match regex
 
         it 'should have downloadable tiles too', (_) ->
             # For simplicity, just download the level 0 tile.

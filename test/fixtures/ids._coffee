@@ -13,6 +13,4 @@
 
 @IMAGE_CONVERTED = '4rcn'
 
-@IMAGE_QUEUED = 'hdfm'
-
 # TODO: IMAGE_FAILED? Etc.
