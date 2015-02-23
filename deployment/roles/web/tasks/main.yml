@@ -1,29 +1,9 @@
 ---
-# References:
-# - https://chrislea.com/2013/03/15/upgrading-from-node-js-0-8-x-to-0-10-0-from-my-ppa/
-# - http://git.io/hvzTnA
 - name: update apt-get cache
   apt:  update_cache=yes cache_valid_time=3600
 
 - name: upgrade apt-get
   apt:  upgrade=dist
-
-- name: Node.js prerequisites
-  apt: pkg={{ item }} state=present
-  with_items:
-    - g++
-    - git
-    - make
-    - software-properties-common
-    - python
-    - python-software-properties
-    - python-pycurl
-
-- name: Chris Lea PPA for Node.js
-  apt_repository: repo='ppa:chris-lea/node.js'
-
-- name: Node.js
-  apt: pkg=nodejs=0.10.33-1chl1~precise1 update_cache=yes state=present
 
 # Make sure the firewall comes back after a system restart
 - name: Install persistent iptables
@@ -53,6 +33,10 @@
 
 - name: create apps root directory
   file: state=directory path={{ apps_root }}
+        owner={{ admin_user }} group={{ admin_group }} recurse=yes
+
+- name: create data root directory
+  file: state=directory path={{ data_root }}
         owner={{ admin_user }} group={{ admin_group }} recurse=yes
 
 - name: create log directory

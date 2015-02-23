@@ -12,6 +12,7 @@ fi
 case "$1" in
 install)
     npm install
+    ansible-galaxy install -r deployment/requirements.yml --force
     ;;
 run)
     npm start

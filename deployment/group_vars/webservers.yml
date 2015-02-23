@@ -5,6 +5,7 @@ admin_user: zoomhub
 admin_home: "/home/{{ admin_user }}"
 admin_group: zoomhub
 apps_root: /var/apps
+data_root: /mnt/datavolume/zoomhub/data
 app_repo: https://github.com/zoomhub/zoomhub.git
 app_root: '{{ apps_root }}/{{ service }}'
 app_version: master
@@ -15,7 +16,7 @@ app_env:
   - NODE_ENV=production
   - PORT={{ app_port }}
   - BASE_URL='http://zoomhub.net'
-  - DATA_DIR=/mnt/datavolume/zoomhub/data
+  - DATA_DIR={{ data_root }}
   - HOME={{ admin_home }}
   - CONTENT_DZIS_PREFIX=dzis/
   - EXPRESS_LOGGER_FORMAT=default

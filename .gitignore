@@ -12,7 +12,12 @@ npm-debug.log
 /deployment/hosts
 /deployment/vars.yml
 /deployment/hosts.staging
+/deployment/hosts.test
 /deployment/credentials/userpassword
+
+# Anisble Roles
+/deployment/roles/DavidWittman.redis
+/deployment/roles/nodesource.node
 
 # Static files
 /public/dzi
