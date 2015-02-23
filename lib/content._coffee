@@ -71,16 +71,12 @@ readFile = (path, _) ->
             throw err
 
 enqueueForConversion = (content, _) ->
-    return if content._isActive
-
     # TODO: We should properly use a queue and workers for conversion!
     # For now, converting directly on our web servers (but still async'ly).
     Worker.process content, (err) ->
         # The worker logs any errors, and promises not to throw them,
         # so the only thing we do here is fail-fast.
         throw err if err
-
-    content._markActive _
 
 # TEMP: Enqueues the given content for conversion if we're processing old
 # content and this one hasn't been processed yet -- including not failed yet.

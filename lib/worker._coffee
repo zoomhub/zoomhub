@@ -69,6 +69,13 @@ storageClient = pkgcloud.storage.createClient
             echo 'Content already successfully processed. id=%j', id
             return
 
+        if content._isActive
+            echo 'Content already being worked on currently. id=%j', id
+            return
+
+        echo 'Marking content as active... id=%j', id
+        content._markActive _
+
         echo 'Creating temp dir... id=%j', id
         dir = makeTempDir _
 
