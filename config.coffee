@@ -93,6 +93,12 @@ configs = module.exports =
     ALLOW_NEW_CONTENT: false
 
     #
+    # Whether to process old content (that we haven't processed yet) or not.
+    # Set to false if under load or having issues.
+    #
+    PROCESS_OLD_CONTENT: true
+
+    #
     # What format we should use with Express logger.
     # The choices are 'dev', 'tiny', 'short', and 'default' (full).
     # Details: http://www.senchalabs.org/connect/logger.html
