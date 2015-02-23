@@ -203,7 +203,7 @@ uploadDZIFile = (src, dest, type, cb) ->
         contentType: type   # If not given, defaults to auto-detect
 
     upload.on 'error', cb
-    upload.on 'finish', (file) -> cb null
+    upload.on 'success', (file) -> cb null
 
     file = FS.createReadStream src
     file.on 'error', cb
