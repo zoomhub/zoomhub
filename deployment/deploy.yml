@@ -23,7 +23,7 @@
 
   - name: start redis
     sudo: yes
-    service: name=redis-server state=started
+    service: name=redis_6379 state=started
 
   - name: run app
     sudo: yes
