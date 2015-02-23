@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# HACK: Support specifying a different hosts file for non-production envs,
+# e.g. `./zh setup deployment/hosts.staging`.
+# TODO: Move this logic into specific commands, or use an arg parser?
 hosts=$2
 if [ -z $2 ]; then
   hosts=deployment/hosts
@@ -42,8 +45,7 @@ bootstrap)
     fi
 
     echo "Bootstrapping server; enter server’s root password when prompted."
-    ansible-playbook --inventory-file ${hosts} \
-                     --ask-pass deployment/bootstrap.yml
+    ansible-playbook --inventory-file ${hosts} deployment/bootstrap.yml --ask-pass
     ;;
 setup)
     ansible-playbook --inventory-file ${hosts} deployment/setup.yml --ask-vault-pass
