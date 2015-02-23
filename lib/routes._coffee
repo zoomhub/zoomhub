@@ -10,7 +10,6 @@ Errors = require './errors'
 http = require 'http'
 path = require 'path'
 URL = require 'url'
-Worker = require './worker'
 
 
 ## META:
@@ -71,7 +70,6 @@ Worker = require './worker'
     if not content
         if config.ALLOW_NEW_CONTENT
             content or= Content.createFromURL url, _
-            enqueueForConversion content
         else
             return respondAPI res,
                 status: 503
@@ -172,7 +170,6 @@ Worker = require './worker'
     if not content
         if config.ALLOW_NEW_CONTENT
             content or= Content.createFromURL url, _
-            enqueueForConversion content
         else
             errorHTML res, 503, Errors.SERVICE_UNAVAILABLE
             return
@@ -240,17 +237,3 @@ validateURL = (url) ->
     uri.protocol in ['http:', 'https:'] and !!uri.host and !!uri.path
         # TODO: Do we also want to reject e.g. localhost, etc.?
         # If we do that, we should differentiate via semantic error codes.
-
-#
-# Enqueues the given content for conversion.
-#
-# TODO: Should this be abstracted away in a more business logic layer?
-# Rather than this file which defines API & website routes?
-#
-enqueueForConversion = (content) ->
-    # TODO: We should properly use a queue and workers for conversion!
-    # For now, converting directly on our web servers.
-    Worker.process content, (err) ->
-        # The worker takes care of logging, and promises not to throw errors,
-        # so the only thing we should do here is fail fast if any error.
-        throw err if err
