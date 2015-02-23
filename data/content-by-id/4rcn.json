@@ -6,6 +6,9 @@
     "progress": 1,
     "mime": "image/jpeg",
     "size": 9115770,
+    "active": false,
+    "activeAt": "2015-02-23T04:31:23.906Z",
+    "finishedAt": "2015-02-23T04:32:47.460Z",
     "dzi": {
         "tileSize": 254,
         "tileOverlap": 1,
