@@ -68,6 +68,26 @@ readFile = (path, _) ->
         else
             throw err
 
+enqueueForConversion = (content) ->
+    # TODO: We should properly use a queue and workers for conversion!
+    # For now, converting directly on our web servers (but still async'ly).
+    Worker.process content, (err) ->
+        # The worker logs any errors, and promises not to throw them,
+        # so the only thing we do here is fail-fast.
+        throw err if err
+
+# Enqueues the given content for conversion if we're processing old content and
+# this content hasn't been processed yet. Returns the content always.
+#
+# TODO: This is open to race conditions of multiple enqueues and thus workers.
+# We should ideally synchronize access, but we should also be robust to worker
+# failures or timeouts in that case, e.g. with a queue visibility timeout.
+#
+enqueueIfNeeded = (content) ->
+    if config.PROCESS_OLD_CONTENT and not content.ready
+        enqueueForConversion content
+    content
+
 
 ## PUBLIC
 
@@ -193,7 +213,7 @@ module.exports = class Content
                 readFile (getFilePathForId id), _
 
         if json
-            new Content JSON.parse json
+            enqueueIfNeeded new Content JSON.parse json
         else
             null
 
@@ -207,7 +227,7 @@ module.exports = class Content
             # note that our URL files are symlinks to the ID files, and
             # node's FS.readFile() follows symlinks natively. sweet!
             if json = readFile (getFilePathForURL url), _
-                new Content JSON.parse json
+                enqueueIfNeeded new Content JSON.parse json
             else
                 null
 
@@ -235,14 +255,7 @@ module.exports = class Content
             FS.writeFile idPath, content._stringifyData(), _
             FS.symlink urlToIdPath, urlPath, _
 
-        # Either way now, enqueue this content for conversion:
-        #
-        # TODO: We should properly use a queue and workers for conversion!
-        # For now, converting directly on our web servers.
-        #
-        Worker.process content, (err) ->
-            # The worker logs any errors, and promises not to throw them,
-            # so the only thing we do here is fail-fast.
-            throw err if err
+        # Either way now:
+        enqueueForConversion content
 
         content
