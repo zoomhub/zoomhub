@@ -27,9 +27,39 @@ configs = module.exports =
     BASE_URL: "http://localhost:#{PORT}"
 
     #
-    # Base URL of remote DZI content location
+    # Base URL of our CDN'ed content.
     #
-    REMOTE_URL: 'content.zoomhub.net'
+    CONTENT_CDN_URL: 'http://content.zoomhub.net'
+
+    #
+    # The name of the storage container holding our content.
+    # E.g. on Rackspace Cloud Files, or Azure Blob Storage, or Amazon S3, etc.
+    #
+    CONTENT_CONTAINER_NAME: 'content'
+
+    #
+    # The prefix to attach to all DZI file paths in our content storage.
+    # If this is a directory, it should include the trailing slash.
+    #
+    CONTENT_DZIS_PREFIX: 'dzis-dev/'
+
+    #
+    # The Cloud Files region, S3 region, etc. where our content lives.
+    # E.g. http://www.rackspace.com/knowledge_center/article/about-regions
+    #
+    CONTENT_REGION: 'IAD'
+
+    #
+    # The username for the account that owns our content storage.
+    #
+    RACKSPACE_USERNAME: 'zoomingservice'
+
+    #
+    # The string API key for our Rackspace account.
+    # This should *not* be checked in unencrypted!
+    # Provide this via an environment variable.
+    #
+    RACKSPACE_API_KEY: null
 
     #
     # What type of data store to use. Options: 'files', 'redis'.
@@ -54,11 +84,6 @@ configs = module.exports =
     STATIC_FILE_PATH: path.join __dirname, 'public'
 
     #
-    # Subdirectory for DZIs under the static asset tree
-    #
-    DZI_SUBDIR_PATH: '/dzi'
-
-    #
     # Whether to allow new content or not.
     # Set to false when under load or having issues.
     #
@@ -66,6 +91,12 @@ configs = module.exports =
     # Redis, which doesn't know about our flat file data store.
     #
     ALLOW_NEW_CONTENT: false
+
+    #
+    # Whether to process old content (that we haven't processed yet) or not.
+    # Set to false if under load or having issues.
+    #
+    PROCESS_OLD_CONTENT: true
 
     #
     # What format we should use with Express logger.

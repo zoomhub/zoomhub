@@ -7,22 +7,9 @@ Content = require './content'
 DZIParser = require './dziparser'
 Embed = require './embed'
 Errors = require './errors'
-Fetcher = require './fetcher'
 http = require 'http'
 path = require 'path'
-Processor = require './processor'
 URL = require 'url'
-
-# Constants
-PIPELINE_PATH = path.join __dirname, '..', 'pipeline'
-
-# Fetcher
-FETCHER_PATH = path.join PIPELINE_PATH, 'fetcher'
-fetcher = new Fetcher FETCHER_PATH
-
-# Processor
-DZI_DIR_PATH = path.join config.STATIC_FILE_PATH, config.DZI_SUBDIR_PATH
-processor = new Processor DZI_DIR_PATH
 
 
 ## META:
@@ -75,11 +62,14 @@ processor = new Processor DZI_DIR_PATH
     # both our API and our website. But in order to do that, we'd want it to
     # throw semantic error codes, so that error handling can remain custom.
     #
+    # TODO: Should this get-or-create also be atomic? At the very least,
+    # we may want to guard against race conditions from concurrent calls,
+    # since the "create" step involves creating a new (random) ID.
+    #
     content = Content.getByURL url, _
     if not content
         if config.ALLOW_NEW_CONTENT
             content or= Content.createFromURL url, _
-            enqueueForConversion content
         else
             return respondAPI res,
                 status: 503
@@ -180,7 +170,6 @@ processor = new Processor DZI_DIR_PATH
     if not content
         if config.ALLOW_NEW_CONTENT
             content or= Content.createFromURL url, _
-            enqueueForConversion content
         else
             errorHTML res, 503, Errors.SERVICE_UNAVAILABLE
             return
@@ -248,36 +237,3 @@ validateURL = (url) ->
     uri.protocol in ['http:', 'https:'] and !!uri.host and !!uri.path
         # TODO: Do we also want to reject e.g. localhost, etc.?
         # If we do that, we should differentiate via semantic error codes.
-
-#
-# Enqueues the given content for conversion.
-#
-# TODO: Should this be abstracted away in a more business logic layer?
-# Rather than this file which defines API & website routes?
-#
-enqueueForConversion = (content) ->
-    # TODO: We should properly use a queue and workers for conversion!
-    # For now, converting directly on our web servers.
-    convertContent content, (err) ->
-        if err
-            console.error "(Async) Error converting content!
-                (ID: #{content.id}) #{err.stack or err}"
-        else
-            console.log "(Async) Successfully converted content.
-                (ID: #{content.id})"
-
-#
-# Converts the given content.
-#
-# TODO: Should this be abstracted away in a more business logic layer?
-# Rather than this file which defines API & website routes?
-#
-convertContent = (content, _) ->
-    try
-        source = fetcher.fetch content, _
-        destination = processor.process source, _
-        dzi = DZIParser.parse destination, _
-        content.markReady dzi, _
-    catch err
-        content.markFailed _
-        throw err

@@ -20,8 +20,6 @@ replaceProtocol = (url, str) ->
     'http://openseadragon.github.io/example-images/highsmith/09250_150px.jpg'
 @IMAGE_CONVERTED =
     'http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg'
-@IMAGE_QUEUED =
-    'http://wdh.blob.core.windows.net/deepzoom-sources/hampi/HampiCB/02-Lakshmi,%20The%20Temple%20Elephant/09-Lakshmi%20and%20little%20girl.jpg'
 # TODO: IMAGE_FAILED? Etc.
 
 @WEBPAGE = 'http://www.example.com/'

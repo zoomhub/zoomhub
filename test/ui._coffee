@@ -97,17 +97,6 @@ describe 'UI', ->
             id = (resp.headers.location.match VIEW_PAGE_REGEX)[1]
             expect(id).to.equal ids.IMAGE_CONVERTED
 
-        # TODO: Need reliable existing image across local dev envs.
-        it 'should redirect existing (queued) HTTP URLs to view page', (_) ->
-            resp = app.get "/?url=#{encodeURIComponent urls.IMAGE_QUEUED}"
-                .redirects 0
-                .expect 301
-                .expect 'Location', VIEW_PAGE_REGEX
-                .end _
-
-            id = (resp.headers.location.match VIEW_PAGE_REGEX)[1]
-            expect(id).to.equal ids.IMAGE_QUEUED
-
     describe 'View page', ->
 
         # TODO: Need reliable existing image across local dev envs.
@@ -119,16 +108,6 @@ describe 'UI', ->
 
             # TODO: How do we assert that this view page actually has a viewer
             # with the image? Selenium?
-
-        # TODO: Need reliable existing image across local dev envs.
-        it 'should return viewer for existing (queued) image', (_) ->
-            app.get "/#{ids.IMAGE_QUEUED}"
-                .expect 200
-                .expect /// #{ids.IMAGE_QUEUED} ///     # anywhere, e.g. <title>
-                .end _
-
-            # TODO: How do we assert that this view page actually shows a
-            # "queued" message and/or progress bar? Selenium?
 
         it 'should return 404 for non-existent image', (_) ->
             app.get '/99999999'
@@ -148,14 +127,6 @@ describe 'UI', ->
 
             # TODO: How do we assert that this embed script actually works,
             # and shows this image? Selenium?
-
-        # TODO: Need reliable existing image across local dev envs.
-        it 'should return JS for existing (queued) image', (_) ->
-            app.get "/#{ids.IMAGE_QUEUED}.js"
-                .expect 200
-                .expect 'Content-Type', TYPE_JS
-                .expect /queued/    # HACK: We show a static queued.dzi for now.
-                .end _
 
         # TEMP: We should be returning JS instead; known FIXME in the code.
         # Until that's fixed, testing our current behavior.

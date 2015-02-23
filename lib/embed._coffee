@@ -2,6 +2,7 @@ fs = require 'fs'
 Path = require 'path'
 config = require '../config'
 dziparser = require './dziparser'
+URL = require 'url'
 
 
 ## CONSTANTS
@@ -12,7 +13,7 @@ SEADRAGON_JS_FILE_PATH = Path.join config.STATIC_FILE_PATH,
 QUEUED_DZI_XML_FILE_PATH = Path.join config.STATIC_FILE_PATH, 'queued.dzi'
 QUEUED_DZI_XML_URL = config.BASE_URL + config.STATIC_URL_PATH + '/queued.dzi'
 
-VIEWER_IMAGES_URL = 'http://' + config.REMOTE_URL + '/openseadragon-images/'
+VIEWER_IMAGES_URL = URL.resolve config.CONTENT_CDN_URL, 'openseadragon-images/'
 
 CLASS_NAME = '__seadragon'
 
