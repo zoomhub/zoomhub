@@ -25,9 +25,24 @@ DZIParser = require './dziparser'
 FS = require 'fs-extra'
 OS = require 'os'
 Path = require 'path'
+pkgcloud = require 'pkgcloud'
 Request = require 'request'
 
 BASE_TEMP_DIR = Path.join OS.tmpdir(), 'zoomhub-worker'
+
+# TODO: Tune this. And should this be a config? Or unnecessary?
+# NOTE: Levels are also parallelized, unlimited. Documentation in `uploadDZI`.
+PARALLEL_UPLOADS_PER_LEVEL = 4
+
+XML_CONTENT_TYPE = 'application/xml'
+
+# NOTE: This assumes/hardcodes Rackspace as the provider for now.
+# TODO: Generalize this and make it properly adaptable/configurable/etc.
+storageClient = pkgcloud.storage.createClient
+    provider: 'rackspace'
+    username: config.RACKSPACE_USERNAME
+    apiKey: config.RACKSPACE_API_KEY
+    region: config.CONTENT_REGION
 
 
 ## PUBLIC:
@@ -67,15 +82,18 @@ BASE_TEMP_DIR = Path.join OS.tmpdir(), 'zoomhub-worker'
         downloadFile content.url, file, _
 
         echo 'Generating DZI for content... id=%j', id
-        dzi = createDZI file, _
+        dziPath = createDZI file, _
 
         echo 'Parsing the generated DZI... id=%j', id
-        dzi = DZIParser.parse dzi, _
+        dzi = DZIParser.parse dziPath, _
 
-        # TODO: Upload!
+        echo 'Uploading the generated DZI...
+            id=%j, width=%j, height=%j, format=%j',
+            id, dzi.width, dzi.height, dzi.tileFormat
+        uploadDZI dziPath, _
 
-        # erro 'Success! Marking content as ready... id=%j', id
-        # content.markReady dzi, _
+        echo 'Success! Marking content as ready... id=%j', id
+        content.markReady dzi, _
 
     catch err
         erro 'Error processing content! Marking content as failed...
@@ -132,14 +150,73 @@ downloadFile = (url, file, cb) ->
 # Automatically derives and returns the name of the destination DZI.
 # TODO: Find some way to report progress here.
 createDZI = (src, _) ->
-    dir = Path.dirname src
-    ext = Path.extname src
-    base = Path.basename src, ext
-    dest = Path.join dir, "#{base}.dzi"
-
+    dest = getSiblingFile src, '.dzi'
     DeepZoomImage.create _, src, dest
-
     dest
+
+# TODO: Find some way to report progress here.
+uploadDZI = (dzi, _) ->
+    # All files will be uploaded to storage with a name relative to the base
+    # directory containing this DZI:
+    baseDir = Path.dirname dzi
+    baseName = Path.basename dzi
+
+    # Read all the levels in the tiles directory:
+    tilesDir = getSiblingFile dzi, '_files'
+    levels = FS.readdir tilesDir, _
+
+    # For each level in parallel...
+    #
+    # NOTE: Not concerned about too much parallelism here.
+    # The number of levels is O(log n) relative to the size of an image, and
+    # most of the lower levels have only one tile, so they'll finish quickly.
+    # Instead, we'll limit the parallelism per level below, for higher levels.
+    #
+    # NOTE: This syntax is Streamline convenience for parallelism:
+    # https://github.com/Sage/streamlinejs/blob/master/lib/compiler/builtins.md
+    #
+    levels.forEach_ _, Infinity, (_, level) ->
+
+        # Read the tiles in this level directory:
+        levelDir = Path.join tilesDir, level
+        tiles = FS.readdir levelDir, _
+
+        # Upload each tile in parallel, within a reasonable limit...
+        tiles.forEach_ _, PARALLEL_UPLOADS_PER_LEVEL, (_, tile) ->
+            tilePath = Path.join levelDir, tile
+            tileName = Path.relative baseDir, tilePath
+
+            uploadDZIFile tilePath, tileName, _
+
+    # Finally, upload the main .dzi file:
+    # TODO: This could be parallelized with the above, but not significant.
+    uploadDZIFile dzi, baseName, XML_CONTENT_TYPE, _
+
+uploadDZIFile = (src, dest, type, cb) ->
+    # Type is optional; if omitted, defaults to auto-detect:
+    if arguments.length is 3
+        [src, dest, cb, type] = arguments
+
+    upload = storageClient.upload
+        container: config.CONTENT_CONTAINER_NAME
+        remote: "#{config.CONTENT_DZIS_PREFIX}#{dest}"
+        contentType: type   # If not given, defaults to auto-detect
+
+    upload.on 'error', cb
+    upload.on 'finish', (file) -> cb null
+
+    file = FS.createReadStream src
+    file.on 'error', cb
+
+    file.pipe upload
+
+# Given a path to a file, gets a "sibling" file with the same basename but the
+# given different extension. (The extension can also be an arbitrary suffix.)
+getSiblingFile = (path, extNew) ->
+    dir = Path.dirname path
+    extOld = Path.extname path
+    base = Path.basename path, extOld
+    Path.join dir, "#{base}#{extNew}"
 
 
 ## MAIN:
