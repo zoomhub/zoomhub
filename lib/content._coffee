@@ -182,8 +182,11 @@ module.exports = class Content
         # The native JSON.stringify doesn't pick up property getters on our
         # *prototype*, which is where they're defined.
         # So help it out by telling it all of our public/enumerable props.
+        # Update: but ignore private (underscore-prefixed) props.
         obj = {}
-        obj[prop] = val for prop, val of @
+        for prop, val of @
+            unless prop[0] is '_'
+                obj[prop] = val
         obj
 
     # Mark that this content is actively being processed (internally) now.
