@@ -23,7 +23,7 @@
   apt_repository: repo='ppa:chris-lea/node.js'
 
 - name: Node.js
-  apt: pkg=nodejs=0.10.32-1chl1~precise1 update_cache=yes state=present
+  apt: pkg=nodejs=0.10.33-1chl1~precise1 update_cache=yes state=present
 
 # Make sure the firewall comes back after a system restart
 - name: Install persistent iptables
@@ -57,4 +57,3 @@
 
 - name: create log directory
   file: state=directory path={{ log_root }}
-
