@@ -96,7 +96,10 @@ configs = module.exports =
     # Whether to process old content (that we haven't processed yet) or not.
     # Set to false if under load or having issues.
     #
-    PROCESS_OLD_CONTENT: true
+    # NOTE: Set to false right now since our production server is at capacity.
+    # TODO: Re-enable this once our server issues have been sorted out.
+    #
+    PROCESS_OLD_CONTENT: false
 
     #
     # What format we should use with Express logger.
