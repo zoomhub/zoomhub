@@ -1,16 +1,16 @@
 {
     "id": "100",
     "url": "http://e.i.uol.com.br/outros/0907/090731cielao1.jpg",
-    "ready": false,
+    "ready": true,
     "failed": false,
     "progress": 1,
     "mime": "image/jpeg",
     "size": 33998,
     "dzi": {
-        "width": 208,
-        "height": 208,
         "tileSize": 254,
         "tileOverlap": 1,
-        "tileFormat": "jpg"
+        "tileFormat": "jpg",
+        "width": 208,
+        "height": 208
     }
 }

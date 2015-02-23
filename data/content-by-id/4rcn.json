@@ -7,10 +7,10 @@
     "mime": "image/jpeg",
     "size": 9115770,
     "dzi": {
-        "width": 5058,
-        "height": 3750,
         "tileSize": 254,
         "tileOverlap": 1,
-        "tileFormat": "jpg"
+        "tileFormat": "jpg",
+        "width": 5058,
+        "height": 3750
     }
 }
