@@ -15,7 +15,7 @@ app_env:
   - NODE_ENV=production
   - PORT={{ app_port }}
   - BASE_URL='http://zoomhub.net'
-  - DATA_DIR=/var/data/zoomhub
+  - DATA_DIR=/mnt/datavolume/zoomhub/data
   - HOME={{ admin_home }}
   - CONTENT_DZIS_PREFIX=dzis/
   - EXPRESS_LOGGER_FORMAT=default
