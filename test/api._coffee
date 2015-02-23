@@ -337,15 +337,21 @@ describe 'API /v1/content', ->
             expect(statusCode).to.equal 200
             expect(headers['content-type']).to.equal TYPE_XML
 
-            # HACK: For simplicity, hardcoding the exact format of the XML:
+            # TODO: Might be good to actually properly parse the XML sometime,
+            # but just approximating for now:
             expect(body).to.be.a 'string'
-            expect(body).to.equal """
-                <?xml version="1.0" encoding="utf-8"?>
-                <Image TileSize="#{tileSize}" Overlap="#{tileOverlap}"
-                 Format="#{tileFormat}" ServerFormat="Default"
-                 xmlns="http://schemas.microsoft.com/deepzoom/2009">
-                <Size Width="#{width}" Height="#{height}" /></Image>
-            """.replace /\n/g, ''
+            for regex in [
+                /^<\?xml version="1.0" encoding="utf-8"\?>/i
+                /<Image\s/
+                /// TileSize="#{tileSize}" ///
+                /// Overlap="#{tileOverlap}" ///
+                /// Format="#{tileFormat}" ///
+                /<Size\s/
+                /// Width="#{width}" ///
+                /// Height="#{height}" ///
+                /<\/Image>\s*$/
+            ]
+                expect(body).to.match regex
 
         it 'should have downloadable tiles too', (_) ->
             # For simplicity, just download the level 0 tile.
