@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Decrypt the vault into a .gitignored unencrypted file.
+
+ROOT=$(cd $(dirname $0)/..; pwd)
+
+ansible-vault view ${ROOT}/deployment/secrets.vault.yml > ${ROOT}/deployment/secrets-clear-text.yml

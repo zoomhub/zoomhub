@@ -14,6 +14,7 @@ npm-debug.log
 /deployment/hosts.staging
 /deployment/hosts.test
 /deployment/credentials/userpassword
+/deployment/secrets-clear-text.yml
 
 # Anisble Roles
 /deployment/roles/DavidWittman.redis
