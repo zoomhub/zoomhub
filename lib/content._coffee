@@ -6,20 +6,17 @@ redis = require 'redis'
 URL = require 'url'
 Worker = require './worker'
 
+pkgcloud = require('pkgcloud')
+cloudClient = pkgcloud.storage.createClient
+    provider: 'rackspace'
+    username: config.RACKSPACE_USERNAME
+    apiKey: config.RACKSPACE_API_KEY
+    region: config.CONTENT_REGION
 
 ## HELPERS
 
 DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'content-by-id'
 DIR_BY_URL_PATH = Path.join config.DATA_DIR, 'content-by-url'
-
-# TODO: this is a short term fix to support the content by url code-path
-# we should remove this when we move to a proper database
-try
-    DATABASE = require Path.join DIR_BY_URL_PATH, 'data.json'
-catch e
-    DATABASE = {}
-
-DIR_PATH_FROM_URL_TO_ID = Path.relative DIR_BY_URL_PATH, DIR_BY_ID_PATH
 
 # TODO: We should be generating random IDs instead of incrementing them.
 NEXT_ID_KEY = 'content:next.id'
@@ -47,11 +44,14 @@ getFilePathForId = (id) ->
     id = id.replace /([A-Z])/g, '_$1'
     Path.join DIR_BY_ID_PATH, "#{id}.json"
 
-getFilePathForURL = (url) ->
-    if idFile = DATABASE["#{hashURL url}.json"]
-        Path.join DIR_BY_ID_PATH, idFile.replace '../content-by-id', ''
-    else
-        ''
+readFileForURL = (url, _) ->
+    cloudClient.download
+        container: 'content/content-by-url'
+        remote: "#{hashURL url}.txt"
+
+    # Somehow after the download we get the ID and then ...
+    path = Path.join DIR_BY_ID_PATH, "#{id}.json"
+    readFile path, _
 
 getRedisKeyForId = (id) ->
     "content:id:#{id}"
@@ -254,7 +254,7 @@ module.exports = class Content
         else
             # note that our URL files are symlinks to the ID files, and
             # node's FS.readFile() follows symlinks natively. sweet!
-            if json = readFile (getFilePathForURL url), _
+            if json = readFileForURL url, _
                 enqueueIfNeeded _, new Content JSON.parse json
             else
                 null
@@ -276,12 +276,8 @@ module.exports = class Content
 
         else
             idPath = getFilePathForId id
-            urlPath = getFilePathForURL url
-            urlToIdPath =
-                Path.join DIR_PATH_FROM_URL_TO_ID, Path.basename idPath
-
             FS.writeFile idPath, content._stringifyData(), _
-            FS.symlink urlToIdPath, urlPath, _
+            # TODO: Update content-by-url in Cloud Files
 
         # Either way now:
         enqueueForConversion content, _
