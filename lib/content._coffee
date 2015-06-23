@@ -2,12 +2,12 @@ config = require '../config'
 crypto = require 'crypto'
 FS = require 'fs'
 Path = require 'path'
+pkgcloud = require 'pkgcloud'
 redis = require 'redis'
 URL = require 'url'
 Worker = require './worker'
 
-pkgcloud = require('pkgcloud')
-cloudClient = pkgcloud.storage.createClient
+storageClient = pkgcloud.storage.createClient
     provider: 'rackspace'
     username: config.RACKSPACE_USERNAME
     apiKey: config.RACKSPACE_API_KEY
@@ -45,13 +45,21 @@ getFilePathForId = (id) ->
     Path.join DIR_BY_ID_PATH, "#{id}.json"
 
 readFileForURL = (url, _) ->
-    cloudClient.download
-        container: 'content/content-by-url'
-        remote: "#{hashURL url}.txt"
+    download = storageClient.download
+        container: 'content'
+        remote: "content-by-url/#{hashURL url}.txt"
 
-    # Somehow after the download we get the ID and then ...
-    path = Path.join DIR_BY_ID_PATH, "#{id}.json"
-    readFile path, _
+    id = ''
+
+    download.on 'data', (chunk) ->
+        id += chunk
+
+    download.on 'error', () ->
+        # What do we do here? Something with Streamline?
+
+    download.on 'end', () ->
+        path = Path.join DIR_BY_ID_PATH, "#{id}.json"
+        readFile path, _
 
 getRedisKeyForId = (id) ->
     "content:id:#{id}"
