@@ -57,7 +57,7 @@ readFileForURL = (url, _) ->
     download.on 'error', () ->
         # What do we do here? Something with Streamline?
 
-    download.on 'end', () ->
+    download.on 'end', (_) ->
         path = Path.join DIR_BY_ID_PATH, "#{id}.json"
         readFile path, _
 
