@@ -20,18 +20,18 @@ data DeepZoomImage = DeepZoomImage
 
 instance ToJSON DeepZoomImage
 
-type ContentAPI = "content" :> Get '[JSON] DeepZoomImage
+type ContentAPI =
+    "v1" :> "content" :> Capture "id" String :> Get '[JSON] DeepZoomImage
 
-content :: DeepZoomImage
-content =
-  DeepZoomImage "http://content.zoomhub.net/dzis/h.dzi" 4013 2405 254 1 "jpg"
+content :: String -> DeepZoomImage
+content id =
+  DeepZoomImage ("http://content.zoomhub.net/dzis/" ++ id ++ ".dzi") 4013 2405 254 1 "jpg"
 
 contentAPI :: Proxy ContentAPI
 contentAPI = Proxy
 
 server :: Server ContentAPI
-server = return content
+server id = return $ content id
 
 app :: Application
 app = serve contentAPI server
-
