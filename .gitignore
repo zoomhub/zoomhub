@@ -5,6 +5,12 @@
 /node_modules
 npm-debug.log
 
+# Haskell
+cabal.sandbox.config
+.cabal-sandbox
+.stack-work
+/dist/
+
 # Sublime Text
 *.sublime-workspace
 
