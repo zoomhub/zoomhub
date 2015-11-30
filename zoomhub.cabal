@@ -21,6 +21,7 @@ executable zoomhub
   main-is: main.hs
   build-depends:
       aeson >= 0.8
+    , aeson-casing == 0.1.0.2
     , base >= 4.7 && < 5
     , bytestring
     , directory
