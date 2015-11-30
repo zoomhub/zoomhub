@@ -6,7 +6,7 @@
 module ZoomHub where
 
 import Data.Aeson
-import Data.Aeson.TH
+import Data.Aeson.Casing
 import Data.Char
 import GHC.Generics
 import Network.Wai
@@ -21,10 +21,10 @@ data DeepZoomImage = DeepZoomImage
   , dziTileFormat :: String
   } deriving (Eq, Show, Generic)
 
-$(deriveJSON defaultOptions
-  { fieldLabelModifier = drop 3
-  , constructorTagModifier = map toLower
-  } ''DeepZoomImage)
+instance ToJSON DeepZoomImage where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON DeepZoomImage where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 data Content = Content
   { contentId :: String
@@ -40,10 +40,10 @@ data Content = Content
   , contentDzi :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
-$(deriveJSON defaultOptions
-  { fieldLabelModifier = drop 7
-  , constructorTagModifier = map toLower
-  } ''Content)
+instance ToJSON Content where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON Content where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 type ContentAPI =
   "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
