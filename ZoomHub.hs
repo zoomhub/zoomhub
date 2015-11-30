@@ -2,38 +2,48 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 module ZoomHub where
 
 import Data.Aeson
+import Data.Aeson.TH
+import Data.Char
 import GHC.Generics
 import Network.Wai
 import Servant
 
-data Content = Content
-  { contentId :: String
-  , url :: String
-  , ready :: Bool
-  , failed :: Bool
-  , progress :: Float
-  , mime :: String -- Use proper MIME type
-  , size :: Integer
-  , active :: Bool
-  , activeAt :: String -- Use proper date type
-  , finishedAt :: String -- Use proper date type
-  , dzi :: Maybe DeepZoomImage
-  } deriving (Eq, Show, Generic)
-
-instance ToJSON Content
 
 data DeepZoomImage = DeepZoomImage
-  { width :: Integer
-  , height :: Integer
-  , tileSize :: Integer
-  , tileOverlap :: Integer
-  , tileFormat :: String
+  { dziWidth :: Integer
+  , dziHeight :: Integer
+  , dziTileSize :: Integer
+  , dziTileOverlap :: Integer
+  , dziTileFormat :: String
   } deriving (Eq, Show, Generic)
 
-instance ToJSON DeepZoomImage
+$(deriveJSON defaultOptions
+  { fieldLabelModifier = drop 3
+  , constructorTagModifier = map toLower
+  } ''DeepZoomImage)
+
+data Content = Content
+  { contentId :: String
+  , contentUrl :: String
+  , contentReady :: Bool
+  , contentFailed :: Bool
+  , contentProgress :: Float
+  , contentMime :: String -- Use proper MIME type
+  , contentSize :: Integer
+  , contentActive :: Bool
+  , contentActiveAt :: String -- Use proper date type
+  , contentFinishedAt :: String -- Use proper date type
+  , contentDzi :: Maybe DeepZoomImage
+  } deriving (Eq, Show, Generic)
+
+$(deriveJSON defaultOptions
+  { fieldLabelModifier = drop 7
+  , constructorTagModifier = map toLower
+  } ''Content)
 
 type ContentAPI =
   "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
@@ -41,21 +51,21 @@ type ContentAPI =
 content :: String -> Content
 content contentId = Content
   { contentId=contentId
-  , url="http://example.com/" ++ contentId ++ ".jpg"
-  , ready=False
-  , failed=False
-  , progress=1.0
-  , mime="image/jpeg"
-  , size=42000
-  , active=False
-  , activeAt="2015-02-23T04:23:29.754Z"
-  , finishedAt="2015-02-23T04:23:34.703Z"
-  , dzi=Just DeepZoomImage
-    { width=4013
-    , height=2405
-    , tileSize=254
-    , tileOverlap=1
-    , tileFormat="jpg"
+  , contentUrl="http://example.com/" ++ contentId ++ ".jpg"
+  , contentReady=False
+  , contentFailed=False
+  , contentProgress=1.0
+  , contentMime="image/jpeg"
+  , contentSize=42000
+  , contentActive=False
+  , contentActiveAt="2015-02-23T04:23:29.754Z"
+  , contentFinishedAt="2015-02-23T04:23:34.703Z"
+  , contentDzi=Just DeepZoomImage
+    { dziWidth=4013
+    , dziHeight=2405
+    , dziTileSize=254
+    , dziTileOverlap=1
+    , dziTileFormat="jpg"
     }
   }
 
