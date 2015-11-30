@@ -9,9 +9,24 @@ import GHC.Generics
 import Network.Wai
 import Servant
 
+data Content = Content
+  { contentId :: String
+  , url :: String
+  , ready :: Bool
+  , failed :: Bool
+  , progress :: Float
+  , mime :: String -- Use proper MIME type
+  , size :: Integer
+  , active :: Bool
+  , activeAt :: String -- Use proper date type
+  , finishedAt :: String -- Use proper date type
+  , dzi :: Maybe DeepZoomImage
+  } deriving (Eq, Show, Generic)
+
+instance ToJSON Content
+
 data DeepZoomImage = DeepZoomImage
-  { url :: String
-  , width :: Integer
+  { width :: Integer
   , height :: Integer
   , tileSize :: Integer
   , tileOverlap :: Integer
@@ -21,17 +36,34 @@ data DeepZoomImage = DeepZoomImage
 instance ToJSON DeepZoomImage
 
 type ContentAPI =
-    "v1" :> "content" :> Capture "id" String :> Get '[JSON] DeepZoomImage
+  "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
 
-content :: String -> DeepZoomImage
-content id =
-  DeepZoomImage ("http://content.zoomhub.net/dzis/" ++ id ++ ".dzi") 4013 2405 254 1 "jpg"
+content :: String -> Content
+content contentId = Content
+  { contentId=contentId
+  , url="http://example.com/" ++ contentId ++ ".jpg"
+  , ready=False
+  , failed=False
+  , progress=1.0
+  , mime="image/jpeg"
+  , size=42000
+  , active=False
+  , activeAt="2015-02-23T04:23:29.754Z"
+  , finishedAt="2015-02-23T04:23:34.703Z"
+  , dzi=Just DeepZoomImage
+    { width=4013
+    , height=2405
+    , tileSize=254
+    , tileOverlap=1
+    , tileFormat="jpg"
+    }
+  }
 
 contentAPI :: Proxy ContentAPI
 contentAPI = Proxy
 
 server :: Server ContentAPI
-server id = return $ content id
+server contentId = return $ content contentId
 
 app :: Application
 app = serve contentAPI server
