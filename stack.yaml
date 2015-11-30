@@ -9,6 +9,7 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
+- aeson-casing-0.1.0.2
 - servant-lucid-0.4.4.5
 
 # Override default flag values for local packages and extra-deps
