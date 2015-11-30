@@ -18,7 +18,7 @@ source-repository head
   location: http://github.com/zoomhub/zoomhub.git
 
 executable zoomhub
-  main-is: main.hs
+  main-is: Main.hs
   build-depends:
       aeson >= 0.8
     , aeson-casing == 0.1.0.2
