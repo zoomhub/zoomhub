@@ -4,7 +4,6 @@
         {
             "path": ".",
             "file_exclude_patterns": [
-                "*.sublime-project",
                 "*.sublime-workspace"
             ],
             "folder_exclude_patterns": [
@@ -17,5 +16,5 @@
         "tab_size": 4,
         "translate_tabs_to_spaces": true,
         "trim_trailing_white_space_on_save": true
-    }   
+    }
 }
