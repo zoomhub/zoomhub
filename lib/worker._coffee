@@ -25,8 +25,9 @@ DZIParser = require './dziparser'
 FS = require 'fs-extra'
 OS = require 'os'
 Path = require 'path'
-pkgcloud = require 'pkgcloud'
 Request = require 'request'
+storageClient = require './util/storageClient'
+
 
 BASE_TEMP_DIR = Path.join OS.tmpdir(), 'zoomhub-worker'
 
@@ -35,15 +36,6 @@ BASE_TEMP_DIR = Path.join OS.tmpdir(), 'zoomhub-worker'
 PARALLEL_UPLOADS_PER_LEVEL = 4
 
 XML_CONTENT_TYPE = 'application/xml'
-
-# NOTE: This assumes/hardcodes Rackspace as the provider for now.
-# TODO: Generalize this and make it properly adaptable/configurable/etc.
-storageClient = pkgcloud.storage.createClient
-    provider: 'rackspace'
-    username: config.RACKSPACE_USERNAME
-    apiKey: config.RACKSPACE_API_KEY
-    region: config.CONTENT_REGION
-
 
 ## PUBLIC:
 
