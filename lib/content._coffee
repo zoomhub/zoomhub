@@ -53,7 +53,16 @@ getFilePathForURL = (url, cb) ->
 
     download.on 'end', ->
         download.removeListener 'error', cb
-        cb null, Path.join DIR_BY_ID_PATH, "#{id}.json"
+
+        # Catch HTML response, e.g.
+        # <html><h1>Not Found</h1><p>The resource could not be found.</p></html>
+        if id.indexOf('<') is 0
+            cb new Error "No ID found for `url`: #{url}"
+            return
+
+        # TODO: Validate `id` before using it as part of a path:
+        path = Path.join DIR_BY_ID_PATH, "#{id}.json"
+        cb null, path
 
 getRedisKeyForId = (id) ->
     "content:id:#{id}"
