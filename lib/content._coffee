@@ -39,7 +39,7 @@ getFilePathForId = (id) ->
     id = id.replace /([A-Z])/g, '_$1'
     Path.join DIR_BY_ID_PATH, "#{id}.json"
 
-readFileForURL = (url, _) ->
+getFilePathForURL = (url, cb) ->
     download = storageClient.download
         container: 'content'
         remote: "content-by-url/#{hashURL url}.txt"
@@ -49,12 +49,11 @@ readFileForURL = (url, _) ->
     download.on 'data', (chunk) ->
         id += chunk
 
-    download.on 'error', () ->
-        # What do we do here? Something with Streamline?
+    download.on 'error', cb
 
-    download.on 'end', (_) ->
-        path = Path.join DIR_BY_ID_PATH, "#{id}.json"
-        readFile path, _
+    download.on 'end', ->
+        download.removeListener 'error', cb
+        cb null, Path.join DIR_BY_ID_PATH, "#{id}.json"
 
 getRedisKeyForId = (id) ->
     "content:id:#{id}"
@@ -255,9 +254,7 @@ module.exports = class Content
             else
                 null
         else
-            # note that our URL files are symlinks to the ID files, and
-            # node's FS.readFile() follows symlinks natively. sweet!
-            if json = readFileForURL url, _
+            if json = readFile (getFilePathForURL url, _), _
                 enqueueIfNeeded _, new Content JSON.parse json
             else
                 null

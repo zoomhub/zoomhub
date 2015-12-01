@@ -81,7 +81,6 @@ URL = require 'url'
         redirect: "/v1/content/#{content.id}"
         content: content
 
-
 ## UI:
 
 #
