@@ -2,16 +2,11 @@ config = require '../config'
 crypto = require 'crypto'
 FS = require 'fs'
 Path = require 'path'
-pkgcloud = require 'pkgcloud'
 redis = require 'redis'
+storageClient = require './util/storageClient'
 URL = require 'url'
 Worker = require './worker'
 
-storageClient = pkgcloud.storage.createClient
-    provider: 'rackspace'
-    username: config.RACKSPACE_USERNAME
-    apiKey: config.RACKSPACE_API_KEY
-    region: config.CONTENT_REGION
 
 ## HELPERS
 
