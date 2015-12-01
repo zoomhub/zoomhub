@@ -61,6 +61,7 @@ app.use express.errorHandler()
 
 # Meta:
 app.get '/health', routes.getHealth
+app.get '/version', routes.getVersion
 
 # API: (TODO: These should be under an api vhost!)
 app.get '/v1/content/:id', routes.getContentById
