@@ -11,7 +11,6 @@ Worker = require './worker'
 ## HELPERS
 
 DIR_BY_ID_PATH = Path.join config.DATA_DIR, 'content-by-id'
-DIR_BY_URL_PATH = Path.join config.DATA_DIR, 'content-by-url'
 
 # TODO: We should be generating random IDs instead of incrementing them.
 NEXT_ID_KEY = 'content:next.id'
