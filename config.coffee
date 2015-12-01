@@ -122,7 +122,6 @@ for key, defaultValue of configs
             when 'number'
                 val = parseInt val, 10
             when 'boolean'
-                val = val.toLowerCase() in [
-                    '1', 'true', 'on', 'yes', 'enabled']
+                val = val.toLowerCase() in ['1', 'true', 'on', 'yes', 'enabled']
 
         configs[key] = val
