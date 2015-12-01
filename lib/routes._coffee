@@ -7,16 +7,26 @@ Content = require './content'
 DZIParser = require './dziparser'
 Embed = require './embed'
 Errors = require './errors'
+FS = require 'fs'
 http = require 'http'
 path = require 'path'
 URL = require 'url'
 
+
+# Constants
+GIT_PATH = "#{__dirname}/../.git"
 
 ## META:
 
 @getHealth = (req, res, _) ->
     res.send 'up'
 
+@getVersion = (req, res, _) ->
+    gitHEADFile = FS.readFile "#{GIT_PATH}/HEAD", _
+    gitHEAD = gitHEADFile.toString().replace('ref: ', '').replace('\n', '')
+    headCommitFile = FS.readFile "#{GIT_PATH}/#{gitHEAD}", _
+    headCommitSHA = headCommitFile.toString().replace('\n', '')
+    res.send headCommitSHA
 
 ## API:
 
