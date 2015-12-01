@@ -57,8 +57,7 @@ getFilePathForURL = (url, cb) ->
         # Catch HTML response, e.g.
         # <html><h1>Not Found</h1><p>The resource could not be found.</p></html>
         if id.indexOf('<') is 0
-            cb new Error "No ID found for `url`: #{url}"
-            return
+            id = 'ID-NOT-FOUND' # Seems safer than HTML as `id`
 
         # TODO: Validate `id` before using it as part of a path:
         path = Path.join DIR_BY_ID_PATH, "#{id}.json"
