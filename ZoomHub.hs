@@ -26,6 +26,8 @@ instance ToJSON DeepZoomImage where
 instance FromJSON DeepZoomImage where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
 
+data ContentState = Inactive | Active | Failed | Ready
+
 data Content = Content
   { contentId :: String
   , contentUrl :: String
