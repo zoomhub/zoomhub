@@ -5,6 +5,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module ZoomHub where
 
+import Control.Monad.Trans.Either
 import Data.Aeson
 import Data.Aeson.Casing
 import Data.Char
@@ -13,6 +14,7 @@ import Network.Wai
 import Servant
 
 
+-- Models
 data DeepZoomImage = DeepZoomImage
   { dziWidth :: Integer
   , dziHeight :: Integer
@@ -47,11 +49,9 @@ instance ToJSON Content where
 instance FromJSON Content where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
 
-type ContentAPI =
-  "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
-
-content :: String -> Content
-content contentId = Content
+-- Constructor: Content
+mkContent :: String -> Content
+mkContent contentId = Content
   { contentId=contentId
   , contentUrl="http://example.com/" ++ contentId ++ ".jpg"
   , contentReady=False
@@ -71,11 +71,24 @@ content contentId = Content
     }
   }
 
-contentAPI :: Proxy ContentAPI
-contentAPI = Proxy
+-- API
+type API = "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
+      :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
 
-server :: Server ContentAPI
-server contentId = return $ content contentId
+api :: Proxy API
+api = Proxy
+
+server :: Server API
+server = contentById
+    :<|> contentByURL
+
+  where contentById :: String -> EitherT ServantErr IO Content
+        contentById id = return $ mkContent id
+
+        contentByURL :: Maybe String -> EitherT ServantErr IO Content
+        contentByURL url = case url of
+          Nothing  -> return . mkContent $ "404" -- Return 400
+          Just url -> return . mkContent $ url
 
 app :: Application
-app = serve contentAPI server
+app = serve api server
