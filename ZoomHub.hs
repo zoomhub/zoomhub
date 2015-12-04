@@ -3,13 +3,18 @@
 {-# LANGUAGE TypeOperators #-}
 module ZoomHub where
 
+import Control.Applicative
 import Control.Monad.Trans.Either
+import Data.Aeson as Aeson
 import Data.Char
 import GHC.Generics
 import Network.Wai
 import Servant
+import System.Directory
 import Types.Content
 
+import qualified Control.Monad.IO.Class as IO
+import qualified Data.ByteString.Lazy as BL
 
 
 -- Servant default handler type
@@ -19,19 +24,31 @@ type Handler a = EitherT ServantErr IO a
 type API = "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
       :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
 
+-- Handlers
+getContentFromFile :: String -> IO (Maybe Content)
+getContentFromFile id = do
+  cd <- getCurrentDirectory
+  Aeson.decode <$> BL.readFile (cd ++ "/data/content-by-id/" ++ id ++ ".json")
+
+contentById :: String -> Handler Content
+contentById id = do
+  maybeContent <- IO.liftIO $ getContentFromFile id
+  case maybeContent of
+    Nothing -> left Servant.err404
+    Just c  -> return c
+
+contentByURL :: Maybe String -> Handler Content
+contentByURL url = case url of
+  Nothing  -> return . mkContent $ "404" -- Return 400
+  Just url -> return . mkContent $ url
+
+-- API
 api :: Proxy API
 api = Proxy
 
 server :: Server API
 server = contentById
     :<|> contentByURL
-
-  where contentById :: String -> Handler Content
-        contentById id = return $ mkContent id
-        contentByURL :: Maybe String -> Handler Content
-        contentByURL url = case url of
-          Nothing  -> return . mkContent $ "404" -- Return 400
-          Just url -> return . mkContent $ url
 
 app :: Application
 app = serve api server
