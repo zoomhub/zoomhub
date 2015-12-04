@@ -1,0 +1,7 @@
+
+- src: nodesource.node
+  path: deployment/roles
+
+- src: DavidWittman.redis
+  path: deployment/roles
+  version: 1.0.2

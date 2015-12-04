@@ -11,11 +11,13 @@ app_version: master
 app_environment: production
 new_relic_app_name: '{{ service }}-{{ app_environment }}'
 app_port: 3000
+rackspace_user_name: zoomingservice
+rackspace_region: IAD
 app_env:
   - NODE_ENV=production
   - PORT={{ app_port }}
   - BASE_URL='http://zoomhub.net'
-  - DATA_DIR=/mnt/datavolume/zoomhub/data
+  - DATA_DIR={{ data_root }}
   - HOME={{ admin_home }}
   - CONTENT_DZIS_PREFIX=dzis/
   - EXPRESS_LOGGER_FORMAT=default

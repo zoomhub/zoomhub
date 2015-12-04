@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# Persist deployment/secrets-clear-text.yml as deployment/secrets.vault.yml.
+
+ROOT=$(cd $(dirname $0)/..; pwd)
+
+if [ ! -e ${ROOT}/deployment/secrets-clear-text.yml ]; then
+  echo "[lock] secrets-clear-text.yml does not exist!"
+  exit 1
+fi
+
+cp ${ROOT}/deployment/secrets-clear-text.yml ${ROOT}/deployment/secrets.vault.yml
+ansible-vault encrypt ${ROOT}/deployment/secrets.vault.yml

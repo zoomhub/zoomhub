@@ -1,0 +1,16 @@
+---
+- name: Build the block storage volume
+  connection: local
+  local_action:
+    module: rax_cbs
+    name: "{{ block_storage_volume_name }}_{{ rackspace_region }}"
+    description: Zoomhub Block Storage Volume
+    username: "{{ rackspace_user_name }}"
+    api_key: "{{ rackspace_api_key }}"
+    region: "{{ rackspace_region }}"
+    volume_type: SSD
+    size: 100
+    wait: yes
+    state: present
+    meta:
+      app: zoomhub

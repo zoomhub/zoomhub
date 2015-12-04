@@ -7,6 +7,9 @@
     - secrets.vault.yml
   sudo: yes
   roles:
+  #  - storage-volume // commenting this out as it's not functional
+    - nodesource.node
     - web
-    - redis
+    - DavidWittman.redis
     - vips
+
