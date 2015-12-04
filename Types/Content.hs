@@ -34,18 +34,18 @@ instance Aeson.FromJSON Content where
 mkContent :: String -> Content
 mkContent contentId = Content
   { contentId=contentId
-  , contentUrl="http://example.com/" ++ contentId ++ ".jpg"
+  , contentUrl="http://EXAMPLE.COM/" ++ contentId ++ ".JPG"
   , contentReady=False
   , contentFailed=False
   , contentProgress=1.0
   , contentMime="image/jpeg"
   , contentSize=42000
   , contentActive=False
-  , contentActiveAt="2015-02-23T04:23:29.754Z"
-  , contentFinishedAt="2015-02-23T04:23:34.703Z"
+  , contentActiveAt="1969-01-01T00:00:00.000Z"
+  , contentFinishedAt="1969-01-01T00:00:00.000Z"
   , contentDzi=Just DeepZoomImage
-    { dziWidth=4013
-    , dziHeight=2405
+    { dziWidth=1024
+    , dziHeight=1024
     , dziTileSize=254
     , dziTileOverlap=1
     , dziTileFormat="jpg"
