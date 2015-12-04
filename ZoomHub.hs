@@ -39,7 +39,9 @@ contentById id = do
 
 contentByURL :: Maybe String -> Handler Content
 contentByURL url = case url of
-  Nothing  -> return . mkContent $ "404" -- Return 400
+  Nothing  -> left Servant.err400{
+    errBody="Please provide an ID or `url` query parameter."
+  }
   Just url -> return . mkContent $ url
 
 -- API
