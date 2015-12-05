@@ -19,7 +19,7 @@ instance Aeson.ToJSON Credentials where
     toJSON (Credentials username apiKey) =
       Aeson.object ["auth" .=
         Aeson.object ["RAX-KSKEY:apiKeyCredentials" .=
-          Aeson.object["username" .= username, "apiKey" .= apiKey]
+          Aeson.object ["username" .= username, "apiKey" .= apiKey]
         ]
       ]
 
