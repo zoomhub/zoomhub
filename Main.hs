@@ -1,8 +1,7 @@
-import Network.Wai
-import Network.Wai.Handler.Warp
+import qualified Network.Wai.Handler.Warp as Warp
 
 
 import qualified ZoomHub.API as ZoomHub
 
 main :: IO ()
-main = run 8000 ZoomHub.app
+main = Warp.run 8000 ZoomHub.app
