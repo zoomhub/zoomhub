@@ -9,10 +9,11 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Network.HTTP.Conduit as HTTP
 
 
+-- Types
 data Credentials = Credentials
   { username :: String
   , apiKey :: String
-  }
+  } deriving (Eq, Show)
 
 instance Aeson.ToJSON Credentials where
     toJSON (Credentials username apiKey) =
