@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
-module ZoomHub where
+module ZoomHub.API where
 
 import Control.Applicative
 import Control.Monad.Trans.Either
@@ -11,7 +11,7 @@ import GHC.Generics
 import Network.Wai
 import Servant
 import System.Directory
-import Types.Content
+import ZoomHub.Types.Content
 
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.ByteString.Lazy as LBS

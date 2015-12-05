@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Types.Content where
+module ZoomHub.Types.Content where
 
 
 import Data.Aeson as Aeson
 import Data.Aeson.Casing
-import Types.DeepZoomImage
+import ZoomHub.Types.DeepZoomImage
 
 import qualified GHC.Generics as GHC
 
