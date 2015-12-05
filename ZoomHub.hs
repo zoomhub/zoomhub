@@ -34,7 +34,7 @@ contentById :: String -> Handler Content
 contentById id = do
   maybeContent <- IO.liftIO $ getContentFromFile id
   case maybeContent of
-    Nothing -> left Servant.err404
+    Nothing -> left Servant.err404{errBody="ID not found"}
     Just c  -> return c
 
 contentByURL :: Maybe String -> Handler Content
