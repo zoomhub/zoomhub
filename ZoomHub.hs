@@ -14,7 +14,7 @@ import System.Directory
 import Types.Content
 
 import qualified Control.Monad.IO.Class as IO
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy as LBS
 
 
 -- Servant default handler type
@@ -28,7 +28,7 @@ type API = "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
 getContentFromFile :: String -> IO (Maybe Content)
 getContentFromFile id = do
   cd <- getCurrentDirectory
-  Aeson.decode <$> BL.readFile (cd ++ "/data/content-by-id/" ++ id ++ ".json")
+  Aeson.decode <$> LBS.readFile (cd ++ "/data/content-by-id/" ++ id ++ ".json")
 
 contentById :: String -> Handler Content
 contentById id = do
