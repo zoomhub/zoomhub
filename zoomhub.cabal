@@ -26,6 +26,7 @@ executable zoomhub
     , bytestring
     , directory
     , either
+    , http-conduit == 2.1.7.2
     , http-types
     , js-jquery
     , lucid
