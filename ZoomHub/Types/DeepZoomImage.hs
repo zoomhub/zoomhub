@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Types.DeepZoomImage where
+module ZoomHub.Types.DeepZoomImage where
 
 
 import Data.Aeson as Aeson
