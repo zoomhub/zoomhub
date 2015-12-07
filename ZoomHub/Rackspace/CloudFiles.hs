@@ -3,11 +3,12 @@
 module ZoomHub.Rackspace.CloudFiles where
 
 import Control.Applicative as Applicative
+import Control.Lens as Lens hiding ((.=)) -- .= used in Data.Aeson as well
 import Data.Aeson as Aeson
+import Network.Wreq as HTTP
 
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.ByteString.Lazy as LBS
-import qualified Network.HTTP.Conduit as HTTP
 
 
 -- Types
@@ -38,16 +39,8 @@ tokenURL = "https://identity.api.rackspacecloud.com/v2.0/tokens"
 
 getJSON :: Credentials -> IO LBS.ByteString
 getJSON credentials = do
-  req <- IO.liftIO $ HTTP.parseUrl tokenURL
-  let credentialsBS = Aeson.encode $ credentials
-  let req' = req {
-              HTTP.method = "POST"
-            , HTTP.requestBody = HTTP.RequestBodyLBS credentialsBS
-            , HTTP.requestHeaders = [("Content-Type", "application/json")]
-            }
-  manager <- IO.liftIO $ HTTP.newManager HTTP.tlsManagerSettings
-  res <- HTTP.httpLbs req' manager
-  return $ HTTP.responseBody res
+  res <- HTTP.post tokenURL $ Aeson.toJSON credentials
+  return $ res ^. responseBody
 
 getToken :: Credentials  -> IO (Maybe Token)
 getToken credentials = do
