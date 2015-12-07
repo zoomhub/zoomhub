@@ -42,5 +42,9 @@ executable zoomhub
     , wai
     , warp
   hs-source-dirs: .
+  other-modules:
+      ZoomHub.API
+    , ZoomHub.Types.Content
+    , ZoomHub.Types.DeepZoomImage
   default-language: Haskell2010
 
