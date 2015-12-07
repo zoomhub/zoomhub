@@ -28,6 +28,7 @@ executable zoomhub
     , either
     , http-types
     , js-jquery
+    , crypto-hash == 0.11.*
     , lens == 4.12.*
     , lens-aeson == 1.*
     , lucid
