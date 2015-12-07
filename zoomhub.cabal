@@ -26,9 +26,9 @@ executable zoomhub
     , bytestring
     , directory
     , either
-    , http-conduit == 2.1.*
     , http-types
     , js-jquery
+    , lens == 4.12.*
     , lucid
     , random
     , servant == 0.4.*
@@ -41,6 +41,7 @@ executable zoomhub
     , transformers
     , wai
     , warp
+    , wreq == 0.4.*
   hs-source-dirs: .
   other-modules:
       ZoomHub.API
