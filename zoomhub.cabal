@@ -45,6 +45,7 @@ executable zoomhub
   hs-source-dirs: .
   other-modules:
       ZoomHub.API
+    , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Types.Content
     , ZoomHub.Types.DeepZoomImage
   default-language: Haskell2010
