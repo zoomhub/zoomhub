@@ -9,6 +9,7 @@ import Data.Aeson.Lens as Aeson
 import Network.Wreq as HTTP
 
 import qualified Control.Monad.IO.Class as IO
+import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as T
 
@@ -56,3 +57,16 @@ parseEndpoint meta =
   -- `{"access":{"serviceCatalog":[{"name":"IAD","endpoints":[]}]}}`
   -- let a = meta ^? key "access" . key "serviceCatalog" . _Array in
   Just $ Endpoint "https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_0c5dc6c2-028f-4648-a59d-e770b827add7"
+
+getContent :: Credentials -> String -> IO (Maybe LBS.ByteString)
+getContent credentials urlPath = do
+  meta <- getMetadata credentials
+  case parseToken meta of
+    Nothing -> return Nothing
+    Just t ->
+      let opts = defaults & header "X-Auth-Token" .~ [B.pack $ show t] in
+      case parseEndpoint meta of
+        Nothing -> return Nothing
+        Just e -> do
+          res <- HTTP.getWith opts (show e ++ urlPath)
+          return $ Just $ res ^. responseBody
