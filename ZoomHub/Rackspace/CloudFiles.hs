@@ -27,6 +27,7 @@ instance Aeson.ToJSON Credentials where
         ]
       ]
 
+newtype Endpoint = Endpoint String deriving (Eq, Show)
 newtype Token = Token String deriving (Eq, Show)
 
 -- API
@@ -42,3 +43,11 @@ parseToken :: LBS.ByteString -> Maybe Token
 parseToken res =
   let maybeToken = res ^? key "access" . key "token" . key "id" . _String in
   (Token . T.unpack) <$> maybeToken
+
+parseEndpoint :: LBS.ByteString -> Maybe Endpoint
+parseEndpoint res =
+  -- TODO: How do I filter `access.serviceCatalog[].name == "IAD"` using
+  -- lenses from:
+  -- `{"access":{"serviceCatalog":[{"name":"IAD","endpoints":[]}]}}`
+  -- let a = res ^? key "access" . key "serviceCatalog" . _Array in
+  Just $ Endpoint "https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_0c5dc6c2-028f-4648-a59d-e770b827add7"
