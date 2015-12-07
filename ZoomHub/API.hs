@@ -24,7 +24,7 @@ type Handler a = Either.EitherT S.ServantErr IO a
 -- API
 type API =
       "v1" :> "content" :> S.Capture "id" String :> S.Get '[S.JSON] Content
- :<|> "v2" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] Content
+ :<|> "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] Content
 
 -- Handlers
 getContentFromFile :: String -> IO (Maybe Content)
