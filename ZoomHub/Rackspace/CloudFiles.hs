@@ -41,6 +41,4 @@ getResponse credentials = do
 parseToken :: LBS.ByteString -> Maybe Token
 parseToken res =
   let maybeToken = res ^? key "access" . key "token" . key "id" . _String in
-  case maybeToken of
-    Nothing -> Nothing
-    Just t  -> Just $ Token $ T.unpack t
+  (\x -> Token $ T.unpack x) <$> maybeToken
