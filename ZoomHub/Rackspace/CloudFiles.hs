@@ -39,20 +39,20 @@ instance Show Token where
 tokenURL :: String
 tokenURL = "https://identity.api.rackspacecloud.com/v2.0/tokens"
 
-getResponse :: Credentials -> IO LBS.ByteString
-getResponse credentials = do
+getMetadata :: Credentials -> IO LBS.ByteString
+getMetadata credentials = do
   res <- HTTP.post tokenURL $ Aeson.toJSON credentials
   return $ res ^. responseBody
 
 parseToken :: LBS.ByteString -> Maybe Token
-parseToken res =
-  let maybeToken = res ^? key "access" . key "token" . key "id" . _String in
+parseToken meta =
+  let maybeToken = meta ^? key "access" . key "token" . key "id" . _String in
   (Token . T.unpack) <$> maybeToken
 
 parseEndpoint :: LBS.ByteString -> Maybe Endpoint
-parseEndpoint res =
+parseEndpoint meta =
   -- TODO: How do I filter `access.serviceCatalog[].name == "IAD"` using
   -- lenses from:
   -- `{"access":{"serviceCatalog":[{"name":"IAD","endpoints":[]}]}}`
-  -- let a = res ^? key "access" . key "serviceCatalog" . _Array in
+  -- let a = meta ^? key "access" . key "serviceCatalog" . _Array in
   Just $ Endpoint "https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_0c5dc6c2-028f-4648-a59d-e770b827add7"
