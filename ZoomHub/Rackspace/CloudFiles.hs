@@ -5,10 +5,12 @@ module ZoomHub.Rackspace.CloudFiles where
 import Control.Applicative as Applicative
 import Control.Lens as Lens hiding ((.=)) -- .= used in Data.Aeson as well
 import Data.Aeson as Aeson
+import Data.Aeson.Lens as Aeson
 import Network.Wreq as HTTP
 
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Text as T
 
 
 -- Types
@@ -25,25 +27,20 @@ instance Aeson.ToJSON Credentials where
         ]
       ]
 
-data Token = Token String deriving (Eq, Show)
-
-instance Aeson.FromJSON Token where
-    parseJSON (Object o) =
-      Token <$> ((o .: "access") >>= (.: "token") >>= (.: "id"))
-    parseJSON _ = empty
-
+newtype Token = Token String deriving (Eq, Show)
 
 -- API
 tokenURL :: String
 tokenURL = "https://identity.api.rackspacecloud.com/v2.0/tokens"
 
-getJSON :: Credentials -> IO LBS.ByteString
-getJSON credentials = do
+getResponse :: Credentials -> IO LBS.ByteString
+getResponse credentials = do
   res <- HTTP.post tokenURL $ Aeson.toJSON credentials
   return $ res ^. responseBody
 
-getToken :: Credentials  -> IO (Maybe Token)
-getToken credentials = do
-  res <- getJSON credentials
-  let maybeToken = decode $ res
-  return maybeToken
+parseToken :: LBS.ByteString -> Maybe Token
+parseToken res =
+  let maybeToken = res ^? key "access" . key "token" . key "id" . _String in
+  case maybeToken of
+    Nothing -> Nothing
+    Just t  -> Just $ Token $ T.unpack t
