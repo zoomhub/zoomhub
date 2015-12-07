@@ -14,6 +14,8 @@ import ZoomHub.Types.Content
 
 import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Either as Either
+import qualified Crypto.Hash as Crypto
+import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Proxy as Proxy
 
@@ -44,7 +46,9 @@ contentByURL url = case url of
   Nothing  -> Either.left S.err400{
     errBody="Please provide an ID or `url` query parameter."
   }
-  Just url -> return . mkContent $ url
+  Just url -> return . mkContent $ sha256 url
+  where sha256 :: String -> String
+        sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
 
 -- API
 api :: Proxy.Proxy API
