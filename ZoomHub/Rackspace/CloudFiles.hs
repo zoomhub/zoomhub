@@ -27,8 +27,13 @@ instance Aeson.ToJSON Credentials where
         ]
       ]
 
-newtype Endpoint = Endpoint String deriving (Eq, Show)
-newtype Token = Token String deriving (Eq, Show)
+newtype Endpoint = Endpoint String deriving Eq
+instance Show Endpoint where
+  show (Endpoint e) = e
+
+newtype Token = Token String deriving Eq
+instance Show Token where
+  show (Token t) = t
 
 -- API
 tokenURL :: String
