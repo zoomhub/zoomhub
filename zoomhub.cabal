@@ -29,7 +29,6 @@ executable zoomhub
     , http-types
     , js-jquery
     , lens == 4.12.*
-    , lens-aeson == 1.*
     , lucid
     , random
     , servant == 0.4.*
