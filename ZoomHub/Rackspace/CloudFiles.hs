@@ -36,8 +36,8 @@ instance Aeson.FromJSON Token where
 tokenURL :: String
 tokenURL = "https://identity.api.rackspacecloud.com/v2.0/tokens"
 
-getToken :: Credentials -> IO (Maybe Token)
-getToken credentials = do
+getJSON :: Credentials -> IO LBS.ByteString
+getJSON credentials = do
   req <- IO.liftIO $ HTTP.parseUrl tokenURL
   let credentialsBS = Aeson.encode $ credentials
   let req' = req {
@@ -47,5 +47,10 @@ getToken credentials = do
             }
   manager <- IO.liftIO $ HTTP.newManager HTTP.tlsManagerSettings
   res <- HTTP.httpLbs req' manager
-  let maybeToken = decode $ HTTP.responseBody res
+  return $ HTTP.responseBody res
+
+getToken :: Credentials  -> IO (Maybe Token)
+getToken credentials = do
+  res <- getJSON credentials
+  let maybeToken = decode $ res
   return maybeToken
