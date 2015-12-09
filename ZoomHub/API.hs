@@ -37,11 +37,10 @@ getContentFromFile id = do
   cd <- getCurrentDirectory
   Aeson.decode <$> LBS.readFile (cd ++ "/data/content-by-id/" ++ id ++ ".json")
 
-getContentFromURL :: String -> IO (Maybe Content)
-getContentFromURL url = do
+getContentFromURL :: CF.Credentials -> String -> IO (Maybe Content)
+getContentFromURL creds url = do
   let urlHash = sha256 url
   let urlPath = "/content/content-by-url/" ++ urlHash ++ ".txt"
-  let creds = CF.Credentials "<TODO>" "<TODO>"
   maybeContentId <- CF.getContent creds urlPath
   case maybeContentId of
     Nothing        -> return Nothing
@@ -57,13 +56,14 @@ contentById id = do
     Nothing      -> Either.left S.err404{errBody="ID not found"}
     Just content -> return content
 
-contentByURL :: Maybe String -> Handler Content
-contentByURL url = case url of
+-- TODO: Use redirect to `contentById` instead:
+contentByURL :: CF.Credentials -> Maybe String -> Handler Content
+contentByURL creds url = case url of
   Nothing  -> Either.left S.err400{
     errBody="Please provide an ID or `url` query parameter."
   }
   Just url -> do
-    maybeContent <- IO.liftIO $ getContentFromURL url
+    maybeContent <- IO.liftIO $ getContentFromURL creds url
     case maybeContent of
       Nothing      -> Either.left $ S.err404{errBody="URL not found"}
       Just content -> return content
@@ -72,9 +72,9 @@ contentByURL url = case url of
 api :: Proxy.Proxy API
 api = Proxy.Proxy
 
-server :: Server API
-server = contentById
-    :<|> contentByURL
+server :: CF.Credentials -> Server API
+server creds = contentById
+          :<|> contentByURL creds
 
-app :: Application
-app = serve api server
+app :: CF.Credentials -> Application
+app creds = serve api (server creds)
