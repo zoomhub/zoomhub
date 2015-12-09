@@ -17,7 +17,9 @@ import qualified Control.Monad.Trans.Either as Either
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as CL
 import qualified Data.Proxy as Proxy
+import qualified ZoomHub.Rackspace.CloudFiles as CF
 
 
 -- Servant default handler type
@@ -34,6 +36,19 @@ getContentFromFile id = do
   cd <- getCurrentDirectory
   Aeson.decode <$> LBS.readFile (cd ++ "/data/content-by-id/" ++ id ++ ".json")
 
+getContentFromURL :: String -> IO (Maybe Content)
+getContentFromURL url = do
+  let urlHash = sha256 url
+  let urlPath = "/content/content-by-url/" ++ urlHash ++ ".txt"
+  let creds = CF.Credentials "<TODO>" "<TODO>"
+  maybeContentId <- CF.getContent creds urlPath
+  case maybeContentId of
+    Nothing        -> return Nothing
+    Just contentId -> getContentFromFile $ CL.unpack contentId
+  where
+    sha256 :: String -> String
+    sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
+
 contentById :: String -> Handler Content
 contentById id = do
   maybeContent <- IO.liftIO $ getContentFromFile id
@@ -46,9 +61,11 @@ contentByURL url = case url of
   Nothing  -> Either.left S.err400{
     errBody="Please provide an ID or `url` query parameter."
   }
-  Just url -> return . mkContent $ sha256 url
-  where sha256 :: String -> String
-        sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
+  Just url -> do
+    maybeContent <- IO.liftIO $ getContentFromURL url
+    case maybeContent of
+      Nothing      -> Either.left $ S.err404{errBody="URL not found"}
+      Just content -> return content
 
 -- API
 api :: Proxy.Proxy API
