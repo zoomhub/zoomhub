@@ -53,8 +53,8 @@ contentById :: String -> Handler Content
 contentById id = do
   maybeContent <- IO.liftIO $ getContentFromFile id
   case maybeContent of
-    Nothing -> Either.left S.err404{errBody="ID not found"}
-    Just c  -> return c
+    Nothing      -> Either.left S.err404{errBody="ID not found"}
+    Just content -> return content
 
 contentByURL :: Maybe String -> Handler Content
 contentByURL url = case url of
