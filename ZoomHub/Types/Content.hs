@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+
 module ZoomHub.Types.Content where
 
 
