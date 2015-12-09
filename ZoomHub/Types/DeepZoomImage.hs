@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+
 module ZoomHub.Types.DeepZoomImage where
 
 
