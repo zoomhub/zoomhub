@@ -12,6 +12,7 @@ import qualified GHC.Generics as GHC
 
 
 data ContentState = Inactive | Active | Failed | Ready
+data ContentMIME = JPEG | GIF | PNG | PDF | HTML
 
 data Content = Content
   { contentId :: String
