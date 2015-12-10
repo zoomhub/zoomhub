@@ -24,12 +24,12 @@ executable zoomhub
     , aeson-casing == 0.1.0.2
     , base >= 4.7 && < 5
     , bytestring
+    , cryptonite == 0.6.*
     , directory
     , either
     , envy == 1.1.*
     , http-types
     , js-jquery
-    , cryptonite == 0.6.*
     , lens == 4.12.*
     , lens-aeson == 1.*
     , lucid
