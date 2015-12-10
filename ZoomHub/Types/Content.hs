@@ -31,25 +31,3 @@ instance Aeson.ToJSON Content where
    toJSON = genericToJSON $ aesonPrefix camelCase
 instance Aeson.FromJSON Content where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
-
--- Constructor: Content
-mkContent :: String -> Content
-mkContent contentId = Content
-  { contentId=contentId
-  , contentUrl="http://EXAMPLE.COM/" ++ contentId ++ ".JPG"
-  , contentReady=False
-  , contentFailed=False
-  , contentProgress=1.0
-  , contentMime="image/jpeg"
-  , contentSize=42000
-  , contentActive=False
-  , contentActiveAt="1969-01-01T00:00:00.000Z"
-  , contentFinishedAt="1969-01-01T00:00:00.000Z"
-  , contentDzi=Just DeepZoomImage
-    { dziWidth=1024
-    , dziHeight=1024
-    , dziTileSize=254
-    , dziTileOverlap=1
-    , dziTileFormat="jpg"
-    }
-  }
