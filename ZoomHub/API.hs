@@ -68,8 +68,16 @@ contentByURL creds url = case url of
   Just url -> do
     maybeContent <- IO.liftIO $ getContentFromURL creds url
     case maybeContent of
-      Nothing      -> Either.left $ S.err404{errBody="URL not found"}
-      Just content -> return content
+      -- TODO: Implement content conversion:
+      Nothing      -> Either.left $ S.err404{
+        errBody="URL not found"
+      }
+      Just content ->
+        let contentId = ZH.contentId content in
+        Either.left $ S.err301{
+          -- HACK: Redirect using error: http://git.io/vBCz9
+          errHeaders = [("Location", C.pack $ "/v1/content/" ++ contentId)]
+        }
 
 -- API
 api :: Proxy.Proxy API
