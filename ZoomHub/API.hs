@@ -54,7 +54,9 @@ contentById :: String -> Handler ZH.Content
 contentById id = do
   maybeContent <- IO.liftIO $ getContentFromFile id
   case maybeContent of
-    Nothing      -> Either.left S.err404{errBody="ID not found"}
+    Nothing      -> Either.left S.err404{
+      errBody=CL.pack $ "ID " ++ id ++ " not found."
+    }
     Just content -> return content
 
 -- TODO: Use redirect to `contentById` instead:
