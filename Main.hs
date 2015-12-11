@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 import qualified Data.Either as E
+import qualified Data.Maybe as M
 import qualified GHC.Generics as GHC
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Environment as System
@@ -27,16 +28,19 @@ instance Env.FromEnv RackspaceConfig where
     }
 
 -- Main
+defaultPort :: Int
+defaultPort = 8000
+
 main :: IO ()
 main = do
   maybePort <- System.lookupEnv "PORT"
   raxConfig <- Env.decodeEnv
-  case (maybePort, raxConfig) of
-    (Just port, E.Right config) ->
-      Warp.run (read port) (ZoomHub.app credentials)
+  case raxConfig of
+    E.Right config ->
+      let port = read $ M.fromMaybe (show defaultPort) maybePort in
+      Warp.run port (ZoomHub.app credentials)
       where
         username = raxUsername config
         apiKey = raxApiKey config
         credentials = CF.Credentials username apiKey
-    (Nothing, _) -> error "Please specify a `PORT`"
-    (_, E.Left message) -> error $ "Failed to read environment: " ++ message
+    E.Left message -> error $ "Failed to read environment: " ++ message
