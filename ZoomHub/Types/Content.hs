@@ -7,15 +7,33 @@ import Data.Aeson as Aeson
 import Data.Aeson.Casing
 import ZoomHub.Types.DeepZoomImage
 
+import qualified Data.Text as T
 import qualified Data.Time.Clock as DTC
 import qualified GHC.Generics as GHC
+import qualified Servant as S
 
 
 data ContentState = Inactive | Active | Failed | Ready
 data ContentMIME = JPEG | GIF | PNG | PDF | HTML
 
+-- ContentId
+newtype ContentId = ContentId String
+  deriving (Eq, GHC.Generic)
+
+instance Show ContentId where
+  show (ContentId contentId) = contentId
+
+instance S.FromText ContentId where
+  fromText t = Just $ ContentId $ T.unpack t
+
+instance Aeson.ToJSON ContentId where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance Aeson.FromJSON ContentId where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
+
+-- Content
 data Content = Content
-  { contentId :: String
+  { contentId :: ContentId
   , contentUrl :: String
   , contentReady :: Bool
   , contentFailed :: Bool
