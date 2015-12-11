@@ -28,34 +28,35 @@ type Handler a = Either.EitherT S.ServantErr IO a
 
 -- API
 type API =
-  "v1" :> "content" :> S.Capture "id" String :> S.Get '[S.JSON] ZH.Content
+  "v1" :> "content" :> S.Capture "id" ZH.ContentId :> S.Get '[S.JSON] ZH.Content
   :<|>
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] ZH.Content
 
 -- Handlers
-getContentFromFile :: String -> IO (Maybe ZH.Content)
-getContentFromFile id = do
+getContentFromFile :: ZH.ContentId -> IO (Maybe ZH.Content)
+getContentFromFile contentId = do
   cd <- getCurrentDirectory
-  Aeson.decode <$> LBS.readFile (cd ++ "/data/content-by-id/" ++ id ++ ".json")
+  Aeson.decode <$> LBS.readFile (
+    cd ++ "/data/content-by-id/" ++ show contentId ++ ".json")
 
-getContentFromURL :: CF.Credentials -> String -> IO (Maybe ZH.Content)
-getContentFromURL creds url = do
+getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe ZH.ContentId)
+getContentIdFromURL creds url = do
   let urlHash = sha256 url
   let urlPath = "/content/content-by-url/" ++ urlHash ++ ".txt"
-  maybeContentId <- CF.getContent creds urlPath
-  case maybeContentId of
-    Nothing        -> return Nothing
-    Just contentId -> getContentFromFile $ CL.unpack contentId
+  maybeContent <- CF.getContent creds urlPath
+  case maybeContent of
+    Nothing      -> return Nothing
+    Just contentId ->  return $ Just $ ZH.ContentId $ CL.unpack contentId
   where
     sha256 :: String -> String
     sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
 
-contentById :: String -> Handler ZH.Content
-contentById id = do
-  maybeContent <- IO.liftIO $ getContentFromFile id
+contentById :: ZH.ContentId -> Handler ZH.Content
+contentById contentId = do
+  maybeContent <- IO.liftIO $ getContentFromFile contentId
   case maybeContent of
     Nothing      -> Either.left S.err404{
-      errBody=CL.pack $ "ID " ++ id ++ " not found."
+      errBody=CL.pack $ "ID " ++ show contentId ++ " not found."
     }
     Just content -> return content
 
@@ -66,17 +67,15 @@ contentByURL creds url = case url of
     errBody="Please provide an ID or `url` query parameter."
   }
   Just url -> do
-    maybeContent <- IO.liftIO $ getContentFromURL creds url
-    case maybeContent of
+    maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
+    case maybeContentId of
       -- TODO: Implement content conversion:
-      Nothing      -> Either.left $ S.err404{
-        errBody="URL not found"
-      }
-      Just (ZH.ContentId contentId) ->
+      Nothing        -> Either.left $ S.err404{errBody="URL not found"}
+      Just contentId ->
         -- TODO: Use 301 permanent redirect once testing is complete:
         Either.left $ S.err302{
           -- HACK: Redirect using error: http://git.io/vBCz9
-          errHeaders = [("Location", C.pack $ "/v1/content/" ++ contentId)]
+          errHeaders = [("Location", C.pack $ "/v1/content/" ++ show contentId)]
         }
 
 -- API
