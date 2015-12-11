@@ -18,7 +18,7 @@ data RackspaceConfig = RackspaceConfig
 -- Default configuration will be used for fields that could not be
 -- retrieved from the environment:
 instance Env.DefConfig RackspaceConfig where
-  defConfig = RackspaceConfig{raxUsername="", raxApiKey=""}
+  defConfig = RackspaceConfig{raxUsername="zoomingservice", raxApiKey=""}
 
 instance Env.FromEnv RackspaceConfig where
   fromEnv = Env.gFromEnvCustom Env.Option
