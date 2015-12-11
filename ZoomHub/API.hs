@@ -72,9 +72,9 @@ contentByURL creds url = case url of
       Nothing      -> Either.left $ S.err404{
         errBody="URL not found"
       }
-      Just content ->
-        let contentId = ZH.contentId content in
-        Either.left $ S.err301{
+      Just (ZH.ContentId contentId) ->
+        -- TODO: Use 301 permanent redirect once testing is complete:
+        Either.left $ S.err302{
           -- HACK: Redirect using error: http://git.io/vBCz9
           errHeaders = [("Location", C.pack $ "/v1/content/" ++ contentId)]
         }
