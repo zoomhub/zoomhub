@@ -72,7 +72,8 @@ contentByURL creds url = case url of
       -- TODO: Implement content conversion:
       Nothing        -> Either.left $ S.err404{errBody="URL not found"}
       Just contentId ->
-        -- TODO: Use 301 permanent redirect once testing is complete:
+        -- TODO: Use 301 permanent redirect once testing is complete to force
+        -- browsers caching them:
         Either.left $ S.err302{
           -- HACK: Redirect using error: http://git.io/vBCz9
           errHeaders = [("Location", C.pack $ "/v1/content/" ++ show contentId)]
