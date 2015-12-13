@@ -31,6 +31,7 @@ executable zoomhub
     , envy == 1.1.*
     , hashids
     , http-types
+    , http-client
     , js-jquery
     , lens == 4.12.*
     , lens-aeson == 1.*
