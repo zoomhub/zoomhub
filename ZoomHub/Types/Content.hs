@@ -38,11 +38,11 @@ data Content = Content
   , contentReady :: Bool
   , contentFailed :: Bool
   , contentProgress :: Float
-  , contentMime :: String -- Use proper MIME type
-  , contentSize :: Integer
+  , contentMime :: Maybe String -- Use proper MIME type
+  , contentSize :: Maybe Integer
   , contentActive :: Bool
-  , contentActiveAt :: DTC.UTCTime
-  , contentFinishedAt :: DTC.UTCTime
+  , contentActiveAt :: Maybe DTC.UTCTime
+  , contentFinishedAt :: Maybe DTC.UTCTime
   , contentDzi :: Maybe DeepZoomImage
   } deriving (Eq, Show, GHC.Generic)
 
