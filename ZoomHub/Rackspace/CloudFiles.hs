@@ -71,11 +71,13 @@ getContent credentials urlPath = do
       case parseEndpoint meta of
         Nothing -> return Nothing
         Just e -> do
-          eRes <- E.tryJust (\e -> case e of
-            HC.StatusCodeException s _ _ -> case s ^. statusCode of
-                404 -> return $ Just e
-                _   -> return Nothing
-            _ -> return $ Nothing) (HTTP.getWith opts (show e ++ urlPath))
-          case eRes of
+          eitherRes <- E.tryJust select404 (HTTP.getWith opts (show e ++ urlPath))
+          case eitherRes of
             Either.Left  e   -> return Nothing
             Either.Right res -> return $ Just $ res ^. responseBody
+    where
+      select404 :: HC.HttpException -> Maybe HC.HttpException
+      select404 e@(HC.StatusCodeException s _ _)
+        | s ^. statusCode == 404 = Just e
+        | otherwise = Nothing
+      select404 _ = Nothing
