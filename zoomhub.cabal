@@ -25,6 +25,7 @@ executable zoomhub
     , base >= 4.7 && < 5
     , bytestring
     , cryptonite == 0.6.*
+    , data-default
     , directory
     , either
     , envy == 1.1.*
