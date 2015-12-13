@@ -29,6 +29,7 @@ executable zoomhub
     , directory
     , either
     , envy == 1.1.*
+    , hashids
     , http-types
     , js-jquery
     , lens == 4.12.*
