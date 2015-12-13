@@ -19,6 +19,7 @@ import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
 import qualified Data.Proxy as Proxy
+import qualified Web.Hashids as H
 import qualified ZoomHub.Rackspace.CloudFiles as CF
 import qualified ZoomHub.Types.Content as ZH
 
@@ -33,6 +34,13 @@ type API =
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] ZH.Content
 
 -- Handlers
+mkContentFromURL :: String -> ZH.Content
+mkContentFromURL url =
+  ZH.mkContent (ZH.ContentId newId) url
+  where
+    newId = let context = H.hashidsSimple "zoomhub hash salt" in
+            C.unpack $ H.encode context 42
+
 getContentFromFile :: ZH.ContentId -> IO (Maybe ZH.Content)
 getContentFromFile contentId = do
   cd <- getCurrentDirectory
