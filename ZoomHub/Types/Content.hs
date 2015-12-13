@@ -67,3 +67,10 @@ instance D.Default Content where
   , contentFinishedAt = Nothing
   , contentDzi = Nothing
   }
+
+-- Constructor
+mkContent :: ContentId -> String -> Content
+mkContent contentId url = D.def
+  { contentId = contentId
+  , contentUrl = url
+  }
