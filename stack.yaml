@@ -11,6 +11,7 @@ packages:
 extra-deps:
 - aeson-casing-0.1.0.2
 - envy-1.1.0.0
+- hashids-1.0.2.2
 - servant-lucid-0.4.4.5
 
 # Override default flag values for local packages and extra-deps
