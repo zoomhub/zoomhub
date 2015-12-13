@@ -8,10 +8,13 @@ import Data.Aeson as Aeson
 import Data.Aeson.Lens as Aeson
 import Network.Wreq as HTTP
 
+import qualified Control.Exception as E
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Either as Either
 import qualified Data.Text as T
+import qualified Network.HTTP.Client as HC
 
 
 -- Types
@@ -68,5 +71,11 @@ getContent credentials urlPath = do
       case parseEndpoint meta of
         Nothing -> return Nothing
         Just e -> do
-          res <- HTTP.getWith opts (show e ++ urlPath)
-          return $ Just $ res ^. responseBody
+          eRes <- E.tryJust (\e -> case e of
+            HC.StatusCodeException s _ _ -> case s ^. statusCode of
+                404 -> return $ Just e
+                _   -> return Nothing
+            _ -> return $ Nothing) (HTTP.getWith opts (show e ++ urlPath))
+          case eRes of
+            Either.Left  e   -> return Nothing
+            Either.Right res -> return $ Just $ res ^. responseBody
