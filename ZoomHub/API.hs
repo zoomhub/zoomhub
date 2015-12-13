@@ -35,11 +35,9 @@ type API =
 
 -- Handlers
 mkContentFromURL :: String -> ZH.Content
-mkContentFromURL url =
-  ZH.mkContent (ZH.ContentId newId) url
-  where
-    newId = let context = H.hashidsSimple "zoomhub hash salt" in
-            C.unpack $ H.encode context 42
+mkContentFromURL = ZH.mkContent (ZH.ContentId newId)
+  where newId = let context = H.hashidsSimple "zoomhub hash salt" in
+                C.unpack $ H.encode context 42
 
 getContentFromFile :: ZH.ContentId -> IO (Maybe ZH.Content)
 getContentFromFile contentId = do
