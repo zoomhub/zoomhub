@@ -1,6 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module ZoomHub.Types.Content where
+module ZoomHub.Types.Content
+  ( ContentId(ContentId)
+  , Content
+  , mkContent
+  ) where
 
 
 import Data.Aeson as Aeson
