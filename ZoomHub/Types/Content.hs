@@ -7,6 +7,7 @@ import Data.Aeson as Aeson
 import Data.Aeson.Casing
 import ZoomHub.Types.DeepZoomImage
 
+import qualified Data.Default as D
 import qualified Data.Text as T
 import qualified Data.Time.Clock as DTC
 import qualified GHC.Generics as GHC
@@ -50,3 +51,19 @@ instance Aeson.ToJSON Content where
    toJSON = genericToJSON $ aesonPrefix camelCase
 instance Aeson.FromJSON Content where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
+
+-- Default
+instance D.Default Content where
+  def = Content {
+    contentId = ContentId ""
+  , contentUrl = ""
+  , contentReady = False
+  , contentFailed = False
+  , contentProgress = 0.0
+  , contentMime = Nothing
+  , contentSize = Nothing
+  , contentActive = False
+  , contentActiveAt = Nothing
+  , contentFinishedAt = Nothing
+  , contentDzi = Nothing
+  }
