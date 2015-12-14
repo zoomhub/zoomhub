@@ -54,15 +54,13 @@ getContentFromFile contentId = do
 
 getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe ZH.ContentId)
 getContentIdFromURL creds url = do
-  let urlHash = sha256 url
-  let urlPath = "/content/content-by-url/" ++ urlHash ++ ".txt"
   maybeContent <- CF.getContent creds urlPath
   case maybeContent of
     Nothing        -> return Nothing
     Just contentId -> return $ Just $ ZH.ContentId $ CL.unpack contentId
   where
-    sha256 :: String -> String
     sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
+    urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
 
 contentById :: ZH.ContentId -> Handler ZH.Content
 contentById contentId = do
