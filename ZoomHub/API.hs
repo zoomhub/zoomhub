@@ -77,13 +77,16 @@ contentByURL creds url = case url of
     case maybeContentId of
       -- TODO: Implement content conversion:
       Nothing        -> Either.left $ S.err404{errBody="URL not found"}
-      Just contentId ->
-        -- TODO: Use 301 permanent redirect once testing is complete to force
-        -- browsers caching them:
-        Either.left $ S.err302{
-          -- HACK: Redirect using error: http://git.io/vBCz9
-          errHeaders = [("Location", C.pack $ "/v1/content/" ++ show contentId)]
-        }
+      Just contentId -> redirect contentId
+      where
+        -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
+        -- permanent HTTP 301 redirects:
+        redirect contentId =
+          let location = C.pack $ "/v1/content/" ++ show contentId in
+          Either.left $ S.err301{
+            -- HACK: Redirect using error: http://git.io/vBCz9
+            errHeaders = [("Location", location)]
+          }
 
 -- API
 api :: Proxy.Proxy API
