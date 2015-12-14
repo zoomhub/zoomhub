@@ -3,6 +3,17 @@
 module ZoomHub.Types.Content
   ( ContentId(ContentId)
   , Content
+  , contentId
+  , contentUrl
+  , contentReady
+  , contentFailed
+  , contentProgress
+  , contentMime
+  , contentSize
+  , contentActive
+  , contentActiveAt
+  , contentFinishedAt
+  , contentDzi
   , mkContent
   ) where
 
