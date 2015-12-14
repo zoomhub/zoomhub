@@ -61,10 +61,9 @@ contentById :: ZH.ContentId -> Handler ZH.Content
 contentById contentId = do
   maybeContent <- IO.liftIO $ getContentFromFile contentId
   case maybeContent of
-    Nothing      -> Either.left S.err404{
-      errBody=CL.pack $ "ID " ++ show contentId ++ " not found."
-    }
+    Nothing      -> Either.left S.err404{errBody = error404message}
     Just content -> return content
+  where error404message = CL.pack $ "ID " ++ show contentId ++ " not found."
 
 -- TODO: Use redirect to `contentById` instead:
 contentByURL :: CF.Credentials -> Maybe String -> Handler ZH.Content
