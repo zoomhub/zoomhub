@@ -23,6 +23,7 @@ import qualified Data.Either as ET
 import qualified Data.Proxy as Proxy
 import qualified System.Directory as SD
 import qualified System.IO.Error as SE
+import qualified Text.Read as TR
 import qualified Web.Hashids as H
 import qualified ZoomHub.Rackspace.CloudFiles as CF
 import qualified ZoomHub.Types.Content as ZH
@@ -37,11 +38,36 @@ type API =
   :<|>
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] ZH.Content
 
--- Handlers
-mkContentFromURL :: String -> ZH.Content
-mkContentFromURL = ZH.mkContent (ZH.ContentId newId)
-  where newId = let context = H.hashidsSimple "zoomhub hash salt" in
-                C.unpack $ H.encode context 42
+-- Helpers
+initalId :: String
+initalId = show 0
+
+createContentId :: IO ZH.ContentId
+createContentId = do
+  cd <- SD.getCurrentDirectory
+  lastIdStr <- E.tryJust (M.guard . SE.isDoesNotExistError) (readFile (path cd))
+  lastId <- case lastIdStr of
+    ET.Left  e         -> initializId cd
+    ET.Right lastIdStr ->
+      case TR.readMaybe lastIdStr of
+        Nothing        -> initializId cd
+        Just numericId -> return numericId
+  let context = H.hashidsSimple "zoomhub hash salt"
+  let newId = C.unpack $ H.encode context lastId
+  writeFile (path cd) (show $ lastId + 1)
+  return $ ZH.ContentId newId
+  where
+    path :: String -> String
+    path cd = cd ++ "/data/lastId.txt"
+    initalId = 0
+    initializId cd = do
+      writeFile (path cd) (show initalId)
+      return initalId
+
+mkContentFromURL :: String -> IO ZH.Content
+mkContentFromURL url = do
+  contentId <- createContentId
+  return $ ZH.mkContent contentId url
 
 getContentFromFile :: ZH.ContentId -> IO (Maybe ZH.Content)
 getContentFromFile contentId = do
@@ -62,6 +88,7 @@ getContentIdFromURL creds url = do
     sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
 
+-- Handlers
 contentById :: ZH.ContentId -> Handler ZH.Content
 contentById contentId = do
   maybeContent <- IO.liftIO $ getContentFromFile contentId
@@ -78,7 +105,9 @@ contentByURL creds url = case url of
     maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
     case maybeContentId of
       -- TODO: Implement content conversion:
-      Nothing        -> return $ mkContentFromURL url
+      Nothing        -> do
+        newContent <- IO.liftIO $ mkContentFromURL url
+        redirect $ ZH.contentId newContent
       Just contentId -> redirect contentId
       where
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
