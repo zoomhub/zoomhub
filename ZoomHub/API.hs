@@ -76,7 +76,7 @@ contentByURL creds url = case url of
     maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
     case maybeContentId of
       -- TODO: Implement content conversion:
-      Nothing        -> Either.left $ S.err404{errBody="URL not found"}
+      Nothing        -> return $ mkContentFromURL url
       Just contentId -> redirect contentId
       where
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
