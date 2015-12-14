@@ -73,9 +73,7 @@ contentById contentId = do
 -- TODO: Use redirect to `contentById` instead:
 contentByURL :: CF.Credentials -> Maybe String -> Handler ZH.Content
 contentByURL creds url = case url of
-  Nothing  -> Either.left S.err400{
-    errBody="Please provide an ID or `url` query parameter."
-  }
+  Nothing  -> Either.left S.err400{errBody = error400message}
   Just url -> do
     maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
     case maybeContentId of
@@ -91,6 +89,7 @@ contentByURL creds url = case url of
             -- HACK: Redirect using error: http://git.io/vBCz9
             errHeaders = [("Location", location)]
           }
+  where error400message = "Please provide an ID or `url` query parameter."
 
 -- API
 api :: Proxy.Proxy API
