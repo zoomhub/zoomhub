@@ -9,10 +9,11 @@ import Data.Aeson.Lens as Aeson
 import Network.Wreq as HTTP
 
 import qualified Control.Exception as E
+import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Either as Either
+import qualified Data.Either as ET
 import qualified Data.Text as T
 import qualified Network.HTTP.Client as HC
 
@@ -70,14 +71,14 @@ getContent credentials urlPath = do
       let opts = defaults & header "X-Auth-Token" .~ [B.pack $ show t] in
       case parseEndpoint meta of
         Nothing -> return Nothing
-        Just e -> do
-          eitherRes <- E.tryJust select404 (HTTP.getWith opts (show e ++ urlPath))
+        Just e  -> do
+          eitherRes <-
+            E.tryJust (M.guard . is404) (HTTP.getWith opts (show e ++ urlPath))
           case eitherRes of
-            Either.Left  e   -> return Nothing
-            Either.Right res -> return $ Just $ res ^. responseBody
+            ET.Right res -> return $ Just $ res ^. responseBody
+            _            -> return Nothing
     where
-      select404 :: HC.HttpException -> Maybe HC.HttpException
-      select404 e@(HC.StatusCodeException s _ _)
-        | s ^. statusCode == 404 = Just e
-        | otherwise = Nothing
-      select404 _ = Nothing
+      is404 :: HC.HttpException -> Bool
+      is404 (HC.StatusCodeException s _ _)
+        | s ^. statusCode == 404 = True
+        | otherwise = False
