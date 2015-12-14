@@ -10,7 +10,6 @@ import Data.Aeson as Aeson
 import Data.Char
 import Network.Wai
 import Servant as S
-import System.Directory
 
 import qualified Control.Exception as E
 import qualified Control.Monad as M
@@ -22,6 +21,7 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
 import qualified Data.Either as ET
 import qualified Data.Proxy as Proxy
+import qualified System.Directory as SD
 import qualified System.IO.Error as SE
 import qualified Web.Hashids as H
 import qualified ZoomHub.Rackspace.CloudFiles as CF
@@ -45,7 +45,7 @@ mkContentFromURL = ZH.mkContent (ZH.ContentId newId)
 
 getContentFromFile :: ZH.ContentId -> IO (Maybe ZH.Content)
 getContentFromFile contentId = do
-  cd <- getCurrentDirectory
+  cd <- SD.getCurrentDirectory
   f <- E.tryJust (M.guard . SE.isDoesNotExistError) (LBS.readFile (path cd))
   case f of
     ET.Left e  -> return Nothing
