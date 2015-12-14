@@ -12,13 +12,17 @@ import Network.Wai
 import Servant as S
 import System.Directory
 
+import qualified Control.Exception as E
+import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Either as Either
 import qualified Crypto.Hash as Crypto
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
+import qualified Data.Either as ET
 import qualified Data.Proxy as Proxy
+import qualified System.IO.Error as SE
 import qualified Web.Hashids as H
 import qualified ZoomHub.Rackspace.CloudFiles as CF
 import qualified ZoomHub.Types.Content as ZH
@@ -42,8 +46,11 @@ mkContentFromURL = ZH.mkContent (ZH.ContentId newId)
 getContentFromFile :: ZH.ContentId -> IO (Maybe ZH.Content)
 getContentFromFile contentId = do
   cd <- getCurrentDirectory
-  Aeson.decode <$> LBS.readFile (
-    cd ++ "/data/content-by-id/" ++ show contentId ++ ".json")
+  f <- E.tryJust (M.guard . SE.isDoesNotExistError) (LBS.readFile (path cd))
+  case f of
+    ET.Left e  -> return Nothing
+    ET.Right f -> return $ Aeson.decode f
+  where path cd = cd ++ "/data/content-by-id/" ++ show contentId ++ ".json"
 
 getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe ZH.ContentId)
 getContentIdFromURL creds url = do
