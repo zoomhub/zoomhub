@@ -51,8 +51,8 @@ getContentIdFromURL creds url = do
   let urlPath = "/content/content-by-url/" ++ urlHash ++ ".txt"
   maybeContent <- CF.getContent creds urlPath
   case maybeContent of
-    Nothing      -> return Nothing
-    Just contentId ->  return $ Just $ ZH.ContentId $ CL.unpack contentId
+    Nothing        -> return Nothing
+    Just contentId -> return $ Just $ ZH.ContentId $ CL.unpack contentId
   where
     sha256 :: String -> String
     sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
