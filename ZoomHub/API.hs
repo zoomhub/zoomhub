@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE TypeOperators #-}
 
 module ZoomHub.API where
@@ -13,7 +14,7 @@ import qualified Control.Exception as E
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Either as Either
-import qualified Crypto.Hash as Crypto
+import qualified "cryptohash" Crypto.Hash as Crypto
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
