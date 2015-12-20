@@ -18,8 +18,8 @@ import qualified Network.HTTP.Client as HC
 
 -- Types
 data Credentials = Credentials
-  { username :: String
-  , apiKey :: String
+  { credUsername :: String
+  , credAPIKey :: String
   } deriving (Eq, Show)
 
 instance Aeson.ToJSON Credentials where
