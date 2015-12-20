@@ -33,7 +33,7 @@ newtype ContentId = ContentId String
   deriving (Eq, GHC.Generic)
 
 instance Show ContentId where
-  show (ContentId contentId) = contentId
+  show (ContentId cid) = cid
 
 instance S.FromText ContentId where
   fromText t = Just $ ContentId $ T.unpack t
@@ -65,8 +65,8 @@ instance Aeson.FromJSON Content where
 
 -- Constructor
 mkContent :: ContentId -> String -> Content
-mkContent contentId url = Content
-  { contentId = contentId
+mkContent cid url = Content
+  { contentId = cid
   , contentUrl = url
   , contentReady = False
   , contentFailed = False
