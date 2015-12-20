@@ -38,18 +38,18 @@ type API =
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] ZH.Content
 
 -- Helpers
-initalId :: String
-initalId = show 0
+initalId :: Int
+initalId = 0
 
 createContentId :: IO ZH.ContentId
 createContentId = do
   cd <- SD.getCurrentDirectory
   lastIdStr <- E.tryJust (M.guard . SE.isDoesNotExistError) (readFile (path cd))
   lastId <- case lastIdStr of
-    ET.Left  e         -> initializId cd
-    ET.Right lastIdStr ->
-      case TR.readMaybe lastIdStr of
-        Nothing        -> initializId cd
+    ET.Left  _          -> initializeId cd
+    ET.Right lastIdStr' ->
+      case TR.readMaybe lastIdStr' of
+        Nothing        -> initializeId cd
         Just numericId -> return numericId
   let context = H.hashidsSimple "zoomhub hash salt"
   let newId = C.unpack $ H.encode context lastId
@@ -58,8 +58,7 @@ createContentId = do
   where
     path :: String -> String
     path cd = cd ++ "/data/lastId.txt"
-    initalId = 0
-    initializId cd = do
+    initializeId cd = do
       writeFile (path cd) (show initalId)
       return initalId
 
@@ -73,8 +72,8 @@ getContentFromFile contentId = do
   cd <- SD.getCurrentDirectory
   f <- E.tryJust (M.guard . SE.isDoesNotExistError) (LBS.readFile (path cd))
   case f of
-    ET.Left e  -> return Nothing
-    ET.Right f -> return $ Aeson.decode f
+    ET.Left _  -> return Nothing
+    ET.Right s -> return $ Aeson.decode s
   where path cd = cd ++ "/data/content-by-id/" ++ show contentId ++ ".json"
 
 getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe ZH.ContentId)
@@ -104,7 +103,7 @@ contentByURL creds url = case url of
     maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
     case maybeContentId of
       -- TODO: Implement content conversion:
-      Nothing        -> do
+      Nothing -> do
         newContent <- IO.liftIO $ mkContentFromURL url
         redirect $ ZH.contentId newContent
       Just contentId -> redirect contentId
