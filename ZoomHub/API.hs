@@ -103,9 +103,12 @@ contentByURL creds maybeURL = case maybeURL of
     maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
     case maybeContentId of
       -- TODO: Implement content conversion:
-      Nothing -> do
-        newContent <- IO.liftIO $ mkContentFromURL url
-        redirect $ ZH.contentId newContent
+      -- Nothing -> do
+      --   newContent <- IO.liftIO $ mkContentFromURL url
+      --   redirect $ ZH.contentId newContent
+      Nothing        -> Either.left $ S.err503{
+        errBody="We cannot process your URL at this time."
+      }
       Just contentId -> redirect contentId
       where
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
