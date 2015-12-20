@@ -25,7 +25,8 @@ import qualified System.IO.Error as SE
 import qualified Text.Read as TR
 import qualified Web.Hashids as H
 import qualified ZoomHub.Rackspace.CloudFiles as CF
-import qualified ZoomHub.Types.Content as ZH
+import qualified ZoomHub.Types.Content as P
+import qualified ZoomHub.Types.Internal.Content as I
 
 
 -- Servant default handler type
@@ -33,15 +34,15 @@ type Handler a = Either.EitherT S.ServantErr IO a
 
 -- API
 type API =
-  "v1" :> "content" :> S.Capture "id" ZH.ContentId :> S.Get '[S.JSON] ZH.Content
+  "v1" :> "content" :> S.Capture "id" I.ContentId :> S.Get '[S.JSON] P.Content
   :<|>
-  "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] ZH.Content
+  "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] P.Content
 
 -- Helpers
 initalId :: Int
 initalId = 0
 
-createContentId :: IO ZH.ContentId
+createContentId :: IO I.ContentId
 createContentId = do
   cd <- SD.getCurrentDirectory
   lastIdStr <- E.tryJust (M.guard . SE.isDoesNotExistError) (readFile (path cd))
@@ -54,7 +55,7 @@ createContentId = do
   let context = H.hashidsSimple "zoomhub hash salt"
   let newId = C.unpack $ H.encode context lastId
   writeFile (path cd) (show $ lastId + 1)
-  return $ ZH.ContentId newId
+  return $ I.ContentId newId
   where
     path :: String -> String
     path cd = cd ++ "/data/lastId.txt"
@@ -62,12 +63,12 @@ createContentId = do
       writeFile (path cd) (show initalId)
       return initalId
 
-mkContentFromURL :: String -> IO ZH.Content
+mkContentFromURL :: String -> IO I.Content
 mkContentFromURL url = do
   contentId <- createContentId
-  return $ ZH.mkContent contentId url
+  return $ I.mkContent contentId url
 
-getContentFromFile :: ZH.ContentId -> IO (Maybe ZH.Content)
+getContentFromFile :: I.ContentId -> IO (Maybe I.Content)
 getContentFromFile contentId = do
   cd <- SD.getCurrentDirectory
   f <- E.tryJust (M.guard . SE.isDoesNotExistError) (LBS.readFile (path cd))
@@ -76,27 +77,27 @@ getContentFromFile contentId = do
     ET.Right s -> return $ Aeson.decode s
   where path cd = cd ++ "/data/content-by-id/" ++ show contentId ++ ".json"
 
-getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe ZH.ContentId)
+getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe I.ContentId)
 getContentIdFromURL creds url = do
   maybeContent <- CF.getContent creds urlPath
   case maybeContent of
     Nothing        -> return Nothing
-    Just contentId -> return $ Just $ ZH.ContentId $ CL.unpack contentId
+    Just contentId -> return $ Just $ I.ContentId $ CL.unpack contentId
   where
     sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
 
 -- Handlers
-contentById :: ZH.ContentId -> Handler ZH.Content
+contentById :: I.ContentId -> Handler P.Content
 contentById contentId = do
   maybeContent <- IO.liftIO $ getContentFromFile contentId
   case maybeContent of
-    Nothing      -> Either.left S.err404{errBody = error404message}
-    Just content -> return content
+    Nothing -> Either.left S.err404{errBody = error404message}
+    Just c  -> return $ P.fromInternal c
   where error404message = CL.pack $ "ID " ++ show contentId ++ " not found."
 
 -- TODO: Use redirect to `contentById` instead:
-contentByURL :: CF.Credentials -> Maybe String -> Handler ZH.Content
+contentByURL :: CF.Credentials -> Maybe String -> Handler P.Content
 contentByURL creds maybeURL = case maybeURL of
   Nothing  -> Either.left S.err400{errBody = error400message}
   Just url -> do
@@ -105,7 +106,7 @@ contentByURL creds maybeURL = case maybeURL of
       -- TODO: Implement content conversion:
       -- Nothing -> do
       --   newContent <- IO.liftIO $ mkContentFromURL url
-      --   redirect $ ZH.contentId newContent
+      --   redirect $ P.contentId newContent
       Nothing        -> Either.left $ S.err503{
         errBody="We cannot process your URL at this time."
       }
