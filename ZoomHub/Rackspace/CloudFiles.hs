@@ -53,7 +53,7 @@ parseToken meta =
   (Token . T.unpack) <$> maybeToken
 
 parseEndpoint :: LBS.ByteString -> Maybe Endpoint
-parseEndpoint meta =
+parseEndpoint _ =
   -- TODO: How do I filter `access.serviceCatalog[].name == "IAD"` using
   -- lenses from:
   -- `{"access":{"serviceCatalog":[{"name":"IAD","endpoints":[]}]}}`
@@ -80,3 +80,5 @@ getContent credentials urlPath = do
       is404 (HC.StatusCodeException s _ _)
         | s ^. statusCode == 404 = True
         | otherwise = False
+
+      is404 _ = False
