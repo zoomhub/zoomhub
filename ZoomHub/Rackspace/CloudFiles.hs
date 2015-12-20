@@ -2,7 +2,6 @@
 
 module ZoomHub.Rackspace.CloudFiles where
 
-import Control.Applicative as Applicative
 import Control.Lens as Lens hiding ((.=)) -- .= used in Data.Aeson as well
 import Data.Aeson as Aeson
 import Data.Aeson.Lens as Aeson
@@ -10,7 +9,6 @@ import Network.Wreq as HTTP
 
 import qualified Control.Exception as E
 import qualified Control.Monad as M
-import qualified Control.Monad.IO.Class as IO
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Either as ET
