@@ -28,7 +28,7 @@ executable zoomhub
     , data-default
     , directory
     , either
-    , envy == 1.1.*
+    , envy
     , hashids
     , http-types
     , http-client
