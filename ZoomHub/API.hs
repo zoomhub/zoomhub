@@ -5,9 +5,7 @@
 module ZoomHub.API where
 
 
-import Control.Applicative
 import Data.Aeson as Aeson
-import Data.Char
 import Network.Wai
 import Servant as S
 
