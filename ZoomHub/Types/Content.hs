@@ -29,9 +29,6 @@ import qualified GHC.Generics as GHC
 import qualified Servant as S
 
 
-data ContentState = Inactive | Active | Failed | Ready
-data ContentMIME = JPEG | GIF | PNG | PDF | HTML
-
 -- ContentId
 newtype ContentId = ContentId String
   deriving (Eq, GHC.Generic)
