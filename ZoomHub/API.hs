@@ -10,11 +10,11 @@ import Data.Aeson as Aeson
 import Network.Wai
 import Servant as S
 
+import qualified "cryptonite" Crypto.Hash as Crypto
 import qualified Control.Exception as E
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Either as Either
-import qualified "cryptonite" Crypto.Hash as Crypto
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
