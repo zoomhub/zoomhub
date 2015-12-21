@@ -1,8 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module ZoomHub.Types.Internal.Content
-  ( ContentId(ContentId)
-  , Content
+  ( Content
+  , ContentId(ContentId)
   , contentId
   , contentUrl
   , contentReady

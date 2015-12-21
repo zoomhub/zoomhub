@@ -55,5 +55,7 @@ executable zoomhub
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Types.Content
     , ZoomHub.Types.DeepZoomImage
+    , ZoomHub.Types.Internal.Content
+    , ZoomHub.Types.Internal.DeepZoomImage
   default-language: Haskell2010
 
