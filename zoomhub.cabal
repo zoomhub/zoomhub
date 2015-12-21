@@ -19,6 +19,7 @@ source-repository head
 
 executable zoomhub
   main-is: Main.hs
+  ghc-options: -Wall
   build-depends:
       aeson >= 0.8
     , aeson-casing == 0.1.0.2
