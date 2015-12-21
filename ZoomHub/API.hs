@@ -6,20 +6,21 @@
 module ZoomHub.API where
 
 
-import Data.Aeson as Aeson
-import Network.Wai
-import Servant as S
+import Servant((:<|>)(..),(:>))
 
 import qualified "cryptonite" Crypto.Hash as Crypto
 import qualified Control.Exception as E
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Either as Either
+import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
 import qualified Data.Either as ET
 import qualified Data.Proxy as Proxy
+import qualified Network.Wai as WAI
+import qualified Servant as S
 import qualified System.Directory as SD
 import qualified System.IO.Error as SE
 import qualified Text.Read as TR
@@ -92,14 +93,14 @@ contentById :: I.ContentId -> Handler P.Content
 contentById contentId = do
   maybeContent <- IO.liftIO $ getContentFromFile contentId
   case maybeContent of
-    Nothing -> Either.left S.err404{errBody = error404message}
+    Nothing -> Either.left S.err404{S.errBody = error404message}
     Just c  -> return $ P.fromInternal c
   where error404message = CL.pack $ "ID " ++ show contentId ++ " not found."
 
 -- TODO: Use redirect to `contentById` instead:
 contentByURL :: CF.Credentials -> Maybe String -> Handler P.Content
 contentByURL creds maybeURL = case maybeURL of
-  Nothing  -> Either.left S.err400{errBody = error400message}
+  Nothing  -> Either.left S.err400{S.errBody = error400message}
   Just url -> do
     maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
     case maybeContentId of
@@ -108,7 +109,7 @@ contentByURL creds maybeURL = case maybeURL of
       --   newContent <- IO.liftIO $ mkContentFromURL url
       --   redirect $ P.contentId newContent
       Nothing        -> Either.left $ S.err503{
-        errBody="We cannot process your URL at this time."
+        S.errBody="We cannot process your URL at this time."
       }
       Just contentId -> redirect contentId
       where
@@ -118,7 +119,7 @@ contentByURL creds maybeURL = case maybeURL of
           let location = C.pack $ "/v1/content/" ++ show contentId in
           Either.left $ S.err301{
             -- HACK: Redirect using error: http://git.io/vBCz9
-            errHeaders = [("Location", location)]
+            S.errHeaders = [("Location", location)]
           }
   where error400message = "Please provide an ID or `url` query parameter."
 
@@ -126,9 +127,9 @@ contentByURL creds maybeURL = case maybeURL of
 api :: Proxy.Proxy API
 api = Proxy.Proxy
 
-server :: CF.Credentials -> Server API
+server :: CF.Credentials -> S.Server API
 server creds = contentById
           :<|> contentByURL creds
 
-app :: CF.Credentials -> Application
-app creds = serve api (server creds)
+app :: CF.Credentials -> WAI.Application
+app creds = S.serve api (server creds)
