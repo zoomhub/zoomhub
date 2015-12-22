@@ -50,6 +50,7 @@ fromInternal c = Content
   }
   where
     cid = IC.contentId c
+    -- TODO: Make hostname dynamic:
     shareURL = "http://zoom.it/" ++ (show cid)
     embedHtml = "<script src=\"" ++ shareURL ++ ".js\
       \?width=auto&height=400px\"></script>"
