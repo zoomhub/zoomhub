@@ -54,6 +54,4 @@ fromInternal c = Content
     shareURL = "http://zoom.it/" ++ (show cid)
     embedHtml = "<script src=\"" ++ shareURL ++ ".js\
       \?width=auto&height=400px\"></script>"
-    dzi = case IC.contentDzi c of
-            Nothing -> Nothing
-            Just d  -> Just $ DZ.fromInternal cid d
+    dzi = (DZ.fromInternal cid) <$> IC.contentDzi c
