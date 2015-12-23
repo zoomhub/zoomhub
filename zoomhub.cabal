@@ -31,8 +31,8 @@ executable zoomhub
     , either
     , envy
     , hashids
-    , http-types
     , http-client
+    , http-types
     , js-jquery
     , lens == 4.12.*
     , lens-aeson == 1.*
@@ -43,6 +43,7 @@ executable zoomhub
     , servant-jquery == 0.4.*
     , servant-lucid == 0.4.*
     , servant-server == 0.4.*
+    , stm
     , text
     , time
     , transformers
@@ -52,6 +53,7 @@ executable zoomhub
   hs-source-dirs: .
   other-modules:
       ZoomHub.API
+    , ZoomHub.Config
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Types.Content
     , ZoomHub.Types.DeepZoomImage
