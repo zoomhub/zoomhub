@@ -25,6 +25,7 @@ import qualified System.Directory as SD
 import qualified System.IO.Error as SE
 import qualified Text.Read as TR
 import qualified Web.Hashids as H
+import qualified ZoomHub.Config as C
 import qualified ZoomHub.Rackspace.CloudFiles as CF
 import qualified ZoomHub.Types.Content as P
 import qualified ZoomHub.Types.Internal.Content as I
@@ -40,7 +41,7 @@ type API =
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] P.Content
 
 -- Helpers
-initalId :: Int
+initalId :: Integer
 initalId = 0
 
 createContentId :: IO I.ContentId
@@ -54,7 +55,7 @@ createContentId = do
         Nothing        -> initializeId cd
         Just numericId -> return numericId
   let context = H.hashidsSimple "zoomhub hash salt"
-  let newId = C.unpack $ H.encode context lastId
+  let newId = C.unpack $ H.encode context (fromIntegral lastId)
   writeFile (path cd) (show $ lastId + 1)
   return $ I.ContentId newId
   where
@@ -127,9 +128,13 @@ contentByURL creds maybeURL = case maybeURL of
 api :: Proxy.Proxy API
 api = Proxy.Proxy
 
-server :: CF.Credentials -> S.Server API
-server creds = contentById
-          :<|> contentByURL creds
+server :: C.Config -> S.Server API
+server config = contentById
+           :<|> contentByURL creds
+  where
+    username = (C.raxUsername . C.rackspace) config
+    apiKey = (C.raxUsername . C.rackspace) config
+    creds = CF.Credentials username apiKey
 
-app :: CF.Credentials -> WAI.Application
-app creds = S.serve api (server creds)
+app :: C.Config -> WAI.Application
+app config = S.serve api (server config)
