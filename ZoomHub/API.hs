@@ -133,7 +133,7 @@ server config = contentById
            :<|> contentByURL creds
   where
     username = (C.raxUsername . C.rackspace) config
-    apiKey = (C.raxUsername . C.rackspace) config
+    apiKey = (C.raxApiKey . C.rackspace) config
     creds = CF.Credentials username apiKey
 
 app :: C.Config -> WAI.Application
