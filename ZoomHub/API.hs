@@ -9,6 +9,7 @@ module ZoomHub.API where
 import Servant((:<|>)(..),(:>))
 
 import qualified "cryptonite" Crypto.Hash as Crypto
+import qualified Control.Concurrent.STM as STM
 import qualified Control.Exception as E
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
@@ -23,7 +24,6 @@ import qualified Network.Wai as WAI
 import qualified Servant as S
 import qualified System.Directory as SD
 import qualified System.IO.Error as SE
-import qualified Text.Read as TR
 import qualified Web.Hashids as H
 import qualified ZoomHub.Config as C
 import qualified ZoomHub.Rackspace.CloudFiles as CF
@@ -41,34 +41,14 @@ type API =
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] P.Content
 
 -- Helpers
-initalId :: Integer
-initalId = 0
+toHashId :: Integer -> String
+toHashId intId =
+  -- TODO: Move Hashid secret to config:
+  let context = H.hashidsSimple "zoomhub hash salt" in
+  C.unpack $ H.encode context (fromIntegral intId)
 
-createContentId :: IO I.ContentId
-createContentId = do
-  cd <- SD.getCurrentDirectory
-  lastIdStr <- E.tryJust (M.guard . SE.isDoesNotExistError) (readFile (path cd))
-  lastId <- case lastIdStr of
-    ET.Left  _          -> initializeId cd
-    ET.Right lastIdStr' ->
-      case TR.readMaybe lastIdStr' of
-        Nothing        -> initializeId cd
-        Just numericId -> return numericId
-  let context = H.hashidsSimple "zoomhub hash salt"
-  let newId = C.unpack $ H.encode context (fromIntegral lastId)
-  writeFile (path cd) (show $ lastId + 1)
-  return $ I.ContentId newId
-  where
-    path :: String -> String
-    path cd = cd ++ "/data/lastId.txt"
-    initializeId cd = do
-      writeFile (path cd) (show initalId)
-      return initalId
-
-mkContentFromURL :: String -> IO I.Content
-mkContentFromURL url = do
-  contentId <- createContentId
-  return $ I.mkContent contentId url
+mkContentFromURL :: I.ContentId -> String -> I.Content
+mkContentFromURL newId url = I.mkContent newId url
 
 getContentFromFile :: I.ContentId -> IO (Maybe I.Content)
 getContentFromFile contentId = do
@@ -98,20 +78,18 @@ contentById contentId = do
     Just c  -> return $ P.fromInternal c
   where error404message = CL.pack $ "ID " ++ show contentId ++ " not found."
 
--- TODO: Use redirect to `contentById` instead:
-contentByURL :: CF.Credentials -> Maybe String -> Handler P.Content
-contentByURL creds maybeURL = case maybeURL of
-  Nothing  -> Either.left S.err400{S.errBody = error400message}
+contentByURL :: C.Config -> CF.Credentials -> Maybe String -> Handler P.Content
+contentByURL config creds maybeURL = case maybeURL of
+  Nothing -> Either.left S.err400{
+    S.errBody = "Please provide an ID or `url` query parameter."
+  }
   Just url -> do
     maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
     case maybeContentId of
-      -- TODO: Implement content conversion:
-      -- Nothing -> do
-      --   newContent <- IO.liftIO $ mkContentFromURL url
-      --   redirect $ P.contentId newContent
-      Nothing        -> Either.left $ S.err503{
-        S.errBody="We cannot process your URL at this time."
-      }
+      Nothing -> do
+        newId <- IO.liftIO $ incrementAndGet $ C.lastId config
+        let newContent = mkContentFromURL (I.ContentId $ toHashId newId) url
+        redirect $ I.contentId newContent
       Just contentId -> redirect contentId
       where
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
@@ -122,7 +100,10 @@ contentByURL creds maybeURL = case maybeURL of
             -- HACK: Redirect using error: http://git.io/vBCz9
             S.errHeaders = [("Location", location)]
           }
-  where error400message = "Please provide an ID or `url` query parameter."
+        incrementAndGet :: STM.TVar Integer -> IO Integer
+        incrementAndGet tvar  = STM.atomically $ do
+          STM.modifyTVar tvar (+1)
+          STM.readTVar tvar
 
 -- API
 api :: Proxy.Proxy API
@@ -130,7 +111,7 @@ api = Proxy.Proxy
 
 server :: C.Config -> S.Server API
 server config = contentById
-           :<|> contentByURL creds
+           :<|> contentByURL config creds
   where
     username = (C.raxUsername . C.rackspace) config
     apiKey = (C.raxApiKey . C.rackspace) config
