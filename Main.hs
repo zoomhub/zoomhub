@@ -17,7 +17,7 @@ main = do
   raxConfig <- Env.decodeEnv
   case raxConfig of
     E.Right rackspace -> do
-      lastId <- IO.liftIO $ STM.atomically (STM.newTVar 0)
+      lastId <- IO.liftIO $ STM.atomically $ STM.newTVar 0
       let port = maybe C.defaultPort read maybePort
       let config = C.Config{..}
       Warp.run (fromIntegral port) (ZH.app config)
