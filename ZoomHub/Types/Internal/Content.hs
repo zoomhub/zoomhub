@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.Internal.Content
   ( Content
@@ -15,12 +16,15 @@ module ZoomHub.Types.Internal.Content
   , contentFinishedAt
   , contentDzi
   , mkContent
+  , prettyEncodeConfig
   ) where
 
 
 import Data.Aeson as Aeson
 import Data.Aeson.Casing
 
+import qualified Data.Aeson.Encode.Pretty as AP
+import qualified Data.Ord as Ord
 import qualified Data.Text as T
 import qualified Data.Time.Clock as DTC
 import qualified GHC.Generics as GHC
@@ -78,3 +82,27 @@ mkContent cid url = Content
   , contentFinishedAt = Nothing
   , contentDzi = Nothing
   }
+
+prettyEncodeConfig :: AP.Config
+prettyEncodeConfig = AP.Config
+  { AP.confIndent = 2
+  , AP.confCompare = keyCompare
+  }
+
+keyCompare :: T.Text -> T.Text -> Ordering
+keyCompare = AP.keyOrder keyOrder `mappend` Ord.comparing T.length
+
+keyOrder :: [T.Text]
+keyOrder =
+  [ "id"
+  , "url"
+  , "ready"
+  , "failed"
+  , "progress"
+  , "mime"
+  , "size"
+  , "active"
+  , "activeAt"
+  , "finishedAt"
+  , "dzi"
+  ]
