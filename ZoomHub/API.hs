@@ -22,7 +22,6 @@ import qualified Data.Either as ET
 import qualified Data.Proxy as Proxy
 import qualified Network.Wai as WAI
 import qualified Servant as S
-import qualified System.Directory as SD
 import qualified System.IO.Error as SE
 import qualified Web.Hashids as H
 import qualified ZoomHub.Config as C
@@ -50,14 +49,17 @@ toHashId intId =
 mkContentFromURL :: I.ContentId -> String -> I.Content
 mkContentFromURL newId url = I.mkContent newId url
 
-getContentFromFile :: I.ContentId -> IO (Maybe I.Content)
-getContentFromFile contentId = do
-  cd <- SD.getCurrentDirectory
-  f <- E.tryJust (M.guard . SE.isDoesNotExistError) (LBS.readFile (path cd))
+getContentPath :: String -> I.ContentId -> String
+getContentPath dataPath contentId =
+  dataPath ++ "/content-by-id/" ++ show contentId ++ ".json"
+
+getContentFromFile :: String -> I.ContentId -> IO (Maybe I.Content)
+getContentFromFile dataPath contentId = do
+  f <- E.tryJust (M.guard . SE.isDoesNotExistError) (LBS.readFile contentPath)
   case f of
     ET.Left _  -> return Nothing
     ET.Right s -> return $ Aeson.decode s
-  where path cd = cd ++ "/data/content-by-id/" ++ show contentId ++ ".json"
+  where contentPath = getContentPath dataPath contentId
 
 getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe I.ContentId)
 getContentIdFromURL creds url = do
@@ -70,9 +72,9 @@ getContentIdFromURL creds url = do
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
 
 -- Handlers
-contentById :: I.ContentId -> Handler P.Content
-contentById contentId = do
-  maybeContent <- IO.liftIO $ getContentFromFile contentId
+contentById :: String -> I.ContentId -> Handler P.Content
+contentById dataPath contentId = do
+  maybeContent <- IO.liftIO $ getContentFromFile dataPath contentId
   case maybeContent of
     Nothing -> Either.left S.err404{S.errBody = error404message}
     Just c  -> return $ P.fromInternal c
@@ -88,8 +90,12 @@ contentByURL config creds maybeURL = case maybeURL of
     case maybeContentId of
       Nothing -> do
         newId <- IO.liftIO $ incrementAndGet $ C.lastId config
-        let newContent = mkContentFromURL (I.ContentId $ toHashId newId) url
-        redirect $ I.contentId newContent
+        let newHashId = toHashId newId
+        let newContent = mkContentFromURL (I.ContentId newHashId) url
+        let newContentId = I.contentId newContent
+        IO.liftIO $ LBS.writeFile (getContentPath dataPath newContentId)
+          (Aeson.encode newContent)
+        redirect $ newContentId
       Just contentId -> redirect contentId
       where
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
@@ -104,13 +110,14 @@ contentByURL config creds maybeURL = case maybeURL of
         incrementAndGet tvar  = STM.atomically $ do
           STM.modifyTVar tvar (+1)
           STM.readTVar tvar
+        dataPath = C.dataPath config
 
 -- API
 api :: Proxy.Proxy API
 api = Proxy.Proxy
 
 server :: C.Config -> S.Server API
-server config = contentById
+server config = contentById (C.dataPath config)
            :<|> contentByURL config creds
   where
     username = (C.raxUsername . C.rackspace) config
