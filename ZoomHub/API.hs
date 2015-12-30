@@ -108,7 +108,7 @@ contentByURL config creds maybeURL = case maybeURL of
             S.errHeaders = [("Location", location)]
           }
         incrementAndGet :: STM.TVar Integer -> IO Integer
-        incrementAndGet tvar  = STM.atomically $ do
+        incrementAndGet tvar = STM.atomically $ do
           STM.modifyTVar tvar (+1)
           STM.readTVar tvar
         dataPath = C.dataPath config
