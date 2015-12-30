@@ -77,8 +77,5 @@ getContent credentials urlPath = do
             _            -> return Nothing
     where
       is404 :: HC.HttpException -> Bool
-      is404 (HC.StatusCodeException s _ _)
-        | s ^. statusCode == 404 = True
-        | otherwise = False
-
+      is404 (HC.StatusCodeException s _ _) = s ^. statusCode == 404
       is404 _ = False
