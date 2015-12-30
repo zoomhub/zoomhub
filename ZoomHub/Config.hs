@@ -9,6 +9,7 @@ module ZoomHub.Config
   , rackspace
   , raxApiKey
   , raxUsername
+  , dataPath
   ) where
 
 import qualified GHC.Generics as GHC
@@ -23,6 +24,7 @@ data Config = Config
   { port :: Integer
   , lastId :: STM.TVar Integer
   , rackspace :: RackspaceConfig
+  , dataPath :: String
   }
 
 -- Config: Rackspace

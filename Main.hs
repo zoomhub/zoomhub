@@ -5,6 +5,7 @@ import qualified Control.Concurrent.STM as STM
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.Either as E
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified System.Directory as SD
 import qualified System.Environment as System
 import qualified System.Envy as Env
 import qualified ZoomHub.API as ZH
@@ -18,6 +19,7 @@ main = do
   case raxConfig of
     E.Right rackspace -> do
       lastId <- IO.liftIO $ STM.atomically $ STM.newTVar 0
+      dataPath <- (++ "/data") <$> SD.getCurrentDirectory
       let port = maybe C.defaultPort read maybePort
       let config = C.Config{..}
       Warp.run (fromIntegral port) (ZH.app config)
