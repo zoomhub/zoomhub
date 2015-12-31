@@ -1,11 +1,16 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module ZoomHub.Types.Internal.DeepZoomImage where
+module ZoomHub.Types.Internal.DeepZoomImage
+  ( DeepZoomImage(DeepZoomImage)
+  , dziWidth
+  , dziHeight
+  , dziTileSize
+  , dziTileOverlap
+  , dziTileFormat
+  ) where
 
-
-import Data.Aeson as Aeson
-import Data.Aeson.Casing
-
+import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Casing as AC
 import qualified GHC.Generics as GHC
 
 
@@ -18,6 +23,6 @@ data DeepZoomImage = DeepZoomImage
   } deriving (Eq, Show, GHC.Generic)
 
 instance Aeson.ToJSON DeepZoomImage where
-   toJSON = genericToJSON $ aesonPrefix camelCase
+   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
 instance Aeson.FromJSON DeepZoomImage where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
+   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
