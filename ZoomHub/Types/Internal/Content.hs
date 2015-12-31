@@ -3,7 +3,6 @@
 
 module ZoomHub.Types.Internal.Content
   ( Content
-  , ContentId(ContentId)
   , contentId
   , contentUrl
   , contentReady
@@ -19,37 +18,19 @@ module ZoomHub.Types.Internal.Content
   , prettyEncodeConfig
   ) where
 
-
-import Data.Aeson as Aeson
-import Data.Aeson.Casing
-
+import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Casing as AC
 import qualified Data.Aeson.Encode.Pretty as AP
 import qualified Data.Ord as Ord
 import qualified Data.Text as T
 import qualified Data.Time.Clock as DTC
 import qualified GHC.Generics as GHC
-import qualified Servant as S
+import qualified ZoomHub.Types.Internal.ContentId as IC
 import qualified ZoomHub.Types.Internal.DeepZoomImage as ID
-
-
--- ContentId
-newtype ContentId = ContentId String
-  deriving (Eq, GHC.Generic)
-
-instance Show ContentId where
-  show (ContentId cid) = cid
-
-instance S.FromText ContentId where
-  fromText t = Just $ ContentId $ T.unpack t
-
-instance Aeson.ToJSON ContentId where
-   toJSON = genericToJSON $ aesonPrefix camelCase
-instance Aeson.FromJSON ContentId where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 -- Content
 data Content = Content
-  { contentId :: ContentId
+  { contentId :: IC.ContentId
   , contentUrl :: String
   , contentReady :: Bool
   , contentFailed :: Bool
@@ -63,14 +44,14 @@ data Content = Content
   } deriving (Eq, Show, GHC.Generic)
 
 instance Aeson.ToJSON Content where
-   toJSON = genericToJSON $ aesonPrefix camelCase
+   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
 instance Aeson.FromJSON Content where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
+   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
 
 -- Constructor
-mkContent :: ContentId -> String -> Content
-mkContent cid url = Content
-  { contentId = cid
+mkContent :: IC.ContentId -> String -> Content
+mkContent cId url = Content
+  { contentId = cId
   , contentUrl = url
   , contentReady = False
   , contentFailed = False

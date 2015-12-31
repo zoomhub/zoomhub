@@ -1,13 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module ZoomHub.Types.DeepZoomImage where
+module ZoomHub.Types.DeepZoomImage
+  ( DeepZoomImage(DeepZoomImage)
+  , fromInternal
+  ) where
 
-
-import Data.Aeson as Aeson
-import Data.Aeson.Casing
-
+import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Casing as AC
 import qualified GHC.Generics as GHC
 import qualified ZoomHub.Types.Internal.Content as IC
+import qualified ZoomHub.Types.Internal.ContentId as IC
 import qualified ZoomHub.Types.Internal.DeepZoomImage as ID
 
 
@@ -21,14 +23,14 @@ data DeepZoomImage = DeepZoomImage
   } deriving (Eq, Show, GHC.Generic)
 
 instance Aeson.ToJSON DeepZoomImage where
-   toJSON = genericToJSON $ aesonPrefix camelCase
+   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
 instance Aeson.FromJSON DeepZoomImage where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
+   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
 
 fromInternal :: IC.ContentId -> ID.DeepZoomImage -> DeepZoomImage
-fromInternal cid dzi = DeepZoomImage
+fromInternal cId dzi = DeepZoomImage
   -- TODO: Make hostname dynamic:
-  { dziUrl = "http://content.zoomhub.net/dzis/" ++ (show cid) ++ ".dzi"
+  { dziUrl = "http://content.zoomhub.net/dzis/" ++ (show cId) ++ ".dzi"
   , dziWidth = ID.dziWidth dzi
   , dziHeight = ID.dziHeight dzi
   , dziTileSize = ID.dziTileSize dzi
