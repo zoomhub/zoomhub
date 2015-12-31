@@ -8,7 +8,6 @@ module ZoomHub.Types.DeepZoomImage
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Casing as AC
 import qualified GHC.Generics as GHC
-import qualified ZoomHub.Types.Internal.Content as IC
 import qualified ZoomHub.Types.Internal.ContentId as IC
 import qualified ZoomHub.Types.Internal.DeepZoomImage as ID
 
