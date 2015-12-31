@@ -10,6 +10,7 @@ module ZoomHub.Config
   , raxApiKey
   , raxUsername
   , dataPath
+  , encodeIntegerId
   ) where
 
 import qualified GHC.Generics as GHC
@@ -25,6 +26,7 @@ data Config = Config
   , lastId :: STM.TVar Integer
   , rackspace :: RackspaceConfig
   , dataPath :: String
+  , encodeIntegerId :: Integer -> String
   }
 
 -- Config: Rackspace

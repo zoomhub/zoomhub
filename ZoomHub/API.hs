@@ -16,7 +16,7 @@ import qualified Control.Monad.IO.Class as IO
 import qualified Control.Monad.Trans.Either as Either
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty as Aeson
-import qualified Data.ByteString.Char8 as C
+import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
 import qualified Data.Either as ET
@@ -24,7 +24,6 @@ import qualified Data.Proxy as Proxy
 import qualified Network.Wai as WAI
 import qualified Servant as S
 import qualified System.IO.Error as SE
-import qualified Web.Hashids as H
 import qualified ZoomHub.Config as C
 import qualified ZoomHub.Rackspace.CloudFiles as CF
 import qualified ZoomHub.Types.Content as P
@@ -42,12 +41,6 @@ type API =
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] P.Content
 
 -- Helpers
-toHashId :: Integer -> String
-toHashId intId =
-  -- TODO: Move Hashid secret to config:
-  let context = H.hashidsSimple "zoomhub hash salt" in
-  C.unpack $ H.encode context (fromIntegral intId)
-
 mkContentFromURL :: I.ContentId -> String -> I.Content
 mkContentFromURL newId url = I.mkContent newId url
 
@@ -65,10 +58,10 @@ getContentFromFile dataPath contentId = do
 
 getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe I.ContentId)
 getContentIdFromURL creds url = do
-  content <- CF.getContent creds urlPath
-  return $ (I.ContentId . CL.unpack) <$> content
+  cId <- CF.getContent creds urlPath
+  return $ I.fromLBS <$> cId
   where
-    sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
+    sha256 x = show (Crypto.hash $ BSC.pack x :: Crypto.Digest Crypto.SHA256)
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
 
 -- Handlers
@@ -90,9 +83,8 @@ contentByURL config creds maybeURL = case maybeURL of
     case maybeContentId of
       Nothing -> do
         newId <- IO.liftIO $ incrementAndGet $ C.lastId config
-        let newHashId = toHashId newId
-        let newContent = mkContentFromURL (I.ContentId newHashId) url
-        let newContentId = I.contentId newContent
+        let newContentId = I.fromInteger encodeIntegerId newId
+        let newContent = mkContentFromURL newContentId url
         IO.liftIO $ LBS.writeFile (getContentPath dataPath newContentId)
           (Aeson.encodePretty' I.prettyEncodeConfig newContent)
         redirect $ newContentId
@@ -101,7 +93,7 @@ contentByURL config creds maybeURL = case maybeURL of
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
         -- permanent HTTP 301 redirects:
         redirect contentId =
-          let location = C.pack $ "/v1/content/" ++ show contentId in
+          let location = BSC.pack $ "/v1/content/" ++ show contentId in
           Either.left $ S.err301{
             -- HACK: Redirect using error: http://git.io/vBCz9
             S.errHeaders = [("Location", location)]
@@ -111,6 +103,7 @@ contentByURL config creds maybeURL = case maybeURL of
           STM.modifyTVar tvar (+1)
           STM.readTVar tvar
         dataPath = C.dataPath config
+        encodeIntegerId = C.encodeIntegerId config
 
 -- API
 api :: Proxy.Proxy API
