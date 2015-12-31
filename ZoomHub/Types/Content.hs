@@ -17,6 +17,7 @@ import Data.Aeson as Aeson
 import qualified Data.Aeson.Casing as AC
 import qualified GHC.Generics as GHC
 import qualified ZoomHub.Types.Internal.Content as IC
+import qualified ZoomHub.Types.Internal.ContentId as IC
 import qualified ZoomHub.Types.DeepZoomImage as DZ
 
 -- Content
@@ -39,7 +40,7 @@ instance Aeson.FromJSON Content where
 -- Constructor
 fromInternal :: IC.Content -> Content
 fromInternal c = Content
-  { contentId = cid
+  { contentId = cId
   , contentUrl = IC.contentUrl c
   , contentReady = IC.contentReady c
   , contentFailed = IC.contentFailed c
@@ -49,9 +50,9 @@ fromInternal c = Content
   , contentDzi = dzi
   }
   where
-    cid = IC.contentId c
+    cId = IC.contentId c
     -- TODO: Make hostname dynamic:
-    shareURL = "http://zoom.it/" ++ (show cid)
+    shareURL = "http://zoom.it/" ++ (show cId)
     embedHtml =
       "<script src=\"" ++ shareURL ++ ".js?width=auto&height=400px\"></script>"
-    dzi = (DZ.fromInternal cid) <$> IC.contentDzi c
+    dzi = (DZ.fromInternal cId) <$> IC.contentDzi c

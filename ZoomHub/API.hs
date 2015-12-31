@@ -29,6 +29,7 @@ import qualified ZoomHub.Config as C
 import qualified ZoomHub.Rackspace.CloudFiles as CF
 import qualified ZoomHub.Types.Content as P
 import qualified ZoomHub.Types.Internal.Content as I
+import qualified ZoomHub.Types.Internal.ContentId as I
 
 
 -- Servant default handler type
