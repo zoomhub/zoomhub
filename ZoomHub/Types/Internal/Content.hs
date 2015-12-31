@@ -14,7 +14,7 @@ module ZoomHub.Types.Internal.Content
   , contentActiveAt
   , contentFinishedAt
   , contentDzi
-  , mkContent
+  , fromURL
   , prettyEncodeConfig
   ) where
 
@@ -49,8 +49,8 @@ instance Aeson.FromJSON Content where
    parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
 
 -- Constructor
-mkContent :: IC.ContentId -> String -> Content
-mkContent cId url = Content
+fromURL :: IC.ContentId -> String -> Content
+fromURL cId url = Content
   { contentId = cId
   , contentUrl = url
   , contentReady = False

@@ -41,9 +41,6 @@ type API =
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] P.Content
 
 -- Helpers
-mkContentFromURL :: I.ContentId -> String -> I.Content
-mkContentFromURL newId url = I.mkContent newId url
-
 getContentPath :: String -> I.ContentId -> String
 getContentPath dataPath contentId =
   dataPath ++ "/content-by-id/" ++ show contentId ++ ".json"
@@ -84,7 +81,7 @@ contentByURL config creds maybeURL = case maybeURL of
       Nothing -> do
         newId <- IO.liftIO $ incrementAndGet $ C.lastId config
         let newContentId = I.fromInteger encodeIntegerId newId
-        let newContent = mkContentFromURL newContentId url
+        let newContent = I.fromURL newContentId url
         IO.liftIO $ LBS.writeFile (getContentPath dataPath newContentId)
           (Aeson.encodePretty' I.prettyEncodeConfig newContent)
         redirect $ newContentId
