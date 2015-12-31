@@ -64,10 +64,8 @@ getContentFromFile dataPath contentId = do
 
 getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe I.ContentId)
 getContentIdFromURL creds url = do
-  maybeContent <- CF.getContent creds urlPath
-  case maybeContent of
-    Nothing        -> return Nothing
-    Just contentId -> return $ Just $ I.ContentId $ CL.unpack contentId
+  content <- CF.getContent creds urlPath
+  return $ (I.ContentId . CL.unpack) <$> content
   where
     sha256 x = show (Crypto.hash $ C.pack x :: Crypto.Digest Crypto.SHA256)
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
