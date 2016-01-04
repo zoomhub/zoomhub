@@ -24,9 +24,9 @@ main = do
   case raxConfig of
     E.Right rackspace -> do
       -- TODO: Initialize from `/data/lastId.txt`:
-      lastId <- IO.liftIO $ STM.atomically $ STM.newTVar 0
-      _ <- C.forkIO $ printLastId lastId
       dataPath <- (++ "/data") <$> SD.getCurrentDirectory
+      lastId <- IO.liftIO $ STM.atomically $ STM.newTVar 0
+      _ <- C.forkIO $ writeLastId dataPath lastId
       -- TODO: Move Hashid secret to config:
       let encodeContext = H.hashidsSimple "zoomhub hash salt"
           encodeIntegerId integerId =
@@ -37,7 +37,7 @@ main = do
     E.Left message -> error $ "Failed to read environment: " ++ message
   where
     -- TODO: Write last ID back to `/data/lastId.txt` instead of printing it:
-    printLastId :: STM.TVar Integer -> IO ()
-    printLastId tvar = M.forever $ STM.atomically (STM.readTVar tvar)
-      >>= \x -> putStrLn ("Last ID: " ++ show x)
+    writeLastId :: String -> STM.TVar Integer -> IO ()
+    writeLastId dataPath tvar = M.forever $ STM.atomically (STM.readTVar tvar)
+      >>= \x -> writeFile (dataPath ++ "/lastId.txt") (show x)
       >> C.threadDelay (3 * 1000 * 1000)
