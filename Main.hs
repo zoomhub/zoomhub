@@ -16,6 +16,11 @@ import qualified Web.Hashids as H
 import qualified ZoomHub.API as ZH
 import qualified ZoomHub.Config as ZH
 
+
+-- TODO: Figure out why `time-units` library doesn’t work:
+lastIdWriteInterval :: Int
+lastIdWriteInterval = 60 * 10^(6 :: Int) -- microseconds
+
 -- Main
 main :: IO ()
 main = do
@@ -40,4 +45,4 @@ main = do
     writeLastId :: String -> STM.TVar Integer -> IO ()
     writeLastId dataPath tvar = M.forever $ STM.atomically (STM.readTVar tvar)
       >>= \x -> writeFile (dataPath ++ "/lastId.txt") (show x)
-      >> C.threadDelay (3 * 1000 * 1000)
+      >> C.threadDelay lastIdWriteInterval
