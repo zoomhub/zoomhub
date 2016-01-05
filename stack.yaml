@@ -10,6 +10,7 @@ packages:
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
 - aeson-casing-0.1.0.2
+- atomic-write-0.2.0.4
 - envy-1.1.0.0
 - hashids-1.0.2.2
 - servant-lucid-0.4.4.5
