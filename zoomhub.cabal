@@ -24,6 +24,7 @@ executable zoomhub
       aeson >= 0.8
     , aeson-casing == 0.1.0.2
     , aeson-pretty
+    , atomic-write
     , base >= 4.7 && < 5
     , bytestring
     , cryptonite == 0.6.*
