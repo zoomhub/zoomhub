@@ -4,22 +4,40 @@
 
 import qualified Control.Concurrent as C
 import qualified Control.Concurrent.STM as STM
+import qualified Control.Exception as Ex
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.Either as E
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified System.AtomicWrite.Writer.String as A
 import qualified System.Directory as SD
 import qualified System.Environment as System
 import qualified System.Envy as Env
+import qualified System.IO.Error as System
 import qualified Web.Hashids as H
 import qualified ZoomHub.API as ZH
 import qualified ZoomHub.Config as ZH
 
 
+lastIdPath :: String -> String
+lastIdPath dataPath = dataPath ++ "/lastId.txt"
+
 -- TODO: Figure out why `time-units` library doesn’t work:
 lastIdWriteInterval :: Int
-lastIdWriteInterval = 60 * 10^(6 :: Int) -- microseconds
+lastIdWriteInterval = 5 * 10^(6 :: Int) -- microseconds
+
+readLastId :: String -> IO Integer
+readLastId dataPath = do
+  r <- Ex.tryJust (M.guard . System.isDoesNotExistError) $ readFile (lastIdPath dataPath)
+  return $ read $ case r of
+    Left _       -> "0"
+    Right lastId -> lastId
+
+writeLastId :: String -> STM.TVar Integer -> Int -> IO ()
+writeLastId dataPath tvar interval = M.forever $ STM.atomically (STM.readTVar tvar)
+  >>= \x -> A.atomicWriteFile (lastIdPath dataPath) (show x)
+  >> C.threadDelay interval
 
 -- Main
 main :: IO ()
@@ -30,8 +48,9 @@ main = do
     E.Right rackspace -> do
       -- TODO: Initialize from `/data/lastId.txt`:
       dataPath <- (++ "/data") <$> SD.getCurrentDirectory
-      lastId <- IO.liftIO $ STM.atomically $ STM.newTVar 0
-      _ <- C.forkIO $ writeLastId dataPath lastId
+      initialLastId <- readLastId dataPath
+      lastId <- IO.liftIO $ STM.atomically $ STM.newTVar initialLastId
+      _ <- C.forkIO $ writeLastId dataPath lastId lastIdWriteInterval
       -- TODO: Move Hashid secret to config:
       let encodeContext = H.hashidsSimple "zoomhub hash salt"
           encodeIntegerId integerId =
@@ -40,9 +59,3 @@ main = do
           config = ZH.Config{..}
       Warp.run (fromIntegral port) (ZH.app config)
     E.Left message -> error $ "Failed to read environment: " ++ message
-  where
-    -- TODO: Write last ID back to `/data/lastId.txt` instead of printing it:
-    writeLastId :: String -> STM.TVar Integer -> IO ()
-    writeLastId dataPath tvar = M.forever $ STM.atomically (STM.readTVar tvar)
-      >>= \x -> writeFile (dataPath ++ "/lastId.txt") (show x)
-      >> C.threadDelay lastIdWriteInterval
