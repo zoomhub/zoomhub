@@ -57,6 +57,7 @@ executable zoomhub
       ZoomHub.API
     , ZoomHub.Config
     , ZoomHub.Rackspace.CloudFiles
+    , ZoomHub.Storage
     , ZoomHub.Types.Content
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.Internal.Content
