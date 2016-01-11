@@ -75,10 +75,14 @@ test-suite tests
   main-is:        Tests.hs
   other-modules:
     ZoomHub.StorageTest
+    ZoomHub.Types.Internal.ContentIdTest
   ghc-options: -Wall
   build-depends:
-      base
+      aeson
+    , base
+    , bytestring
     , QuickCheck
+    , quickcheck-instances
     , test-framework
     , test-framework-quickcheck2
     , zoomhub
