@@ -38,31 +38,32 @@ newtype Token = Token String deriving Eq
 instance Show Token where
   show (Token t) = t
 
+newtype Metadata = Metadata { unMetadata :: LBS.ByteString } deriving Eq
+
 -- API
 tokenURL :: String
 tokenURL = "https://identity.api.rackspacecloud.com/v2.0/tokens"
 
-getMetadata :: Credentials -> IO LBS.ByteString
+getMetadata :: Credentials -> IO Metadata
 getMetadata credentials = do
   res <- HTTP.post tokenURL $ Aeson.toJSON credentials
-  return $ res ^. responseBody
+  return $ Metadata (res ^. responseBody)
 
-parseToken :: LBS.ByteString -> Maybe Token
+parseToken :: Metadata -> Maybe Token
 parseToken meta =
-  let maybeToken = meta ^? key "access" . key "token" . key "id" . _String in
+  let maybeToken = (unMetadata meta) ^? key "access" . key "token" . key "id" . _String in
   (Token . T.unpack) <$> maybeToken
 
-parseEndpoint :: LBS.ByteString -> Maybe Endpoint
+parseEndpoint :: Metadata -> Maybe Endpoint
 parseEndpoint _ =
   -- TODO: How do I filter `access.serviceCatalog[].name == "IAD"` using
   -- lenses from:
   -- `{"access":{"serviceCatalog":[{"name":"IAD","endpoints":[]}]}}`
-  -- let a = meta ^? key "access" . key "serviceCatalog" . _Array in
+  -- let a = (unMetadata meta) ^? key "access" . key "serviceCatalog" . _Array in
   Just $ Endpoint "https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_0c5dc6c2-028f-4648-a59d-e770b827add7"
 
-getContent :: Credentials -> String -> IO (Maybe LBS.ByteString)
-getContent credentials urlPath = do
-  meta <- getMetadata credentials
+getContent :: Metadata -> String -> IO (Maybe LBS.ByteString)
+getContent meta urlPath = do
   case parseToken meta of
     Nothing -> return Nothing
     Just t ->

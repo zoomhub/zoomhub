@@ -53,9 +53,9 @@ getContentFromFile dataPath contentId = do
     ET.Right s -> return $ Aeson.decode s
   where contentPath = getContentPath dataPath contentId
 
-getContentIdFromURL :: CF.Credentials -> String -> IO (Maybe I.ContentId)
-getContentIdFromURL creds url = do
-  cId <- CF.getContent creds urlPath
+getContentIdFromURL :: CF.Metadata -> String -> IO (Maybe I.ContentId)
+getContentIdFromURL meta url = do
+  cId <- CF.getContent meta urlPath
   return $ I.fromLBS <$> cId
   where
     sha256 x = show (Crypto.hash $ BSC.pack x :: Crypto.Digest Crypto.SHA256)
@@ -70,13 +70,13 @@ contentById dataPath contentId = do
     Just c  -> return $ P.fromInternal c
   where error404message = CL.pack $ "ID " ++ show contentId ++ " not found."
 
-contentByURL :: C.Config -> CF.Credentials -> Maybe String -> Handler P.Content
-contentByURL config creds maybeURL = case maybeURL of
+contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
+contentByURL config meta maybeURL = case maybeURL of
   Nothing -> Either.left S.err400{
     S.errBody = "Please provide an ID or `url` query parameter."
   }
   Just url -> do
-    maybeContentId <- IO.liftIO $ getContentIdFromURL creds url
+    maybeContentId <- IO.liftIO $ getContentIdFromURL meta url
     case maybeContentId of
       Nothing -> do
         newId <- IO.liftIO $ incrementAndGet $ C.lastId config
@@ -106,13 +106,9 @@ contentByURL config creds maybeURL = case maybeURL of
 api :: Proxy.Proxy API
 api = Proxy.Proxy
 
-server :: C.Config -> S.Server API
-server config = contentById (C.dataPath config)
-           :<|> contentByURL config creds
-  where
-    username = (C.raxUsername . C.rackspace) config
-    apiKey = (C.raxApiKey . C.rackspace) config
-    creds = CF.Credentials username apiKey
+server :: C.Config -> CF.Metadata -> S.Server API
+server config meta = contentById (C.dataPath config)
+           :<|> contentByURL config meta
 
-app :: C.Config -> WAI.Application
-app config = S.serve api (server config)
+app :: C.Config -> CF.Metadata -> WAI.Application
+app config meta = S.serve api (server config meta)
