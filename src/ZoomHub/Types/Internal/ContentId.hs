@@ -5,6 +5,7 @@ module ZoomHub.Types.Internal.ContentId
   ( ContentId
   , fromInteger
   , fromLBS
+  , unContentId
   ) where
 
 
@@ -19,11 +20,11 @@ import qualified GHC.Generics as GHC
 import qualified Servant as S
 
 
-newtype ContentId = ContentId String
+newtype ContentId = ContentId { unContentId :: String }
   deriving (Eq, GHC.Generic)
 
 instance Show ContentId where
-  show (ContentId cId) = cId
+  show (ContentId cId) = "ContentId " ++ cId
 
 instance S.FromText ContentId where
   fromText t = Just $ ContentId $ T.unpack t

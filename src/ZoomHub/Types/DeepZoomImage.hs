@@ -29,7 +29,8 @@ instance Aeson.FromJSON DeepZoomImage where
 fromInternal :: IC.ContentId -> ID.DeepZoomImage -> DeepZoomImage
 fromInternal cId dzi = DeepZoomImage
   -- TODO: Make hostname dynamic:
-  { dziUrl = "http://content.zoomhub.net/dzis/" ++ (show cId) ++ ".dzi"
+  { dziUrl =
+      "http://content.zoomhub.net/dzis/" ++ (IC.unContentId cId) ++ ".dzi"
   , dziWidth = ID.dziWidth dzi
   , dziHeight = ID.dziHeight dzi
   , dziTileSize = ID.dziTileSize dzi
