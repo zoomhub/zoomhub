@@ -36,22 +36,17 @@ library
     , aeson-casing == 0.1.0.2
     , aeson-pretty
     , atomic-write
-    , base >= 4.7 && < 5
+    , base >= 4.8 && < 5
     , bytestring
     , cryptonite == 0.6.*
-    , data-default
     , directory
     , either
     , envy
     , hashids
     , http-client
-    , http-types
-    , js-jquery
     , lens == 4.12.*
     , lens-aeson == 1.*
-    , random
     , servant == 0.4.*
-    , servant-docs == 0.4.*
     , servant-server == 0.4.*
     , stm
     , text
