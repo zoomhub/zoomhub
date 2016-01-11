@@ -49,7 +49,6 @@ main = do
   raxConfig <- Env.decodeEnv
   case raxConfig of
     E.Right rackspace -> do
-      -- TODO: Initialize from `/data/lastId.txt`:
       dataPath <- (++ "/data") <$> SD.getCurrentDirectory
       initialLastId <- readLastId dataPath
       lastId <- IO.liftIO $ STM.atomically $ STM.newTVar initialLastId
