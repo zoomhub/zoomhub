@@ -7,6 +7,7 @@ module ZoomHub.API where
 
 
 import Servant((:<|>)(..),(:>))
+import ZoomHub.Storage (toFilename)
 
 import qualified "cryptonite" Crypto.Hash as Crypto
 import qualified Control.Concurrent.STM as STM
@@ -43,7 +44,8 @@ type API =
 -- Helpers
 getContentPath :: String -> I.ContentId -> String
 getContentPath dataPath contentId =
-  dataPath ++ "/content-by-id/" ++ I.unId contentId ++ ".json"
+  dataPath ++ "/content-by-id/" ++ filename ++ ".json"
+  where filename = toFilename . I.unId $ contentId
 
 getContentFromFile :: String -> I.ContentId -> IO (Maybe I.Content)
 getContentFromFile dataPath contentId = do
