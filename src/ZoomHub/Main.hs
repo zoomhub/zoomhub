@@ -32,10 +32,11 @@ lastIdWriteInterval = 5 * 10^(6 :: Int) -- microseconds
 
 readLastId :: String -> IO Integer
 readLastId dataPath = do
-  r <- Ex.tryJust (M.guard . System.isDoesNotExistError) $ readFile (lastIdPath dataPath)
+  r <- Ex.tryJust doesNotExistGuard $ readFile (lastIdPath dataPath)
   return $ read $ case r of
     Left _       -> "0"
     Right lastId -> lastId
+  where doesNotExistGuard = M.guard . System.isDoesNotExistError
 
 writeLastId :: String -> STM.TVar Integer -> Int -> IO ()
 writeLastId dataPath tvar interval = M.forever $ STM.atomically (STM.readTVar tvar)
