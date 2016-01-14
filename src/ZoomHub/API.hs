@@ -70,12 +70,12 @@ contentById dataPath contentId = do
   case maybeContent of
     Nothing -> Either.left S.err404{S.errBody = error404message}
     Just c  -> return $ P.fromInternal c
-  where error404message = CL.pack $ "ID " ++ I.unId contentId ++ " not found."
+  where error404message = CL.pack $ "No content with ID: " ++ I.unId contentId
 
 contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
 contentByURL config meta maybeURL = case maybeURL of
   Nothing -> Either.left S.err400{
-    S.errBody = "Please provide an ID or `url` query parameter."
+    S.errBody = "Missing ID or URL."
   }
   Just url -> do
     maybeContentId <- IO.liftIO $ getContentIdFromURL meta url
