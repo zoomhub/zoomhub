@@ -7,7 +7,7 @@ module ZoomHub.API where
 
 
 import Servant((:<|>)(..),(:>))
-import ZoomHub.Storage (toFilename)
+import ZoomHub.Storage.File (toFilename)
 
 import qualified "cryptonite" Crypto.Hash as Crypto
 import qualified Control.Concurrent.STM as STM
