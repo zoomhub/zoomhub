@@ -33,9 +33,9 @@ lastIdWriteInterval = 5 * 10^(6 :: Int) -- microseconds
 readLastId :: String -> IO Integer
 readLastId dataPath = do
   r <- Ex.tryJust doesNotExistGuard $ readFile (lastIdPath dataPath)
-  return $ read $ case r of
-    Left _       -> "0"
-    Right lastId -> lastId
+  return $ case r of
+    Left _       -> 0
+    Right lastId -> read lastId
   where doesNotExistGuard = M.guard . System.isDoesNotExistError
 
 writeLastId :: String -> STM.TVar Integer -> Int -> IO ()
