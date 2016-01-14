@@ -24,6 +24,7 @@ library
     , ZoomHub.Main
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Storage.File
+    , ZoomHub.Storage.Internal.File
     , ZoomHub.Types.Content
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.Internal.Content
@@ -69,7 +70,7 @@ test-suite tests
   hs-source-dirs: tests
   main-is:        Tests.hs
   other-modules:
-    ZoomHub.Storage.FileTest
+    ZoomHub.Storage.Internal.FileTest
     ZoomHub.Types.Internal.ContentIdTest
   ghc-options: -Wall
   build-depends:
