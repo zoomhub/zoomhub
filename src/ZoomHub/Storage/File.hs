@@ -1,4 +1,4 @@
-module ZoomHub.Storage
+module ZoomHub.Storage.File
   ( toFilename
   , toId
   )
