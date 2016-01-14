@@ -5,7 +5,7 @@ module ZoomHub.Types.Internal.ContentId
   ( ContentId
   , fromInteger
   , fromLBS
-  , unContentId
+  , unId
   ) where
 
 
@@ -20,11 +20,8 @@ import qualified GHC.Generics as GHC
 import qualified Servant as S
 
 
-newtype ContentId = ContentId { unContentId :: String }
-  deriving (Eq, GHC.Generic)
-
-instance Show ContentId where
-  show (ContentId cId) = "ContentId " ++ cId
+newtype ContentId = ContentId String
+  deriving (Eq, GHC.Generic, Show)
 
 instance S.FromText ContentId where
   fromText t = Just $ ContentId $ T.unpack t
@@ -34,8 +31,11 @@ instance Aeson.ToJSON ContentId where
 instance Aeson.FromJSON ContentId where
    parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
 
+unId :: ContentId -> String
+unId (ContentId cId) = cId
+
 fromInteger :: (Integer -> String) -> Integer -> ContentId
 fromInteger encode intId = ContentId $ encode intId
 
 fromLBS :: LBS.ByteString -> ContentId
-fromLBS cId = ContentId $ CL.unpack cId
+fromLBS contentId = ContentId $ CL.unpack contentId
