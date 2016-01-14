@@ -74,9 +74,7 @@ contentById dataPath contentId = do
 
 contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
 contentByURL config meta maybeURL = case maybeURL of
-  Nothing -> Either.left S.err400{
-    S.errBody = "Missing ID or URL."
-  }
+  Nothing -> Either.left S.err400{ S.errBody = "Missing ID or URL." }
   Just url -> do
     maybeContentId <- IO.liftIO $ getContentIdFromURL meta url
     case maybeContentId of
