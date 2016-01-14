@@ -20,7 +20,7 @@ import qualified GHC.Generics as GHC
 import qualified Servant as S
 
 
-newtype ContentId = ContentId { unId :: String }
+newtype ContentId = ContentId String
   deriving (Eq, GHC.Generic, Show)
 
 instance S.FromText ContentId where
@@ -30,6 +30,9 @@ instance Aeson.ToJSON ContentId where
    toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
 instance Aeson.FromJSON ContentId where
    parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
+
+unId :: ContentId -> String
+unId (ContentId cId) = cId
 
 fromInteger :: (Integer -> String) -> Integer -> ContentId
 fromInteger encode intId = ContentId $ encode intId
