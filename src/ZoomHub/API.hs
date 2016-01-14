@@ -1,15 +1,16 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE TypeOperators #-}
 
 module ZoomHub.API where
 
 
 import Servant((:<|>)(..),(:>))
-import ZoomHub.Storage.File (toFilename)
+import ZoomHub.Storage.File ( getContentFromFile
+                            , getContentIdFromURL
+                            , getContentPath
+                            )
 
-import qualified "cryptonite" Crypto.Hash as Crypto
 import qualified Control.Concurrent.STM as STM
 import qualified Control.Exception as E
 import qualified Control.Monad as M
@@ -41,34 +42,12 @@ type API =
   :<|>
   "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] P.Content
 
--- Helpers
-getContentPath :: String -> I.ContentId -> String
-getContentPath dataPath contentId =
-  dataPath ++ "/content-by-id/" ++ filename ++ ".json"
-  where filename = toFilename . I.unId $ contentId
-
-getContentFromFile :: String -> I.ContentId -> IO (Maybe I.Content)
-getContentFromFile dataPath contentId = do
-  f <- E.tryJust (M.guard . SE.isDoesNotExistError) (LBS.readFile contentPath)
-  case f of
-    ET.Left _  -> return Nothing
-    ET.Right s -> return $ Aeson.decode s
-  where contentPath = getContentPath dataPath contentId
-
-getContentIdFromURL :: CF.Metadata -> String -> IO (Maybe I.ContentId)
-getContentIdFromURL meta url = do
-  cId <- CF.getContent meta urlPath
-  return $ I.fromLBS <$> cId
-  where
-    sha256 x = show (Crypto.hash $ BSC.pack x :: Crypto.Digest Crypto.SHA256)
-    urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
-
 -- Handlers
 contentById :: String -> I.ContentId -> Handler P.Content
 contentById dataPath contentId = do
   maybeContent <- IO.liftIO $ getContentFromFile dataPath contentId
   case maybeContent of
-    Nothing -> Either.left S.err404{S.errBody = error404message}
+    Nothing -> Either.left S.err404{ S.errBody = error404message }
     Just c  -> return $ P.fromInternal c
   where error404message = CL.pack $ "No content with ID: " ++ I.unId contentId
 
