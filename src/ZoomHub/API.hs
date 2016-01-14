@@ -43,7 +43,7 @@ type API =
 -- Helpers
 getContentPath :: String -> I.ContentId -> String
 getContentPath dataPath contentId =
-  dataPath ++ "/content-by-id/" ++ show contentId ++ ".json"
+  dataPath ++ "/content-by-id/" ++ I.unId contentId ++ ".json"
 
 getContentFromFile :: String -> I.ContentId -> IO (Maybe I.Content)
 getContentFromFile dataPath contentId = do
@@ -68,7 +68,7 @@ contentById dataPath contentId = do
   case maybeContent of
     Nothing -> Either.left S.err404{S.errBody = error404message}
     Just c  -> return $ P.fromInternal c
-  where error404message = CL.pack $ "ID " ++ show contentId ++ " not found."
+  where error404message = CL.pack $ "ID " ++ I.unId contentId ++ " not found."
 
 contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
 contentByURL config meta maybeURL = case maybeURL of
@@ -90,7 +90,7 @@ contentByURL config meta maybeURL = case maybeURL of
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
         -- permanent HTTP 301 redirects:
         redirect contentId =
-          let location = BSC.pack $ "/v1/content/" ++ show contentId in
+          let location = BSC.pack $ "/v1/content/" ++ I.unId contentId in
           Either.left $ S.err301{
             -- HACK: Redirect using error: http://git.io/vBCz9
             S.errHeaders = [("Location", location)]
