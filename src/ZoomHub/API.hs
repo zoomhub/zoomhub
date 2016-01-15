@@ -6,7 +6,7 @@ module ZoomHub.API where
 
 
 import Servant((:<|>)(..),(:>))
-import ZoomHub.Storage.File ( getContentFromFile
+import ZoomHub.Storage.File ( load
                             , getContentIdFromURL
                             , getContentPath
                             )
@@ -45,7 +45,7 @@ type API =
 -- Handlers
 contentById :: String -> I.ContentId -> Handler P.Content
 contentById dataPath contentId = do
-  maybeContent <- IO.liftIO $ getContentFromFile dataPath contentId
+  maybeContent <- IO.liftIO $ load dataPath contentId
   case maybeContent of
     Nothing -> Either.left S.err404{ S.errBody = error404message }
     Just c  -> return $ P.fromInternal c
