@@ -5,11 +5,13 @@ module ZoomHub.Types.Internal.ContentId
   ( ContentId
   , fromInteger
   , fromLBS
+  , fromString
   , unId
   ) where
 
 
 import Prelude hiding (fromInteger)
+import Data.List (isInfixOf)
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Casing as AC
@@ -37,7 +39,13 @@ unId :: ContentId -> String
 unId (ContentId cId) = cId
 
 fromInteger :: (Integer -> String) -> Integer -> ContentId
-fromInteger encode intId = ContentId $ encode intId
+fromInteger encode intId = fromString $ encode intId
 
 fromLBS :: LBS.ByteString -> ContentId
-fromLBS contentId = ContentId $ CL.unpack contentId
+fromLBS contentId = fromString $ CL.unpack contentId
+
+-- TODO: Change return type to `Maybe ContentId` to make it a total function:
+fromString :: String -> ContentId
+fromString cId
+  | "_" `isInfixOf` cId = error "Content IDs cannot have underscores (`_`)"
+  | otherwise           = ContentId cId
