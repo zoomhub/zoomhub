@@ -22,7 +22,7 @@ import qualified ZoomHub.Rackspace.CloudFiles as CF
 import System.IO.Error (isDoesNotExistError)
 import ZoomHub.Storage.Internal.File (toFilename, toId)
 import ZoomHub.Types.Internal.Content (Content)
-import ZoomHub.Types.Internal.ContentId (ContentId, fromLBS, unId)
+import ZoomHub.Types.Internal.ContentId (ContentId, fromString, unId)
 
 -- Public API
 store :: Content -> IO ()
@@ -45,7 +45,7 @@ getContentPath dataPath contentId =
 getContentIdFromURL :: CF.Metadata -> String -> IO (Maybe ContentId)
 getContentIdFromURL meta url = do
   cId <- CF.getContent meta urlPath
-  return $ fromLBS <$> (BLC.pack . toId . BLC.unpack) <$> cId
+  return $ fromString <$> (toId . BLC.unpack) <$> cId
   where
     sha256 x = show (hash $ BC.pack x :: Digest SHA256)
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
