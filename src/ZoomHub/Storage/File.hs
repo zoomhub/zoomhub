@@ -67,7 +67,7 @@ getIdByURL config meta url = do
 _getIdByURL :: CF.Metadata -> String -> IO (Maybe ContentId)
 _getIdByURL meta url = do
   cId <- CF.getContent meta urlPath
-  return $ fromString <$> (toId . BLC.unpack) <$> cId
+  return $ (fromString . toId . BLC.unpack) <$> cId
   where
     sha256 x = show (hash $ BC.pack x :: Digest SHA256)
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
