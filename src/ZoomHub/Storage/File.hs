@@ -3,6 +3,7 @@
 module ZoomHub.Storage.File
   ( getById
   , getByURL
+  , create
   )
   where
 
@@ -25,7 +26,7 @@ import           System.IO.Error                  (isDoesNotExistError)
 import qualified ZoomHub.Config                   as C
 import qualified ZoomHub.Rackspace.CloudFiles     as CF
 import           ZoomHub.Storage.Internal.File    (toFilename, toId)
-import           ZoomHub.Types.Internal.Content   (Content, fromURL,
+import           ZoomHub.Types.Internal.Content   (Content, contentId, fromURL,
                                                    prettyEncodeConfig)
 import           ZoomHub.Types.Internal.ContentId (ContentId, fromInteger,
                                                    fromString, unId)
@@ -40,39 +41,38 @@ getById dataPath contentId = do
   where contentPath = getContentPath dataPath contentId
 
 getByURL :: C.Config -> CF.Metadata -> String -> IO (Maybe Content)
-getByURL config meta url = (getById dataPath) =<< getIdByURL config meta url
-  where
-    dataPath = C.dataPath config
-
-getIdByURL :: C.Config -> CF.Metadata -> String -> IO ContentId
-getIdByURL config meta url = do
-  maybeContentId <- _getIdByURL meta url
+getByURL config meta url = do
+  maybeContentId <- getIdByURL meta url
   case maybeContentId of
-    Nothing -> do
-      newId <- incrementAndGet $ C.lastId config
-      let newContentId = fromInteger encodeIntegerId newId
-      let newContent = fromURL newContentId url
-      BL.writeFile (getContentPath dataPath newContentId)
-        (encodePretty' prettyEncodeConfig newContent)
-      return newContentId
-    Just contentId -> return contentId
+    Nothing        -> return Nothing
+    Just contentId -> getById (C.dataPath config) contentId
+
+create :: C.Config -> String -> IO Content
+create config url = do
+  newId <- incrementAndGet $ C.lastId config
+  let newContentId = fromInteger (C.encodeId config) newId
+  let newContent = fromURL newContentId url
+  write newContent
+  return newContent
   where
       incrementAndGet :: TVar Integer -> IO Integer
       incrementAndGet tvar = atomically $ do
         modifyTVar tvar (+1)
         readTVar tvar
-      dataPath = C.dataPath config
-      encodeIntegerId = C.encodeIntegerId config
+      path content = getContentPath (C.dataPath config) (contentId content)
+      encode = encodePretty' prettyEncodeConfig
+      write newContent =
+        BL.writeFile (path newContent) (encode newContent)
 
-_getIdByURL :: CF.Metadata -> String -> IO (Maybe ContentId)
-_getIdByURL meta url = do
+-- Helpers
+getIdByURL :: CF.Metadata -> String -> IO (Maybe ContentId)
+getIdByURL meta url = do
   cId <- CF.getContent meta urlPath
   return $ (fromString . toId . BLC.unpack) <$> cId
   where
     sha256 x = show (hash $ BC.pack x :: Digest SHA256)
     urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
 
--- Helpers
 getContentPath :: FilePath -> ContentId -> String
 getContentPath dataPath contentId =
   dataPath ++ "/content-by-id/" ++ filename ++ ".json"
