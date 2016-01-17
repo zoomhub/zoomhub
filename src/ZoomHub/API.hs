@@ -5,7 +5,8 @@
 module ZoomHub.API where
 
 
-import Servant((:<|>)(..),(:>))
+import Servant((:<|>)(..),(:>), Capture, err301, err400, err404, errBody,
+               errHeaders, Get, JSON, QueryParam, serve, ServantErr, Server)
 import ZoomHub.Storage.File ( load
                             , getContentIdFromURL
                             , getContentPath
@@ -34,26 +35,26 @@ import qualified ZoomHub.Types.Internal.ContentId as I
 
 
 -- Servant default handler type
-type Handler a = Either.EitherT S.ServantErr IO a
+type Handler a = Either.EitherT ServantErr IO a
 
 -- API
 type API =
-  "v1" :> "content" :> S.Capture "id" I.ContentId :> S.Get '[S.JSON] P.Content
+  "v1" :> "content" :> Capture "id" I.ContentId :> Get '[JSON] P.Content
   :<|>
-  "v1" :> "content" :> S.QueryParam "url" String :> S.Get '[S.JSON] P.Content
+  "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] P.Content
 
 -- Handlers
 contentById :: String -> I.ContentId -> Handler P.Content
 contentById dataPath contentId = do
   maybeContent <- IO.liftIO $ load dataPath contentId
   case maybeContent of
-    Nothing -> Either.left S.err404{ S.errBody = error404message }
+    Nothing -> Either.left err404{ errBody = error404message }
     Just c  -> return $ P.fromInternal c
   where error404message = CL.pack $ "No content with ID: " ++ I.unId contentId
 
 contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
 contentByURL config meta maybeURL = case maybeURL of
-  Nothing -> Either.left S.err400{ S.errBody = "Missing ID or URL." }
+  Nothing -> Either.left err400{ errBody = "Missing ID or URL." }
   Just url -> do
     maybeContentId <- IO.liftIO $ getContentIdFromURL meta url
     case maybeContentId of
@@ -70,9 +71,9 @@ contentByURL config meta maybeURL = case maybeURL of
         -- permanent HTTP 301 redirects:
         redirect contentId =
           let location = BSC.pack $ "/v1/content/" ++ I.unId contentId in
-          Either.left $ S.err301{
+          Either.left $ err301{
             -- HACK: Redirect using error: http://git.io/vBCz9
-            S.errHeaders = [("Location", location)]
+            errHeaders = [("Location", location)]
           }
         incrementAndGet :: STM.TVar Integer -> IO Integer
         incrementAndGet tvar = STM.atomically $ do
@@ -85,9 +86,9 @@ contentByURL config meta maybeURL = case maybeURL of
 api :: Proxy.Proxy API
 api = Proxy.Proxy
 
-server :: C.Config -> CF.Metadata -> S.Server API
+server :: C.Config -> CF.Metadata -> Server API
 server config meta = contentById (C.dataPath config)
            :<|> contentByURL config meta
 
 app :: C.Config -> CF.Metadata -> WAI.Application
-app config meta = S.serve api (server config meta)
+app config meta = serve api (server config meta)
