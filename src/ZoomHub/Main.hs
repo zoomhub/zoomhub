@@ -56,7 +56,7 @@ main = do
       _ <- C.forkIO $ writeLastId dataPath lastId lastIdWriteInterval
       -- TODO: Move Hashid secret to config:
       let encodeContext = H.hashidsSimple "zoomhub hash salt"
-          encodeIntegerId integerId =
+          encodeId integerId =
             BSC.unpack $ H.encode encodeContext (fromIntegral integerId)
           port = maybe ZH.defaultPort read maybePort
           config = ZH.Config{..}
