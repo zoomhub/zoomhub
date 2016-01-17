@@ -11,18 +11,17 @@ import ZoomHub.Storage.File ( load
                             , getContentIdFromURL
                             , getContentPath
                             )
+import Control.Monad.Trans.Either (EitherT, left, right)
 
 import qualified Control.Concurrent.STM as STM
 import qualified Control.Exception as E
 import qualified Control.Monad as M
 import qualified Control.Monad.IO.Class as IO
-import qualified Control.Monad.Trans.Either as Either
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty as Aeson
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as CL
-import qualified Data.Either as ET
 import qualified Data.Proxy as Proxy
 import qualified Network.Wai as WAI
 import qualified Servant as S
@@ -35,7 +34,7 @@ import qualified ZoomHub.Types.Internal.ContentId as I
 
 
 -- Servant default handler type
-type Handler a = Either.EitherT ServantErr IO a
+type Handler a = EitherT ServantErr IO a
 
 -- API
 type API =
@@ -48,13 +47,13 @@ contentById :: String -> I.ContentId -> Handler P.Content
 contentById dataPath contentId = do
   maybeContent <- IO.liftIO $ load dataPath contentId
   case maybeContent of
-    Nothing -> Either.left err404{ errBody = error404message }
+    Nothing -> left err404{ errBody = error404message }
     Just c  -> return $ P.fromInternal c
   where error404message = CL.pack $ "No content with ID: " ++ I.unId contentId
 
 contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
 contentByURL config meta maybeURL = case maybeURL of
-  Nothing -> Either.left err400{ errBody = "Missing ID or URL." }
+  Nothing -> left err400{ errBody = "Missing ID or URL." }
   Just url -> do
     maybeContentId <- IO.liftIO $ getContentIdFromURL meta url
     case maybeContentId of
@@ -71,7 +70,7 @@ contentByURL config meta maybeURL = case maybeURL of
         -- permanent HTTP 301 redirects:
         redirect contentId =
           let location = BSC.pack $ "/v1/content/" ++ I.unId contentId in
-          Either.left $ err301{
+          left $ err301{
             -- HACK: Redirect using error: http://git.io/vBCz9
             errHeaders = [("Location", location)]
           }
