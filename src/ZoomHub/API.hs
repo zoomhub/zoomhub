@@ -25,7 +25,7 @@ import qualified System.IO.Error                  as SE
 
 import qualified ZoomHub.Config                   as C
 import qualified ZoomHub.Rackspace.CloudFiles     as CF
-import           ZoomHub.Storage.File             (getById, getByURL)
+import           ZoomHub.Storage.File             (create, getById, getByURL)
 import qualified ZoomHub.Types.Content            as P
 import qualified ZoomHub.Types.Internal.Content   as I
 import qualified ZoomHub.Types.Internal.ContentId as I
@@ -53,9 +53,11 @@ contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
 contentByURL config meta maybeURL = case maybeURL of
   Nothing  -> left err400{ errBody = "Missing ID or URL." }
   Just url -> do
-      content <- IO.liftIO $ getByURL config meta url
-      -- FIXME: Do rely on unsafe `fromJust`:
-      redirect $ I.contentId $ fromJust content
+      maybeContent <- IO.liftIO $ getByURL config meta url
+      content <- case maybeContent of
+        Nothing -> IO.liftIO $ create config url
+        Just c  -> return c
+      redirect $ I.contentId content
       where
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
         -- permanent HTTP 301 redirects:
