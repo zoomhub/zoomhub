@@ -10,7 +10,6 @@ import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
 import           Control.Monad.IO.Class           (liftIO)
 import qualified Data.ByteString.Char8            as BC
-import           Data.Either                      (Either (Left, Right))
 import           Network.Wai.Handler.Warp         (run)
 import           System.AtomicWrite.Writer.String (atomicWriteFile)
 import           System.Directory                 (getCurrentDirectory)
@@ -21,9 +20,8 @@ import           System.IO.Error                  (isDoesNotExistError)
 import           Web.Hashids                      (encode, hashidsSimple)
 
 import           ZoomHub.API                      (app)
-import           ZoomHub.Config                   (Config (..), RackspaceConfig,
-                                                   defaultPort, raxApiKey,
-                                                   raxUsername, raxUsername)
+import           ZoomHub.Config                   (Config (..), defaultPort)
+
 
 lastIdPath :: String -> String
 lastIdPath dataPath = dataPath ++ "/lastId.txt"
