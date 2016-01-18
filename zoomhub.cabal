@@ -43,6 +43,7 @@ library
     , directory
     , either
     , envy
+    , filepath
     , hashids
     , http-client
     , lens == 4.13.*
