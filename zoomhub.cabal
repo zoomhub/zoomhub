@@ -1,6 +1,6 @@
 name:                zoomhub
 version:             0.0.0.0
-synopsis:            Cloud zooming service
+synopsis:            Publish high-resolution images — simply and efficiently.
 description:         Please see README.md
 homepage:            http://github.com/zoomhub/zoomhub#readme
 license:             MIT
