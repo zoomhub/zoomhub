@@ -10,12 +10,12 @@ import qualified ZoomHub.Types.Internal.ContentIdTest as ContentId
 
 main :: IO ()
 main = hspec $ do
-  describe "ZoomHub.Storage.File: `toId`" $ do
-    context "when used with valid strings, i.e. no underscores," $ do
-      it "is inverse to `toFilename`" $ property $
+  describe "ZoomHub.Storage.File: `toId`" $
+    context "when used with valid strings, i.e. no underscores," $
+      it "is inverse to `toFilename`" $ property
         File.prop_invertible
 
-  describe "ZoomHub.Types.Internal.ContentId: `encode`" $ do
-    context "when used with valid strings, i.e. no underscores," $ do
-      it "is inverse to `decode`" $ property $
+  describe "ZoomHub.Types.Internal.ContentId: `encode`" $
+    context "when used with valid strings, i.e. no underscores," $
+      it "is inverse to `decode`" $ property
         ContentId.prop_invertible
