@@ -68,7 +68,7 @@ executable zoomhub
 test-suite tests
   type:           exitcode-stdio-1.0
   hs-source-dirs: tests
-  main-is:        Tests.hs
+  main-is:        Spec.hs
   other-modules:
     ZoomHub.Storage.Internal.FileTest
     ZoomHub.Types.Internal.ContentIdTest
@@ -77,9 +77,8 @@ test-suite tests
       aeson
     , base
     , bytestring
+    , hspec == 2.*
     , QuickCheck
     , quickcheck-instances
-    , test-framework
-    , test-framework-quickcheck2
     , zoomhub
   default-language: Haskell2010
