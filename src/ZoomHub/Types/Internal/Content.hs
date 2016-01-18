@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.Internal.Content
@@ -18,38 +18,44 @@ module ZoomHub.Types.Internal.Content
   , prettyEncodeConfig
   ) where
 
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.Casing as AC
-import qualified Data.Aeson.Encode.Pretty as AP
-import qualified Data.Ord as Ord
-import qualified Data.Text as T
-import qualified Data.Time.Clock as DTC
-import qualified GHC.Generics as GHC
-import qualified ZoomHub.Types.Internal.ContentId as IC
-import qualified ZoomHub.Types.Internal.DeepZoomImage as ID
+import           Data.Aeson                           (FromJSON, ToJSON,
+                                                       genericParseJSON,
+                                                       genericToJSON, parseJSON,
+                                                       toJSON)
+import           Data.Aeson.Casing                    (aesonPrefix, camelCase)
+import           Data.Aeson.Encode.Pretty             (Config (Config),
+                                                       confCompare, confIndent,
+                                                       keyOrder)
+import           Data.Ord                             (comparing)
+import qualified Data.Text                            as T
+import           Data.Time.Clock                      (UTCTime)
+import           GHC.Generics                         (Generic)
+
+import           ZoomHub.Types.Internal.ContentId     (ContentId)
+import           ZoomHub.Types.Internal.DeepZoomImage (DeepZoomImage)
 
 -- Content
 data Content = Content
-  { contentId :: IC.ContentId
-  , contentUrl :: String
-  , contentReady :: Bool
-  , contentFailed :: Bool
-  , contentProgress :: Float
-  , contentMime :: Maybe String -- Use proper MIME type
-  , contentSize :: Maybe Integer
-  , contentActive :: Bool
-  , contentActiveAt :: Maybe DTC.UTCTime
-  , contentFinishedAt :: Maybe DTC.UTCTime
-  , contentDzi :: Maybe ID.DeepZoomImage
-  } deriving (Eq, Show, GHC.Generic)
+  { contentId         :: ContentId
+  , contentUrl        :: String
+  , contentReady      :: Bool
+  , contentFailed     :: Bool
+  , contentProgress   :: Float
+  , contentMime       :: Maybe String -- Use proper MIME type
+  , contentSize       :: Maybe Integer
+  , contentActive     :: Bool
+  , contentActiveAt   :: Maybe UTCTime
+  , contentFinishedAt :: Maybe UTCTime
+  , contentDzi        :: Maybe DeepZoomImage
+  } deriving (Eq, Show, Generic)
 
-instance Aeson.ToJSON Content where
-   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
-instance Aeson.FromJSON Content where
-   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
+instance ToJSON Content where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON Content where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 -- Constructor
-fromURL :: IC.ContentId -> String -> Content
+fromURL :: ContentId -> String -> Content
 fromURL cId url = Content
   { contentId = cId
   , contentUrl = url
@@ -62,19 +68,19 @@ fromURL cId url = Content
   , contentActiveAt = Nothing
   , contentFinishedAt = Nothing
   , contentDzi = Nothing
-  }
+    }
 
-prettyEncodeConfig :: AP.Config
-prettyEncodeConfig = AP.Config
-  { AP.confIndent = 2
-  , AP.confCompare = keyCompare
+prettyEncodeConfig :: Config
+prettyEncodeConfig = Config
+  { confIndent = 2
+  , confCompare = keyCompare
   }
 
 keyCompare :: T.Text -> T.Text -> Ordering
-keyCompare = AP.keyOrder keyOrder `mappend` Ord.comparing T.length
+keyCompare = keyOrder keyOrdering `mappend` comparing T.length
 
-keyOrder :: [T.Text]
-keyOrder =
+keyOrdering :: [T.Text]
+keyOrdering =
   [ "id"
   , "url"
   , "ready"

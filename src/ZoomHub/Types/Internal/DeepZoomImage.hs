@@ -9,20 +9,21 @@ module ZoomHub.Types.Internal.DeepZoomImage
   , dziTileFormat
   ) where
 
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.Casing as AC
-import qualified GHC.Generics as GHC
+import           Data.Aeson        (FromJSON, ToJSON, genericParseJSON,
+                                    genericToJSON, parseJSON, toJSON)
+import           Data.Aeson.Casing (aesonPrefix, camelCase)
+import           GHC.Generics      (Generic)
 
 
 data DeepZoomImage = DeepZoomImage
-  { dziWidth :: Integer
-  , dziHeight :: Integer
-  , dziTileSize :: Integer
+  { dziWidth       :: Integer
+  , dziHeight      :: Integer
+  , dziTileSize    :: Integer
   , dziTileOverlap :: Integer
-  , dziTileFormat :: String
-  } deriving (Eq, Show, GHC.Generic)
+  , dziTileFormat  :: String
+  } deriving (Eq, Show, Generic)
 
-instance Aeson.ToJSON DeepZoomImage where
-   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
-instance Aeson.FromJSON DeepZoomImage where
-   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
+instance ToJSON DeepZoomImage where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON DeepZoomImage where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase

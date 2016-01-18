@@ -11,48 +11,52 @@ module ZoomHub.Types.Content
   , fromInternal
   ) where
 
+import           Data.Aeson                       (FromJSON, ToJSON,
+                                                   genericParseJSON,
+                                                   genericToJSON, parseJSON,
+                                                   toJSON)
+import           Data.Aeson.Casing                (aesonPrefix, camelCase)
+import           GHC.Generics                     (Generic)
 
-import Data.Aeson as Aeson
+import           ZoomHub.Types.DeepZoomImage      (DeepZoomImage)
+import qualified ZoomHub.Types.DeepZoomImage      as DZ
+import qualified ZoomHub.Types.Internal.Content   as Internal
+import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
 
-import qualified Data.Aeson.Casing as AC
-import qualified GHC.Generics as GHC
-import qualified ZoomHub.Types.Internal.Content as IC
-import qualified ZoomHub.Types.Internal.ContentId as IC
-import qualified ZoomHub.Types.DeepZoomImage as DZ
 
 -- Content
 data Content = Content
-  { contentId :: IC.ContentId
-  , contentUrl :: String
-  , contentReady :: Bool
-  , contentFailed :: Bool
-  , contentProgress :: Float
-  , contentShareUrl :: String
+  { contentId        :: ContentId
+  , contentUrl       :: String
+  , contentReady     :: Bool
+  , contentFailed    :: Bool
+  , contentProgress  :: Float
+  , contentShareUrl  :: String
   , contentEmbedHtml :: String
-  , contentDzi :: Maybe DZ.DeepZoomImage
-  } deriving (Eq, Show, GHC.Generic)
+  , contentDzi       :: Maybe DeepZoomImage
+  } deriving (Eq, Show, Generic)
 
-instance Aeson.ToJSON Content where
-   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
-instance Aeson.FromJSON Content where
-   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
+instance ToJSON Content where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON Content where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 -- Constructor
-fromInternal :: IC.Content -> Content
+fromInternal :: Internal.Content -> Content
 fromInternal c = Content
   { contentId = cId
-  , contentUrl = IC.contentUrl c
-  , contentReady = IC.contentReady c
-  , contentFailed = IC.contentFailed c
-  , contentProgress = IC.contentProgress c
+  , contentUrl = Internal.contentUrl c
+  , contentReady = Internal.contentReady c
+  , contentFailed = Internal.contentFailed c
+  , contentProgress = Internal.contentProgress c
   , contentShareUrl = shareURL
   , contentEmbedHtml = embedHtml
   , contentDzi = dzi
   }
   where
-    cId = IC.contentId c
+    cId = Internal.contentId c
     -- TODO: Make hostname dynamic:
-    shareURL = "http://zoom.it/" ++ IC.unId cId
+    shareURL = "http://zoom.it/" ++ unId cId
     embedHtml =
       "<script src=\"" ++ shareURL ++ ".js?width=auto&height=400px\"></script>"
-    dzi = (DZ.fromInternal cId) <$> IC.contentDzi c
+    dzi = DZ.fromInternal cId <$> Internal.contentDzi c

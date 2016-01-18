@@ -11,40 +11,37 @@ import           Control.Concurrent.STM           (TVar, atomically, modifyTVar,
                                                    readTVar)
 import           Control.Exception                (tryJust)
 import           Control.Monad                    (guard)
-import           Control.Monad.IO.Class           (liftIO)
-import           Data.Aeson                       as Aeson (decode, encode)
+import           Data.Aeson                       (decode)
 import           Data.Aeson.Encode.Pretty         (encodePretty')
 import qualified Data.ByteString.Lazy             as BL
-import qualified Data.ByteString.Lazy.Char8       as BLC
-import           Data.Either                      (Either (Left, Right))
 import           System.FilePath.Posix            ((<.>), (</>))
 import           System.IO.Error                  (isDoesNotExistError)
 import           System.Posix.Files               (createLink)
 
 import qualified ZoomHub.Config                   as C
-import           ZoomHub.Storage.Internal.File    (hashURL, toFilename, toId)
+import           ZoomHub.Storage.Internal.File    (hashURL, toFilename)
 import           ZoomHub.Types.Internal.Content   (Content, contentId, fromURL,
                                                    prettyEncodeConfig)
-import           ZoomHub.Types.Internal.ContentId (ContentId, fromInteger,
-                                                   fromString, unId)
+import           ZoomHub.Types.Internal.ContentId (ContentId, fromInteger, unId)
+
 
 -- TODO: Introduce `ContentURL` `newtype`:
 type URL = String
 
 -- Public API
 getById :: FilePath -> ContentId -> IO (Maybe Content)
-getById dataPath contentId = readJSON $ getByIdPath dataPath contentId
+getById dataPath cId = readJSON $ getByIdPath dataPath cId
 
 getByURL :: FilePath -> URL -> IO (Maybe Content)
 getByURL dataPath url = readJSON $ getByURLPath dataPath url
 
 create :: C.Config -> String -> IO Content
-create config url = do
+create config contentURL = do
   newId <- incrementAndGet $ C.lastId config
   let newContentId = fromInteger (C.encodeId config) newId
-  let newContent = fromURL newContentId url
+  let newContent = fromURL newContentId contentURL
   write newContent
-  writeIndex newContent url
+  writeIndex newContent contentURL
   return newContent
   where
       incrementAndGet :: TVar Integer -> IO Integer
@@ -70,9 +67,9 @@ getByURLPath dataPath url =
   where filename = hashURL url
 
 getByIdPath :: FilePath -> ContentId -> FilePath
-getByIdPath dataPath contentId =
+getByIdPath dataPath cId =
   dataPath </> "content-by-id" </> filename <.> ".json"
-  where filename = toFilename . unId $ contentId
+  where filename = toFilename . unId $ cId
 
 readJSON :: FilePath -> IO (Maybe Content)
 readJSON contentPath = do

@@ -1,48 +1,42 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.Internal.ContentId
   ( ContentId
   , fromInteger
-  , fromLBS
   , fromString
   , unId
   ) where
 
+import           Prelude           hiding (fromInteger)
 
-import Prelude hiding (fromInteger)
-import Data.List (isInfixOf)
-
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.Casing as AC
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Lazy.Char8 as CL
-import qualified Data.Text as T
-import qualified GHC.Generics as GHC
-import qualified Servant as S
+import           Data.Aeson        (FromJSON, ToJSON, genericParseJSON,
+                                    genericToJSON, parseJSON, toJSON)
+import           Data.Aeson.Casing (aesonPrefix, camelCase)
+import           Data.List         (isInfixOf)
+import qualified Data.Text         as T
+import           GHC.Generics      (Generic)
+import           Servant           (FromText, fromText)
 
 
--- TODO: Use record syntax, i.e. `ContentId { unId :: String}` without
+-- TODO: Use record syntax, i.e. `ContentId { unId :: .tring}` without
 -- introducing `{"id": <id>}` JSON serialization:
 newtype ContentId = ContentId String
-  deriving (Eq, GHC.Generic, Show)
+  deriving (Eq, Generic, Show)
 
-instance S.FromText ContentId where
+instance FromText ContentId where
   fromText t = Just $ ContentId $ T.unpack t
 
-instance Aeson.ToJSON ContentId where
-   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
-instance Aeson.FromJSON ContentId where
-   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
+instance ToJSON ContentId where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON ContentId where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 unId :: ContentId -> String
 unId (ContentId cId) = cId
 
 fromInteger :: (Integer -> String) -> Integer -> ContentId
 fromInteger encode intId = fromString $ encode intId
-
-fromLBS :: LBS.ByteString -> ContentId
-fromLBS contentId = fromString $ CL.unpack contentId
 
 -- TODO: Change return type to `Maybe ContentId` to make it a total function:
 fromString :: String -> ContentId

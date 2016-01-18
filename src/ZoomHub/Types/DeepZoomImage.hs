@@ -5,34 +5,38 @@ module ZoomHub.Types.DeepZoomImage
   , fromInternal
   ) where
 
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.Casing as AC
-import qualified GHC.Generics as GHC
-import qualified ZoomHub.Types.Internal.ContentId as IC
-import qualified ZoomHub.Types.Internal.DeepZoomImage as ID
+import           Data.Aeson                           (FromJSON, ToJSON,
+                                                       genericParseJSON,
+                                                       genericToJSON, parseJSON,
+                                                       toJSON)
+import           Data.Aeson.Casing                    (aesonPrefix, camelCase)
+import           GHC.Generics                         (Generic)
+
+import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
+import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
 
 
 data DeepZoomImage = DeepZoomImage
-  { dziUrl :: String
-  , dziWidth :: Integer
-  , dziHeight :: Integer
-  , dziTileSize :: Integer
+  { dziUrl         :: String
+  , dziWidth       :: Integer
+  , dziHeight      :: Integer
+  , dziTileSize    :: Integer
   , dziTileOverlap :: Integer
-  , dziTileFormat :: String
-  } deriving (Eq, Show, GHC.Generic)
+  , dziTileFormat  :: String
+  } deriving (Eq, Show, Generic)
 
-instance Aeson.ToJSON DeepZoomImage where
-   toJSON = Aeson.genericToJSON $ AC.aesonPrefix AC.camelCase
-instance Aeson.FromJSON DeepZoomImage where
-   parseJSON = Aeson.genericParseJSON $ AC.aesonPrefix AC.camelCase
+instance ToJSON DeepZoomImage where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON DeepZoomImage where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
-fromInternal :: IC.ContentId -> ID.DeepZoomImage -> DeepZoomImage
+fromInternal :: ContentId -> Internal.DeepZoomImage -> DeepZoomImage
 fromInternal cId dzi = DeepZoomImage
   -- TODO: Make hostname dynamic:
-  { dziUrl = "http://content.zoomhub.net/dzis/" ++ IC.unId cId ++ ".dzi"
-  , dziWidth = ID.dziWidth dzi
-  , dziHeight = ID.dziHeight dzi
-  , dziTileSize = ID.dziTileSize dzi
-  , dziTileOverlap = ID.dziTileOverlap dzi
-  , dziTileFormat = ID.dziTileFormat dzi
+  { dziUrl = "http://content.zoomhub.net/dzis/" ++ unId cId ++ ".dzi"
+  , dziWidth = Internal.dziWidth dzi
+  , dziHeight = Internal.dziHeight dzi
+  , dziTileSize = Internal.dziTileSize dzi
+  , dziTileOverlap = Internal.dziTileOverlap dzi
+  , dziTileFormat = Internal.dziTileFormat dzi
   }
