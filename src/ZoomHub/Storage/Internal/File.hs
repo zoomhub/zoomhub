@@ -1,6 +1,9 @@
 module ZoomHub.Storage.Internal.File where
 
-import Data.Char (isUpper)
+import           Crypto.Hash           (Digest, SHA256, hash)
+import qualified Data.ByteString.Char8 as BC
+import           Data.Char             (isUpper)
+
 
 toFilename :: String -> FilePath
 toFilename "" = ""
@@ -14,3 +17,6 @@ toId "" = ""
 toId (c:cs)
   | c == '_'  = toId cs
   | otherwise = c : toId cs
+
+hashURL :: String -> String
+hashURL url = show (hash $ BC.pack url :: Digest SHA256)
