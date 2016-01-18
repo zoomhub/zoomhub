@@ -1,5 +1,3 @@
-{-# LANGUAGE PackageImports #-}
-
 module ZoomHub.Storage.File
   ( getById
   , getByURL
