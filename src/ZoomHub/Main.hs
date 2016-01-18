@@ -45,6 +45,10 @@ writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
   >>= \x -> atomicWriteFile (lastIdPath dataPath) (show x)
   >> threadDelay interval
 
+-- See: https://mail.haskell.org/pipermail/libraries/2010-April/013417.html
+(<$$>) :: (Functor f) => f a -> (a -> b) -> f b
+(<$$>) = flip (<$>)
+
 -- Main
 main :: IO ()
 main = do
@@ -52,7 +56,7 @@ main = do
   raxConfig <- decodeEnv
   case raxConfig of
     Right rackspace -> do
-      dataPath <- (</> "data") <$> getCurrentDirectory
+      dataPath <- getCurrentDirectory <$$> (</> "data")
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
