@@ -2,32 +2,28 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
 
-module ZoomHub.API where
+module ZoomHub.API
+  ( app
+  ) where
 
-
-import qualified Control.Exception                as E
-import qualified Control.Monad                    as M
-import qualified Control.Monad.IO.Class           as IO
-import           Control.Monad.Trans.Either       (EitherT, left, right)
-import qualified Data.ByteString.Char8            as BSC
-import qualified Data.ByteString.Lazy             as LBS
-import qualified Data.ByteString.Lazy.Char8       as CL
-import           Data.Maybe                       (fromJust)
-import qualified Data.Proxy                       as Proxy
-import qualified Network.Wai                      as WAI
+import           Control.Monad.IO.Class           (liftIO)
+import           Control.Monad.Trans.Either       (EitherT, left)
+import qualified Data.ByteString.Char8            as BC
+import qualified Data.ByteString.Lazy.Char8       as BLC
+import           Data.Proxy                       (Proxy (Proxy))
+import           Network.Wai                      (Application)
 import           Servant                          ((:<|>) (..), (:>), Capture,
                                                    Get, JSON, QueryParam,
                                                    ServantErr, Server, err301,
                                                    err400, err404, errBody,
                                                    errHeaders, serve)
-import qualified Servant                          as S
-import qualified System.IO.Error                  as SE
 
-import qualified ZoomHub.Config                   as C
+import           ZoomHub.Config                   (Config)
+import qualified ZoomHub.Config                   as Config
 import           ZoomHub.Storage.File             (create, getById, getByURL)
-import qualified ZoomHub.Types.Content            as P
-import qualified ZoomHub.Types.Internal.Content   as I
-import qualified ZoomHub.Types.Internal.ContentId as I
+import           ZoomHub.Types.Content            (Content, fromInternal)
+import qualified ZoomHub.Types.Internal.Content   as Internal
+import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
 
 
 -- Servant default handler type
@@ -35,45 +31,45 @@ type Handler a = EitherT ServantErr IO a
 
 -- API
 type API =
-  "v1" :> "content" :> Capture "id" I.ContentId :> Get '[JSON] P.Content
+  "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|>
-  "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] P.Content
+  "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
 
 -- Handlers
-contentById :: String -> I.ContentId -> Handler P.Content
+contentById :: String -> ContentId -> Handler Content
 contentById dataPath contentId = do
-  maybeContent <- IO.liftIO $ getById dataPath contentId
+  maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
-    Just content -> return $ P.fromInternal content
-  where error404message = CL.pack $ "No content with ID: " ++ I.unId contentId
+    Just content -> return $ fromInternal content
+  where error404message = BLC.pack $ "No content with ID: " ++ unId contentId
 
-contentByURL :: C.Config -> Maybe String -> Handler P.Content
+contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
   Nothing  -> left err400{ errBody = "Missing ID or URL." }
   Just url -> do
-      maybeContent <- IO.liftIO $ getByURL (C.dataPath config) url
+      maybeContent <- liftIO $ getByURL (Config.dataPath config) url
       content <- case maybeContent of
-        Nothing -> IO.liftIO $ create config url
+        Nothing -> liftIO $ create config url
         Just c  -> return c
-      redirect $ I.contentId content
+      redirect $ Internal.contentId content
       where
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
         -- permanent HTTP 301 redirects:
         redirect contentId =
-          let location = BSC.pack $ "/v1/content/" ++ I.unId contentId in
+          let location = BC.pack $ "/v1/content/" ++ unId contentId in
           left $ err301{
             -- HACK: Redirect using error: http://git.io/vBCz9
             errHeaders = [("Location", location)]
           }
 
 -- API
-api :: Proxy.Proxy API
-api = Proxy.Proxy
+api :: Proxy API
+api = Proxy
 
-server :: C.Config -> Server API
-server config = contentById (C.dataPath config)
+server :: Config -> Server API
+server config = contentById (Config.dataPath config)
            :<|> contentByURL config
 
-app :: C.Config -> WAI.Application
+app :: Config -> Application
 app config = serve api (server config)
