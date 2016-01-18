@@ -1,26 +1,30 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module ZoomHub.Main (main) where
 
-import qualified Control.Concurrent as C
-import qualified Control.Concurrent.STM as STM
-import qualified Control.Exception as Ex
-import qualified Control.Monad as M
-import qualified Control.Monad.IO.Class as IO
-import qualified Data.ByteString.Char8 as BSC
-import qualified Data.Either as E
-import qualified Network.Wai.Handler.Warp as Warp
-import qualified System.AtomicWrite.Writer.String as A
-import qualified System.Directory as SD
-import qualified System.Environment as System
-import qualified System.Envy as Env
-import qualified System.IO.Error as System
-import qualified Web.Hashids as H
-import qualified ZoomHub.API as ZH
-import qualified ZoomHub.Config as ZH
-import qualified ZoomHub.Rackspace.CloudFiles as CF
+import           Control.Concurrent               (forkIO, threadDelay)
+import           Control.Concurrent.STM           (TVar, atomically, newTVar,
+                                                   readTVar)
+import           Control.Exception                (tryJust)
+import           Control.Monad                    (forever, guard)
+import           Control.Monad.IO.Class           (liftIO)
+import qualified Data.ByteString.Char8            as BC
+import           Data.Either                      (Either (Left, Right))
+import           Network.Wai.Handler.Warp         (run)
+import           System.AtomicWrite.Writer.String (atomicWriteFile)
+import           System.Directory                 (getCurrentDirectory)
+import           System.Environment               (lookupEnv)
+import           System.Envy                      (decodeEnv)
+import           System.IO.Error                  (isDoesNotExistError)
+import           Web.Hashids                      (encode, hashidsSimple)
+
+import           ZoomHub.API                      (app)
+import           ZoomHub.Config                   (Config (..), RackspaceConfig,
+                                                   defaultPort, raxApiKey,
+                                                   raxUsername, raxUsername)
+import           ZoomHub.Rackspace.CloudFiles     (Credentials (..),
+                                                   getMetadata)
 
 
 lastIdPath :: String -> String
@@ -32,37 +36,35 @@ lastIdWriteInterval = 5 * 10^(6 :: Int) -- microseconds
 
 readLastId :: String -> IO Integer
 readLastId dataPath = do
-  r <- Ex.tryJust doesNotExistGuard $ readFile (lastIdPath dataPath)
+  r <- tryJust doesNotExistGuard $ readFile (lastIdPath dataPath)
   return $ case r of
     Left _       -> 0
     Right lastId -> read lastId
-  where doesNotExistGuard = M.guard . System.isDoesNotExistError
+  where doesNotExistGuard = guard . isDoesNotExistError
 
-writeLastId :: String -> STM.TVar Integer -> Int -> IO ()
-writeLastId dataPath tvar interval = M.forever $ STM.atomically (STM.readTVar tvar)
-  >>= \x -> A.atomicWriteFile (lastIdPath dataPath) (show x)
-  >> C.threadDelay interval
+writeLastId :: String -> TVar Integer -> Int -> IO ()
+writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
+  >>= \x -> atomicWriteFile (lastIdPath dataPath) (show x)
+  >> threadDelay interval
 
 -- Main
 main :: IO ()
 main = do
-  maybePort <- System.lookupEnv "PORT"
-  raxConfig <- Env.decodeEnv
+  maybePort <- lookupEnv "PORT"
+  raxConfig <- decodeEnv
   case raxConfig of
-    E.Right rackspace -> do
-      dataPath <- (++ "/data") <$> SD.getCurrentDirectory
+    Right rackspace -> do
+      dataPath <- (++ "/data") <$> getCurrentDirectory
       initialLastId <- readLastId dataPath
-      lastId <- IO.liftIO $ STM.atomically $ STM.newTVar initialLastId
-      _ <- C.forkIO $ writeLastId dataPath lastId lastIdWriteInterval
+      lastId <- liftIO $ atomically $ newTVar initialLastId
+      _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
       -- TODO: Move Hashid secret to config:
-      let encodeContext = H.hashidsSimple "zoomhub hash salt"
+      let encodeContext = hashidsSimple "zoomhub hash salt"
           encodeId integerId =
-            BSC.unpack $ H.encode encodeContext (fromIntegral integerId)
-          port = maybe ZH.defaultPort read maybePort
-          config = ZH.Config{..}
-      let username = ZH.raxUsername . ZH.rackspace $ config
-          apiKey = ZH.raxApiKey . ZH.rackspace $ config
-          creds = CF.Credentials username apiKey
-      meta <- CF.getMetadata creds
-      Warp.run (fromIntegral port) (ZH.app config meta)
-    E.Left message -> error $ "Failed to read environment: " ++ message
+            BC.unpack $ encode encodeContext (fromIntegral integerId)
+          port = maybe defaultPort read maybePort
+          config = Config{..}
+          creds = Credentials (raxUsername rackspace) (raxApiKey rackspace)
+      meta <- getMetadata creds
+      run (fromIntegral port) (app config meta)
+    Left message -> error $ "Failed to read environment: " ++ message
