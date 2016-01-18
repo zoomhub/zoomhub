@@ -1,15 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ZoomHub.Types.Internal.ContentIdTest where
 
-import Data.Aeson (encode, decode)
-import Test.QuickCheck ((==>), Property)
-import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Test.QuickCheck.Instances()
-import ZoomHub.Types.Internal.ContentId (ContentId, fromLBS, unId)
+import           Data.Aeson                       (decode, encode)
+import           Test.QuickCheck                  (elements, listOf)
+import           Test.QuickCheck.Arbitrary        (Arbitrary, arbitrary)
+import           Test.QuickCheck.Instances        ()
+import           ZoomHub.Types.Internal.ContentId (ContentId, fromString)
+
 
 instance Arbitrary ContentId where
-  arbitrary = arbitrary >>= \c -> return . fromLBS $ c
+  arbitrary = do
+    validId <- listOf $ elements $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9']
+    return $ fromString validId
 
-propInversion :: ContentId -> Property
-propInversion x = (not . null $ unId x) ==> decode (encode x) == Just x
+prop_invertible :: ContentId -> Bool
+prop_invertible x = (decode . encode) x == Just x
