@@ -19,6 +19,7 @@ import qualified Data.ByteString.Lazy.Char8       as BLC
 import           Data.Either                      (Either (Left, Right))
 import           System.FilePath.Posix            ((<.>), (</>))
 import           System.IO.Error                  (isDoesNotExistError)
+import           System.Posix.Files               (createLink)
 
 import qualified ZoomHub.Config                   as C
 import           ZoomHub.Storage.Internal.File    (hashURL, toFilename, toId)
@@ -27,9 +28,10 @@ import           ZoomHub.Types.Internal.Content   (Content, contentId, fromURL,
 import           ZoomHub.Types.Internal.ContentId (ContentId, fromInteger,
                                                    fromString, unId)
 
--- Public API
+-- TODO: Introduce `ContentURL` `newtype`:
 type URL = String
 
+-- Public API
 getById :: FilePath -> ContentId -> IO (Maybe Content)
 getById dataPath contentId = readJSON $ getByIdPath dataPath contentId
 
@@ -42,16 +44,24 @@ create config url = do
   let newContentId = fromInteger (C.encodeId config) newId
   let newContent = fromURL newContentId url
   write newContent
+  writeIndex newContent url
   return newContent
   where
       incrementAndGet :: TVar Integer -> IO Integer
       incrementAndGet tvar = atomically $ do
         modifyTVar tvar (+1)
         readTVar tvar
-      path content = getByIdPath (C.dataPath config) (contentId content)
+
+      -- TODO: Use `atomicWriteFile`:
+      write :: Content -> IO ()
+      write newContent = BL.writeFile (idPath newContent) (encode newContent)
+
+      writeIndex :: Content -> URL -> IO ()
+      writeIndex content url = createLink (idPath content) (urlPath url)
+
+      idPath content = getByIdPath (C.dataPath config) (contentId content)
+      urlPath url = getByURLPath (C.dataPath config) url
       encode = encodePretty' prettyEncodeConfig
-      write newContent =
-        BL.writeFile (path newContent) (encode newContent)
 
 -- Helpers
 getByURLPath :: FilePath -> URL -> FilePath

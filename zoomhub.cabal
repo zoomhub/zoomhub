@@ -54,6 +54,7 @@ library
     , text
     , time
     , transformers
+    , unix
     , wai
     , warp
     , wreq == 0.4.*
