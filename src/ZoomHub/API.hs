@@ -24,7 +24,6 @@ import qualified Servant                          as S
 import qualified System.IO.Error                  as SE
 
 import qualified ZoomHub.Config                   as C
-import qualified ZoomHub.Rackspace.CloudFiles     as CF
 import           ZoomHub.Storage.File             (create, getById, getByURL)
 import qualified ZoomHub.Types.Content            as P
 import qualified ZoomHub.Types.Internal.Content   as I
@@ -49,11 +48,11 @@ contentById dataPath contentId = do
     Just content -> return $ P.fromInternal content
   where error404message = CL.pack $ "No content with ID: " ++ I.unId contentId
 
-contentByURL :: C.Config -> CF.Metadata -> Maybe String -> Handler P.Content
-contentByURL config meta maybeURL = case maybeURL of
+contentByURL :: C.Config -> Maybe String -> Handler P.Content
+contentByURL config maybeURL = case maybeURL of
   Nothing  -> left err400{ errBody = "Missing ID or URL." }
   Just url -> do
-      maybeContent <- IO.liftIO $ getByURL config meta url
+      maybeContent <- IO.liftIO $ getByURL (C.dataPath config) url
       content <- case maybeContent of
         Nothing -> IO.liftIO $ create config url
         Just c  -> return c
@@ -72,9 +71,9 @@ contentByURL config meta maybeURL = case maybeURL of
 api :: Proxy.Proxy API
 api = Proxy.Proxy
 
-server :: C.Config -> CF.Metadata -> Server API
-server config meta = contentById (C.dataPath config)
-           :<|> contentByURL config meta
+server :: C.Config -> Server API
+server config = contentById (C.dataPath config)
+           :<|> contentByURL config
 
-app :: C.Config -> CF.Metadata -> WAI.Application
-app config meta = serve api (server config meta)
+app :: C.Config -> WAI.Application
+app config = serve api (server config)

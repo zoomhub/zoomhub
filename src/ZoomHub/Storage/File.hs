@@ -14,38 +14,29 @@ import           Control.Concurrent.STM           (TVar, atomically, modifyTVar,
 import           Control.Exception                (tryJust)
 import           Control.Monad                    (guard)
 import           Control.Monad.IO.Class           (liftIO)
-import           Crypto.Hash                      (Digest, SHA256, hash)
 import           Data.Aeson                       as Aeson (decode, encode)
 import           Data.Aeson.Encode.Pretty         (encodePretty')
-import qualified Data.ByteString.Char8            as BC
 import qualified Data.ByteString.Lazy             as BL
 import qualified Data.ByteString.Lazy.Char8       as BLC
 import           Data.Either                      (Either (Left, Right))
+import           System.FilePath.Posix            ((<.>), (</>))
 import           System.IO.Error                  (isDoesNotExistError)
 
 import qualified ZoomHub.Config                   as C
-import qualified ZoomHub.Rackspace.CloudFiles     as CF
-import           ZoomHub.Storage.Internal.File    (toFilename, toId)
+import           ZoomHub.Storage.Internal.File    (hashURL, toFilename, toId)
 import           ZoomHub.Types.Internal.Content   (Content, contentId, fromURL,
                                                    prettyEncodeConfig)
 import           ZoomHub.Types.Internal.ContentId (ContentId, fromInteger,
                                                    fromString, unId)
 
 -- Public API
-getById :: FilePath -> ContentId -> IO (Maybe Content)
-getById dataPath contentId = do
-  f <- tryJust (guard . isDoesNotExistError) (BL.readFile contentPath)
-  case f of
-    Left _  -> return Nothing
-    Right s -> return $ decode s
-  where contentPath = getContentPath dataPath contentId
+type URL = String
 
-getByURL :: C.Config -> CF.Metadata -> String -> IO (Maybe Content)
-getByURL config meta url = do
-  maybeContentId <- getIdByURL meta url
-  case maybeContentId of
-    Nothing        -> return Nothing
-    Just contentId -> getById (C.dataPath config) contentId
+getById :: FilePath -> ContentId -> IO (Maybe Content)
+getById dataPath contentId = readJSON $ getByIdPath dataPath contentId
+
+getByURL :: FilePath -> URL -> IO (Maybe Content)
+getByURL dataPath url = readJSON $ getByURLPath dataPath url
 
 create :: C.Config -> String -> IO Content
 create config url = do
@@ -59,21 +50,25 @@ create config url = do
       incrementAndGet tvar = atomically $ do
         modifyTVar tvar (+1)
         readTVar tvar
-      path content = getContentPath (C.dataPath config) (contentId content)
+      path content = getByIdPath (C.dataPath config) (contentId content)
       encode = encodePretty' prettyEncodeConfig
       write newContent =
         BL.writeFile (path newContent) (encode newContent)
 
 -- Helpers
-getIdByURL :: CF.Metadata -> String -> IO (Maybe ContentId)
-getIdByURL meta url = do
-  cId <- CF.getContent meta urlPath
-  return $ (fromString . toId . BLC.unpack) <$> cId
-  where
-    sha256 x = show (hash $ BC.pack x :: Digest SHA256)
-    urlPath = "/content/content-by-url/" ++ (sha256 url) ++ ".txt"
+getByURLPath :: FilePath -> URL -> FilePath
+getByURLPath dataPath url =
+  dataPath </> "content-by-url" </> filename <.> ".json"
+  where filename = hashURL url
 
-getContentPath :: FilePath -> ContentId -> String
-getContentPath dataPath contentId =
-  dataPath ++ "/content-by-id/" ++ filename ++ ".json"
+getByIdPath :: FilePath -> ContentId -> FilePath
+getByIdPath dataPath contentId =
+  dataPath </> "content-by-id" </> filename <.> ".json"
   where filename = toFilename . unId $ contentId
+
+readJSON :: FilePath -> IO (Maybe Content)
+readJSON contentPath = do
+  f <- tryJust (guard . isDoesNotExistError) (BL.readFile contentPath)
+  case f of
+    Left _  -> return Nothing
+    Right s -> return $ decode s

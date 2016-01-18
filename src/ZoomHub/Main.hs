@@ -16,6 +16,7 @@ import           System.AtomicWrite.Writer.String (atomicWriteFile)
 import           System.Directory                 (getCurrentDirectory)
 import           System.Environment               (lookupEnv)
 import           System.Envy                      (decodeEnv)
+import           System.FilePath.Posix            ((</>))
 import           System.IO.Error                  (isDoesNotExistError)
 import           Web.Hashids                      (encode, hashidsSimple)
 
@@ -23,9 +24,6 @@ import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), RackspaceConfig,
                                                    defaultPort, raxApiKey,
                                                    raxUsername, raxUsername)
-import           ZoomHub.Rackspace.CloudFiles     (Credentials (..),
-                                                   getMetadata)
-
 
 lastIdPath :: String -> String
 lastIdPath dataPath = dataPath ++ "/lastId.txt"
@@ -54,7 +52,7 @@ main = do
   raxConfig <- decodeEnv
   case raxConfig of
     Right rackspace -> do
-      dataPath <- (++ "/data") <$> getCurrentDirectory
+      dataPath <- (</> "data") <$> getCurrentDirectory
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
@@ -64,7 +62,5 @@ main = do
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           port = maybe defaultPort read maybePort
           config = Config{..}
-          creds = Credentials (raxUsername rackspace) (raxApiKey rackspace)
-      meta <- getMetadata creds
-      run (fromIntegral port) (app config meta)
+      run (fromIntegral port) (app config)
     Left message -> error $ "Failed to read environment: " ++ message
