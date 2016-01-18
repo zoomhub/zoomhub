@@ -2,7 +2,7 @@
 
 module ZoomHub.Rackspace.CloudFiles where
 
-import Control.Lens as Lens hiding ((.=)) -- .= used in Data.Aeson as well
+import Control.Lens as Lens hiding ((.=)) -- (.=) used in Data.Aeson as well
 import Data.Aeson as Aeson
 import Data.Aeson.Lens as Aeson
 import Network.Wreq as HTTP
@@ -51,7 +51,7 @@ getMetadata credentials = do
 
 parseToken :: Metadata -> Maybe Token
 parseToken meta =
-  let maybeToken = (unMetadata meta) ^? key "access" . key "token" . key "id" . _String in
+  let maybeToken = unMetadata meta ^? key "access" . key "token" . key "id" . _String in
   (Token . T.unpack) <$> maybeToken
 
 parseEndpoint :: Metadata -> Maybe Endpoint
@@ -63,7 +63,7 @@ parseEndpoint _ =
   Just $ Endpoint "https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_0c5dc6c2-028f-4648-a59d-e770b827add7"
 
 getContent :: Metadata -> String -> IO (Maybe LBS.ByteString)
-getContent meta urlPath = do
+getContent meta urlPath =
   case parseToken meta of
     Nothing -> return Nothing
     Just t ->
