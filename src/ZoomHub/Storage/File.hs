@@ -34,12 +34,6 @@ import           ZoomHub.Types.Internal.ContentId         (ContentId,
 type URL = String
 
 -- Public API
-getById :: FilePath -> ContentId -> IO (Maybe Content)
-getById dataPath cId = readJSON $ getByIdPath dataPath cId
-
-getByURL :: FilePath -> URL -> IO (Maybe Content)
-getByURL dataPath url = readJSON $ getByURLPath dataPath url
-
 create :: Config -> String -> IO Content
 create config contentURL = do
   newContentId <- createNewId config
@@ -58,6 +52,13 @@ create config contentURL = do
       urlPath = getByURLPath (Config.dataPath config)
       encode = encodePretty' prettyEncodeConfig
 
+getById :: FilePath -> ContentId -> IO (Maybe Content)
+getById dataPath cId = readJSON $ getByIdPath dataPath cId
+
+getByURL :: FilePath -> URL -> IO (Maybe Content)
+getByURL dataPath url = readJSON $ getByURLPath dataPath url
+
+-- Helpers
 createNewId :: Config -> IO ContentId
 createNewId config = do
   newId <- incrementAndGet $ Config.lastId config
@@ -70,19 +71,18 @@ createNewId config = do
       modifyTVar tvar (+1)
       readTVar tvar
 
--- Helpers
 doesIdExist :: FilePath -> ContentId -> IO Bool
 doesIdExist dataPath cId = doesFileExist $ getByIdPath dataPath cId
-
-getByURLPath :: FilePath -> URL -> FilePath
-getByURLPath dataPath url =
-  dataPath </> "content-by-url" </> filename <.> ".json"
-  where filename = hashURL url
 
 getByIdPath :: FilePath -> ContentId -> FilePath
 getByIdPath dataPath cId =
   dataPath </> "content-by-id" </> filename <.> ".json"
   where filename = toFilename . unId $ cId
+
+getByURLPath :: FilePath -> URL -> FilePath
+getByURLPath dataPath url =
+  dataPath </> "content-by-url" </> filename <.> ".json"
+  where filename = hashURL url
 
 readJSON :: FilePath -> IO (Maybe Content)
 readJSON contentPath = do
