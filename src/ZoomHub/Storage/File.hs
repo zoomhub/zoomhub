@@ -14,6 +14,7 @@ import           Control.Monad                    (guard)
 import           Data.Aeson                       (decode)
 import           Data.Aeson.Encode.Pretty         (encodePretty')
 import qualified Data.ByteString.Lazy             as BL
+import           System.Directory                 (doesFileExist)
 import           System.FilePath.Posix            ((<.>), (</>))
 import           System.IO.Error                  (isDoesNotExistError)
 import           System.Posix.Files               (createLink)
@@ -38,18 +39,12 @@ getByURL dataPath url = readJSON $ getByURLPath dataPath url
 
 create :: Config -> String -> IO Content
 create config contentURL = do
-  newId <- incrementAndGet $ Config.lastId config
-  let newContentId = fromInteger (Config.encodeId config) newId
+  newContentId <- createNewId config
   let newContent = fromURL newContentId contentURL
   write newContent
   writeIndex newContent contentURL
   return newContent
   where
-      incrementAndGet :: TVar Integer -> IO Integer
-      incrementAndGet tvar = atomically $ do
-        modifyTVar tvar (+1)
-        readTVar tvar
-
       -- TODO: Use `atomicWriteFile`:
       write :: Content -> IO ()
       write newContent = BL.writeFile (idPath newContent) (encode newContent)
@@ -61,7 +56,22 @@ create config contentURL = do
       urlPath = getByURLPath (Config.dataPath config)
       encode = encodePretty' prettyEncodeConfig
 
+createNewId :: Config -> IO ContentId
+createNewId config = do
+  newId <- incrementAndGet $ Config.lastId config
+  let newContentId = fromInteger (Config.encodeId config) newId
+  result <- doesIdExist (Config.dataPath config) newContentId
+  if result then createNewId config else return newContentId
+  where
+    incrementAndGet :: TVar Integer -> IO Integer
+    incrementAndGet tvar = atomically $ do
+      modifyTVar tvar (+1)
+      readTVar tvar
+
 -- Helpers
+doesIdExist :: FilePath -> ContentId -> IO Bool
+doesIdExist dataPath cId = doesFileExist $ getByIdPath dataPath cId
+
 getByURLPath :: FilePath -> URL -> FilePath
 getByURLPath dataPath url =
   dataPath </> "content-by-url" </> filename <.> ".json"
