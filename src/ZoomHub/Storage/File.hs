@@ -5,26 +5,29 @@ module ZoomHub.Storage.File
   )
   where
 
-import           Prelude                          hiding (fromInteger)
+import           Prelude                                  hiding (fromInteger)
 
-import           Control.Concurrent.STM           (TVar, atomically, modifyTVar,
-                                                   readTVar)
-import           Control.Exception                (tryJust)
-import           Control.Monad                    (guard)
-import           Data.Aeson                       (decode)
-import           Data.Aeson.Encode.Pretty         (encodePretty')
-import qualified Data.ByteString.Lazy             as BL
-import           System.Directory                 (doesFileExist)
-import           System.FilePath.Posix            ((<.>), (</>))
-import           System.IO.Error                  (isDoesNotExistError)
-import           System.Posix.Files               (createLink)
+import           Control.Concurrent.STM                   (TVar, atomically,
+                                                           modifyTVar, readTVar)
+import           Control.Exception                        (tryJust)
+import           Control.Monad                            (guard)
+import           Data.Aeson                               (decode)
+import           Data.Aeson.Encode.Pretty                 (encodePretty')
+import qualified Data.ByteString.Lazy                     as BL
+import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
+import           System.Directory                         (doesFileExist)
+import           System.FilePath.Posix                    ((<.>), (</>))
+import           System.IO.Error                          (isDoesNotExistError)
+import           System.Posix.Files                       (createLink)
 
-import           ZoomHub.Config                   (Config)
-import qualified ZoomHub.Config                   as Config
-import           ZoomHub.Storage.Internal.File    (hashURL, toFilename)
-import           ZoomHub.Types.Internal.Content   (Content, contentId, fromURL,
-                                                   prettyEncodeConfig)
-import           ZoomHub.Types.Internal.ContentId (ContentId, fromInteger, unId)
+import           ZoomHub.Config                           (Config)
+import qualified ZoomHub.Config                           as Config
+import           ZoomHub.Storage.Internal.File            (hashURL, toFilename)
+import           ZoomHub.Types.Internal.Content           (Content, contentId,
+                                                           fromURL,
+                                                           prettyEncodeConfig)
+import           ZoomHub.Types.Internal.ContentId         (ContentId,
+                                                           fromInteger, unId)
 
 
 -- TODO: Introduce `ContentURL` `newtype`:
@@ -45,9 +48,8 @@ create config contentURL = do
   writeIndex newContent contentURL
   return newContent
   where
-      -- TODO: Use `atomicWriteFile`:
       write :: Content -> IO ()
-      write newContent = BL.writeFile (idPath newContent) (encode newContent)
+      write newContent = atomicWriteFile (idPath newContent) (encode newContent)
 
       writeIndex :: Content -> URL -> IO ()
       writeIndex content url = createLink (idPath content) (urlPath url)
