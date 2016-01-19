@@ -18,7 +18,8 @@ import           System.FilePath.Posix            ((<.>), (</>))
 import           System.IO.Error                  (isDoesNotExistError)
 import           System.Posix.Files               (createLink)
 
-import qualified ZoomHub.Config                   as C
+import           ZoomHub.Config                   (Config)
+import qualified ZoomHub.Config                   as Config
 import           ZoomHub.Storage.Internal.File    (hashURL, toFilename)
 import           ZoomHub.Types.Internal.Content   (Content, contentId, fromURL,
                                                    prettyEncodeConfig)
@@ -35,10 +36,10 @@ getById dataPath cId = readJSON $ getByIdPath dataPath cId
 getByURL :: FilePath -> URL -> IO (Maybe Content)
 getByURL dataPath url = readJSON $ getByURLPath dataPath url
 
-create :: C.Config -> String -> IO Content
+create :: Config -> String -> IO Content
 create config contentURL = do
-  newId <- incrementAndGet $ C.lastId config
-  let newContentId = fromInteger (C.encodeId config) newId
+  newId <- incrementAndGet $ Config.lastId config
+  let newContentId = fromInteger (Config.encodeId config) newId
   let newContent = fromURL newContentId contentURL
   write newContent
   writeIndex newContent contentURL
@@ -56,8 +57,8 @@ create config contentURL = do
       writeIndex :: Content -> URL -> IO ()
       writeIndex content url = createLink (idPath content) (urlPath url)
 
-      idPath content = getByIdPath (C.dataPath config) (contentId content)
-      urlPath url = getByURLPath (C.dataPath config) url
+      idPath content = getByIdPath (Config.dataPath config) (contentId content)
+      urlPath url = getByURLPath (Config.dataPath config) url
       encode = encodePretty' prettyEncodeConfig
 
 -- Helpers
