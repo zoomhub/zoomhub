@@ -58,7 +58,7 @@ create config contentURL = do
       writeIndex content url = createLink (idPath content) (urlPath url)
 
       idPath content = getByIdPath (Config.dataPath config) (contentId content)
-      urlPath url = getByURLPath (Config.dataPath config) url
+      urlPath = getByURLPath (Config.dataPath config)
       encode = encodePretty' prettyEncodeConfig
 
 -- Helpers
