@@ -46,20 +46,23 @@ writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
   >>= \x -> atomicWriteFile (lastIdPath dataPath) (show x)
   >> threadDelay interval
 
+-- Environment
+hashidsSaltEnvName :: String
+hashidsSaltEnvName = "HASHIDS_SALT"
 
 -- Main
 main :: IO ()
 main = do
   maybePort <- lookupEnv "PORT"
+  maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
   raxConfig <- decodeEnv
-  case raxConfig of
-    Right rackspace -> do
+  case (maybeHashidsSalt, raxConfig) of
+    (Just hashidsSalt, Right rackspace) -> do
       dataPath <- getCurrentDirectory <$$> (</> "data")
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
-      -- TODO: Move Hashid secret to config:
-      let encodeContext = hashidsSimple "zoomhub hash salt"
+      let encodeContext = hashidsSimple $ BC.pack hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           port = maybe defaultPort read maybePort
@@ -67,4 +70,8 @@ main = do
       putStrLn $ "Welcome to ZoomHub." ++
         " Go to <http://localhost:" ++ show port ++ "> and have fun!"
       run (fromIntegral port) (app config)
-    Left message -> error $ "Failed to read environment: " ++ message
+    (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
+      "` environment variable.\nThis secret salt enables ZoomHub to encode" ++
+      " integer IDs as short, non-sequential string IDs which make it harder" ++
+      " to guess valid content IDs."
+    (_, Left message) -> error $ "Failed to read Rackspace config: " ++ message
