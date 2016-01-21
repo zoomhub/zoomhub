@@ -64,5 +64,7 @@ main = do
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           port = maybe defaultPort read maybePort
           config = Config{..}
+      putStrLn $ "Welcome to ZoomHub." ++
+        " Go to <http://localhost:" ++ show port ++ "> and have fun!"
       run (fromIntegral port) (app config)
     Left message -> error $ "Failed to read environment: " ++ message
