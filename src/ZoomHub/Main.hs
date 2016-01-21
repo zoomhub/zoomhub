@@ -21,6 +21,7 @@ import           Web.Hashids                      (encode, hashidsSimple)
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
+import           ZoomHub.Utils                    ((<$$>))
 
 
 lastIdPath :: String -> String
@@ -43,9 +44,6 @@ writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
   >>= \x -> atomicWriteFile (lastIdPath dataPath) (show x)
   >> threadDelay interval
 
--- See: https://mail.haskell.org/pipermail/libraries/2010-April/013417.html
-(<$$>) :: (Functor f) => f a -> (a -> b) -> f b
-(<$$>) = flip (<$>)
 
 -- Main
 main :: IO ()
