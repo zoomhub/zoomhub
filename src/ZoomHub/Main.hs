@@ -24,6 +24,8 @@ import           ZoomHub.Config                   (Config (..), defaultPort)
 import           ZoomHub.Utils                    ((<$$>))
 
 
+-- TODO: Move to `Storage` module:
+-- Last ID
 lastIdPath :: String -> String
 lastIdPath dataPath = dataPath ++ "/lastId.txt"
 
