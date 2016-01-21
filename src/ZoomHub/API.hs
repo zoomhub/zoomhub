@@ -31,11 +31,18 @@ type Handler a = EitherT ServantErr IO a
 
 -- API
 type API =
+  -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
+  -- despite a hint here: https://git.io/vzEZx
+  "welcome" :> Get '[JSON] String
+  :<|>
   "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|>
   "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
 
 -- Handlers
+welcome :: Handler String
+welcome = return "Welcome to ZoomHub."
+
 contentById :: String -> ContentId -> Handler Content
 contentById dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
@@ -68,7 +75,8 @@ api :: Proxy API
 api = Proxy
 
 server :: Config -> Server API
-server config = contentById (Config.dataPath config)
+server config = welcome
+           :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
 
 app :: Config -> Application
