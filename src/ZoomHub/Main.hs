@@ -55,8 +55,8 @@ main :: IO ()
 main = do
   maybePort <- lookupEnv "PORT"
   maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
-  raxConfig <- decodeEnv
-  case (maybeHashidsSalt, raxConfig) of
+  maybeRaxConfig <- decodeEnv
+  case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
       dataPath <- getCurrentDirectory <$$> (</> "data")
       initialLastId <- readLastId dataPath
