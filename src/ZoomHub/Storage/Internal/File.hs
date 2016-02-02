@@ -5,6 +5,7 @@ import qualified Data.ByteString.Char8 as BC
 import           Data.Char             (isUpper)
 
 
+-- TODO: Make this a total function using `Maybe FilePath` return value:
 toFilename :: String -> FilePath
 toFilename "" = ""
 toFilename (c:cs)
