@@ -1,0 +1,19 @@
+{
+    "id": "100U",
+    "url": "http://www.archdrawing.ireland.anglican.org/archive/files/a0630962f3164841684eea66b6552445.JPG",
+    "ready": true,
+    "failed": false,
+    "progress": 1,
+    "mime": "image/jpeg",
+    "size": 202199,
+    "active": false,
+    "activeAt": "2015-02-23T04:23:49.039Z",
+    "finishedAt": "2015-02-23T04:24:04.415Z",
+    "dzi": {
+        "tileSize": 254,
+        "tileOverlap": 1,
+        "tileFormat": "jpg",
+        "width": 1824,
+        "height": 1368
+    }
+}
