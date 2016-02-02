@@ -19,7 +19,7 @@ import           GHC.Generics      (Generic)
 import           Servant           (FromText, fromText)
 
 
--- TODO: Use record syntax, i.e. `ContentId { unId :: .tring}` without
+-- TODO: Use record syntax, i.e. `ContentId { unId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
 newtype ContentId = ContentId String
   deriving (Eq, Generic, Show)
