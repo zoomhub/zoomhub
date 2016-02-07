@@ -52,6 +52,7 @@ library
     , servant == 0.4.*
     , servant-server == 0.4.*
     , stm
+    , temporary
     , text
     , time
     , transformers
