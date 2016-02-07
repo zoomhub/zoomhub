@@ -33,11 +33,9 @@ type Handler a = EitherT ServantErr IO a
 type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx
-  "welcome" :> Get '[JSON] String
-  :<|>
-  "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
-  :<|>
-  "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
+       "welcome" :> Get '[JSON] String
+  :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
+  :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
 
 -- Handlers
 welcome :: Handler String
