@@ -10,6 +10,7 @@ import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.Either       (EitherT, left)
 import qualified Data.ByteString.Char8            as BC
 import qualified Data.ByteString.Lazy.Char8       as BLC
+import           Data.Monoid                      ((<>))
 import           Data.Proxy                       (Proxy (Proxy))
 import           Network.Wai                      (Application)
 import           Servant                          ((:<|>) (..), (:>), Capture,
@@ -47,7 +48,7 @@ contentById dataPath contentId = do
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
     Just content -> return $ fromInternal content
-  where error404message = BLC.pack $ "No content with ID: " ++ unId contentId
+  where error404message = "No content with ID: " <> (BLC.pack $ unId contentId)
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
