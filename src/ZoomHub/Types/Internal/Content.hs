@@ -14,6 +14,7 @@ module ZoomHub.Types.Internal.Content
   , contentActiveAt
   , contentFinishedAt
   , contentDzi
+  , contentRawPath
   , fromURL
   , prettyEncodeConfig
   ) where
@@ -47,6 +48,7 @@ data Content = Content
   , contentActiveAt   :: Maybe UTCTime
   , contentFinishedAt :: Maybe UTCTime
   , contentDzi        :: Maybe DeepZoomImage
+  , contentRawPath    :: Maybe FilePath
   } deriving (Eq, Show, Generic)
 
 -- Constructor
@@ -63,6 +65,7 @@ fromURL cId url = Content
   , contentActiveAt = Nothing
   , contentFinishedAt = Nothing
   , contentDzi = Nothing
+  , contentRawPath = Nothing
     }
 
 -- JSON
@@ -92,5 +95,6 @@ keyOrdering =
   , "active"
   , "activeAt"
   , "finishedAt"
+  , "rawPath"
   , "dzi"
   ]
