@@ -36,11 +36,6 @@ data Content = Content
   , contentDzi       :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
-instance ToJSON Content where
-   toJSON = genericToJSON $ aesonPrefix camelCase
-instance FromJSON Content where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
-
 -- Constructor
 fromInternal :: Internal.Content -> Content
 fromInternal c = Content
@@ -60,3 +55,9 @@ fromInternal c = Content
     embedHtml =
       "<script src=\"" ++ shareURL ++ ".js?width=auto&height=400px\"></script>"
     dzi = DZ.fromInternal cId <$> Internal.contentDzi c
+
+-- JSON
+instance ToJSON Content where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON Content where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase

@@ -49,11 +49,6 @@ data Content = Content
   , contentDzi        :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
-instance ToJSON Content where
-   toJSON = genericToJSON $ aesonPrefix camelCase
-instance FromJSON Content where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
-
 -- Constructor
 fromURL :: ContentId -> String -> Content
 fromURL cId url = Content
@@ -69,6 +64,12 @@ fromURL cId url = Content
   , contentFinishedAt = Nothing
   , contentDzi = Nothing
     }
+
+-- JSON
+instance ToJSON Content where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON Content where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 prettyEncodeConfig :: Config
 prettyEncodeConfig = Config
