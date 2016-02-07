@@ -5,12 +5,13 @@ import qualified Data.ByteString.Char8 as BC
 import           Data.Char             (isUpper)
 
 
-toFilename :: String -> Maybe FilePath
-toFilename "" = Just ""
+-- TODO: Make this a total function using `Maybe FilePath` return value:
+toFilename :: String -> FilePath
+toFilename "" = ""
 toFilename (c:cs)
-  | c == '_'  = Nothing
-  | isUpper c = (\x -> '_' : c : x) <$> toFilename cs
-  | otherwise = (\x -> c : x) <$> toFilename cs
+  | c == '_' = error "toFilename: Underscore (`_`) is not allowed in IDs."
+  | isUpper c = '_' : c : toFilename cs
+  | otherwise = c : toFilename cs
 
 toId :: FilePath -> String
 toId "" = ""
