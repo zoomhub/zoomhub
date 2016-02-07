@@ -24,6 +24,3 @@ cabal.sandbox.config
 # Static files
 /public/dzi
 /pipeline/fetcher
-
-# Database (sample data)
-/data/
