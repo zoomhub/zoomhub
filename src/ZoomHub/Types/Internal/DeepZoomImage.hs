@@ -23,6 +23,7 @@ data DeepZoomImage = DeepZoomImage
   , dziTileFormat  :: String
   } deriving (Eq, Show, Generic)
 
+-- JSON
 instance ToJSON DeepZoomImage where
    toJSON = genericToJSON $ aesonPrefix camelCase
 instance FromJSON DeepZoomImage where

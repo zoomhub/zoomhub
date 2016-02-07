@@ -24,14 +24,6 @@ import           Servant           (FromText, fromText)
 newtype ContentId = ContentId String
   deriving (Eq, Generic, Show)
 
-instance FromText ContentId where
-  fromText t = Just $ ContentId $ T.unpack t
-
-instance ToJSON ContentId where
-   toJSON = genericToJSON $ aesonPrefix camelCase
-instance FromJSON ContentId where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
-
 unId :: ContentId -> String
 unId (ContentId cId) = cId
 
@@ -43,3 +35,13 @@ fromString :: String -> ContentId
 fromString cId
   | "_" `isInfixOf` cId = error "Content IDs cannot have underscores (`_`)"
   | otherwise           = ContentId cId
+
+-- Text
+instance FromText ContentId where
+  fromText t = Just $ ContentId $ T.unpack t
+
+-- JSON
+instance ToJSON ContentId where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON ContentId where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase

@@ -25,11 +25,6 @@ data DeepZoomImage = DeepZoomImage
   , dziTileFormat  :: String
   } deriving (Eq, Show, Generic)
 
-instance ToJSON DeepZoomImage where
-   toJSON = genericToJSON $ aesonPrefix camelCase
-instance FromJSON DeepZoomImage where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
-
 fromInternal :: ContentId -> Internal.DeepZoomImage -> DeepZoomImage
 fromInternal cId dzi = DeepZoomImage
   -- TODO: Make hostname dynamic:
@@ -40,3 +35,9 @@ fromInternal cId dzi = DeepZoomImage
   , dziTileOverlap = Internal.dziTileOverlap dzi
   , dziTileFormat = Internal.dziTileFormat dzi
   }
+
+-- JSON
+instance ToJSON DeepZoomImage where
+   toJSON = genericToJSON $ aesonPrefix camelCase
+instance FromJSON DeepZoomImage where
+   parseJSON = genericParseJSON $ aesonPrefix camelCase
