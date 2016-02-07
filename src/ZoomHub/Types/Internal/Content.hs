@@ -42,7 +42,7 @@ data Content = Content
   , contentReady      :: Bool
   , contentFailed     :: Bool
   , contentProgress   :: Float
-  , contentMime       :: Maybe String -- Use proper MIME type
+  , contentMime       :: Maybe String -- TODO: Use proper MIME type
   , contentSize       :: Maybe Integer
   , contentActive     :: Bool
   , contentActiveAt   :: Maybe UTCTime
