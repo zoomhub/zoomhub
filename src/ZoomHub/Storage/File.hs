@@ -39,16 +39,17 @@ create config contentURL = do
   newContentId <- createNewId config
   let newContent = fromURL newContentId contentURL
   write newContent
-  writeIndex newContent contentURL
+  writeIndex (contentId newContent) contentURL
   return newContent
   where
       write :: Content -> IO ()
-      write newContent = atomicWriteFile (idPath newContent) (encode newContent)
+      write newContent =
+        atomicWriteFile (idPath $ contentId newContent) (encode newContent)
 
-      writeIndex :: Content -> URL -> IO ()
-      writeIndex content url = createLink (idPath content) (urlPath url)
+      writeIndex :: ContentId -> URL -> IO ()
+      writeIndex cId url = createLink (idPath cId) (urlPath url)
 
-      idPath content = getByIdPath (Config.dataPath config) (contentId content)
+      idPath cId = getByIdPath (Config.dataPath config) cId
       urlPath = getByURLPath (Config.dataPath config)
       encode = encodePretty' prettyEncodeConfig
 
