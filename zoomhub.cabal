@@ -50,6 +50,7 @@ library
     , http-client
     , lens == 4.13.*
     , lens-aeson == 1.*
+    , process
     , servant == 0.4.*
     , servant-server == 0.4.*
     , stm
