@@ -22,6 +22,7 @@ import           System.Posix.Files                       (createLink)
 
 import           ZoomHub.Config                           (Config)
 import qualified ZoomHub.Config                           as Config
+import           ZoomHub.Pipeline                         (process)
 import           ZoomHub.Storage.Internal.File            (hashURL, toFilename)
 import           ZoomHub.Types.Internal.Content           (Content, contentId,
                                                            fromURL,
@@ -40,7 +41,9 @@ create config contentURL = do
   let newContent = fromURL newContentId contentURL
   write newContent
   writeIndex (contentId newContent) contentURL
-  return newContent
+  processedContent <- process config newContent
+  write processedContent
+  return processedContent
   where
       write :: Content -> IO ()
       write newContent =

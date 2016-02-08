@@ -22,6 +22,7 @@ library
       ZoomHub.API
     , ZoomHub.Config
     , ZoomHub.Main
+    , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Storage.File
     , ZoomHub.Storage.Internal.File
