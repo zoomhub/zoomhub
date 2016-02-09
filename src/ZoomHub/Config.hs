@@ -3,14 +3,14 @@
 module ZoomHub.Config
   ( Config(Config)
   , RackspaceConfig
+  , dataPath
   , defaultPort
+  , encodeId
   , lastId
   , port
   , rackspace
   , raxApiKey
   , raxUsername
-  , dataPath
-  , encodeId
   ) where
 
 import           Control.Concurrent.STM (TVar)
@@ -25,11 +25,11 @@ defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { port      :: Integer
-  , lastId    :: TVar Integer
-  , rackspace :: RackspaceConfig
-  , dataPath  :: String
+  { dataPath  :: String
   , encodeId  :: Integer -> String
+  , lastId    :: TVar Integer
+  , port      :: Integer
+  , rackspace :: RackspaceConfig
   }
 
 -- Config: Rackspace
