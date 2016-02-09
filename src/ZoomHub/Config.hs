@@ -6,6 +6,7 @@ module ZoomHub.Config
   , dataPath
   , defaultPort
   , encodeId
+  , jobs
   , lastId
   , port
   , rackspace
@@ -13,7 +14,7 @@ module ZoomHub.Config
   , raxUsername
   ) where
 
-import           Control.Concurrent.STM (TVar)
+import           Control.Concurrent.STM (TChan, TVar)
 import           GHC.Generics           (Generic)
 import           System.Envy            (DefConfig, FromEnv, Option (..),
                                          customPrefix, defConfig,
@@ -27,6 +28,7 @@ defaultPort = 8000
 data Config = Config
   { dataPath  :: String
   , encodeId  :: Integer -> String
+  , jobs      :: TChan String
   , lastId    :: TVar Integer
   , port      :: Integer
   , rackspace :: RackspaceConfig
