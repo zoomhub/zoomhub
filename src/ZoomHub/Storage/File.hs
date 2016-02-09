@@ -8,7 +8,8 @@ module ZoomHub.Storage.File
 import           Prelude                                  hiding (fromInteger)
 
 import           Control.Concurrent.STM                   (TVar, atomically,
-                                                           modifyTVar, readTVar)
+                                                           modifyTVar, readTVar,
+                                                           writeTChan)
 import           Control.Exception                        (tryJust)
 import           Control.Monad                            (guard)
 import           Data.Aeson                               (decode)
@@ -22,7 +23,6 @@ import           System.Posix.Files                       (createLink)
 
 import           ZoomHub.Config                           (Config)
 import qualified ZoomHub.Config                           as Config
-import           ZoomHub.Pipeline                         (process)
 import           ZoomHub.Storage.Internal.File            (hashURL, toFilename)
 import           ZoomHub.Types.Internal.Content           (Content, contentId,
                                                            fromURL,
@@ -41,9 +41,8 @@ create config contentURL = do
   let newContent = fromURL newContentId contentURL
   write newContent
   writeIndex (contentId newContent) contentURL
-  processedContent <- process config newContent
-  write processedContent
-  return processedContent
+  atomically $ writeTChan (Config.jobs config) contentURL
+  return newContent
   where
       write :: Content -> IO ()
       write newContent =
