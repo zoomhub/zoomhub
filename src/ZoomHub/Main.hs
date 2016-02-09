@@ -4,7 +4,8 @@
 module ZoomHub.Main (main) where
 
 import           Control.Concurrent               (forkIO, threadDelay)
-import           Control.Concurrent.STM           (TVar, atomically, newTVar,
+import           Control.Concurrent.STM           (TChan, TVar, atomically,
+                                                   newTChan, newTVar, readTChan,
                                                    readTVar)
 import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
@@ -21,6 +22,7 @@ import           Web.Hashids                      (encode, hashidsSimple)
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
+-- import           ZoomHub.Pipeline                 (process)
 import           ZoomHub.Utils                    ((<$$>))
 
 
@@ -46,6 +48,13 @@ writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
   >>= \lastId -> atomicWriteFile (lastIdPath dataPath) (show lastId)
   >> threadDelay interval
 
+-- Jobs
+-- TODO: Implement job processing here:
+printJobs :: TChan String -> Int -> IO ()
+printJobs tchan interval = forever $ atomically (readTChan tchan)
+  >>= \job -> putStrLn ("Job: " ++ job)
+  >> threadDelay interval
+
 -- Environment
 hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
@@ -62,6 +71,8 @@ main = do
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
+      jobs <- liftIO $ atomically $ newTChan
+      _ <- forkIO $ printJobs jobs lastIdWriteInterval
       let encodeContext = hashidsSimple $ BC.pack hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
