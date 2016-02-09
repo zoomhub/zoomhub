@@ -43,7 +43,7 @@ readLastId dataPath = do
 
 writeLastId :: String -> TVar Integer -> Int -> IO ()
 writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
-  >>= \x -> atomicWriteFile (lastIdPath dataPath) (show x)
+  >>= \lastId -> atomicWriteFile (lastIdPath dataPath) (show lastId)
   >> threadDelay interval
 
 -- Environment
