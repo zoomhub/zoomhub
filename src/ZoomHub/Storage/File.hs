@@ -35,7 +35,7 @@ import           ZoomHub.Types.Internal.ContentId         (ContentId,
 type URL = String
 
 -- Public API
-create :: Config -> String -> IO Content
+create :: Config -> URL -> IO Content
 create config contentURL = do
   newContentId <- createNewId config
   let newContent = fromURL newContentId contentURL
