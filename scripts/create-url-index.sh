@@ -12,9 +12,9 @@ CONTENT_BY_URL='/mnt/datavolume/zoomhub/data/content-by-url'
 for target in $CONTENT_BY_ID/*.json ;
 do
   content=$(cat "$target")
-  contentID=$(printf "$content" | json 'id')
-  contentURL=$(printf "$content" | json url)
-  targetHash=$(printf "$contentURL" | sha256sum | tr -d '[:space:]-')
+  contentID=$(printf '%s' "$content" | json 'id')
+  contentURL=$(printf '%s' "$content" | json url)
+  targetHash=$(printf '%s' "$contentURL" | sha256sum | tr -d '[:space:]-')
   linkName="$CONTENT_BY_URL/$targetHash.json"
   echo "Processing: $contentID"
   ln $target $linkName
