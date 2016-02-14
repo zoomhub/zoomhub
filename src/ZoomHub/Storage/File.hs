@@ -41,7 +41,7 @@ create config contentURL = do
   let newContent = fromURL newContentId contentURL
   write newContent
   writeIndex (contentId newContent) contentURL
-  atomically $ writeTChan (Config.jobs config) contentURL
+  enqueue contentURL
   return newContent
   where
       write :: Content -> IO ()
@@ -50,6 +50,9 @@ create config contentURL = do
 
       writeIndex :: ContentId -> URL -> IO ()
       writeIndex cId url = createLink (idPath cId) (urlPath url)
+
+      enqueue :: URL -> IO ()
+      enqueue url = atomically $ writeTChan (Config.jobs config) url
 
       idPath cId = getByIdPath (Config.dataPath config) cId
       urlPath = getByURLPath (Config.dataPath config)
