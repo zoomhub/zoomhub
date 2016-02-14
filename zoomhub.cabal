@@ -40,7 +40,7 @@ library
     , aeson-casing == 0.1.*
     , aeson-pretty
     , atomic-write
-    , base
+    , base >= 4.8 && < 5
     , bytestring
     , cryptonite == 0.10.*
     , directory
