@@ -1,10 +1,7 @@
 #!/bin/sh
 
 #
-# Before:
-#   > df -i /mnt/datavolume/zoomhub/
-#   Filesystem      Inodes   IUsed   IFree IUse% Mounted on
-#   /dev/xvdb1     6553600 1192855 5360745   19% /mnt/datavolume
+# Create URL --> ID index using hardlinks to avoid consuming inodes.
 #
 
 CONTENT_BY_ID='/mnt/datavolume/zoomhub/data/content-by-id'
