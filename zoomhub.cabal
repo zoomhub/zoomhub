@@ -36,24 +36,24 @@ library
   ghc-options:      -Wall
   hs-source-dirs:   src
   build-depends:
-      aeson == 0.10.*
-    , aeson-casing == 0.1.*
+      aeson
+    , aeson-casing
     , aeson-pretty
     , atomic-write
     , base
     , bytestring
-    , cryptonite == 0.10.*
+    , cryptonite
     , directory
     , either
     , envy
     , filepath
     , hashids
     , http-client
-    , lens == 4.13.*
-    , lens-aeson == 1.*
+    , lens
+    , lens-aeson
     , process
-    , servant == 0.4.*
-    , servant-server == 0.4.*
+    , servant
+    , servant-server
     , stm
     , temporary
     , text
@@ -62,7 +62,7 @@ library
     , unix
     , wai
     , warp
-    , wreq == 0.4.*
+    , wreq
 
 executable zoomhub
   default-language: Haskell2010
@@ -85,7 +85,7 @@ test-suite tests
       aeson
     , base
     , bytestring
-    , hspec == 2.*
+    , hspec
     , QuickCheck
     , quickcheck-instances
     , zoomhub
