@@ -9,6 +9,7 @@ module ZoomHub.Config
   , jobs
   , lastId
   , port
+  , publicPath
   , rackspace
   , raxApiKey
   , raxUsername
@@ -26,12 +27,13 @@ defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { dataPath  :: String
-  , encodeId  :: Integer -> String
-  , jobs      :: TChan String
-  , lastId    :: TVar Integer
-  , port      :: Integer
-  , rackspace :: RackspaceConfig
+  { dataPath   :: FilePath
+  , encodeId   :: Integer -> String
+  , jobs       :: TChan String
+  , lastId     :: TVar Integer
+  , port       :: Integer
+  , publicPath :: FilePath
+  , rackspace  :: RackspaceConfig
   }
 
 -- Config: Rackspace

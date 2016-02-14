@@ -79,7 +79,7 @@ server :: Config -> Server API
 server config = welcome
            :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
-           :<|> serveDirectory "public"
+           :<|> serveDirectory (Config.publicPath config)
 
 app :: Config -> Application
 app config = serve api (server config)
