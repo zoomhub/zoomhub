@@ -17,7 +17,8 @@ import           Servant                          ((:<|>) (..), (:>), Capture,
                                                    Get, JSON, QueryParam,
                                                    ServantErr, Server, err301,
                                                    err400, err404, errBody,
-                                                   errHeaders, serve)
+                                                   errHeaders, serve,
+                                                   serveDirectory, Raw)
 
 import           ZoomHub.Config                   (Config)
 import qualified ZoomHub.Config                   as Config
@@ -37,6 +38,7 @@ type API =
        "welcome" :> Get '[JSON] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
+  :<|> Raw
 
 -- Handlers
 welcome :: Handler String
@@ -77,6 +79,7 @@ server :: Config -> Server API
 server config = welcome
            :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
+           :<|> serveDirectory "public"
 
 app :: Config -> Application
 app config = serve api (server config)
