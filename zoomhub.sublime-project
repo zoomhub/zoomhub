@@ -7,13 +7,16 @@
                 "*.sublime-workspace"
             ],
             "folder_exclude_patterns": [
+                ".stack-work",
+                ".cabal-sandbox",
+                "dist",
                 "node_modules"
             ]
         }
     ],
     "settings":
     {
-        "tab_size": 4,
+        "tab_size": 2,
         "translate_tabs_to_spaces": true,
         "trim_trailing_white_space_on_save": true
     }

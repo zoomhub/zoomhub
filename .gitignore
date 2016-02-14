@@ -3,7 +3,14 @@
 
 # npm
 /node_modules
+/node/node_modules
 npm-debug.log
+
+# Haskell
+cabal.sandbox.config
+.cabal-sandbox
+.stack-work
+/dist/
 
 # Sublime Text
 *.sublime-workspace
@@ -17,6 +24,3 @@ npm-debug.log
 # Static files
 /public/dzi
 /pipeline/fetcher
-
-# Database (sample data)
-/data/
