@@ -68,6 +68,7 @@ main = do
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
       dataPath <- getCurrentDirectory <$$> (</> "data")
+      publicPath <- getCurrentDirectory <$$> (</> "public")
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
