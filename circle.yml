@@ -17,6 +17,6 @@ test:
 
 deployment:
   development:
-    branch: circle-cd
+    branch: /.*/
     commands:
       - ./deployment/deploy.sh
