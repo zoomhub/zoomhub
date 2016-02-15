@@ -23,3 +23,7 @@ deployment:
     branch: /.*/
     commands:
       - ./deployment/deploy.sh
+
+notify:
+  webhooks:
+    - url: https://webhooks.gitter.im/e/5b83f4ce9cca865c832c
