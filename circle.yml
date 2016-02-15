@@ -9,7 +9,8 @@ dependencies:
     - stack setup
     - stack build
   post:
-    - ./deployment/copy-build-artifacts.sh
+    - ./deployment/keter-bundle.sh
+    - cp zoomhub.keter $CIRCLE_ARTIFACTS
 
 test:
   override:
