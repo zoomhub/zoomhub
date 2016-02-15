@@ -1,2 +1,5 @@
 exec: ../zoomhub
 host: 104.130.230.137
+env:
+  DATA_PATH: '/mnt/datavolume/zoomhub/data'
+  HASHIDS_SALT: 'CHANGE-ME-IN-PRODUCTION'
