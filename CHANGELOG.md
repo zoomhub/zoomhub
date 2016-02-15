@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 0.0.5 – February 14, 2016
+
+-   Initial port to Haskell.
+-   Add basic continuous deployment using [CircleCI].
+
 ## 0.0.4 - October 1, 2014
 
 -   Upgrade `coffee-script` to 1.8.0.
@@ -51,6 +56,7 @@
 [Rackspace]: http://www.rackspace.com/
 [Redis]: http://redis.io/
 [VIPS]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS
+[CircleCI]: https://circleci.com
 
 [ZH-18]: https://github.com/zoomhub/zoomhub/issues/18
 [ZH-22]: https://github.com/zoomhub/zoomhub/issues/22
