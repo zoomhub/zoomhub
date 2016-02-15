@@ -29,7 +29,7 @@ import           ZoomHub.Utils                    ((<$$>))
 -- TODO: Move to `Storage` module:
 -- Last ID
 lastIdPath :: FilePath -> FilePath
-lastIdPath dataPath = dataPath ++ "/lastId.txt"
+lastIdPath dataPath = dataPath </> "lastId.txt"
 
 -- TODO: Figure out why `time-units` library doesn’t work:
 lastIdWriteInterval :: Int
