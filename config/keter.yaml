@@ -1,0 +1,10 @@
+stanzas:
+  - type: webapp
+    exec: ../zoomhub
+    hosts:
+      - 104.130.230.137
+      - openzoom.net
+      - openzoom.org
+    env:
+      DATA_PATH: '/mnt/datavolume/zoomhub/data'
+      HASHIDS_SALT: 'CHANGE-ME-IN-PRODUCTION'
