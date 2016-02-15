@@ -10,7 +10,8 @@ fi
 
 # Commands
 case "$1" in
-install)
+init)
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew/bda8d64e0e9011aab1612868eac2f709e631c503/Library/Formula/haskell-stack.rb
     stack setup
     ;;
 run)

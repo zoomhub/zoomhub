@@ -7,7 +7,7 @@ To set up the project, run:
 ```bash
 git clone https://github.com/zoomhub/zoomhub.git
 cd zoomhub
-./zh install
+./zh init
 ```
 
 To start the server, run:
