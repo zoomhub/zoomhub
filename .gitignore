@@ -21,6 +21,5 @@ cabal.sandbox.config
 /deployment/hosts.staging
 /deployment/credentials/userpassword
 
-# Static files
-/public/dzi
-/pipeline/fetcher
+# PID
+/zoomhub.pid
