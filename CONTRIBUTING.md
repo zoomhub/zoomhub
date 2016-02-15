@@ -1,8 +1,15 @@
 ## Development
 
-This app is built on [Haskell].
+This app is built on [Haskell]. We use [Stack] to manage dependencies, build, as
+well as run the app.
 
-To set up the project, run:
+#### Prerequisites
+
+-   [Homebrew]
+
+### Setup
+
+Set up the app:
 
 ```bash
 git clone https://github.com/zoomhub/zoomhub.git
@@ -10,13 +17,17 @@ cd zoomhub
 ./zh init
 ```
 
-To start the server, run:
+### Run
+
+Build and run the app:
 
 ```bash
 ./zh run
 ```
 
-To run the tests, run:
+### Test
+
+Run the app tests:
 
 ```bash
 ./zh test
@@ -45,3 +56,5 @@ commands:
 
 
 [Haskell]: https://www.haskell.org
+[Homebrew]: http://brew.sh/
+[Stack]: http://docs.haskellstack.org/en/stable/README.html
