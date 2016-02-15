@@ -2,22 +2,24 @@
 
 This app is built on [Haskell].
 
+To set up the project, run:
+
 ```bash
 git clone https://github.com/zoomhub/zoomhub.git
 cd zoomhub
-stack setup
+./zh install
 ```
 
 To start the server, run:
 
 ```bash
-stack build --file-watch --exec ./scripts/run-development.sh
+./zh run
 ```
 
 To run the tests, run:
 
 ```bash
-stack test
+./zh test
 ```
 
 ## Administation
