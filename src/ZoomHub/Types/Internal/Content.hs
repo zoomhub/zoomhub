@@ -44,7 +44,7 @@ data Content = Content
   , contentProgress   :: Float
   , contentMime       :: Maybe String -- TODO: Use proper MIME type
   , contentSize       :: Maybe Integer
-  , contentActive     :: Bool
+  , contentActive     :: Maybe Bool
   , contentActiveAt   :: Maybe UTCTime
   , contentFinishedAt :: Maybe UTCTime
   , contentDzi        :: Maybe DeepZoomImage
@@ -61,7 +61,7 @@ fromURL cId url = Content
   , contentProgress = 0.0
   , contentMime = Nothing
   , contentSize = Nothing
-  , contentActive = False
+  , contentActive = Just False
   , contentActiveAt = Nothing
   , contentFinishedAt = Nothing
   , contentDzi = Nothing

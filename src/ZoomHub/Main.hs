@@ -11,6 +11,7 @@ import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
 import           Control.Monad.IO.Class           (liftIO)
 import qualified Data.ByteString.Char8            as BC
+import           Data.Maybe                       (fromMaybe)
 import           Network.Wai.Handler.Warp         (run)
 import           System.AtomicWrite.Writer.String (atomicWriteFile)
 import           System.Directory                 (getCurrentDirectory)
@@ -23,13 +24,12 @@ import           Web.Hashids                      (encode, hashidsSimple)
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
 -- import           ZoomHub.Pipeline                 (process)
-import           ZoomHub.Utils                    ((<$$>))
 
 
 -- TODO: Move to `Storage` module:
 -- Last ID
-lastIdPath :: String -> String
-lastIdPath dataPath = dataPath ++ "/lastId.txt"
+lastIdPath :: FilePath -> FilePath
+lastIdPath dataPath = dataPath </> "lastId.txt"
 
 -- TODO: Figure out why `time-units` library doesn’t work:
 lastIdWriteInterval :: Int
@@ -62,17 +62,22 @@ hashidsSaltEnvName = "HASHIDS_SALT"
 -- Main
 main :: IO ()
 main = do
+  currentDirectory <- getCurrentDirectory
   maybePort <- lookupEnv "PORT"
+  maybeDataPath <- lookupEnv "DATA_PATH"
+  maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
   maybeRaxConfig <- decodeEnv
+  let defaultDataPath = currentDirectory </> "data"
+      dataPath = fromMaybe defaultDataPath maybeDataPath
+      defaultPublicPath = currentDirectory </> "public"
+      publicPath = fromMaybe defaultPublicPath maybePublicPath
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
-      dataPath <- getCurrentDirectory <$$> (</> "data")
-      publicPath <- getCurrentDirectory <$$> (</> "public")
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
-      jobs <- liftIO $ atomically $ newTChan
+      jobs <- liftIO $ atomically newTChan
       _ <- forkIO $ printJobs jobs lastIdWriteInterval
       let encodeContext = hashidsSimple $ BC.pack hashidsSalt
           encodeId integerId =
