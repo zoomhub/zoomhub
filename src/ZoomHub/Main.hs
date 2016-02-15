@@ -11,6 +11,7 @@ import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
 import           Control.Monad.IO.Class           (liftIO)
 import qualified Data.ByteString.Char8            as BC
+import           Data.Maybe                       (fromMaybe)
 import           Network.Wai.Handler.Warp         (run)
 import           System.AtomicWrite.Writer.String (atomicWriteFile)
 import           System.Directory                 (getCurrentDirectory)
@@ -68,15 +69,15 @@ main = do
   maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
   maybeRaxConfig <- decodeEnv
   let defaultDataPath = currentDirectory </> "data"
-      dataPath = maybe defaultDataPath id maybeDataPath
+      dataPath = fromMaybe defaultDataPath maybeDataPath
       defaultPublicPath = currentDirectory </> "public"
-      publicPath = maybe defaultPublicPath id maybePublicPath
+      publicPath = fromMaybe defaultPublicPath maybePublicPath
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
-      jobs <- liftIO $ atomically $ newTChan
+      jobs <- liftIO $ atomically newTChan
       _ <- forkIO $ printJobs jobs lastIdWriteInterval
       let encodeContext = hashidsSimple $ BC.pack hashidsSalt
           encodeId integerId =
