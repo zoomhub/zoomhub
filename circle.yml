@@ -8,7 +8,15 @@ dependencies:
   override:
     - stack setup
     - stack build
+  post:
+    - ./deployment/copy-build-artifacts.sh
 
 test:
   override:
     - stack test
+
+deployment:
+  development:
+    branch: circle-cd
+    commands:
+      - ./deployment/deploy.sh
