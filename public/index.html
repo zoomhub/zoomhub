@@ -17,16 +17,35 @@
     </script>
     <style>
       body {
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         color: #333;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         font-size: 16px;
+        height: 100%;
         line-height: 1.5em;
+        margin: 0;
+        padding: 0;
+        width: 100%;
       }
 
       .container {
-          width: 80%;
-          max-width: 36em;
-          margin: 3em auto;
+        margin: 3em 0;
+        width: 100%;
+      }
+
+      .inner {
+        margin: 0 auto;
+        max-width: 36em;
+        width: 80%;
+      }
+
+      .title {
+        font-size: 360%;
+        letter-spacing: -4px;
+      }
+
+      .mark {
+        color: #555;
+        font-weight: bold;
       }
 
       a {
@@ -36,40 +55,79 @@
       }
 
       p {
-          margin-bottom: 1em;
+        margin-bottom: 1em;
       }
 
       footer {
-        color: #ddd;
+        color: #ccc;
         font-size: 0.8em;
-        text-align: center;
         margin-top: 2em;
+        text-align: center;
       }
 
       footer a {
+        color: #ccc;
         font-weight: normal;
-        color: #ddd;
         text-decoration: underline;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>zoom.it</h1>
-      <p>No longer part of Microsoft, <strong>zoom.it</strong> is now an open-source project.</p>
-      <p>We’re <strong>not converting new images</strong> during the transition, but existing images (and their pages and embeds) should work.</p>
+      <div class="inner">
+        <h1 class="title">zoom.it</h1>
+      </div>
 
-      <h3>Get involved!</h3>
-      <ul>
-        <li>Want to integrate <strong>zoom.it</strong> into your app? Check out our <a href="https://github.com/zoomhub/zoomhub/blob/master/API.md">API</a>.</li>
-        <li>Looking for the latest news? Follow us on Twitter: <a href="https://twitter.com/ZoomHub">@zoomhub</a>.</li>
-        <li>Need help? Join the <a href="https://groups.google.com/group/zoomhub">mailing list</a>.</li>
-        <li>Found a bug or typo? <a href="https://github.com/zoomhub/zoomhub/issues">File an issue</a>.</li>
-        <li>Want to contribute a new feature? Check out the <a href="https://github.com/zoomhub/zoomhub">code</a>.</li>
-      </ul>
-      <footer>
-        <p>Powered by <a href="https://www.rackspace.com/">Rackspace</a> &amp; <a href="https://www.haskell.org/">Haskell</a>.</p>
-      </footer>
+      <script src="http://zoom.it/h.js?width=auto&amp;height=340px"></script>
+
+      <div class="inner">
+        <h2>What is it?</h2>
+        <p>
+          <span class="mark">zoom.it</span> lets you publish &amp; view your
+          high-resolution images seamlessly and blazingly fast, no matter whether
+          you are on a desktop computer, tablet, or mobile phone.
+        </p>
+        <p>Play around with the demo above.</p>
+
+        <h2>What’s the current status?</h2>
+        <p>
+          <span class="mark">zoom.it</span> is no longer part of Microsoft and has been
+          revived as an open-source project.
+        </p>
+        <p>
+          We’re currently <strong>not converting new images</strong>, but existing
+          images—and their pages and embeds—should work. We are working very hard
+          to restore the service to its old glory and beyond!
+        </p>
+
+        <h2>Get involved!</h3>
+        <ul>
+          <li>
+            Want to integrate <span class="mark">zoom.it</span> into your app?
+            Check out our <a href="https://github.com/zoomhub/zoomhub/blob/master/API.md">API</a>.
+          </li>
+          <li>
+            Looking for the latest news? Follow us on Twitter:
+            <a href="https://twitter.com/ZoomHub">@zoomhub</a>.
+          </li>
+          <li>
+            Need help? Join the
+            <a href="https://groups.google.com/group/zoomhub">mailing list</a>.
+          </li>
+          <li>
+            Found a bug or typo?
+            <a href="https://github.com/zoomhub/zoomhub/issues">File an issue</a>.
+          </li>
+          <li>
+            Want to contribute a new feature?
+            Check out the <a href="https://github.com/zoomhub/zoomhub">code</a>.
+          </li>
+        </ul>
+
+        <footer>
+          <p>Powered by <a href="https://www.haskell.org/">Haskell</a>. Hosting sponsored by <a href="https://www.rackspace.com/">Rackspace</a>.</p>
+        </footer>
+      </div>
     </div>
   </body>
 </html>
