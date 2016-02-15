@@ -23,7 +23,6 @@ import           Web.Hashids                      (encode, hashidsSimple)
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
 -- import           ZoomHub.Pipeline                 (process)
-import           ZoomHub.Utils                    ((<$$>))
 
 
 -- TODO: Move to `Storage` module:
@@ -62,13 +61,16 @@ hashidsSaltEnvName = "HASHIDS_SALT"
 -- Main
 main :: IO ()
 main = do
+  cd <- getCurrentDirectory
   maybePort <- lookupEnv "PORT"
+  maybeDataPath <- lookupEnv "DATA_PATH"
   maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
   maybeRaxConfig <- decodeEnv
+  let defaultDataPath = cd </> "data"
+      publicPath = cd </> "public"
+      dataPath = maybe defaultDataPath id maybeDataPath
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
-      dataPath <- getCurrentDirectory <$$> (</> "data")
-      publicPath <- getCurrentDirectory <$$> (</> "public")
       initialLastId <- readLastId dataPath
       lastId <- liftIO $ atomically $ newTVar initialLastId
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
