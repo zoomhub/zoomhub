@@ -28,7 +28,7 @@ import           ZoomHub.Utils                    ((<$$>))
 
 -- TODO: Move to `Storage` module:
 -- Last ID
-lastIdPath :: String -> String
+lastIdPath :: FilePath -> FilePath
 lastIdPath dataPath = dataPath ++ "/lastId.txt"
 
 -- TODO: Figure out why `time-units` library doesn’t work:
