@@ -18,6 +18,8 @@ test:
 
 deployment:
   development:
+    # During development, deploy all branches. Restrict to `master` once
+    # we are further along:
     branch: /.*/
     commands:
       - ./deployment/deploy.sh
