@@ -64,11 +64,13 @@ main = do
   currentDirectory <- getCurrentDirectory
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
+  maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
   maybeRaxConfig <- decodeEnv
   let defaultDataPath = currentDirectory </> "data"
-      publicPath = currentDirectory </> "public"
       dataPath = maybe defaultDataPath id maybeDataPath
+      defaultPublicPath = currentDirectory </> "public"
+      publicPath = maybe defaultPublicPath id maybePublicPath
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
       initialLastId <- readLastId dataPath
