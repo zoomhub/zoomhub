@@ -61,13 +61,13 @@ hashidsSaltEnvName = "HASHIDS_SALT"
 -- Main
 main :: IO ()
 main = do
-  cd <- getCurrentDirectory
+  currentDirectory <- getCurrentDirectory
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
   maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
   maybeRaxConfig <- decodeEnv
-  let defaultDataPath = cd </> "data"
-      publicPath = cd </> "public"
+  let defaultDataPath = currentDirectory </> "data"
+      publicPath = currentDirectory </> "public"
       dataPath = maybe defaultDataPath id maybeDataPath
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
