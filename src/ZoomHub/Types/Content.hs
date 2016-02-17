@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.Content
   ( Content
@@ -16,7 +17,13 @@ import           Data.Aeson                       (FromJSON, ToJSON,
                                                    genericToJSON, parseJSON,
                                                    toJSON)
 import           Data.Aeson.Casing                (aesonPrefix, camelCase)
+import           Data.Monoid                      ((<>))
+import qualified Data.Text                        as T
 import           GHC.Generics                     (Generic)
+import           Lucid                            (ToHtml, body_, content_,
+                                                   doctypehtml_, head_, meta_,
+                                                   name_, script_, src_, style_,
+                                                   title_, toHtml, toHtmlRaw)
 
 import           ZoomHub.Types.DeepZoomImage      (DeepZoomImage)
 import qualified ZoomHub.Types.DeepZoomImage      as DZ
@@ -61,3 +68,39 @@ instance ToJSON Content where
    toJSON = genericToJSON $ aesonPrefix camelCase
 instance FromJSON Content where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
+
+-- HTML
+instance ToHtml Content where
+  toHtml content =
+      doctypehtml_ $
+        do head_ (do title_ (toHtml $ cId <> " — zoom.it")
+                     meta_ [name_ "viewport",
+                            content_ "width=device-width, initial-scale=1"]
+                     style_ "\
+                         \  html, body {\
+                         \    background-color: #000;\
+                         \    color: #fff;\
+                         \    font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;\
+                         \    height: 100%;\
+                         \    margin: 0;\
+                         \  }\
+
+                         \  a {\
+                         \    color: #999;\
+                         \    text-decoration: none;\
+                         \  }\
+
+                         \  a:hover {\
+                         \    color: #666;\
+                         \  }\
+
+                         \  /* HACK: See below. */\
+                         \  .__seadragon {\
+                         \    height: 100% !important;\
+                         \  }\
+                         \  ")
+           body_ $ script_ [src_ scriptURL] ("" :: T.Text)
+    where
+      scriptURL = "http://zoom.it/" <> cId <> ".js?width=auto&height=400px"
+      cId = T.pack $ unId $ contentId content
+  toHtmlRaw = toHtml
