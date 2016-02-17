@@ -17,6 +17,7 @@ mkdir -p .keter-bundle
 cp "$zoomhub" .keter-bundle
 cp -R public .keter-bundle
 cp -R config .keter-bundle
+cp -R scripts .keter-bundle
 
 # Create bundle:
 cd .keter-bundle
