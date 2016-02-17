@@ -44,7 +44,7 @@ type API =
 welcome :: Handler String
 welcome = return "Welcome to ZoomHub."
 
-contentById :: String -> ContentId -> Handler Content
+contentById :: FilePath -> ContentId -> Handler Content
 contentById dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
