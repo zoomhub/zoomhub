@@ -7,8 +7,9 @@
                 "*.sublime-workspace"
             ],
             "folder_exclude_patterns": [
-                ".stack-work",
                 ".cabal-sandbox",
+                ".stack-work",
+                "backup-*",
                 "dist",
                 "node_modules"
             ]
