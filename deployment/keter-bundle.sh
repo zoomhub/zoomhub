@@ -21,7 +21,7 @@ cp -R scripts .keter-bundle
 
 # Create bundle:
 cd .keter-bundle
-tar czfv zoomhub.keter zoomhub public config
+tar czfv zoomhub.keter zoomhub public config scripts
 cd -
 
 # Move bundle to root:
