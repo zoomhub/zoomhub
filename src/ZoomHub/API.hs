@@ -12,18 +12,24 @@ import qualified Data.ByteString.Char8            as BC
 import qualified Data.ByteString.Lazy.Char8       as BLC
 import           Data.Monoid                      ((<>))
 import           Data.Proxy                       (Proxy (Proxy))
+import qualified Data.Text                        as T
+import           Lucid                            (Html, ToHtml, doctypehtml_,
+                                                   script_, src_, toHtml,
+                                                   toHtmlRaw)
 import           Network.Wai                      (Application)
 import           Servant                          ((:<|>) (..), (:>), Capture,
-                                                   Get, JSON, QueryParam,
+                                                   Get, JSON, QueryParam, Raw,
                                                    ServantErr, Server, err301,
                                                    err400, err404, errBody,
                                                    errHeaders, serve,
-                                                   serveDirectory, Raw)
+                                                   serveDirectory)
+import           Servant.HTML.Lucid               (HTML)
 
 import           ZoomHub.Config                   (Config)
 import qualified ZoomHub.Config                   as Config
 import           ZoomHub.Storage.File             (create, getById, getByURL)
 import           ZoomHub.Types.Content            (Content, fromInternal)
+import qualified ZoomHub.Types.Content            as Public
 import qualified ZoomHub.Types.Internal.Content   as Internal
 import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
 
@@ -38,6 +44,7 @@ type API =
        "welcome" :> Get '[JSON] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
+  :<|> Capture "viewId" ContentId :> Get '[HTML] Content
   :<|> Raw
 
 -- Handlers
@@ -71,6 +78,22 @@ contentByURL config maybeURL = case maybeURL of
             errHeaders = [("Location", location)]
           }
 
+viewContentById :: FilePath -> ContentId -> Handler Content
+viewContentById dataPath contentId = do
+  maybeContent <- liftIO $ getById dataPath contentId
+  case maybeContent of
+    Nothing      -> left err404{ errBody = error404message }
+    Just content -> return $ fromInternal content
+  where error404message = "No content with ID: " <> (BLC.pack $ unId contentId)
+
+-- HTML serialization
+instance ToHtml Content where
+  toHtml content = doctypehtml_ $ do script_ [src_ scriptURL] ("" :: T.Text)
+    where
+      scriptURL = "http://zoom.it/" <> cId <> ".js?width=auto&height=400px"
+      cId = T.pack $ unId $ Public.contentId content
+  toHtmlRaw = toHtml
+
 -- API
 api :: Proxy API
 api = Proxy
@@ -79,6 +102,7 @@ server :: Config -> Server API
 server config = welcome
            :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
+           :<|> viewContentById (Config.dataPath config)
            :<|> serveDirectory (Config.publicPath config)
 
 app :: Config -> Application
