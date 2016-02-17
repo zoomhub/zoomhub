@@ -19,7 +19,7 @@ import           System.Environment               (lookupEnv)
 import           System.Envy                      (decodeEnv)
 import           System.FilePath.Posix            ((</>))
 import           System.IO.Error                  (isDoesNotExistError)
-import           Web.Hashids                      (encode, hashidsSimple)
+import           Web.Hashids                      (encode, hashidsMinimum)
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
@@ -59,6 +59,10 @@ printJobs tchan interval = forever $ atomically (readTChan tchan)
 hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
 
+-- Config
+contentIdMinLength :: Int
+contentIdMinLength = 4
+
 -- Main
 main :: IO ()
 main = do
@@ -66,7 +70,7 @@ main = do
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
   maybePublicPath <- lookupEnv "PUBLIC_PATH"
-  maybeHashidsSalt <- lookupEnv hashidsSaltEnvName
+  maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
   maybeRaxConfig <- decodeEnv
   let defaultDataPath = currentDirectory </> "data"
       dataPath = fromMaybe defaultDataPath maybeDataPath
@@ -79,7 +83,7 @@ main = do
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
       jobs <- liftIO $ atomically newTChan
       _ <- forkIO $ printJobs jobs lastIdWriteInterval
-      let encodeContext = hashidsSimple $ BC.pack hashidsSalt
+      let encodeContext = hashidsMinimum hashidsSalt contentIdMinLength
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           port = maybe defaultPort read maybePort
