@@ -51,8 +51,10 @@ library
     , http-client
     , lens == 4.13.*
     , lens-aeson == 1.*
+    , lucid
     , process
     , servant == 0.4.*
+    , servant-lucid == 0.4.*
     , servant-server == 0.4.*
     , stm
     , temporary
