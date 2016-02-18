@@ -63,10 +63,20 @@ hashidsSaltEnvName = "HASHIDS_SALT"
 contentIdMinLength :: Int
 contentIdMinLength = 4
 
+readVersion :: FilePath -> IO String
+readVersion currentDirectory = do
+  r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
+  return $ case r of
+    Left _        -> "unknown"
+    Right version -> version
+  where
+    versionPath = currentDirectory </> "version.txt"
+
 -- Main
 main :: IO ()
 main = do
   currentDirectory <- getCurrentDirectory
+  version <- readVersion currentDirectory
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
   maybePublicPath <- lookupEnv "PUBLIC_PATH"

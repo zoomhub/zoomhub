@@ -37,6 +37,7 @@ type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx
        "health" :> Get '[HTML] String
+  :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
   :<|> Capture "viewId" ContentId :> Get '[HTML] Content
@@ -48,6 +49,7 @@ api = Proxy
 
 server :: Config -> Server API
 server config = health
+           :<|> version (Config.version config)
            :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
            :<|> viewContentById (Config.dataPath config)
@@ -59,6 +61,9 @@ app config = serve api (server config)
 -- Handlers
 health :: Handler String
 health = return "up"
+
+version :: String -> Handler String
+version = return
 
 contentById :: FilePath -> ContentId -> Handler Content
 contentById dataPath contentId = do
