@@ -33,7 +33,7 @@ library
     , ZoomHub.Types.Internal.DeepZoomImage
     , ZoomHub.Utils
   default-language: Haskell2010
-  ghc-options:      -Wall -Werror
+  ghc-options:      -Wall
   hs-source-dirs:   src
   build-depends:
       aeson == 0.10.*
@@ -51,8 +51,10 @@ library
     , http-client
     , lens == 4.13.*
     , lens-aeson == 1.*
+    , lucid
     , process
     , servant == 0.4.*
+    , servant-lucid == 0.4.*
     , servant-server == 0.4.*
     , stm
     , temporary
@@ -66,7 +68,7 @@ library
 
 executable zoomhub
   default-language: Haskell2010
-  ghc-options:      -Wall -Werror
+  ghc-options:      -Wall
   main-is:          Main.hs
   build-depends:
       base
@@ -74,7 +76,7 @@ executable zoomhub
 
 test-suite tests
   default-language: Haskell2010
-  ghc-options:      -Wall -Werror
+  ghc-options:      -Wall
   hs-source-dirs:   tests
   main-is:          Spec.hs
   type:             exitcode-stdio-1.0

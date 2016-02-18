@@ -14,11 +14,12 @@ import           Data.Monoid                      ((<>))
 import           Data.Proxy                       (Proxy (Proxy))
 import           Network.Wai                      (Application)
 import           Servant                          ((:<|>) (..), (:>), Capture,
-                                                   Get, JSON, QueryParam,
+                                                   Get, JSON, QueryParam, Raw,
                                                    ServantErr, Server, err301,
                                                    err400, err404, errBody,
                                                    errHeaders, serve,
-                                                   serveDirectory, Raw)
+                                                   serveDirectory)
+import           Servant.HTML.Lucid               (HTML)
 
 import           ZoomHub.Config                   (Config)
 import qualified ZoomHub.Config                   as Config
@@ -38,19 +39,36 @@ type API =
        "welcome" :> Get '[JSON] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
+  :<|> Capture "viewId" ContentId :> Get '[HTML] Content
   :<|> Raw
+
+-- API
+api :: Proxy API
+api = Proxy
+
+server :: Config -> Server API
+server config = welcome
+           :<|> contentById (Config.dataPath config)
+           :<|> contentByURL config
+           :<|> viewContentById (Config.dataPath config)
+           :<|> serveDirectory (Config.publicPath config)
+
+app :: Config -> Application
+app config = serve api (server config)
 
 -- Handlers
 welcome :: Handler String
 welcome = return "Welcome to ZoomHub."
 
-contentById :: String -> ContentId -> Handler Content
+contentById :: FilePath -> ContentId -> Handler Content
 contentById dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
     Just content -> return $ fromInternal content
-  where error404message = "No content with ID: " <> (BLC.pack $ unId contentId)
+  where
+    error404message = "No content with ID: " <> rawContentId
+    rawContentId = BLC.pack $ unId contentId
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
@@ -71,15 +89,10 @@ contentByURL config maybeURL = case maybeURL of
             errHeaders = [("Location", location)]
           }
 
--- API
-api :: Proxy API
-api = Proxy
-
-server :: Config -> Server API
-server config = welcome
-           :<|> contentById (Config.dataPath config)
-           :<|> contentByURL config
-           :<|> serveDirectory (Config.publicPath config)
-
-app :: Config -> Application
-app config = serve api (server config)
+viewContentById :: FilePath -> ContentId -> Handler Content
+viewContentById dataPath contentId = do
+  maybeContent <- liftIO $ getById dataPath contentId
+  case maybeContent of
+    Nothing      -> left err404{ errBody = error404message }
+    Just content -> return $ fromInternal content
+  where error404message = "No content with ID: " <> (BLC.pack $ unId contentId)
