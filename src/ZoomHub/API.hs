@@ -42,6 +42,20 @@ type API =
   :<|> Capture "viewId" ContentId :> Get '[HTML] Content
   :<|> Raw
 
+-- API
+api :: Proxy API
+api = Proxy
+
+server :: Config -> Server API
+server config = welcome
+           :<|> contentById (Config.dataPath config)
+           :<|> contentByURL config
+           :<|> viewContentById (Config.dataPath config)
+           :<|> serveDirectory (Config.publicPath config)
+
+app :: Config -> Application
+app config = serve api (server config)
+
 -- Handlers
 welcome :: Handler String
 welcome = return "Welcome to ZoomHub."
@@ -80,17 +94,3 @@ viewContentById dataPath contentId = do
     Nothing      -> left err404{ errBody = error404message }
     Just content -> return $ fromInternal content
   where error404message = "No content with ID: " <> (BLC.pack $ unId contentId)
-
--- API
-api :: Proxy API
-api = Proxy
-
-server :: Config -> Server API
-server config = welcome
-           :<|> contentById (Config.dataPath config)
-           :<|> contentByURL config
-           :<|> viewContentById (Config.dataPath config)
-           :<|> serveDirectory (Config.publicPath config)
-
-app :: Config -> Application
-app config = serve api (server config)
