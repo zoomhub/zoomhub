@@ -3,7 +3,14 @@
 
 # npm
 /node_modules
+/node/node_modules
 npm-debug.log
+
+# Haskell
+cabal.sandbox.config
+.cabal-sandbox
+.stack-work
+/dist/
 
 # Sublime Text
 *.sublime-workspace
@@ -14,9 +21,5 @@ npm-debug.log
 /deployment/hosts.staging
 /deployment/credentials/userpassword
 
-# Static files
-/public/dzi
-/pipeline/fetcher
-
-# Database (sample data)
-/data/
+# PID
+/zoomhub.pid

@@ -1,53 +1,37 @@
 ## Development
 
-This app is built on [Node.js](http://nodejs.org/), currently v0.10.
+This app is built on [Haskell]. We use [Stack] to manage dependencies, build, as
+well as run the app.
+
+#### Prerequisites
+
+-   [Homebrew]
+
+### Setup
+
+Set up the app:
 
 ```bash
 git clone https://github.com/zoomhub/zoomhub.git
 cd zoomhub
-npm install
+./zh init
 ```
 
-To start the server, run:
+### Run
+
+Build and run the app:
 
 ```bash
-npm start
+./zh run
 ```
 
-To run the tests, run:
+### Test
+
+Run the app tests:
 
 ```bash
-npm test
+./zh test
 ```
-
-The tests are written for [Mocha](http://visionmedia.github.io/mocha/)'s
-[`exports` interface](http://visionmedia.github.io/mocha/#exports-interface).
-They use [Chai](http://chaijs.com/) for assertions and
-[Supertest](https://github.com/visionmedia/supertest) for API requests.
-
-Portions of this code use [CoffeeScript](http://coffeescript.org/) and/or
-[Streamline](https://github.com/Sage/streamlinejs) for now, but we're open to
-changing that as this project matures and expands.
-
-### Debugging
-
-To debug via [node-inspector](https://github.com/node-inspector/node-inspector),
-run:
-
-```
-npm run debugger
-```
-
-The CoffeeScript and Streamline code will show up as compiled JS currently;
-while source maps get generated internally, they don't get outputted to files
-currently (which the debugger needs) when you run the code directly.
-Bugs are open to fix that!
-
-To support no-hassle debugging, the server runs in Node's `--debug` mode
-always right now. We'll figure out a way to turn that on/off down the road.
-
-To set a breakpoint from code, you can just write the `debugger` keyword.
-
 
 ## Administation
 
@@ -69,3 +53,8 @@ commands:
 -   `./zh ping`: Ping production machines.
 -   `./zh setup`: Setup server(s).
 -   `./zh deploy`: Deploy latest app code from Git.
+
+
+[Haskell]: https://www.haskell.org
+[Homebrew]: http://brew.sh/
+[Stack]: http://docs.haskellstack.org/en/stable/README.html
