@@ -17,6 +17,7 @@ import           Data.Aeson                       (FromJSON, ToJSON,
                                                    genericToJSON, parseJSON,
                                                    toJSON)
 import           Data.Aeson.Casing                (aesonPrefix, camelCase)
+import           Data.List                        (intersperse)
 import           Data.Monoid                      ((<>))
 import qualified Data.Text                        as T
 import           GHC.Generics                     (Generic)
@@ -69,36 +70,37 @@ instance ToJSON Content where
 instance FromJSON Content where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
 
+
 -- HTML
+concatPretty :: [T.Text] -> T.Text
+concatPretty = T.concat . intersperse "\n"
+
+-- TODO: Improve how we represent inline styles.
+styles :: T.Text
+styles = concatPretty [
+    "html, body {",
+    "  background-color: #000;",
+    "  color: #fff;",
+    "  font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;",
+    "  height: 100%;",
+    "  margin: 0;",
+    "  padding: 0;",
+    "}",
+    "",
+    ".__seadragon {",
+    "  height: 100% !important;",
+    "}"
+ ]
+
+-- TODO: Pass through host:
 instance ToHtml Content where
   toHtml content =
       doctypehtml_ $
         do head_ (do title_ (toHtml $ cId <> " — zoom.it")
                      meta_ [name_ "viewport",
                             content_ "width=device-width, initial-scale=1"]
-                     style_ "\
-                         \  html, body {\
-                         \    background-color: #000;\
-                         \    color: #fff;\
-                         \    font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;\
-                         \    height: 100%;\
-                         \    margin: 0;\
-                         \  }\
-
-                         \  a {\
-                         \    color: #999;\
-                         \    text-decoration: none;\
-                         \  }\
-
-                         \  a:hover {\
-                         \    color: #666;\
-                         \  }\
-
-                         \  /* HACK: See below. */\
-                         \  .__seadragon {\
-                         \    height: 100% !important;\
-                         \  }\
-                         \  ")
+                     style_ styles
+                     )
            body_ $ script_ [src_ scriptURL] ("" :: T.Text)
     where
       scriptURL = "http://zoom.it/" <> cId <> ".js?width=auto&height=400px"
