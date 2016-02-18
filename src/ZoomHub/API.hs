@@ -95,4 +95,4 @@ viewContentById dataPath contentId = do
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
     Just content -> return $ fromInternal content
-  where error404message = "No content with ID: " <> (BLC.pack $ unId contentId)
+  where error404message = "No content with ID: " <> BLC.pack (unId contentId)
