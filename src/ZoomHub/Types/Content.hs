@@ -120,5 +120,5 @@ instance ToHtml Content where
            body_ $ script_ [src_ scriptURL] ("" :: T.Text)
     where
       scriptURL = "http://zoom.it/" <> cId <> ".js?width=auto&height=400px"
-      cId = T.pack $ unId $ contentId content
+      cId = T.pack . unId $ contentId content
   toHtmlRaw = toHtml
