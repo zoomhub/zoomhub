@@ -23,6 +23,7 @@ import           Web.Hashids                      (encode, hashidsMinimum)
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
+import qualified ZoomHub.Types.Internal.ContentId as ContentId
 -- import           ZoomHub.Pipeline                 (process)
 
 
@@ -59,9 +60,6 @@ hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
 
 -- Config
-contentIdMinLength :: Int
-contentIdMinLength = 4
-
 readVersion :: FilePath -> IO String
 readVersion currentDirectory = do
   r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
@@ -92,7 +90,7 @@ main = do
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
       jobs <- liftIO $ atomically newTChan
       _ <- forkIO $ printJobs jobs lastIdWriteInterval
-      let encodeContext = hashidsMinimum hashidsSalt contentIdMinLength
+      let encodeContext = hashidsMinimum hashidsSalt ContentId.minimumLength
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           port = maybe defaultPort read maybePort
