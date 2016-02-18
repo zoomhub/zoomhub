@@ -4,16 +4,17 @@
 module ZoomHub.Types.Internal.ContentIdTest where
 
 import           Data.Aeson                       (decode, encode)
-import           Test.QuickCheck                  (elements, listOf)
+import           Test.QuickCheck                  (Property, elements, listOf,
+                                                   suchThat, (==>))
 import           Test.QuickCheck.Arbitrary        (Arbitrary, arbitrary)
 import           Test.QuickCheck.Instances        ()
-import           ZoomHub.Types.Internal.ContentId (ContentId, fromString)
-
+import           ZoomHub.Types.Internal.ContentId (ContentId, fromString,
+                                                   isValid, unId, validChars)
 
 instance Arbitrary ContentId where
   arbitrary = do
-    validId <- listOf $ elements $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9']
+    validId <- suchThat (listOf . elements $ validChars) isValid
     return $ fromString validId
 
-prop_invertible :: ContentId -> Bool
-prop_invertible x = (decode . encode) x == Just x
+prop_invertible :: ContentId -> Property
+prop_invertible x = (isValid $ unId x) ==> (decode . encode) x == Just x
