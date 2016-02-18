@@ -66,7 +66,9 @@ contentById dataPath contentId = do
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
     Just content -> return $ fromInternal content
-  where error404message = "No content with ID: " <> (BLC.pack $ unId contentId)
+  where
+    error404message = "No content with ID: " <> rawContentId
+    rawContentId = BLC.pack $ unId contentId
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
