@@ -37,11 +37,10 @@ lastIdWriteInterval = 5 * 10^(6 :: Int) -- microseconds
 
 readLastId :: String -> IO Integer
 readLastId dataPath = do
-  r <- tryJust doesNotExistGuard $ readFile (lastIdPath dataPath)
+  r <- tryJust (guard . isDoesNotExistError) $ readFile (lastIdPath dataPath)
   return $ case r of
     Left _       -> 0
     Right lastId -> read lastId
-  where doesNotExistGuard = guard . isDoesNotExistError
 
 writeLastId :: String -> TVar Integer -> Int -> IO ()
 writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
