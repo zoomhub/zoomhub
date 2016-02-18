@@ -7,7 +7,7 @@ dependencies:
     - sudo apt-get update && sudo apt-get install stack -y
   override:
     - stack setup
-    - stack build
+    - stack build --ghc-options="-Wall -Werror"
   post:
     - ./deployment/keter-bundle.sh
     - cp zoomhub.keter $CIRCLE_ARTIFACTS
