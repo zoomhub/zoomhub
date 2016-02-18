@@ -42,6 +42,7 @@ library
     , atomic-write
     , base >= 4.8 && < 5
     , bytestring
+    , containers
     , cryptonite == 0.10.*
     , directory
     , either
