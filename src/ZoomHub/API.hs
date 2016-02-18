@@ -36,7 +36,7 @@ type Handler a = EitherT ServantErr IO a
 type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx
-       "welcome" :> Get '[JSON] String
+       "health" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
   :<|> Capture "viewId" ContentId :> Get '[HTML] Content
@@ -47,7 +47,7 @@ api :: Proxy API
 api = Proxy
 
 server :: Config -> Server API
-server config = welcome
+server config = health
            :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
            :<|> viewContentById (Config.dataPath config)
@@ -57,8 +57,8 @@ app :: Config -> Application
 app config = serve api (server config)
 
 -- Handlers
-welcome :: Handler String
-welcome = return "Welcome to ZoomHub."
+health :: Handler String
+health = return "up"
 
 contentById :: FilePath -> ContentId -> Handler Content
 contentById dataPath contentId = do
