@@ -92,6 +92,21 @@ styles = concatPretty [
     "}"
  ]
 
+-- TODO: Improve how we represent analytics code.
+-- TODO: Pass through `UA-XXXXXXXX-X` Google Analytics ID.
+analyticsScript :: T.Text
+analyticsScript = concatPretty [
+    "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){",
+    "(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),",
+    "m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)",
+    "})(window,document,'script','//www.google-analytics.com/analytics.js','ga');",
+    "",
+    "ga('create', 'UA-55808703-1', 'auto');",
+    "ga('_setDomainName', 'zoomhub.net');",
+    "ga('_setAllowLinker', true);",
+    "ga('send', 'pageview');"
+  ]
+
 -- TODO: Pass through host:
 instance ToHtml Content where
   toHtml content =
@@ -100,6 +115,7 @@ instance ToHtml Content where
                      meta_ [name_ "viewport",
                             content_ "width=device-width, initial-scale=1"]
                      style_ styles
+                     script_ analyticsScript
                      )
            body_ $ script_ [src_ scriptURL] ("" :: T.Text)
     where
