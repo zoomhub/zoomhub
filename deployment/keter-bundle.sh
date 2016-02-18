@@ -3,6 +3,7 @@
 # Creates Keter bundle of app.
 # See: https://github.com/snoyberg/keter#bundles
 
+APP_VERSION=${CIRCLE_SHA1:-unknown}
 
 # Find app binary:
 zoomhub=$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')
@@ -21,7 +22,8 @@ cp -R scripts .keter-bundle
 
 # Create bundle:
 cd .keter-bundle
-tar czfv zoomhub.keter zoomhub public config scripts
+echo "$APP_VERSION" > version.txt
+tar czfv zoomhub.keter zoomhub public config scripts version.txt
 cd -
 
 # Move bundle to root:

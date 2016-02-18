@@ -13,6 +13,7 @@ module ZoomHub.Config
   , rackspace
   , raxApiKey
   , raxUsername
+  , version
   ) where
 
 import           Control.Concurrent.STM (TChan, TVar)
@@ -34,6 +35,7 @@ data Config = Config
   , port       :: Integer
   , publicPath :: FilePath
   , rackspace  :: RackspaceConfig
+  , version    :: String
   }
 
 -- Config: Rackspace
