@@ -50,6 +50,7 @@ library
     , filepath
     , hashids
     , http-client
+    , http-types
     , lens == 4.13.*
     , lens-aeson == 1.*
     , lucid
