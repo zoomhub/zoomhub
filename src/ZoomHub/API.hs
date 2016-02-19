@@ -27,6 +27,7 @@ import           ZoomHub.Storage.File             (create, getById, getByURL)
 import           ZoomHub.Types.Content            (Content, fromInternal)
 import qualified ZoomHub.Types.Internal.Content   as Internal
 import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
+import           ZoomHub.Types.Embed              (Embed)
 
 
 -- Servant default handler type
@@ -40,6 +41,7 @@ type API =
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
+  :<|> Capture "embed" Embed :> Get '[HTML] Embed
   :<|> Capture "viewId" ContentId :> Get '[HTML] Content
   :<|> Raw
 
@@ -52,6 +54,7 @@ server config = health
            :<|> version (Config.version config)
            :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
+           :<|> embed
            :<|> viewContentById (Config.dataPath config)
            :<|> serveDirectory (Config.publicPath config)
 
@@ -93,6 +96,9 @@ contentByURL config maybeURL = case maybeURL of
             -- HACK: Redirect using error: http://git.io/vBCz9
             errHeaders = [("Location", location)]
           }
+
+embed :: Embed -> Handler Embed
+embed = return
 
 viewContentById :: FilePath -> ContentId -> Handler Content
 viewContentById dataPath contentId = do
