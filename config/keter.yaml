@@ -6,6 +6,9 @@ stanzas:
       - openzoom.net
       - openzoom.org
       - teamteam.team
+      - v2.zoomhub.net
+      - v2.zoomhub.org
+      - v2.zoom.it
     env:
       DATA_PATH: '/mnt/datavolume/zoomhub/data'
       HASHIDS_SALT: 'CHANGE-ME-IN-PRODUCTION'
