@@ -20,7 +20,7 @@ data DeepZoomImage = DeepZoomImage
   , dziHeight      :: Integer
   , dziTileSize    :: Integer
   , dziTileOverlap :: Integer
-  , dziTileFormat  :: String
+  , dziTileFormat  :: String -- TODO: Introduce type
   } deriving (Eq, Show, Generic)
 
 -- JSON
