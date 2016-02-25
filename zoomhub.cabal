@@ -29,6 +29,7 @@ library
     , ZoomHub.Types.Content
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.Embed
+    , ZoomHub.Types.EmbedParam
     , ZoomHub.Types.Internal.Content
     , ZoomHub.Types.Internal.ContentId
     , ZoomHub.Types.Internal.DeepZoomImage
