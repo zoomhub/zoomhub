@@ -6,28 +6,38 @@ module ZoomHub.API
   ( app
   ) where
 
-import           Control.Monad.IO.Class           (liftIO)
-import           Control.Monad.Trans.Either       (EitherT, left)
-import qualified Data.ByteString.Char8            as BC
-import qualified Data.ByteString.Lazy.Char8       as BLC
-import           Data.Monoid                      ((<>))
-import           Data.Proxy                       (Proxy (Proxy))
-import           Network.Wai                      (Application)
-import           Servant                          ((:<|>) (..), (:>), Capture,
-                                                   Get, JSON, QueryParam, Raw,
-                                                   ServantErr, Server, err301,
-                                                   err400, err404, errBody,
-                                                   errHeaders, serve,
-                                                   serveDirectory)
-import           Servant.HTML.Lucid               (HTML)
+import           Control.Monad.IO.Class               (liftIO)
+import           Control.Monad.Trans.Either           (EitherT, left)
+import qualified Data.ByteString.Char8                as BC
+import qualified Data.ByteString.Lazy.Char8           as BLC
+import           Data.Monoid                          ((<>))
+import           Data.Proxy                           (Proxy (Proxy))
+import           Network.Wai                          (Application)
+import           Servant                              ((:<|>) (..), (:>),
+                                                       Capture, Get, JSON,
+                                                       QueryParam, Raw,
+                                                       ServantErr, Server,
+                                                       err301, err400, err404,
+                                                       errBody, errHeaders,
+                                                       serve, serveDirectory)
+import           Servant.HTML.Lucid                   (HTML)
 
-import           ZoomHub.Config                   (Config)
-import qualified ZoomHub.Config                   as Config
-import           ZoomHub.Storage.File             (create, getById, getByURL)
-import           ZoomHub.Types.Content            (Content, fromInternal)
-import qualified ZoomHub.Types.Internal.Content   as Internal
-import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
-import           ZoomHub.Types.Embed              (Embed)
+import           ZoomHub.Config                       (Config)
+import qualified ZoomHub.Config                       as Config
+import           ZoomHub.Storage.File                 (create, getById,
+                                                       getByURL)
+import           ZoomHub.Types.Content                (Content, fromInternal)
+import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
+import           ZoomHub.Types.EmbedParam             (EmbedParam,
+                                                       embedParamContentId,
+                                                       embedParamHeight,
+                                                       embedParamWidth)
+import qualified ZoomHub.Types.Internal.Content       as Internal
+import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
+import           ZoomHub.Types.Internal.DeepZoomImage (dziHeight, dziTileFormat,
+                                                       dziTileOverlap,
+                                                       dziTileSize, dziWidth)
+import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
 
 
 -- Servant default handler type
@@ -41,7 +51,7 @@ type API =
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
-  :<|> Capture "embed" Embed :> Get '[HTML] Embed
+  :<|> Capture "embed" EmbedParam :> Get '[HTML] Embed
   :<|> Capture "viewId" ContentId :> Get '[HTML] Content
   :<|> Raw
 
@@ -54,7 +64,7 @@ server config = health
            :<|> version (Config.version config)
            :<|> contentById (Config.dataPath config)
            :<|> contentByURL config
-           :<|> embed
+           :<|> embed (Config.openseadragonScript config)
            :<|> viewContentById (Config.dataPath config)
            :<|> serveDirectory (Config.publicPath config)
 
@@ -97,8 +107,20 @@ contentByURL config maybeURL = case maybeURL of
             errHeaders = [("Location", location)]
           }
 
-embed :: Embed -> Handler Embed
-embed = return
+embed :: String -> EmbedParam -> Handler Embed
+embed script param =
+  return $ mkEmbed cId script dzi width height
+  where
+    cId = embedParamContentId param
+    width = embedParamWidth param
+    height = embedParamHeight param
+    dzi = Internal.DeepZoomImage
+      { dziWidth = 1000
+      , dziHeight = 1000
+      , dziTileSize = 254
+      , dziTileOverlap = 1
+      , dziTileFormat = "jpg"
+      }
 
 viewContentById :: FilePath -> ContentId -> Handler Content
 viewContentById dataPath contentId = do
