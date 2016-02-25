@@ -8,6 +8,7 @@ module ZoomHub.Config
   , encodeId
   , jobs
   , lastId
+  , openseadragonScript
   , port
   , publicPath
   , rackspace
@@ -23,19 +24,19 @@ import           System.Envy            (DefConfig, FromEnv, Option (..),
                                          dropPrefixCount, fromEnv,
                                          gFromEnvCustom)
 
-
 defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { dataPath   :: FilePath
-  , encodeId   :: Integer -> String
-  , jobs       :: TChan String
-  , lastId     :: TVar Integer
-  , port       :: Integer
-  , publicPath :: FilePath
-  , rackspace  :: RackspaceConfig
-  , version    :: String
+  { dataPath            :: FilePath
+  , encodeId            :: Integer -> String
+  , jobs                :: TChan String
+  , lastId              :: TVar Integer
+  , openseadragonScript :: String
+  , port                :: Integer
+  , publicPath          :: FilePath
+  , rackspace           :: RackspaceConfig
+  , version             :: String
   }
 
 -- Config: Rackspace
