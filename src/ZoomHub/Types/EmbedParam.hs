@@ -10,8 +10,6 @@ module ZoomHub.Types.EmbedParam
   , embedParamHeight
   ) where
 
-import           Prelude                          hiding (fromInteger)
-
 import qualified Data.ByteString.Char8            as BC
 import qualified Data.Text                        as T
 import           GHC.Generics                     (Generic)
