@@ -38,6 +38,7 @@ import           ZoomHub.Types.Internal.DeepZoomImage (dziHeight, dziTileFormat,
                                                        dziTileOverlap,
                                                        dziTileSize, dziWidth)
 import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
+import           ZoomHub.Types.Internal.JavaScript    (JavaScript)
 
 
 -- Servant default handler type
@@ -51,7 +52,7 @@ type API =
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
-  :<|> Capture "embed" EmbedParam :> Get '[HTML] Embed
+  :<|> Capture "embed" EmbedParam :> Get '[JavaScript] Embed
   :<|> Capture "viewId" ContentId :> Get '[HTML] Content
   :<|> Raw
 
@@ -109,7 +110,8 @@ contentByURL config maybeURL = case maybeURL of
 
 embed :: String -> EmbedParam -> Handler Embed
 embed script param =
-  return $ mkEmbed cId script dzi width height
+  -- TODO: Use random number for `embedId`:
+  return $ mkEmbed 1 cId script dzi width height
   where
     cId = embedParamContentId param
     width = embedParamWidth param
