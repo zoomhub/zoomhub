@@ -52,6 +52,7 @@ library
     , filepath
     , hashids
     , http-client
+    , http-media
     , http-types
     , lens == 4.13.*
     , lens-aeson == 1.*
