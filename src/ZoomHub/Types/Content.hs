@@ -77,20 +77,20 @@ concatPretty = T.concat . intersperse "\n"
 
 -- TODO: Improve how we represent inline styles.
 styles :: T.Text
-styles = concatPretty [
-    "html, body {",
-    "  background-color: #000;",
-    "  color: #fff;",
-    "  font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;",
-    "  height: 100%;",
-    "  margin: 0;",
-    "  padding: 0;",
-    "}",
-    "",
-    ".__seadragon {",
-    "  height: 100% !important;",
-    "}"
- ]
+styles = concatPretty
+  [ "html, body {"
+  , "  background-color: #000;"
+  , "  color: #fff;"
+  , "  font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;"
+  , "  height: 100%;"
+  , "  margin: 0;"
+  , "  padding: 0;"
+  , "}"
+  , ""
+  , ".__seadragon {"
+  , "  height: 100% !important;"
+  , "}"
+  ]
 
 -- TODO: Improve how we represent analytics code.
 -- TODO: Pass through `UA-XXXXXXXX-X` Google Analytics ID.
