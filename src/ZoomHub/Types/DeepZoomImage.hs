@@ -3,6 +3,7 @@
 
 module ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage(DeepZoomImage)
+  , DeepZoomImageURI(DeepZoomImageURI)
   , dziHeight
   , dziTileFormat
   , dziTileOverlap
@@ -13,20 +14,24 @@ module ZoomHub.Types.DeepZoomImage
   , mkDeepZoomImage
   ) where
 
-import           Data.Aeson                           (FromJSON, ToJSON,
-                                                       genericParseJSON,
-                                                       genericToJSON, parseJSON,
-                                                       toJSON)
+import           Data.Aeson                           (ToJSON, Value (String),
+                                                       genericToJSON, toJSON)
 import           Data.Aeson.Casing                    (aesonPrefix, camelCase)
+import           Data.Maybe                           (fromJust)
+import qualified Data.Text                            as T
 import           GHC.Generics                         (Generic)
+import           Network.URI                          (URI,
+                                                       parseRelativeReference,
+                                                       relativeTo)
 
+import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI,
+                                                       unContentBaseURI)
 import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
 import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
 
-type URL = String
 
 data DeepZoomImage = DeepZoomImage
-  { dziUrl         :: String
+  { dziUrl         :: DeepZoomImageURI
   , dziWidth       :: Integer
   , dziHeight      :: Integer
   , dziTileSize    :: Integer
@@ -34,26 +39,30 @@ data DeepZoomImage = DeepZoomImage
   , dziTileFormat  :: String
   } deriving (Eq, Show, Generic)
 
-fromInternal :: ContentId -> Internal.DeepZoomImage -> DeepZoomImage
-fromInternal cId dzi = DeepZoomImage
-  -- TODO: Make hostname dynamic:
-  { dziUrl = "http://content.zoomhub.net/dzis/" ++ unId cId ++ ".dzi"
+fromInternal :: ContentBaseURI ->
+                ContentId ->
+                Internal.DeepZoomImage ->
+                DeepZoomImage
+fromInternal baseURI cId dzi = DeepZoomImage
+  { dziUrl = DeepZoomImageURI (dziPath `relativeTo` unContentBaseURI baseURI)
   , dziWidth = Internal.dziWidth dzi
   , dziHeight = Internal.dziHeight dzi
   , dziTileSize = Internal.dziTileSize dzi
   , dziTileOverlap = Internal.dziTileOverlap dzi
   , dziTileFormat = Internal.dziTileFormat dzi
   }
+  where
+    dziPath = fromJust . parseRelativeReference $ "/dzis/" ++ unId cId ++ ".dzi"
 
-mkDeepZoomImage :: URL ->
+mkDeepZoomImage :: DeepZoomImageURI ->
                    Integer ->
                    Integer ->
                    Integer ->
                    Integer ->
                    String ->
                    DeepZoomImage
-mkDeepZoomImage url width height tileSize tileOverlap tileFormat = DeepZoomImage
-  { dziUrl = url
+mkDeepZoomImage uri width height tileSize tileOverlap tileFormat = DeepZoomImage
+  { dziUrl = uri
   , dziWidth = width
   , dziHeight = height
   , dziTileSize = tileSize
@@ -64,5 +73,13 @@ mkDeepZoomImage url width height tileSize tileOverlap tileFormat = DeepZoomImage
 -- JSON
 instance ToJSON DeepZoomImage where
    toJSON = genericToJSON $ aesonPrefix camelCase
-instance FromJSON DeepZoomImage where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
+
+-- Types
+newtype DeepZoomImageURI = DeepZoomImageURI { unDeepZoomImageURI :: URI }
+  deriving (Eq)
+
+instance Show DeepZoomImageURI where
+  show = show . unDeepZoomImageURI
+
+instance ToJSON DeepZoomImageURI where
+  toJSON = String . T.pack . show . unDeepZoomImageURI

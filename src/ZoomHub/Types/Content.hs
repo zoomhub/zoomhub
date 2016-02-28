@@ -1,18 +1,17 @@
--- HACK: Allow `ToJSON URI` instance:
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.Content
   ( Content
-  , contentId
-  , contentUrl
-  , contentReady
-  , contentFailed
-  , contentProgress
+  , ContentShareURI
   , contentDzi
+  , contentFailed
+  , contentId
+  , contentProgress
+  , contentReady
+  , contentUrl
   , fromInternal
+  , unContentShareURI
   ) where
 
 import           Data.Aeson                       (ToJSON, Value (String),
@@ -29,6 +28,8 @@ import           Lucid                            (ToHtml, body_, content_,
 import           Network.URI                      (URI, parseRelativeReference,
                                                    relativeTo)
 
+import           ZoomHub.Types.BaseURI            (BaseURI, unBaseURI)
+import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI)
 import           ZoomHub.Types.DeepZoomImage      (DeepZoomImage)
 import qualified ZoomHub.Types.DeepZoomImage      as DZ
 import qualified ZoomHub.Types.Internal.Content   as Internal
@@ -42,40 +43,32 @@ data Content = Content
   , contentReady     :: Bool
   , contentFailed    :: Bool
   , contentProgress  :: Float
-  , contentShareUrl  :: URI
+  , contentShareUrl  :: ContentShareURI
   , contentEmbedHtml :: String
   , contentDzi       :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
 -- Constructor
-fromInternal :: URI -> Internal.Content -> Content
-fromInternal host c = Content
+fromInternal :: BaseURI -> ContentBaseURI -> Internal.Content -> Content
+fromInternal baseURI contentBaseURI c = Content
   { contentId = cId
   , contentUrl = Internal.contentUrl c
   , contentReady = Internal.contentReady c
   , contentFailed = Internal.contentFailed c
   , contentProgress = Internal.contentProgress c
-  , contentShareUrl = shareURL
-  , contentEmbedHtml = embedHtml
+  , contentShareUrl = shareURI
+  , contentEmbedHtml = embedHTML
   , contentDzi = dzi
   }
   where
     cId = Internal.contentId c
-    shareURL = (fromJust . parseRelativeReference $ unId cId) `relativeTo` host
-    embedHtml = concat
-      ["<script src=\""
-      , show shareURL
-      , ".js?width=auto&height=400px\">"
-      , "</script>"
-      ]
-    dzi = DZ.fromInternal cId <$> Internal.contentDzi c
+    shareURI = ContentShareURI $ sharePathURI `relativeTo` unBaseURI baseURI
+    sharePathURI = fromJust . parseRelativeReference $ unId cId
+    scriptSource = show shareURI ++ ".js?width=auto&height=400px"
+    embedHTML = "<script src=\"" ++ scriptSource ++ "\"></script>"
+    dzi = DZ.fromInternal contentBaseURI cId <$> Internal.contentDzi c
 
 -- JSON
--- HACK: Orphan instance, see:
--- https://www.reddit.com/r/haskell/comments/1prg4q/ghc_wall_orphan_instance/
-instance ToJSON URI where
-  toJSON = String . T.pack . show
-
 instance ToJSON Content where
    toJSON = genericToJSON $ aesonPrefix camelCase
 
@@ -134,3 +127,13 @@ instance ToHtml Content where
       cId = T.pack . unId $ contentId content
 
   toHtmlRaw = toHtml
+
+-- Types
+newtype ContentShareURI = ContentShareURI { unContentShareURI :: URI }
+  deriving Eq
+
+instance Show ContentShareURI where
+  show = show . unContentShareURI
+
+instance ToJSON ContentShareURI where
+  toJSON = String . T.pack . show . unContentShareURI

@@ -11,7 +11,7 @@ import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
 import           Control.Monad.IO.Class           (liftIO)
 import qualified Data.ByteString.Char8            as BC
-import           Data.Maybe                       (fromMaybe, fromJust)
+import           Data.Maybe                       (fromJust, fromMaybe)
 import           Network.URI                      (parseAbsoluteURI)
 import           Network.Wai.Handler.Warp         (run)
 import           System.AtomicWrite.Writer.String (atomicWriteFile)
@@ -24,6 +24,8 @@ import           Web.Hashids                      (encode, hashidsSimple)
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
+import           ZoomHub.Types.BaseURI            (BaseURI (BaseURI))
+import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI (ContentBaseURI))
 -- import           ZoomHub.Pipeline                 (process)
 
 
@@ -87,8 +89,10 @@ main = do
       port = maybe defaultPort read maybePort
       defaultBaseURI =
         fromJust . parseAbsoluteURI $ "http://localhost:" ++ show port
-      baseURI = fromMaybe defaultBaseURI $
+      baseURI = BaseURI $ fromMaybe defaultBaseURI $
         maybe Nothing parseAbsoluteURI maybeBaseURI
+      contentBaseURI = ContentBaseURI $
+        fromJust . parseAbsoluteURI $ "http://content.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath maybePublicPath
   case (maybeHashidsSalt, maybeRaxConfig) of
