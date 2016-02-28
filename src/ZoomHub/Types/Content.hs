@@ -121,6 +121,7 @@ instance ToHtml Content where
       emptyBody :: T.Text
       emptyBody = ""
 
-      scriptURL = "http://zoom.it/" <> cId <> ".js?width=auto&height=400px"
+      scriptURL = "/" <> cId <> ".js?width=auto&height=100%"
       cId = T.pack . unId $ contentId content
+
   toHtmlRaw = toHtml
