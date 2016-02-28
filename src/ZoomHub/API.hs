@@ -6,36 +6,33 @@ module ZoomHub.API
   ( app
   ) where
 
-import           Control.Monad.IO.Class               (liftIO)
-import           Control.Monad.Trans.Either           (EitherT, left)
-import qualified Data.ByteString.Char8                as BC
-import qualified Data.ByteString.Lazy.Char8           as BLC
-import           Data.Monoid                          ((<>))
-import           Data.Proxy                           (Proxy (Proxy))
-import           Network.Wai                          (Application)
-import           Servant                              ((:<|>) (..), (:>),
-                                                       Capture, Get, JSON,
-                                                       QueryParam, Raw,
-                                                       ServantErr, Server,
-                                                       err301, err400, err404,
-                                                       errBody, errHeaders,
-                                                       serve, serveDirectory)
-import           Servant.HTML.Lucid                   (HTML)
-import           System.Random                        (randomIO)
+import           Control.Monad.IO.Class           (liftIO)
+import           Control.Monad.Trans.Either       (EitherT, left)
+import qualified Data.ByteString.Char8            as BC
+import qualified Data.ByteString.Lazy.Char8       as BLC
+import           Data.Maybe                       (fromMaybe)
+import           Data.Monoid                      ((<>))
+import           Data.Proxy                       (Proxy (Proxy))
+import           Network.Wai                      (Application)
+import           Servant                          ((:<|>) (..), (:>), Capture,
+                                                   Get, JSON, QueryParam, Raw,
+                                                   ServantErr, Server, err301,
+                                                   err400, err404, errBody,
+                                                   errHeaders, serve,
+                                                   serveDirectory)
+import           Servant.HTML.Lucid               (HTML)
+import           System.Random                    (randomIO)
 
-import           ZoomHub.API.ContentTypes             (JavaScript)
-import           ZoomHub.Config                       (Config)
-import qualified ZoomHub.Config                       as Config
-import           ZoomHub.Storage.File                 (create, getById,
-                                                       getByURL)
-import           ZoomHub.Types.Content                (Content, fromInternal)
-import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
-import           ZoomHub.Types.EmbedParam             (EmbedParam,
-                                                       embedParamContentId,
-                                                       embedParamHeight,
-                                                       embedParamWidth)
-import qualified ZoomHub.Types.Internal.Content       as Internal
-import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
+import           ZoomHub.API.ContentTypes         (JavaScript)
+import           ZoomHub.Config                   (Config)
+import qualified ZoomHub.Config                   as Config
+import           ZoomHub.Storage.File             (create, getById, getByURL)
+import           ZoomHub.Types.Content            (Content, fromInternal)
+import           ZoomHub.Types.Embed              (Embed, mkEmbed)
+import           ZoomHub.Types.EmbedDimension     (EmbedDimension)
+import           ZoomHub.Types.EmbedId            (EmbedId, unEmbedId)
+import qualified ZoomHub.Types.Internal.Content   as Internal
+import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
 
 
 -- Servant default handler type
@@ -49,7 +46,11 @@ type API =
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
-  :<|> Capture "embed" EmbedParam :> Get '[JavaScript] Embed
+  :<|> Capture "id" EmbedId
+       :> QueryParam "id" String
+       :> QueryParam "width" EmbedDimension
+       :> QueryParam "height" EmbedDimension
+       :> Get '[JavaScript] Embed
   :<|> Capture "viewId" ContentId :> Get '[HTML] Content
   :<|> Raw
 
@@ -106,23 +107,27 @@ contentByURL config maybeURL = case maybeURL of
             errHeaders = [("Location", location)]
           }
 
-embed :: FilePath -> String -> EmbedParam -> Handler Embed
-embed dataPath script param = do
+embed :: FilePath ->
+         String ->
+         EmbedId ->
+         Maybe String ->
+         Maybe EmbedDimension ->
+         Maybe EmbedDimension ->
+         Handler Embed
+embed dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
     Just content -> do
       -- TODO: Why do we even enforce having an element ID for embed?
       randomId <- liftIO (randomIO :: IO Int)
-      let eId = namespace ++ "-" ++ show (abs randomId)
-      return $ mkEmbed eId (fromInternal content) script width height
+      let defaultEmbedId = namespace ++ "-" ++ show (abs randomId)
+          embedId = fromMaybe defaultEmbedId maybeId
+      return $ mkEmbed embedId (fromInternal content) script width height
   where
-    error404message = "No content with ID: " <> rawContentId
-    rawContentId = BLC.pack $ unId contentId
+    contentId = unEmbedId embedId
+    error404message = "No content with ID: " <> BLC.pack (unId contentId)
     namespace = "__zoomhub"
-    contentId = embedParamContentId param
-    width = embedParamWidth param
-    height = embedParamHeight param
 
 viewContentById :: FilePath -> ContentId -> Handler Content
 viewContentById dataPath contentId = do
