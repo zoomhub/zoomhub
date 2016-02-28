@@ -31,6 +31,7 @@ library
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.Embed
     , ZoomHub.Types.EmbedParam
+    , ZoomHub.Types.OpenSeadragonTileSource
     , ZoomHub.Types.Internal.Content
     , ZoomHub.Types.Internal.ContentId
     , ZoomHub.Types.Internal.DeepZoomImage
