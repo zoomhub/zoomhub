@@ -31,7 +31,6 @@ data EmbedParam = EmbedParam
 
 fromString :: String -> Maybe EmbedParam
 fromString s = case maybeContentId of
-    Nothing -> Nothing
     Just embedParamContentId ->
       Just EmbedParam
         { embedParamContentId
@@ -39,6 +38,7 @@ fromString s = case maybeContentId of
         , embedParamId
         , embedParamWidth
         }
+    _ -> Nothing
   where
     embedParamId = Nothing     -- TODO
     embedParamWidth = Nothing  -- TODO
