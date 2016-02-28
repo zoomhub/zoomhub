@@ -6,7 +6,6 @@ module ZoomHub.Types.Internal.ContentId
   , fromInteger
   , fromString
   , isValid
-  , minimumLength
   , unId
   , validChars
   ) where
@@ -41,9 +40,6 @@ fromString s
   | otherwise = error $ "Invalid content ID '" ++ s ++ "'." ++
     " Valid characters: " ++ intersperse ',' validChars ++ "."
 
-minimumLength :: Int
-minimumLength = 4
-
 -- NOTE: Duplicated from `hashids`: https://git.io/vgpT4
 -- TODO: Use this for `hashids` initialization.
 validChars :: [Char]
@@ -53,7 +49,7 @@ validCharsSet :: S.Set Char
 validCharsSet = S.fromList validChars
 
 isValid :: String -> Bool
-isValid s = length s >= minimumLength && all ((flip S.member) validCharsSet) s
+isValid s = all ((flip S.member) validCharsSet) s
 
 -- Text
 instance FromText ContentId where
