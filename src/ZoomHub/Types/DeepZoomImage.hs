@@ -1,8 +1,10 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage(DeepZoomImage)
   , fromInternal
+  , mkDeepZoomImage
   ) where
 
 import           Data.Aeson                           (FromJSON, ToJSON,
@@ -15,6 +17,7 @@ import           GHC.Generics                         (Generic)
 import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
 import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
 
+type URL = String
 
 data DeepZoomImage = DeepZoomImage
   { dziUrl         :: String
@@ -34,6 +37,22 @@ fromInternal cId dzi = DeepZoomImage
   , dziTileSize = Internal.dziTileSize dzi
   , dziTileOverlap = Internal.dziTileOverlap dzi
   , dziTileFormat = Internal.dziTileFormat dzi
+  }
+
+mkDeepZoomImage :: URL ->
+                   Integer ->
+                   Integer ->
+                   Integer ->
+                   Integer ->
+                   String ->
+                   DeepZoomImage
+mkDeepZoomImage url width height tileSize tileOverlap tileFormat = DeepZoomImage
+  { dziUrl = url
+  , dziWidth = width
+  , dziHeight = height
+  , dziTileSize = tileSize
+  , dziTileOverlap = tileOverlap
+  , dziTileFormat = tileFormat
   }
 
 -- JSON
