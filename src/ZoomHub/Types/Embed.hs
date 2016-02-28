@@ -7,20 +7,25 @@ module ZoomHub.Types.Embed
   ( Embed
   , EmbedDimension(..)
   , embedBody
-  , embedContentId
-  , embedDZI
+  , embedContent
   , embedHeight
   , embedWidth
   , mkEmbed
   ) where
 
-import           Data.List                            (intercalate)
-import           Data.Maybe                           (fromMaybe)
-import           GHC.Generics                         (Generic)
+import           Data.Aeson                              (encode)
+import qualified Data.ByteString.Lazy.Char8              as BLC
+import           Data.List                               (intercalate)
+import           Data.Maybe                              (fromMaybe)
+import qualified Data.Text                               as T
+import           GHC.Generics                            (Generic)
+import           System.FilePath.Posix                   (dropExtension)
 
-import           ZoomHub.API.ContentTypes             (ToJS, toJS)
-import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
-import           ZoomHub.Types.Internal.DeepZoomImage
+import           ZoomHub.API.ContentTypes                (ToJS, toJS)
+import           ZoomHub.Types.Content                   (Content, contentDzi)
+import           ZoomHub.Types.DeepZoomImage             (mkDeepZoomImage)
+import           ZoomHub.Types.OpenSeadragonTileSource   (fromDeepZoomImage)
+import           ZoomHub.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
 
 
 -- Constants
@@ -51,22 +56,20 @@ toCSS Auto = "auto"
 toCSS (Pixels n) = show n ++ "px"
 
 data Embed = Embed
-  { embedBody      :: String
-  , embedContentId :: ContentId
-  , embedDZI       :: DeepZoomImage
-  , embedHeight    :: Maybe EmbedDimension
-  , embedId        :: String
-  , embedWidth     :: Maybe EmbedDimension
+  { embedBody    :: String
+  , embedContent :: Content
+  , embedHeight  :: Maybe EmbedDimension
+  , embedId      :: String
+  , embedWidth   :: Maybe EmbedDimension
   } deriving (Eq, Generic, Show)
 
 mkEmbed :: String ->
-           ContentId ->
+           Content ->
            String ->
-           DeepZoomImage ->
            Maybe EmbedDimension ->
            Maybe EmbedDimension ->
            Embed
-mkEmbed embedId embedContentId embedBody embedDZI embedWidth embedHeight =
+mkEmbed embedId embedContent embedBody embedWidth embedHeight =
   Embed{..}
 
 -- HTML
@@ -93,9 +96,13 @@ instance ToJS Embed where
         ]
       wrapper = concatPretty
         [ "(function () {"
-        , "    document.write('" ++ html ++ "'});"
-        , "    OpenSeadragon({});"
+        , "    document.write('" ++ html ++ "');"
+        , "    OpenSeadragon(" ++ BLC.unpack (encode viewerConfig) ++ ");"
         , "}());"
         ]
-      cId = unId . embedContentId $ embed
       script = embedBody embed
+      maybeDZI = contentDzi . embedContent $ embed
+      queuedDZI =
+        mkDeepZoomImage "http://zoom.it/static/queued.dzi" 1592 652 254 1 "jpg"
+      tileSource = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
+      viewerConfig = mkOpenSeadragonViewerConfig (embedId embed) tileSource

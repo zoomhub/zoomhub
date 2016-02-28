@@ -39,7 +39,6 @@ import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
 import           ZoomHub.Types.Internal.DeepZoomImage (dziHeight, dziTileFormat,
                                                        dziTileOverlap,
                                                        dziTileSize, dziWidth)
-import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
 
 
 -- Servant default handler type
@@ -66,7 +65,7 @@ server config = health
            :<|> version (Config.version config)
            :<|> contentById dataPath
            :<|> contentByURL config
-           :<|> embed (Config.openseadragonScript config)
+           :<|> embed dataPath (Config.openseadragonScript config)
            :<|> viewContentById dataPath
            :<|> serveDirectory (Config.publicPath config)
   where dataPath = Config.dataPath config
@@ -110,24 +109,23 @@ contentByURL config maybeURL = case maybeURL of
             errHeaders = [("Location", location)]
           }
 
-embed :: String -> EmbedParam -> Handler Embed
-embed script param = do
-  -- TODO: Why do we even enforce having an element ID for embed?
-  randomId <- liftIO (randomIO :: IO Int)
-  let eId = namespace ++ "-" ++ show (abs randomId)
-  return $ mkEmbed eId cId script dzi width height
+embed :: FilePath -> String -> EmbedParam -> Handler Embed
+embed dataPath script param = do
+  maybeContent <- liftIO $ getById dataPath contentId
+  case maybeContent of
+    Nothing      -> left err404{ errBody = error404message }
+    Just content -> do
+      -- TODO: Why do we even enforce having an element ID for embed?
+      randomId <- liftIO (randomIO :: IO Int)
+      let eId = namespace ++ "-" ++ show (abs randomId)
+      return $ mkEmbed eId (fromInternal content) script width height
   where
+    error404message = "No content with ID: " <> rawContentId
+    rawContentId = BLC.pack $ unId contentId
     namespace = "__zoomhub"
-    cId = embedParamContentId param
+    contentId = embedParamContentId param
     width = embedParamWidth param
     height = embedParamHeight param
-    dzi = Internal.DeepZoomImage
-      { dziWidth = 1000
-      , dziHeight = 1000
-      , dziTileSize = 254
-      , dziTileOverlap = 1
-      , dziTileFormat = "jpg"
-      }
 
 viewContentById :: FilePath -> ContentId -> Handler Content
 viewContentById dataPath contentId = do
