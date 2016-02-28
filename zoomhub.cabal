@@ -59,6 +59,7 @@ library
     , lens-aeson == 1.*
     , lucid
     , process
+    , random
     , servant == 0.4.*
     , servant-lucid == 0.4.*
     , servant-server == 0.4.*
