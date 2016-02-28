@@ -21,7 +21,7 @@ import           Servant                          ((:<|>) (..), (:>), Capture,
                                                    errHeaders, serve,
                                                    serveDirectory)
 import           Servant.HTML.Lucid               (HTML)
-import           System.Random                    (randomIO)
+import           System.Random                    (randomRIO)
 
 import           ZoomHub.API.ContentTypes         (JavaScript)
 import           ZoomHub.Config                   (Config)
@@ -119,14 +119,15 @@ embed dataPath script embedId maybeId width height = do
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
     Just content -> do
-      randomId <- liftIO (randomIO :: IO Int)
-      let defaultContainerId = namespace ++ "-" ++ show (abs randomId)
-          containerId = fromMaybe defaultContainerId maybeId
+      let randomIdRange = (100000, 999999) :: (Int, Int)
+      randomId <- liftIO $ randomRIO randomIdRange
+      let containerId = fromMaybe (defaultContainerId randomId) maybeId
       return $ mkEmbed containerId (fromInternal content) script width height
   where
     contentId = unEmbedId embedId
     error404message = "No content with ID: " <> BLC.pack (unId contentId)
-    namespace = "__zoomhub"
+    defaultContainerId n = "zoomhub-embed-" ++ show n
+
 
 viewContentById :: FilePath -> ContentId -> Handler Content
 viewContentById dataPath contentId = do
