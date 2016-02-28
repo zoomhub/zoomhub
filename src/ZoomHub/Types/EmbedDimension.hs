@@ -10,8 +10,11 @@ import           Safe      (readMay)
 import           Servant   (FromText, fromText)
 
 -- Type
-data EmbedDimension = Zero | Auto | Pixels Integer | Percentage Integer
-  deriving (Eq, Show)
+data EmbedDimension = Zero
+                    | Auto
+                    | Pixels Integer
+                    | Percentage Integer
+                    deriving (Eq, Show)
 
 toCSSValue :: EmbedDimension -> String
 toCSSValue Auto = "auto"
