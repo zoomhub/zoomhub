@@ -101,6 +101,7 @@ instance ToJS Embed where
         ]
       script = embedBody embed
       maybeDZI = contentDzi . embedContent $ embed
+      -- TODO: Host `queued.dzi` on CDN or package up with this app:
       queuedDZI =
         mkDeepZoomImage "http://zoom.it/static/queued.dzi" 1592 652 254 1 "jpg"
       tileSource = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
