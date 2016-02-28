@@ -3,6 +3,12 @@
 
 module ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage(DeepZoomImage)
+  , dziHeight
+  , dziTileFormat
+  , dziTileOverlap
+  , dziTileSize
+  , dziUrl
+  , dziWidth
   , fromInternal
   , mkDeepZoomImage
   ) where
