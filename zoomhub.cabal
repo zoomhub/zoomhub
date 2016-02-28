@@ -61,6 +61,7 @@ library
     , lens == 4.13.*
     , lens-aeson == 1.*
     , lucid
+    , network-uri
     , process
     , random
     , safe
