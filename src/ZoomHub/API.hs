@@ -8,8 +8,8 @@ module ZoomHub.API
 
 import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.Either       (EitherT, left)
-import qualified Data.ByteString.Lazy             as BL
 import qualified Data.ByteString.Char8            as BC
+import qualified Data.ByteString.Lazy             as BL
 import qualified Data.ByteString.Lazy.Char8       as BLC
 import           Data.Maybe                       (fromMaybe)
 import           Data.Monoid                      ((<>))
