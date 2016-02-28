@@ -15,12 +15,18 @@ module ZoomHub.Types.Embed
 import           Data.Aeson.Encode                       (encode)
 import qualified Data.ByteString.Lazy.Char8              as BLC
 import           Data.List                               (intercalate)
-import           Data.Maybe                              (fromMaybe)
+import           Data.Maybe                              (fromJust, fromMaybe)
 import           GHC.Generics                            (Generic)
+import           Network.URI                             (parseRelativeReference,
+                                                          relativeTo)
 
 import           ZoomHub.API.ContentTypes                (ToJS, toJS)
+import           ZoomHub.Types.BaseURI                   (BaseURI, unBaseURI)
 import           ZoomHub.Types.Content                   (Content, contentDzi)
-import           ZoomHub.Types.DeepZoomImage             (mkDeepZoomImage)
+import           ZoomHub.Types.ContentBaseURI            (ContentBaseURI,
+                                                          unContentBaseURI)
+import           ZoomHub.Types.DeepZoomImage             (DeepZoomImageURI (..),
+                                                          mkDeepZoomImage)
 import           ZoomHub.Types.EmbedDimension            (EmbedDimension (..),
                                                           toCSSValue)
 import           ZoomHub.Types.OpenSeadragonTileSource   (fromDeepZoomImage)
@@ -28,21 +34,32 @@ import           ZoomHub.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerC
 
 
 data Embed = Embed
-  { embedBody        :: String
-  , embedContainerId :: String
-  , embedContent     :: Content
-  , embedHeight      :: Maybe EmbedDimension
-  , embedWidth       :: Maybe EmbedDimension
+  { embedBaseURI        :: BaseURI
+  , embedContentBaseURI :: ContentBaseURI
+  , embedBody           :: String
+  , embedContainerId    :: String
+  , embedContent        :: Content
+  , embedHeight         :: Maybe EmbedDimension
+  , embedWidth          :: Maybe EmbedDimension
   } deriving (Eq, Generic, Show)
 
-mkEmbed :: String ->
+mkEmbed :: BaseURI ->
+           ContentBaseURI ->
+           String ->
            Content ->
            String ->
            Maybe EmbedDimension ->
            Maybe EmbedDimension ->
            Embed
-mkEmbed embedContainerId embedContent embedBody embedWidth embedHeight =
-  Embed{..}
+mkEmbed baseURI contentBaseURI containerId content body width height = Embed{..}
+  where
+    embedBaseURI = baseURI
+    embedContentBaseURI = contentBaseURI
+    embedContainerId = containerId
+    embedContent = content
+    embedBody = body
+    embedWidth = width
+    embedHeight = height
 
 -- CSS
 legacyCSSClassName :: String
@@ -101,9 +118,12 @@ instance ToJS Embed where
         ]
       script = embedBody embed
       maybeDZI = contentDzi . embedContent $ embed
-      -- TODO: Host `queued.dzi` on CDN or package up with this app:
-      queuedDZI =
-        mkDeepZoomImage "http://zoom.it/static/queued.dzi" 1592 652 254 1 "jpg"
+      queuedDZI = mkDeepZoomImage queuedDZIURI 1592 652 254 1 "jpg"
+      queuedDZIURI = DeepZoomImageURI $
+        queuedDZIPath `relativeTo` unBaseURI (embedBaseURI embed)
+      queuedDZIPath = fromJust . parseRelativeReference $ "/static/queued.dzi"
       tileSource = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
-      viewerConfig = mkOpenSeadragonViewerConfig containerId tileSource
+      viewerConfig =
+        mkOpenSeadragonViewerConfig contentBaseURI containerId tileSource
+      contentBaseURI = embedContentBaseURI embed
       containerId = embedContainerId embed
