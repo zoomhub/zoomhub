@@ -38,7 +38,7 @@ fromString s = case maybeContentId of
     pathAndQuery = decodePath (BC.pack s)
     pathSegments = fst pathAndQuery
     maybeContentId = case pathSegments of
-      (p:[]) ->
+      [p] ->
         let idParts = splitExtension . T.unpack $ p in
         case idParts of
           (cId, ".js") -> Just $ ContentId.fromString cId
