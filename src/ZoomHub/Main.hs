@@ -11,7 +11,8 @@ import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
 import           Control.Monad.IO.Class           (liftIO)
 import qualified Data.ByteString.Char8            as BC
-import           Data.Maybe                       (fromMaybe)
+import           Data.Maybe                       (fromMaybe, fromJust)
+import           Network.URI                      (parseAbsoluteURI)
 import           Network.Wai.Handler.Warp         (run)
 import           System.AtomicWrite.Writer.String (atomicWriteFile)
 import           System.Directory                 (getCurrentDirectory)
@@ -80,8 +81,14 @@ main = do
   maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
   maybeRaxConfig <- decodeEnv
+  maybeBaseURI <- lookupEnv "BASE_URI"
   let defaultDataPath = currentDirectory </> "data"
       dataPath = fromMaybe defaultDataPath maybeDataPath
+      port = maybe defaultPort read maybePort
+      defaultBaseURI =
+        fromJust . parseAbsoluteURI $ "http://localhost:" ++ show port
+      baseURI = fromMaybe defaultBaseURI $
+        maybe Nothing parseAbsoluteURI maybeBaseURI
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath maybePublicPath
   case (maybeHashidsSalt, maybeRaxConfig) of
@@ -94,10 +101,9 @@ main = do
       let encodeContext = hashidsSimple hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
-          port = maybe defaultPort read maybePort
           config = Config{..}
       putStrLn $ "Welcome to ZoomHub." ++
-        " Go to <http://localhost:" ++ show port ++ "> and have fun!"
+        " Go to <" ++ show baseURI ++ "> and have fun!"
       run (fromIntegral port) (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
       "` environment variable.\nThis secret salt enables ZoomHub to encode" ++

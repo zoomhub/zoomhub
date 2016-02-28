@@ -14,6 +14,7 @@ import qualified Data.ByteString.Lazy.Char8       as BLC
 import           Data.Maybe                       (fromMaybe)
 import           Data.Monoid                      ((<>))
 import           Data.Proxy                       (Proxy (Proxy))
+import           Network.URI                      (URI)
 import           Network.Wai                      (Application)
 import           Servant                          ((:<|>) (..), (:>), Capture,
                                                    Get, JSON, QueryParam, Raw,
@@ -62,12 +63,14 @@ api = Proxy
 server :: Config -> Server API
 server config = health
            :<|> version (Config.version config)
-           :<|> contentById dataPath
+           :<|> contentById baseURI dataPath
            :<|> contentByURL config
-           :<|> embed dataPath (Config.openseadragonScript config)
-           :<|> viewContentById dataPath
+           :<|> embed baseURI dataPath (Config.openseadragonScript config)
+           :<|> viewContentById baseURI dataPath
            :<|> serveDirectory (Config.publicPath config)
-  where dataPath = Config.dataPath config
+  where
+    baseURI = Config.baseURI config
+    dataPath = Config.dataPath config
 
 app :: Config -> Application
 app config = serve api (server config)
@@ -79,12 +82,12 @@ health = return "up"
 version :: String -> Handler String
 version = return
 
-contentById :: FilePath -> ContentId -> Handler Content
-contentById dataPath contentId = do
+contentById :: URI -> FilePath -> ContentId -> Handler Content
+contentById baseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404Message contentId }
-    Just content -> return $ fromInternal content
+    Just content -> return $ fromInternal baseURI content
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
@@ -105,14 +108,15 @@ contentByURL config maybeURL = case maybeURL of
             errHeaders = [("Location", location)]
           }
 
-embed :: FilePath ->
+embed :: URI ->
+         FilePath ->
          String ->
          EmbedId ->
          Maybe String ->
          Maybe EmbedDimension ->
          Maybe EmbedDimension ->
          Handler Embed
-embed dataPath script embedId maybeId width height = do
+embed baseURI dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404Message contentId }
@@ -120,18 +124,19 @@ embed dataPath script embedId maybeId width height = do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
       let containerId = fromMaybe (defaultContainerId randomId) maybeId
-      return $ mkEmbed containerId (fromInternal content) script width height
+      return $
+        mkEmbed containerId (fromInternal baseURI content) script width height
   where
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
 
-viewContentById :: FilePath -> ContentId -> Handler Content
-viewContentById dataPath contentId = do
+viewContentById :: URI -> FilePath -> ContentId -> Handler Content
+viewContentById baseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404Message contentId }
-    Just content -> return $ fromInternal content
+    Just content -> return $ fromInternal baseURI content
 
 -- Helpers
 error404Message :: ContentId -> BL.ByteString
