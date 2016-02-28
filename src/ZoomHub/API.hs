@@ -36,9 +36,6 @@ import           ZoomHub.Types.EmbedParam             (EmbedParam,
                                                        embedParamWidth)
 import qualified ZoomHub.Types.Internal.Content       as Internal
 import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
-import           ZoomHub.Types.Internal.DeepZoomImage (dziHeight, dziTileFormat,
-                                                       dziTileOverlap,
-                                                       dziTileSize, dziWidth)
 
 
 -- Servant default handler type

@@ -3,7 +3,6 @@ module ZoomHub.Types.EmbedDimension
   , toCSSValue
   ) where
 
-
 -- Type
 data EmbedDimension = Zero | Auto | Pixels Integer | Percentage Integer
   deriving (Eq, Show)
