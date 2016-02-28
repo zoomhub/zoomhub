@@ -19,7 +19,7 @@ import           System.Environment               (lookupEnv)
 import           System.Envy                      (decodeEnv)
 import           System.FilePath.Posix            ((</>))
 import           System.IO.Error                  (isDoesNotExistError)
-import           Web.Hashids                      (encode, hashidsMinimum)
+import           Web.Hashids                      (encode, hashidsSimple)
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
@@ -92,7 +92,7 @@ main = do
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
       jobs <- liftIO $ atomically newTChan
       _ <- forkIO $ printJobs jobs lastIdWriteInterval
-      let encodeContext = hashidsMinimum hashidsSalt ContentId.minimumLength
+      let encodeContext = hashidsSimple hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           port = maybe defaultPort read maybePort
