@@ -22,6 +22,7 @@ import           Servant                              ((:<|>) (..), (:>),
                                                        serve, serveDirectory)
 import           Servant.HTML.Lucid                   (HTML)
 
+import           ZoomHub.API.ContentTypes             (JavaScript)
 import           ZoomHub.Config                       (Config)
 import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Storage.File                 (create, getById,
@@ -38,7 +39,6 @@ import           ZoomHub.Types.Internal.DeepZoomImage (dziHeight, dziTileFormat,
                                                        dziTileOverlap,
                                                        dziTileSize, dziWidth)
 import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
-import           ZoomHub.Types.Internal.JavaScript    (JavaScript)
 
 
 -- Servant default handler type
