@@ -109,10 +109,11 @@ contentByURL config maybeURL = case maybeURL of
           }
 
 embed :: String -> EmbedParam -> Handler Embed
-embed script param =
-  -- TODO: Use random number for `embedId`:
-  return $ mkEmbed 1 cId script dzi width height
+embed script param = do
+  let eId = namespace ++ "-" ++ "1"
+  return $ mkEmbed eId cId script dzi width height
   where
+    namespace = "__zoomhub"
     cId = embedParamContentId param
     width = embedParamWidth param
     height = embedParamHeight param
