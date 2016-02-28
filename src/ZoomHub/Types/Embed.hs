@@ -55,11 +55,11 @@ data Embed = Embed
   , embedContentId :: ContentId
   , embedDZI       :: DeepZoomImage
   , embedHeight    :: Maybe EmbedDimension
-  , embedId        :: Integer
+  , embedId        :: String
   , embedWidth     :: Maybe EmbedDimension
   } deriving (Eq, Generic, Show)
 
-mkEmbed :: Integer ->
+mkEmbed :: String ->
            ContentId ->
            String ->
            DeepZoomImage ->
@@ -88,7 +88,7 @@ instance ToJS Embed where
     where
       html = tag "div"
         [ ("class", cssClassName)
-        , ("id", idAttr embed)
+        , ("id", embedId embed)
         , ("style", style (embedWidth embed) (embedHeight embed))
         ]
       wrapper = concatPretty
@@ -99,4 +99,3 @@ instance ToJS Embed where
         ]
       cId = unId . embedContentId $ embed
       script = embedBody embed
-      idAttr embed = cssClassName ++ show (embedId embed)
