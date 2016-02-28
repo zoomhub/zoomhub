@@ -17,7 +17,6 @@ import           Data.Aeson                       (FromJSON, ToJSON,
                                                    genericToJSON, parseJSON,
                                                    toJSON)
 import           Data.Aeson.Casing                (aesonPrefix, camelCase)
-import           Data.List                        (intersperse)
 import           Data.Monoid                      ((<>))
 import qualified Data.Text                        as T
 import           GHC.Generics                     (Generic)
@@ -73,7 +72,7 @@ instance FromJSON Content where
 
 -- HTML
 concatPretty :: [T.Text] -> T.Text
-concatPretty = T.concat . intersperse "\n"
+concatPretty = T.intercalate "\n"
 
 -- TODO: Improve how we represent inline styles.
 styles :: T.Text

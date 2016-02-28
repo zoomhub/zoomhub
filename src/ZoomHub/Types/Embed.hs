@@ -6,16 +6,15 @@
 module ZoomHub.Types.Embed
   ( Embed
   , EmbedDimension(..)
-  , mkEmbed
-  , embedContentId
-  , embedWidth
-  , embedHeight
   , embedBody
+  , embedContentId
   , embedDZI
-  , tag
+  , embedHeight
+  , embedWidth
+  , mkEmbed
   ) where
 
-import           Data.List                            (intersperse)
+import           Data.List                            (intercalate)
 import           Data.Maybe                           (fromMaybe)
 import           GHC.Generics                         (Generic)
 
@@ -29,9 +28,9 @@ cssClassName :: String
 cssClassName = "__seadragon"
 
 style :: Maybe EmbedDimension -> Maybe EmbedDimension -> String
-style maybeWidth maybeHeight = concat . intersperse " " $
+style maybeWidth maybeHeight = unwords
   [ "background: black;"
-  , "border: 1px solid black; "
+  , "border: 1px solid black;"
   , "color: white;"
   , "height: " ++ toCSS height ++ ";"
   , "margin: 0;"
@@ -40,7 +39,7 @@ style maybeWidth maybeHeight = concat . intersperse " " $
   ]
   where
     height = fromMaybe (Pixels 200) maybeHeight
-    width = fromMaybe (Auto) maybeWidth
+    width = fromMaybe Auto maybeWidth
 
 -- Types
 data EmbedDimension = Auto | Pixels Integer
@@ -51,12 +50,12 @@ toCSS Auto = "auto"
 toCSS (Pixels n) = show n ++ "px"
 
 data Embed = Embed
-  { embedId        :: Integer
+  { embedBody      :: String
   , embedContentId :: ContentId
-  , embedBody      :: String
   , embedDZI       :: DeepZoomImage
-  , embedWidth     :: Maybe EmbedDimension
   , embedHeight    :: Maybe EmbedDimension
+  , embedId        :: Integer
+  , embedWidth     :: Maybe EmbedDimension
   } deriving (Eq, Generic, Show)
 
 mkEmbed :: Integer ->
@@ -71,27 +70,27 @@ mkEmbed embedId embedContentId embedBody embedDZI embedWidth embedHeight =
 
 -- HTML
 concatPretty :: [String] -> String
-concatPretty = concat . intersperse "\n"
+concatPretty = intercalate "\n"
 
 concatScripts :: [String] -> String
-concatScripts = concat . intersperse ";\n"
+concatScripts = intercalate ";\n"
 
 tag :: String -> [(String, String)] -> String
-tag name attrs = "<" ++ name ++ " " ++ concatMap attr attrs ++ ">" ++
-  "</" ++ name ++ ">"
+tag name attrs =
+  "<" ++ name ++ " " ++ unwords (map attr attrs) ++ "></" ++ name ++ ">"
 
 attr :: (String, String) -> String
-attr (name, value) = concat [name, "=\"", value, "\" "]
+attr (name, value) = concat [name, "=", "\"", value, "\""]
 
 instance ToJS Embed where
-  toJS embed = concatScripts $ [script, wrapper embed]
+  toJS embed = concatScripts [script, wrapper]
     where
       html = tag "div"
         [ ("class", cssClassName)
         , ("id", idAttr embed)
         , ("style", style (embedWidth embed) (embedHeight embed))
         ]
-      wrapper embed = concatPretty
+      wrapper = concatPretty
         [ "(function () {"
         , "    document.write('" ++ html ++ "'});"
         , "    OpenSeadragon({});"
