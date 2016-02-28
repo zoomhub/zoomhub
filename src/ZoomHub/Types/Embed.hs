@@ -25,7 +25,8 @@ import           ZoomHub.Types.Internal.DeepZoomImage
 
 -- Constants
 cssClassName :: String
-cssClassName = "__seadragon"
+-- Preserve `__seadragon` for backwards compatibility:
+cssClassName = "__zoomhub __seadragon"
 
 style :: Maybe EmbedDimension -> Maybe EmbedDimension -> String
 style maybeWidth maybeHeight = unwords
