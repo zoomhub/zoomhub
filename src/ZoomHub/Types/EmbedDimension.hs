@@ -22,13 +22,13 @@ toCSSValue (Percentage n) = show n ++ "%"
 parseCSSValue :: String -> Maybe EmbedDimension
 parseCSSValue "auto" = Just Auto
 parseCSSValue "0" = Just Zero
-parseCSSValue s = case dimension of
-    "px" -> readMay prefix >>= Just . Pixels
-    "%"  -> readMay prefix >>= Just . Percentage
+parseCSSValue s = case unit of
+    "px" -> readMay value >>= Just . Pixels
+    "%"  -> readMay value >>= Just . Percentage
     _    -> Nothing
   where
-    dimension = dropWhile isDigit s
-    prefix = takeWhile isDigit s
+    value = takeWhile isDigit s
+    unit = dropWhile isDigit s
 
 -- Text
 instance FromText EmbedDimension where
