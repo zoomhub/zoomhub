@@ -86,7 +86,7 @@ styles = concatPretty
   , "  padding: 0;"
   , "}"
   , ""
-  , ".__seadragon {"
+  , ".__zoomhub {"
   , "  height: 100% !important;"
   , "}"
   ]
