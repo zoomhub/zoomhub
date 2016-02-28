@@ -119,7 +119,6 @@ embed dataPath script embedId maybeId width height = do
   case maybeContent of
     Nothing      -> left err404{ errBody = error404message }
     Just content -> do
-      -- TODO: Why do we even enforce having an element ID for embed?
       randomId <- liftIO (randomIO :: IO Int)
       let defaultContainerId = namespace ++ "-" ++ show (abs randomId)
           containerId = fromMaybe defaultContainerId maybeId
