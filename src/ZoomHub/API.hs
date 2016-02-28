@@ -121,9 +121,9 @@ embed dataPath script embedId maybeId width height = do
     Just content -> do
       -- TODO: Why do we even enforce having an element ID for embed?
       randomId <- liftIO (randomIO :: IO Int)
-      let defaultEmbedId = namespace ++ "-" ++ show (abs randomId)
-          embedId = fromMaybe defaultEmbedId maybeId
-      return $ mkEmbed embedId (fromInternal content) script width height
+      let defaultContainerId = namespace ++ "-" ++ show (abs randomId)
+          containerId = fromMaybe defaultContainerId maybeId
+      return $ mkEmbed containerId (fromInternal content) script width height
   where
     contentId = unEmbedId embedId
     error404message = "No content with ID: " <> BLC.pack (unId contentId)

@@ -28,11 +28,11 @@ import           ZoomHub.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerC
 
 
 data Embed = Embed
-  { embedBody    :: String
-  , embedContent :: Content
-  , embedHeight  :: Maybe EmbedDimension
-  , embedId      :: String
-  , embedWidth   :: Maybe EmbedDimension
+  { embedBody        :: String
+  , embedContainerId :: String
+  , embedContent     :: Content
+  , embedHeight      :: Maybe EmbedDimension
+  , embedWidth       :: Maybe EmbedDimension
   } deriving (Eq, Generic, Show)
 
 mkEmbed :: String ->
@@ -41,7 +41,7 @@ mkEmbed :: String ->
            Maybe EmbedDimension ->
            Maybe EmbedDimension ->
            Embed
-mkEmbed embedId embedContent embedBody embedWidth embedHeight =
+mkEmbed embedContainerId embedContent embedBody embedWidth embedHeight =
   Embed{..}
 
 -- CSS
@@ -90,7 +90,7 @@ instance ToJS Embed where
     where
       html = tag "div"
         [ ("class", unwords cssClassNames)
-        , ("id", embedId embed)
+        , ("id", embedContainerId embed)
         , ("style", style (embedWidth embed) (embedHeight embed))
         ]
       wrapper = concatPretty
@@ -104,4 +104,5 @@ instance ToJS Embed where
       queuedDZI =
         mkDeepZoomImage "http://zoom.it/static/queued.dzi" 1592 652 254 1 "jpg"
       tileSource = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
-      viewerConfig = mkOpenSeadragonViewerConfig (embedId embed) tileSource
+      viewerConfig = mkOpenSeadragonViewerConfig containerId tileSource
+      containerId = embedContainerId embed
