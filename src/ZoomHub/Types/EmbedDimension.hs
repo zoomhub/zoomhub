@@ -4,6 +4,9 @@ module ZoomHub.Types.EmbedDimension
   , parseCSSValue
   ) where
 
+import qualified Data.Text as T
+import           Servant   (FromText, fromText)
+
 -- Type
 data EmbedDimension = Zero | Auto | Pixels Integer | Percentage Integer
   deriving (Eq, Show)
@@ -19,3 +22,7 @@ parseCSSValue "auto" = Just Auto
 parseCSSValue "0" = Just Zero
 -- TODO: Add support for parsing `Pixels` and `Percentage`:
 parseCSSValue _ = Nothing
+
+-- Text
+instance FromText EmbedDimension where
+  fromText = parseCSSValue . T.unpack
