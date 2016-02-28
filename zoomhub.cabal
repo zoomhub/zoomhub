@@ -28,8 +28,8 @@ library
     , ZoomHub.Storage.File
     , ZoomHub.Storage.Internal.File
     , ZoomHub.Types.BaseURI
-    , ZoomHub.Types.ContentBaseURI
     , ZoomHub.Types.Content
+    , ZoomHub.Types.ContentBaseURI
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.Embed
     , ZoomHub.Types.EmbedDimension
