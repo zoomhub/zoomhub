@@ -57,6 +57,15 @@ setup)
 deploy)
     ansible-playbook --inventory-file ${hosts} deployment/deploy.yml --ask-vault-pass
     ;;
+lint)
+    git diff-files --quiet
+    HAS_GIT_UNSTAGED_CHANGES=$?
+    if [[ "$HAS_GIT_UNSTAGED_CHANGES" != "0" ]] ; then
+        echo 'Commit all changes to Git before running `./zh lint`'
+        exit 1
+    fi
+    git ls-files | grep '.hs$' | xargs stylish-haskell --inplace
+    ;;
 *)
     echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"
     ;;
