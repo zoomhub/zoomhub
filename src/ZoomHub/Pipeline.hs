@@ -7,7 +7,7 @@ import           Control.Lens                             ((^.))
 import           Network.Wreq                             (get, responseBody)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import           System.Directory                         (createDirectoryIfMissing)
-import           System.FilePath.Posix                    ((</>), (<.>))
+import           System.FilePath.Posix                    ((<.>), (</>))
 -- import           System.IO.Temp
 import           System.Process                           (callProcess)
 
