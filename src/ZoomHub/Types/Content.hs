@@ -116,8 +116,11 @@ instance ToHtml Content where
                      style_ styles
                      script_ analyticsScript
                      )
-           body_ $ script_ [src_ scriptURL] ("" :: T.Text)
+           body_ $ script_ [src_ scriptURL] emptyBody
     where
+      emptyBody :: T.Text
+      emptyBody = ""
+
       scriptURL = "http://zoom.it/" <> cId <> ".js?width=auto&height=400px"
       cId = T.pack . unId $ contentId content
   toHtmlRaw = toHtml
