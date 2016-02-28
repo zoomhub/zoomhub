@@ -1,3 +1,6 @@
+-- HACK: Allow `ToJSON URI` instance:
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -12,11 +15,10 @@ module ZoomHub.Types.Content
   , fromInternal
   ) where
 
-import           Data.Aeson                       (FromJSON, ToJSON,
-                                                   genericParseJSON,
-                                                   genericToJSON, parseJSON,
-                                                   toJSON)
+import           Data.Aeson                       (ToJSON, Value (String),
+                                                   genericToJSON, toJSON)
 import           Data.Aeson.Casing                (aesonPrefix, camelCase)
+import           Data.Maybe                       (fromJust)
 import           Data.Monoid                      ((<>))
 import qualified Data.Text                        as T
 import           GHC.Generics                     (Generic)
@@ -24,6 +26,8 @@ import           Lucid                            (ToHtml, body_, content_,
                                                    doctypehtml_, head_, meta_,
                                                    name_, script_, src_, style_,
                                                    title_, toHtml, toHtmlRaw)
+import           Network.URI                      (URI, parseRelativeReference,
+                                                   relativeTo)
 
 import           ZoomHub.Types.DeepZoomImage      (DeepZoomImage)
 import qualified ZoomHub.Types.DeepZoomImage      as DZ
@@ -38,14 +42,14 @@ data Content = Content
   , contentReady     :: Bool
   , contentFailed    :: Bool
   , contentProgress  :: Float
-  , contentShareUrl  :: String
+  , contentShareUrl  :: URI
   , contentEmbedHtml :: String
   , contentDzi       :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
 -- Constructor
-fromInternal :: Internal.Content -> Content
-fromInternal c = Content
+fromInternal :: URI -> Internal.Content -> Content
+fromInternal host c = Content
   { contentId = cId
   , contentUrl = Internal.contentUrl c
   , contentReady = Internal.contentReady c
@@ -57,18 +61,23 @@ fromInternal c = Content
   }
   where
     cId = Internal.contentId c
-    -- TODO: Make hostname dynamic:
-    shareURL = "http://zoom.it/" ++ unId cId
-    embedHtml =
-      "<script src=\"" ++ shareURL ++ ".js?width=auto&height=400px\"></script>"
+    shareURL = (fromJust . parseRelativeReference $ unId cId) `relativeTo` host
+    embedHtml = concat
+      ["<script src=\""
+      , show shareURL
+      , ".js?width=auto&height=400px\">"
+      , "</script>"
+      ]
     dzi = DZ.fromInternal cId <$> Internal.contentDzi c
 
 -- JSON
+-- HACK: Orphan instance, see:
+-- https://www.reddit.com/r/haskell/comments/1prg4q/ghc_wall_orphan_instance/
+instance ToJSON URI where
+  toJSON = String . T.pack . show
+
 instance ToJSON Content where
    toJSON = genericToJSON $ aesonPrefix camelCase
-instance FromJSON Content where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
-
 
 -- HTML
 concatPretty :: [T.Text] -> T.Text
