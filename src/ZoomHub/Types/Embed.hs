@@ -5,7 +5,6 @@
 
 module ZoomHub.Types.Embed
   ( Embed
-  , EmbedDimension(..)
   , embedBody
   , embedContent
   , embedHeight
