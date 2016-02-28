@@ -21,6 +21,7 @@ import           Servant                              ((:<|>) (..), (:>),
                                                        errBody, errHeaders,
                                                        serve, serveDirectory)
 import           Servant.HTML.Lucid                   (HTML)
+import           System.Random                        (randomIO)
 
 import           ZoomHub.API.ContentTypes             (JavaScript)
 import           ZoomHub.Config                       (Config)
@@ -110,7 +111,9 @@ contentByURL config maybeURL = case maybeURL of
 
 embed :: String -> EmbedParam -> Handler Embed
 embed script param = do
-  let eId = namespace ++ "-" ++ "1"
+  -- TODO: Why do we even enforce having an element ID for embed?
+  randomId <- liftIO (randomIO :: IO Int)
+  let eId = namespace ++ "-" ++ show (abs randomId)
   return $ mkEmbed eId cId script dzi width height
   where
     namespace = "__zoomhub"
