@@ -68,7 +68,7 @@ analyticsScript = concatPretty [
 instance ToHtml ViewContent where
   toHtml vc =
       doctypehtml_ $
-        do head_ (do title_ (toHtml $ "zoom.it — " <> cId)
+        do head_ (do title_ (toHtml $ "ZoomHub — " <> cId)
                      meta_ [name_ "viewport",
                             content_ "width=device-width, initial-scale=1"]
                      style_ styles
