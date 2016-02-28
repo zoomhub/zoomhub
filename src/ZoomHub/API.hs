@@ -8,6 +8,7 @@ module ZoomHub.API
 
 import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.Either       (EitherT, left)
+import qualified Data.ByteString.Lazy             as BL
 import qualified Data.ByteString.Char8            as BC
 import qualified Data.ByteString.Lazy.Char8       as BLC
 import           Data.Maybe                       (fromMaybe)
@@ -82,11 +83,8 @@ contentById :: FilePath -> ContentId -> Handler Content
 contentById dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left err404{ errBody = error404message }
+    Nothing      -> left err404{ errBody = error404Message contentId }
     Just content -> return $ fromInternal content
-  where
-    error404message = "No content with ID: " <> rawContentId
-    rawContentId = BLC.pack $ unId contentId
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
@@ -117,7 +115,7 @@ embed :: FilePath ->
 embed dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left err404{ errBody = error404message }
+    Nothing      -> left err404{ errBody = error404Message contentId }
     Just content -> do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
@@ -125,7 +123,6 @@ embed dataPath script embedId maybeId width height = do
       return $ mkEmbed containerId (fromInternal content) script width height
   where
     contentId = unEmbedId embedId
-    error404message = "No content with ID: " <> BLC.pack (unId contentId)
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
 
@@ -133,6 +130,9 @@ viewContentById :: FilePath -> ContentId -> Handler Content
 viewContentById dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left err404{ errBody = error404message }
+    Nothing      -> left err404{ errBody = error404Message contentId }
     Just content -> return $ fromInternal content
-  where error404message = "No content with ID: " <> BLC.pack (unId contentId)
+
+-- Helpers
+error404Message :: ContentId -> BL.ByteString
+error404Message contentId = "No content with ID: " <> BLC.pack (unId contentId)
