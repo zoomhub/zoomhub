@@ -19,8 +19,8 @@ import           Data.List                            (intersperse)
 import           Data.Maybe                           (fromMaybe)
 import           GHC.Generics                         (Generic)
 
+import           ZoomHub.API.ContentTypes             (ToJS, toJS)
 import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
-import           ZoomHub.Types.Internal.JavaScript     (ToJS, toJS, JavaScript)
 import           ZoomHub.Types.Internal.DeepZoomImage
 
 
