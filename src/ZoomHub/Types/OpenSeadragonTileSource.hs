@@ -26,8 +26,8 @@ instance ToJSON OpenSeadragonTileSource where
   toJSON o =
     object ["Image" .=
       object
-      [ "xmlns" .= ("http://schemas.microsoft.com/deepzoom/2008" :: T.Text)
-      , "Url" .= T.pack (dropExtension (dziUrl dzi) ++ "_files/")
+      [ "xmlns" .= xmlns
+      , "Url" .= (dropExtension (dziUrl dzi) ++ "_files/")
       , "Format" .= dziTileFormat dzi
       , "Overlap" .= dziTileOverlap dzi
       , "TileSize" .= dziTileSize dzi
@@ -38,4 +38,7 @@ instance ToJSON OpenSeadragonTileSource where
       ]
     ]
     where
+      xmlns :: T.Text
+      xmlns = "http://schemas.microsoft.com/deepzoom/2008"
+
       dzi = unOpenSeadragonTileSource o
