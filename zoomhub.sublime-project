@@ -12,7 +12,9 @@
                 "archive",
                 "backup-*",
                 "dist",
-                "node_modules"
+                "node/public/lib",
+                "node_modules",
+                "public/lib"
             ]
         }
     ],
