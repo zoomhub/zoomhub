@@ -20,6 +20,7 @@ source-repository head
 library
   exposed-modules:
       ZoomHub.API
+    , ZoomHub.API.ContentTypes
     , ZoomHub.Config
     , ZoomHub.Main
     , ZoomHub.Pipeline
@@ -33,7 +34,6 @@ library
     , ZoomHub.Types.Internal.Content
     , ZoomHub.Types.Internal.ContentId
     , ZoomHub.Types.Internal.DeepZoomImage
-    , ZoomHub.Types.Internal.JavaScript
     , ZoomHub.Utils
   default-language: Haskell2010
   ghc-options:      -Wall
