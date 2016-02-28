@@ -18,7 +18,8 @@ import           Network.HTTP.Types               (decodePath)
 import           Servant                          (FromText, fromText)
 import           System.FilePath.Posix            (splitExtension)
 
-import           ZoomHub.Types.Embed              (EmbedDimension (..))
+import           ZoomHub.Types.EmbedDimension     (EmbedDimension (..),
+                                                   parseCSSValue)
 import           ZoomHub.Types.Internal.ContentId (ContentId)
 import qualified ZoomHub.Types.Internal.ContentId as ContentId
 
@@ -40,11 +41,19 @@ fromString s = case maybeContentId of
         }
     _ -> Nothing
   where
-    embedParamId = Nothing     -- TODO
-    embedParamWidth = Nothing  -- TODO
-    embedParamHeight = Nothing -- TODO
+    toDimension :: String -> Maybe EmbedDimension
+    toDimension name = maybe Nothing parseCSSValue (getQueryParam name)
+
+    getQueryParam :: String -> Maybe String
+    getQueryParam name = case lookup (BC.pack name) queryParams of
+      Just (Just bs) -> Just $ BC.unpack bs
+      _ -> Nothing
+
+    embedParamId = getQueryParam "id"
+    embedParamWidth = toDimension "width"
+    embedParamHeight = toDimension "height"
     pathAndQuery = decodePath (BC.pack s)
-    pathSegments = fst pathAndQuery
+    (pathSegments, queryParams) = pathAndQuery
     maybeContentId = case pathSegments of
       [p] ->
         let idParts = splitExtension . T.unpack $ p in
