@@ -64,11 +64,12 @@ api = Proxy
 server :: Config -> Server API
 server config = health
            :<|> version (Config.version config)
-           :<|> contentById (Config.dataPath config)
+           :<|> contentById dataPath
            :<|> contentByURL config
            :<|> embed (Config.openseadragonScript config)
-           :<|> viewContentById (Config.dataPath config)
+           :<|> viewContentById dataPath
            :<|> serveDirectory (Config.publicPath config)
+  where dataPath = Config.dataPath config
 
 app :: Config -> Application
 app config = serve api (server config)
