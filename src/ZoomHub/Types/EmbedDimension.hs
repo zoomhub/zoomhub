@@ -4,7 +4,9 @@ module ZoomHub.Types.EmbedDimension
   , parseCSSValue
   ) where
 
+import           Data.Char (isDigit)
 import qualified Data.Text as T
+import           Safe      (readMay)
 import           Servant   (FromText, fromText)
 
 -- Type
@@ -20,8 +22,13 @@ toCSSValue (Percentage n) = show n ++ "%"
 parseCSSValue :: String -> Maybe EmbedDimension
 parseCSSValue "auto" = Just Auto
 parseCSSValue "0" = Just Zero
--- TODO: Add support for parsing `Pixels` and `Percentage`:
-parseCSSValue _ = Nothing
+parseCSSValue s = case dimension of
+    "px" -> readMay prefix >>= Just . Pixels
+    "%"  -> readMay prefix >>= Just . Percentage
+    _    -> Nothing
+  where
+    dimension = dropWhile isDigit s
+    prefix = takeWhile isDigit s
 
 -- Text
 instance FromText EmbedDimension where
