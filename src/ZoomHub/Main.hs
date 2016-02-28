@@ -72,8 +72,8 @@ readVersion currentDirectory = do
 main :: IO ()
 main = do
   currentDirectory <- getCurrentDirectory
-  openseadragonScript <- readFile (currentDirectory </> "public" </> "lib" </>
-    "openseadragon" </> "openseadragon.min.js")
+  openseadragonScript <- readFile $ currentDirectory </>
+    "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
   version <- readVersion currentDirectory
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
