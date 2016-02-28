@@ -13,47 +13,20 @@ module ZoomHub.Types.Embed
   , mkEmbed
   ) where
 
-import           Data.Aeson                              (encode)
+import           Data.Aeson.Encode                       (encode)
 import qualified Data.ByteString.Lazy.Char8              as BLC
 import           Data.List                               (intercalate)
 import           Data.Maybe                              (fromMaybe)
-import qualified Data.Text                               as T
 import           GHC.Generics                            (Generic)
-import           System.FilePath.Posix                   (dropExtension)
 
 import           ZoomHub.API.ContentTypes                (ToJS, toJS)
 import           ZoomHub.Types.Content                   (Content, contentDzi)
 import           ZoomHub.Types.DeepZoomImage             (mkDeepZoomImage)
+import           ZoomHub.Types.EmbedDimension            (EmbedDimension (..),
+                                                          toCSSValue)
 import           ZoomHub.Types.OpenSeadragonTileSource   (fromDeepZoomImage)
 import           ZoomHub.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
 
-
--- Constants
-cssClassName :: String
--- Preserve `__seadragon` for backwards compatibility:
-cssClassName = "__zoomhub __seadragon"
-
-style :: Maybe EmbedDimension -> Maybe EmbedDimension -> String
-style maybeWidth maybeHeight = unwords
-  [ "background: black;"
-  , "border: 1px solid black;"
-  , "color: white;"
-  , "height: " ++ toCSS height ++ ";"
-  , "margin: 0;"
-  , "padding: 0;"
-  , "width: " ++ toCSS width ++ ";"
-  ]
-  where
-    height = fromMaybe (Pixels 200) maybeHeight
-    width = fromMaybe Auto maybeWidth
-
--- Types
-data EmbedDimension = Auto | Pixels Integer
-  deriving (Eq, Generic, Show)
-
-toCSS :: EmbedDimension -> String
-toCSS Auto = "auto"
-toCSS (Pixels n) = show n ++ "px"
 
 data Embed = Embed
   { embedBody    :: String
@@ -72,7 +45,34 @@ mkEmbed :: String ->
 mkEmbed embedId embedContent embedBody embedWidth embedHeight =
   Embed{..}
 
--- HTML
+-- CSS
+legacyCSSClassName :: String
+legacyCSSClassName = "__seadragon"
+
+cssClassNames :: [String]
+cssClassNames = ["__zoomhub", legacyCSSClassName]
+
+defaultHeight :: EmbedDimension
+defaultHeight = Pixels 200
+
+defaultWidth :: EmbedDimension
+defaultWidth = Auto
+
+style :: Maybe EmbedDimension -> Maybe EmbedDimension -> String
+style maybeWidth maybeHeight = unwords
+  [ "background: black;"
+  , "border: 1px solid black;"
+  , "color: white;"
+  , "height: " ++ toCSSValue height ++ ";"
+  , "margin: 0;"
+  , "padding: 0;"
+  , "width: " ++ toCSSValue width ++ ";"
+  ]
+  where
+    height = fromMaybe defaultHeight maybeHeight
+    width = fromMaybe defaultWidth maybeWidth
+
+-- JavaScript
 concatPretty :: [String] -> String
 concatPretty = intercalate "\n"
 
@@ -90,14 +90,14 @@ instance ToJS Embed where
   toJS embed = concatScripts [script, wrapper]
     where
       html = tag "div"
-        [ ("class", cssClassName)
+        [ ("class", unwords cssClassNames)
         , ("id", embedId embed)
         , ("style", style (embedWidth embed) (embedHeight embed))
         ]
       wrapper = concatPretty
         [ "(function () {"
-        , "    document.write('" ++ html ++ "');"
-        , "    OpenSeadragon(" ++ BLC.unpack (encode viewerConfig) ++ ");"
+        , "  document.write('" ++ html ++ "');"
+        , "  OpenSeadragon(" ++ BLC.unpack (encode viewerConfig) ++ ");"
         , "}());"
         ]
       script = embedBody embed
