@@ -8,6 +8,7 @@ module ZoomHub.Types.EmbedParam
   , embedParamContentId
   , embedParamWidth
   , embedParamHeight
+  , embedParamId
   ) where
 
 import qualified Data.ByteString.Char8            as BC
@@ -23,6 +24,7 @@ import qualified ZoomHub.Types.Internal.ContentId as ContentId
 
 data EmbedParam = EmbedParam
   { embedParamContentId :: ContentId
+  , embedParamId        :: Maybe String
   , embedParamWidth     :: Maybe EmbedDimension
   , embedParamHeight    :: Maybe EmbedDimension
   } deriving (Eq, Generic, Show)
@@ -31,8 +33,14 @@ fromString :: String -> Maybe EmbedParam
 fromString s = case maybeContentId of
     Nothing -> Nothing
     Just embedParamContentId ->
-      Just EmbedParam { embedParamContentId, embedParamWidth, embedParamHeight }
+      Just EmbedParam
+        { embedParamContentId
+        , embedParamHeight
+        , embedParamId
+        , embedParamWidth
+        }
   where
+    embedParamId = Nothing     -- TODO
     embedParamWidth = Nothing  -- TODO
     embedParamHeight = Nothing -- TODO
     pathAndQuery = decodePath (BC.pack s)
