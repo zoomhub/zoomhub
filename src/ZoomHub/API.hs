@@ -36,6 +36,7 @@ import           ZoomHub.Types.EmbedDimension     (EmbedDimension)
 import           ZoomHub.Types.EmbedId            (EmbedId, unEmbedId)
 import qualified ZoomHub.Types.Internal.Content   as Internal
 import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
+import           ZoomHub.Types.ViewContent        (ViewContent, mkViewContent)
 
 
 -- Servant default handler type
@@ -54,7 +55,7 @@ type API =
        :> QueryParam "width" EmbedDimension
        :> QueryParam "height" EmbedDimension
        :> Get '[JavaScript] Embed
-  :<|> Capture "viewId" ContentId :> Get '[HTML] Content
+  :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
   :<|> Raw
 
 -- API
@@ -143,12 +144,14 @@ viewContentById :: BaseURI ->
                    ContentBaseURI ->
                    FilePath ->
                    ContentId ->
-                   Handler Content
+                   Handler ViewContent
 viewContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left err404{ errBody = error404Message contentId }
-    Just content -> return $ fromInternal baseURI contentBaseURI content
+    Nothing -> left err404{ errBody = error404Message contentId }
+    Just c  -> do
+      let content = fromInternal baseURI contentBaseURI c
+      return $ mkViewContent baseURI content
 
 -- Helpers
 error404Message :: ContentId -> BL.ByteString
