@@ -3,6 +3,7 @@
 module ZoomHub.Config
   ( Config(Config)
   , RackspaceConfig
+  , baseURI
   , dataPath
   , defaultPort
   , encodeId
@@ -19,6 +20,7 @@ module ZoomHub.Config
 
 import           Control.Concurrent.STM (TChan, TVar)
 import           GHC.Generics           (Generic)
+import           Network.URI            (URI)
 import           System.Envy            (DefConfig, FromEnv, Option (..),
                                          customPrefix, defConfig,
                                          dropPrefixCount, fromEnv,
@@ -28,7 +30,8 @@ defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { dataPath            :: FilePath
+  { baseURI             :: URI
+  , dataPath            :: FilePath
   , encodeId            :: Integer -> String
   , jobs                :: TChan String
   , lastId              :: TVar Integer
