@@ -14,7 +14,6 @@ import qualified Data.ByteString.Lazy.Char8       as BLC
 import           Data.Maybe                       (fromMaybe)
 import           Data.Monoid                      ((<>))
 import           Data.Proxy                       (Proxy (Proxy))
-import           Network.URI                      (URI)
 import           Network.Wai                      (Application)
 import           Servant                          ((:<|>) (..), (:>), Capture,
                                                    Get, JSON, QueryParam, Raw,
@@ -29,7 +28,9 @@ import           ZoomHub.API.ContentTypes         (JavaScript)
 import           ZoomHub.Config                   (Config)
 import qualified ZoomHub.Config                   as Config
 import           ZoomHub.Storage.File             (create, getById, getByURL)
+import           ZoomHub.Types.BaseURI            (BaseURI)
 import           ZoomHub.Types.Content            (Content, fromInternal)
+import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI)
 import           ZoomHub.Types.Embed              (Embed, mkEmbed)
 import           ZoomHub.Types.EmbedDimension     (EmbedDimension)
 import           ZoomHub.Types.EmbedId            (EmbedId, unEmbedId)
@@ -63,14 +64,16 @@ api = Proxy
 server :: Config -> Server API
 server config = health
            :<|> version (Config.version config)
-           :<|> contentById baseURI dataPath
+           :<|> contentById baseURI contentBaseURI dataPath
            :<|> contentByURL config
-           :<|> embed baseURI dataPath (Config.openseadragonScript config)
-           :<|> viewContentById baseURI dataPath
+           :<|> embed baseURI contentBaseURI dataPath viewerScript
+           :<|> viewContentById baseURI contentBaseURI dataPath
            :<|> serveDirectory (Config.publicPath config)
   where
     baseURI = Config.baseURI config
+    contentBaseURI = Config.contentBaseURI config
     dataPath = Config.dataPath config
+    viewerScript = Config.openseadragonScript config
 
 app :: Config -> Application
 app config = serve api (server config)
@@ -82,12 +85,16 @@ health = return "up"
 version :: String -> Handler String
 version = return
 
-contentById :: URI -> FilePath -> ContentId -> Handler Content
-contentById baseURI dataPath contentId = do
+contentById :: BaseURI ->
+               ContentBaseURI ->
+               FilePath ->
+               ContentId ->
+               Handler Content
+contentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404Message contentId }
-    Just content -> return $ fromInternal baseURI content
+    Just content -> return $ fromInternal baseURI contentBaseURI content
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
@@ -108,7 +115,8 @@ contentByURL config maybeURL = case maybeURL of
             errHeaders = [("Location", location)]
           }
 
-embed :: URI ->
+embed :: BaseURI ->
+         ContentBaseURI ->
          FilePath ->
          String ->
          EmbedId ->
@@ -116,7 +124,7 @@ embed :: URI ->
          Maybe EmbedDimension ->
          Maybe EmbedDimension ->
          Handler Embed
-embed baseURI dataPath script embedId maybeId width height = do
+embed baseURI cBaseURI dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404Message contentId }
@@ -124,19 +132,23 @@ embed baseURI dataPath script embedId maybeId width height = do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
       let containerId = fromMaybe (defaultContainerId randomId) maybeId
-      return $
-        mkEmbed containerId (fromInternal baseURI content) script width height
+          pContent = fromInternal baseURI cBaseURI content
+      return $ mkEmbed baseURI cBaseURI containerId pContent script width height
   where
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
 
-viewContentById :: URI -> FilePath -> ContentId -> Handler Content
-viewContentById baseURI dataPath contentId = do
+viewContentById :: BaseURI ->
+                   ContentBaseURI ->
+                   FilePath ->
+                   ContentId ->
+                   Handler Content
+viewContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left err404{ errBody = error404Message contentId }
-    Just content -> return $ fromInternal baseURI content
+    Just content -> return $ fromInternal baseURI contentBaseURI content
 
 -- Helpers
 error404Message :: ContentId -> BL.ByteString

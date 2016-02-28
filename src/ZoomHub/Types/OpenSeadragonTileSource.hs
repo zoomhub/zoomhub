@@ -27,7 +27,7 @@ instance ToJSON OpenSeadragonTileSource where
     object ["Image" .=
       object
       [ "xmlns" .= xmlns
-      , "Url" .= (dropExtension (dziUrl dzi) ++ "_files/")
+      , "Url" .= (dropExtension (show $ dziUrl dzi) ++ "_files/")
       , "Format" .= dziTileFormat dzi
       , "Overlap" .= dziTileOverlap dzi
       , "TileSize" .= dziTileSize dzi
