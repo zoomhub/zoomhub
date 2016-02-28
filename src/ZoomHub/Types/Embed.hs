@@ -117,12 +117,16 @@ instance ToJS Embed where
         , "}());"
         ]
       script = embedBody embed
-      maybeDZI = contentDzi . embedContent $ embed
+      content = embedContent embed
+      maybeDZI = contentDzi content
       queuedDZI = mkDeepZoomImage queuedDZIURI 1592 652 254 1 "jpg"
       queuedDZIURI = DeepZoomImageURI $
         queuedDZIPath `relativeTo` unBaseURI (embedBaseURI embed)
       queuedDZIPath = fromJust . parseRelativeReference $ "/static/queued.dzi"
-      tileSource = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
+      isReady = contentReady content
+      tileSource
+        | not isReady = fromDeepZoomImage queuedDZI
+        | otherwise   = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
       viewerConfig =
         mkOpenSeadragonViewerConfig contentBaseURI containerId tileSource
       contentBaseURI = embedContentBaseURI embed
