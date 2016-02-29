@@ -21,10 +21,11 @@ import           Network.URI                             (parseRelativeReference
                                                           relativeTo)
 
 import           ZoomHub.API.ContentTypes                (ToJS, toJS)
-import           ZoomHub.Types.BaseURI                   (BaseURI, unBaseURI)
+import           ZoomHub.Types.BaseURI                   (BaseURI)
 import           ZoomHub.Types.Content                   (Content, contentDzi,
                                                           contentReady)
-import           ZoomHub.Types.ContentBaseURI            (ContentBaseURI)
+import           ZoomHub.Types.ContentBaseURI            (ContentBaseURI,
+                                                          unContentBaseURI)
 import           ZoomHub.Types.DeepZoomImage             (DeepZoomImageURI (..),
                                                           mkDeepZoomImage)
 import           ZoomHub.Types.EmbedDimension            (EmbedDimension (..),
@@ -119,10 +120,11 @@ instance ToJS Embed where
       script = embedBody embed
       content = embedContent embed
       maybeDZI = contentDzi content
-      queuedDZI = mkDeepZoomImage queuedDZIURI 1592 652 254 1 "jpg"
+      queuedDZI = mkDeepZoomImage queuedDZIURI 8000 6000 254 1 "png"
       queuedDZIURI = DeepZoomImageURI $
-        queuedDZIPath `relativeTo` unBaseURI (embedBaseURI embed)
-      queuedDZIPath = fromJust . parseRelativeReference $ "/static/queued.dzi"
+        queuedDZIPath `relativeTo` unContentBaseURI contentBaseURI
+      queuedDZIPath = fromJust . parseRelativeReference $
+        "/static/queued.dzi"
       isReady = contentReady content
       tileSource
         | not isReady = fromDeepZoomImage queuedDZI
