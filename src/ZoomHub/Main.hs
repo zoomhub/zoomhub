@@ -77,6 +77,8 @@ readVersion currentDirectory = do
 -- Main
 main :: IO ()
 main = do
+  -- TODO: Migrate configuration to `configurator`:
+  -- https://hackage.haskell.org/package/configurator
   currentDirectory <- getCurrentDirectory
   openseadragonScript <- readFile $ currentDirectory </>
     "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
