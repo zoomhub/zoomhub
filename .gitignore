@@ -23,3 +23,6 @@ cabal.sandbox.config
 
 # PID
 /zoomhub.pid
+
+# Exported design files
+/design/*.png
