@@ -14,16 +14,12 @@ import           Lucid                            (ToHtml, body_, content_,
                                                    doctypehtml_, head_, meta_,
                                                    name_, script_, src_, style_,
                                                    title_, toHtml, toHtmlRaw)
-import           Network.URI                      (URI, parseRelativeReference,
+import           Network.URI                      (parseRelativeReference,
                                                    relativeTo)
 
 import           ZoomHub.Types.BaseURI            (BaseURI, unBaseURI)
 import           ZoomHub.Types.Content            (Content, contentId)
-import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI)
-import           ZoomHub.Types.DeepZoomImage      (DeepZoomImage)
-import qualified ZoomHub.Types.DeepZoomImage      as DZ
-import qualified ZoomHub.Types.Internal.Content   as Internal
-import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
+import           ZoomHub.Types.Internal.ContentId (unId)
 
 data ViewContent = ViewContent
   { vcContent :: Content
