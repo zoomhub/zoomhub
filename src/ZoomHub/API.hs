@@ -99,7 +99,7 @@ contentByURL config maybeURL = case maybeURL of
   Nothing  -> left . error400 $ unwords
     [ "Missing ID or URL."
     , "Please provide ID, e.g. `/v1/content/<id>`,"
-    , "or URL via `?url=<url>` query parameter."
+    , "or URL via `/v1/content?url=<url>` query parameter."
     ]
   Just url -> do
       maybeContent <- liftIO $ getByURL (Config.dataPath config) url
