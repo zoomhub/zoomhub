@@ -115,11 +115,11 @@ main = do
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           config = Config{..}
-      putStrLn $ "Welcome to ZoomHub." ++
+      putStrLn $ "Welcome to zoomhub." ++
         " Go to <" ++ show baseURI ++ "> and have fun!"
       run (fromIntegral port) (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
-      "` environment variable.\nThis secret salt enables ZoomHub to encode" ++
+      "` environment variable.\nThis secret salt enables zoomhub to encode" ++
       " integer IDs as short, non-sequential string IDs which make it harder" ++
       " to guess valid content IDs."
     (_, Left message) -> error $ "Failed to read Rackspace config: " ++ message
