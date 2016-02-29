@@ -21,6 +21,7 @@ library
   exposed-modules:
       ZoomHub.API
     , ZoomHub.API.ContentTypes
+    , ZoomHub.API.Errors
     , ZoomHub.Config
     , ZoomHub.Main
     , ZoomHub.Pipeline
