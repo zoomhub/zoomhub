@@ -18,13 +18,13 @@ import           Network.Wai                      (Application)
 import           Servant                          ((:<|>) (..), (:>), Capture,
                                                    Get, JSON, QueryParam, Raw,
                                                    ServantErr, Server, err301,
-                                                   err400, err404, errBody,
                                                    errHeaders, serve,
                                                    serveDirectory)
 import           Servant.HTML.Lucid               (HTML)
 import           System.Random                    (randomRIO)
 
 import           ZoomHub.API.ContentTypes         (JavaScript)
+import           ZoomHub.API.Errors               (error400, error404)
 import           ZoomHub.Config                   (Config)
 import qualified ZoomHub.Config                   as Config
 import           ZoomHub.Storage.File             (create, getById, getByURL)
@@ -94,12 +94,16 @@ contentById :: BaseURI ->
 contentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left err404{ errBody = error404Message contentId }
+    Nothing      -> left . error404 $ error404Message contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
-  Nothing  -> left err400{ errBody = "Missing ID or URL." }
+  Nothing  -> left . error400 $ unwords
+    [ "Missing ID or URL."
+    , "Please provide ID, e.g. `/v1/content/<id>`,"
+    , "or URL via `?url=<url>` query parameter."
+    ]
   Just url -> do
       maybeContent <- liftIO $ getByURL (Config.dataPath config) url
       content <- case maybeContent of
@@ -128,7 +132,7 @@ embed :: BaseURI ->
 embed baseURI cBaseURI dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left err404{ errBody = error404Message contentId }
+    Nothing      -> left . error404 $ error404Message contentId
     Just content -> do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
@@ -148,11 +152,11 @@ viewContentById :: BaseURI ->
 viewContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing -> left err404{ errBody = error404Message contentId }
+    Nothing -> left . error404 $ error404Message contentId
     Just c  -> do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
 
 -- Helpers
-error404Message :: ContentId -> BL.ByteString
-error404Message contentId = "No content with ID: " <> BLC.pack (unId contentId)
+error404Message :: ContentId -> String
+error404Message contentId = "No content with ID: " ++ unId contentId
