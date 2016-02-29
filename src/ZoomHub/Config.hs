@@ -3,37 +3,49 @@
 module ZoomHub.Config
   ( Config(Config)
   , RackspaceConfig
+  , acceptNewContent
+  , baseURI
+  , contentBaseURI
   , dataPath
   , defaultPort
   , encodeId
   , jobs
   , lastId
+  , openseadragonScript
   , port
   , publicPath
   , rackspace
   , raxApiKey
   , raxUsername
+  , version
   ) where
 
-import           Control.Concurrent.STM (TChan, TVar)
-import           GHC.Generics           (Generic)
-import           System.Envy            (DefConfig, FromEnv, Option (..),
-                                         customPrefix, defConfig,
-                                         dropPrefixCount, fromEnv,
-                                         gFromEnvCustom)
+import           Control.Concurrent.STM       (TChan, TVar)
+import           GHC.Generics                 (Generic)
+import           System.Envy                  (DefConfig, FromEnv, Option (..),
+                                               customPrefix, defConfig,
+                                               dropPrefixCount, fromEnv,
+                                               gFromEnvCustom)
 
+import           ZoomHub.Types.BaseURI        (BaseURI)
+import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 
 defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { dataPath   :: FilePath
-  , encodeId   :: Integer -> String
-  , jobs       :: TChan String
-  , lastId     :: TVar Integer
-  , port       :: Integer
-  , publicPath :: FilePath
-  , rackspace  :: RackspaceConfig
+  { acceptNewContent    :: Bool
+  , baseURI             :: BaseURI
+  , contentBaseURI      :: ContentBaseURI
+  , dataPath            :: FilePath
+  , encodeId            :: Integer -> String
+  , jobs                :: TChan String
+  , lastId              :: TVar Integer
+  , openseadragonScript :: String
+  , port                :: Integer
+  , publicPath          :: FilePath
+  , rackspace           :: RackspaceConfig
+  , version             :: String
   }
 
 -- Config: Rackspace

@@ -11,7 +11,8 @@ import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
 import           Control.Monad.IO.Class           (liftIO)
 import qualified Data.ByteString.Char8            as BC
-import           Data.Maybe                       (fromMaybe)
+import           Data.Maybe                       (fromJust, fromMaybe)
+import           Network.URI                      (parseAbsoluteURI)
 import           Network.Wai.Handler.Warp         (run)
 import           System.AtomicWrite.Writer.String (atomicWriteFile)
 import           System.Directory                 (getCurrentDirectory)
@@ -19,10 +20,12 @@ import           System.Environment               (lookupEnv)
 import           System.Envy                      (decodeEnv)
 import           System.FilePath.Posix            ((</>))
 import           System.IO.Error                  (isDoesNotExistError)
-import           Web.Hashids                      (encode, hashidsMinimum)
+import           Web.Hashids                      (encode, hashidsSimple)
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..), defaultPort)
+import           ZoomHub.Types.BaseURI            (BaseURI (BaseURI))
+import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI (ContentBaseURI))
 -- import           ZoomHub.Pipeline                 (process)
 
 
@@ -37,11 +40,10 @@ lastIdWriteInterval = 5 * 10^(6 :: Int) -- microseconds
 
 readLastId :: String -> IO Integer
 readLastId dataPath = do
-  r <- tryJust doesNotExistGuard $ readFile (lastIdPath dataPath)
+  r <- tryJust (guard . isDoesNotExistError) $ readFile (lastIdPath dataPath)
   return $ case r of
     Left _       -> 0
     Right lastId -> read lastId
-  where doesNotExistGuard = guard . isDoesNotExistError
 
 writeLastId :: String -> TVar Integer -> Int -> IO ()
 writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
@@ -59,21 +61,47 @@ printJobs tchan interval = forever $ atomically (readTChan tchan)
 hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
 
+baseURIEnvName :: String
+baseURIEnvName = "BASE_URI"
+
 -- Config
-contentIdMinLength :: Int
-contentIdMinLength = 4
+readVersion :: FilePath -> IO String
+readVersion currentDirectory = do
+  r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
+  return $ case r of
+    Left _        -> "unknown"
+    Right version -> version
+  where
+    versionPath = currentDirectory </> "version.txt"
 
 -- Main
 main :: IO ()
 main = do
+  -- TODO: Migrate configuration to `configurator`:
+  -- https://hackage.haskell.org/package/configurator
   currentDirectory <- getCurrentDirectory
+  openseadragonScript <- readFile $ currentDirectory </>
+    "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
+  version <- readVersion currentDirectory
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
   maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
   maybeRaxConfig <- decodeEnv
-  let defaultDataPath = currentDirectory </> "data"
+  maybeBaseURI <- lookupEnv baseURIEnvName
+  baseURI <- case maybeBaseURI of
+    Just uriString -> case parseAbsoluteURI uriString of
+      Just uri  -> return $ BaseURI uri
+      Nothing -> error $ "Provided environment variable `" ++ baseURIEnvName ++
+        "` '" ++ uriString ++ "' is not a valid URL."
+    Nothing -> error $ "Please set required `" ++ baseURIEnvName ++
+      "` environment variable."
+  let acceptNewContent = False
+      defaultDataPath = currentDirectory </> "data"
       dataPath = fromMaybe defaultDataPath maybeDataPath
+      port = maybe defaultPort read maybePort
+      contentBaseURI = ContentBaseURI $
+        fromJust . parseAbsoluteURI $ "http://content.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath maybePublicPath
   case (maybeHashidsSalt, maybeRaxConfig) of
@@ -83,13 +111,12 @@ main = do
       _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
       jobs <- liftIO $ atomically newTChan
       _ <- forkIO $ printJobs jobs lastIdWriteInterval
-      let encodeContext = hashidsMinimum hashidsSalt contentIdMinLength
+      let encodeContext = hashidsSimple hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
-          port = maybe defaultPort read maybePort
           config = Config{..}
       putStrLn $ "Welcome to ZoomHub." ++
-        " Go to <http://localhost:" ++ show port ++ "> and have fun!"
+        " Go to <" ++ show baseURI ++ "> and have fun!"
       run (fromIntegral port) (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
       "` environment variable.\nThis secret salt enables ZoomHub to encode" ++

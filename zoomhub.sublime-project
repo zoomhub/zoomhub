@@ -9,9 +9,12 @@
             "folder_exclude_patterns": [
                 ".cabal-sandbox",
                 ".stack-work",
+                "archive",
                 "backup-*",
                 "dist",
-                "node_modules"
+                "node/public/lib",
+                "node_modules",
+                "public/lib"
             ]
         }
     ],
