@@ -84,7 +84,8 @@ main = do
   maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
   maybeRaxConfig <- decodeEnv
   maybeBaseURI <- lookupEnv "BASE_URI"
-  let defaultDataPath = currentDirectory </> "data"
+  let acceptNewContent = False
+      defaultDataPath = currentDirectory </> "data"
       dataPath = fromMaybe defaultDataPath maybeDataPath
       port = maybe defaultPort read maybePort
       defaultBaseURI =

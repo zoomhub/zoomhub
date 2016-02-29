@@ -3,6 +3,7 @@
 module ZoomHub.Config
   ( Config(Config)
   , RackspaceConfig
+  , acceptNewContent
   , baseURI
   , contentBaseURI
   , dataPath
@@ -33,7 +34,8 @@ defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { baseURI             :: BaseURI
+  { acceptNewContent    :: Bool
+  , baseURI             :: BaseURI
   , contentBaseURI      :: ContentBaseURI
   , dataPath            :: FilePath
   , encodeId            :: Integer -> String
