@@ -64,7 +64,7 @@ analyticsScript = concatPretty [
 instance ToHtml ViewContent where
   toHtml vc =
       doctypehtml_ $
-        do head_ (do title_ (toHtml $ cId <> title)
+        do head_ (do title_ (toHtml $ cId <> titleSeparator <> title)
                      meta_ [name_ "viewport",
                             content_ "width=device-width, initial-scale=1"]
                      style_ styles
@@ -72,7 +72,8 @@ instance ToHtml ViewContent where
                      )
            body_ $ script_ [src_ (T.pack $ show scriptURI)] emptyBody
     where
-      title = "— ZoomHub: Share and view high-resolution images effortlessly"
+      title = "ZoomHub: Share and view high-resolution images effortlessly"
+      titleSeparator = " — "
       content = vcContent vc
       cId = unId $ contentId content
       baseURI = vcBaseURI vc
