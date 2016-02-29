@@ -61,6 +61,9 @@ printJobs tchan interval = forever $ atomically (readTChan tchan)
 hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
 
+baseURIEnvName :: String
+baseURIEnvName = "BASE_URI"
+
 -- Config
 readVersion :: FilePath -> IO String
 readVersion currentDirectory = do
@@ -83,15 +86,18 @@ main = do
   maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
   maybeRaxConfig <- decodeEnv
-  maybeBaseURI <- lookupEnv "BASE_URI"
+  maybeBaseURI <- lookupEnv baseURIEnvName
+  baseURI <- case maybeBaseURI of
+    Just uriString -> case parseAbsoluteURI uriString of
+      Just uri  -> return $ BaseURI uri
+      Nothing -> error $ "Provided environment variable `" ++ baseURIEnvName ++
+        "` '" ++ uriString ++ "' is not a valid URL."
+    Nothing -> error $ "Please set required `" ++ baseURIEnvName ++
+      "` environment variable."
   let acceptNewContent = False
       defaultDataPath = currentDirectory </> "data"
       dataPath = fromMaybe defaultDataPath maybeDataPath
       port = maybe defaultPort read maybePort
-      defaultBaseURI =
-        fromJust . parseAbsoluteURI $ "http://localhost:" ++ show port
-      baseURI = BaseURI $ fromMaybe defaultBaseURI $
-        maybe Nothing parseAbsoluteURI maybeBaseURI
       contentBaseURI = ContentBaseURI $
         fromJust . parseAbsoluteURI $ "http://content.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
