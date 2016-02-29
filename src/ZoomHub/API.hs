@@ -27,7 +27,7 @@ import           ZoomHub.API.ContentTypes         (JavaScript)
 import           ZoomHub.API.Errors               (error400, error404)
 import           ZoomHub.Config                   (Config)
 import qualified ZoomHub.Config                   as Config
-import           ZoomHub.Storage.File             (create, getById, getByURL)
+import           ZoomHub.Storage.File             (getById, getByURL)
 import           ZoomHub.Types.BaseURI            (BaseURI)
 import           ZoomHub.Types.Content            (Content, fromInternal)
 import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI)
@@ -106,11 +106,11 @@ contentByURL config maybeURL = case maybeURL of
     ]
   Just url -> do
       maybeContent <- liftIO $ getByURL (Config.dataPath config) url
-      content <- case maybeContent of
-        Nothing -> liftIO $ create config url
-        Just c  -> return c
-      redirect $ Internal.contentId content
+      case maybeContent of
+        Nothing      -> left $ error400 noNewContentMessage
+        Just content -> redirect $ Internal.contentId content
       where
+        noNewContentMessage = "We are currently not processing new content."
         -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
         -- permanent HTTP 301 redirects:
         redirect contentId =
