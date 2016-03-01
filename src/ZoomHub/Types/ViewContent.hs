@@ -10,7 +10,7 @@ module ZoomHub.Types.ViewContent
 import           Data.Maybe                       (fromJust)
 import           Data.Monoid                      ((<>))
 import qualified Data.Text                        as T
-import           Lucid                            (ToHtml, body_, content_,
+import           Lucid                            (ToHtml, body_, charset_, content_,
                                                    doctypehtml_, head_, meta_,
                                                    name_, script_, src_, style_,
                                                    title_, toHtml, toHtmlRaw)
@@ -65,6 +65,7 @@ instance ToHtml ViewContent where
   toHtml vc =
       doctypehtml_ $
         do head_ (do title_ (toHtml $ cId <> titleSeparator <> title)
+                     meta_ [charset_ "utf-8"]
                      meta_ [name_ "viewport",
                             content_ "width=device-width, initial-scale=1"]
                      style_ styles
