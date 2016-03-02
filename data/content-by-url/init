@@ -1,0 +1,22 @@
+#!/bin/sh
+
+#
+# Initializes URL --> ID index files for sample content.
+#
+
+ROOT=$(git rev-parse --show-toplevel)
+ID_PATH="../content-by-id"
+URL_ROOT="$ROOT/data/content-by-url"
+
+cd "$URL_ROOT"
+ln -s "$ID_PATH/100.json" \
+  f47ebb016118ec8733629bf2bee23d3838dec72f03c4e72de871b5f5cab99e29.json
+ln -s "$ID_PATH/100_U.json" \
+  62cc9aec7e8bf5b3c7ecb452ac1e8e41848757279f0acb76475cb0dd5a2311bf.json
+ln -s "$ID_PATH/4rcn.json" \
+  02e584171d18e29140e98f0d3a1793317c433b4473e743112444118ad125aa18.json
+ln -s "$ID_PATH/hdfm.json" \
+  ca896364115afba10473c4e86b43c939a6265f0afb3c26a74d0fa861678e24df.json
+ln -s "$ID_PATH/h.json" \
+  dab732e0bb832d25db40384a8c9d70ffcbe32e1cd4dcc0d5cca596e672ba64b6.json
+cd -

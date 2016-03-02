@@ -10,11 +10,15 @@ fi
 
 # Commands
 case "$1" in
-install)
-    npm install
+init)
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew/bda8d64e0e9011aab1612868eac2f709e631c503/Library/Formula/haskell-stack.rb
+    stack setup
     ;;
 run)
-    npm start
+    stack build --file-watch --exec ./scripts/run-development.sh
+    ;;
+test)
+    stack test
     ;;
 ping)
     ansible --user zoomhub --inventory-file ${hosts} all -m ping
@@ -52,6 +56,15 @@ setup)
     ;;
 deploy)
     ansible-playbook --inventory-file ${hosts} deployment/deploy.yml --ask-vault-pass
+    ;;
+lint)
+    git diff-files --quiet
+    HAS_GIT_UNSTAGED_CHANGES=$?
+    if [[ "$HAS_GIT_UNSTAGED_CHANGES" != "0" ]] ; then
+        echo 'Commit all changes to Git before running `./zh lint`'
+        exit 1
+    fi
+    git ls-files | grep '.hs$' | xargs stylish-haskell --inplace
     ;;
 *)
     echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"

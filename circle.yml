@@ -1,0 +1,29 @@
+dependencies:
+  cache_directories:
+    - "~/.stack"
+  pre:
+    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 575159689BEFB442
+    - echo 'deb http://download.fpcomplete.com/ubuntu precise main'|sudo tee /etc/apt/sources.list.d/fpco.list
+    - sudo apt-get update && sudo apt-get install stack -y
+  override:
+    - stack setup
+    - stack build --ghc-options="-Wall -Werror"
+  post:
+    - ./deployment/keter-bundle.sh
+    - cp zoomhub.keter $CIRCLE_ARTIFACTS
+
+test:
+  override:
+    - stack test
+
+deployment:
+  development:
+    # During development, deploy all branches. Restrict to `master` once
+    # we are further along:
+    branch: /.*/
+    commands:
+      - ./deployment/deploy.sh
+
+notify:
+  webhooks:
+    - url: https://webhooks.gitter.im/e/84a0591a52491268102f

@@ -1,0 +1,110 @@
+name:                zoomhub
+version:             0.0.5.0
+synopsis:            Share and view high-resolution images effortlessly.
+description:         Please see README.md
+homepage:            http://github.com/zoomhub/zoomhub#readme
+license:             MIT
+license-file:        LICENSE
+author:              ZoomHub
+maintainer:          zoomhub@googlegroups.com
+copyright:           2013–2016 ZoomHub
+category:            Web
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+bug-reports:         http://github.com/zoomhub/zoomhub/issues
+source-repository head
+  type: git
+  location: http://github.com/zoomhub/zoomhub.git
+
+library
+  exposed-modules:
+      ZoomHub.API
+    , ZoomHub.API.ContentTypes
+    , ZoomHub.API.Errors
+    , ZoomHub.Config
+    , ZoomHub.Main
+    , ZoomHub.Pipeline
+    , ZoomHub.Rackspace.CloudFiles
+    , ZoomHub.Storage.File
+    , ZoomHub.Storage.Internal.File
+    , ZoomHub.Types.BaseURI
+    , ZoomHub.Types.Content
+    , ZoomHub.Types.ContentBaseURI
+    , ZoomHub.Types.DeepZoomImage
+    , ZoomHub.Types.Embed
+    , ZoomHub.Types.EmbedDimension
+    , ZoomHub.Types.EmbedId
+    , ZoomHub.Types.Internal.Content
+    , ZoomHub.Types.Internal.ContentId
+    , ZoomHub.Types.Internal.ContentURI
+    , ZoomHub.Types.Internal.DeepZoomImage
+    , ZoomHub.Types.OpenSeadragonTileSource
+    , ZoomHub.Types.OpenSeadragonViewerConfig
+    , ZoomHub.Types.ViewContent
+    , ZoomHub.Utils
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   src
+  build-depends:
+      aeson == 0.10.*
+    , aeson-casing == 0.1.*
+    , aeson-pretty
+    , atomic-write
+    , base >= 4.8 && < 5
+    , bytestring
+    , containers
+    , cryptonite == 0.10.*
+    , directory
+    , either
+    , envy
+    , filepath
+    , hashids
+    , http-client
+    , http-media
+    , http-types
+    , lens == 4.13.*
+    , lens-aeson == 1.*
+    , lucid
+    , network-uri
+    , process
+    , random
+    , safe
+    , servant == 0.4.*
+    , servant-lucid == 0.4.*
+    , servant-server == 0.4.*
+    , stm
+    , temporary
+    , text
+    , time
+    , transformers
+    , unix
+    , wai
+    , warp
+    , wreq == 0.4.*
+
+executable zoomhub
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  main-is:          Main.hs
+  build-depends:
+      base
+    , zoomhub
+
+test-suite tests
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   tests
+  main-is:          Spec.hs
+  type:             exitcode-stdio-1.0
+  other-modules:
+    ZoomHub.Storage.Internal.FileTest
+    ZoomHub.Types.Internal.ContentIdTest
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , hspec == 2.*
+    , QuickCheck
+    , quickcheck-instances
+    , zoomhub
