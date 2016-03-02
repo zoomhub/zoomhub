@@ -6,34 +6,35 @@ module ZoomHub.API
   ( app
   ) where
 
-import           Control.Monad.IO.Class           (liftIO)
-import           Control.Monad.Trans.Either       (EitherT, left)
-import qualified Data.ByteString.Char8            as BC
-import           Data.Maybe                       (fromMaybe)
-import           Data.Proxy                       (Proxy (Proxy))
-import           Network.Wai                      (Application)
-import           Servant                          ((:<|>) (..), (:>), Capture,
-                                                   Get, JSON, QueryParam, Raw,
-                                                   ServantErr, Server, err301,
-                                                   errHeaders, serve,
-                                                   serveDirectory)
-import           Servant.HTML.Lucid               (HTML)
-import           System.Random                    (randomRIO)
+import           Control.Monad.IO.Class            (liftIO)
+import           Control.Monad.Trans.Either        (EitherT, left)
+import qualified Data.ByteString.Char8             as BC
+import           Data.Maybe                        (fromMaybe)
+import           Data.Proxy                        (Proxy (Proxy))
+import           Network.Wai                       (Application)
+import           Servant                           ((:<|>) (..), (:>), Capture,
+                                                    Get, JSON, QueryParam, Raw,
+                                                    ServantErr, Server, err301,
+                                                    errHeaders, serve,
+                                                    serveDirectory)
+import           Servant.HTML.Lucid                (HTML)
+import           System.Random                     (randomRIO)
 
-import           ZoomHub.API.ContentTypes         (JavaScript)
-import           ZoomHub.API.Errors               (error400, error404)
-import           ZoomHub.Config                   (Config)
-import qualified ZoomHub.Config                   as Config
-import           ZoomHub.Storage.File             (getById, getByURL)
-import           ZoomHub.Types.BaseURI            (BaseURI)
-import           ZoomHub.Types.Content            (Content, fromInternal)
-import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI)
-import           ZoomHub.Types.Embed              (Embed, mkEmbed)
-import           ZoomHub.Types.EmbedDimension     (EmbedDimension)
-import           ZoomHub.Types.EmbedId            (EmbedId, unEmbedId)
-import qualified ZoomHub.Types.Internal.Content   as Internal
-import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
-import           ZoomHub.Types.ViewContent        (ViewContent, mkViewContent)
+import           ZoomHub.API.ContentTypes          (JavaScript)
+import           ZoomHub.API.Errors                (error400, error404)
+import           ZoomHub.Config                    (Config)
+import qualified ZoomHub.Config                    as Config
+import           ZoomHub.Storage.File              (getById, getByURL)
+import           ZoomHub.Types.BaseURI             (BaseURI)
+import           ZoomHub.Types.Content             (Content, fromInternal)
+import           ZoomHub.Types.ContentBaseURI      (ContentBaseURI)
+import           ZoomHub.Types.Embed               (Embed, mkEmbed)
+import           ZoomHub.Types.EmbedDimension      (EmbedDimension)
+import           ZoomHub.Types.EmbedId             (EmbedId, unEmbedId)
+import qualified ZoomHub.Types.Internal.Content    as Internal
+import           ZoomHub.Types.Internal.ContentId  (ContentId, unId)
+import           ZoomHub.Types.Internal.ContentURI (ContentURI)
+import           ZoomHub.Types.ViewContent         (ViewContent, mkViewContent)
 
 
 -- Servant default handler type
@@ -52,6 +53,7 @@ type API =
        :> QueryParam "width" EmbedDimension
        :> QueryParam "height" EmbedDimension
        :> Get '[JavaScript] Embed
+  :<|> Capture "viewURI" ContentURI :> Get '[HTML] ViewContent
   :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
   :<|> Raw
 
@@ -65,6 +67,7 @@ server config = health
            :<|> contentById baseURI contentBaseURI dataPath
            :<|> contentByURL config
            :<|> embed baseURI contentBaseURI dataPath viewerScript
+           :<|> viewContentByURL dataPath
            :<|> viewContentById baseURI contentBaseURI dataPath
            :<|> serveDirectory (Config.publicPath config)
   where
@@ -130,6 +133,12 @@ embed baseURI cBaseURI dataPath script embedId maybeId width height = do
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
+viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
+viewContentByURL dataPath contentURI = do
+  maybeContent <- liftIO $ getByURL dataPath (show contentURI)
+  case maybeContent of
+    Nothing -> noNewContentError
+    Just c  -> redirect $ Internal.contentId c
 
 viewContentById :: BaseURI ->
                    ContentBaseURI ->
