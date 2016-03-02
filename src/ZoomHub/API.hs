@@ -165,6 +165,7 @@ noNewContentError =
 -- permanent HTTP 301 redirects:
 redirect :: ContentId -> Handler a
 redirect contentId =
+  -- TODO: Look into Servant ‘Links’ for type safe link generation:
   let location = BC.pack $ "/v1/content/" ++ unId contentId in
   left $ err301{
     -- HACK: Redirect using error: http://git.io/vBCz9
