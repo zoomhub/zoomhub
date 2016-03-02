@@ -104,18 +104,8 @@ contentByURL config maybeURL = case maybeURL of
   Just url -> do
       maybeContent <- liftIO $ getByURL (Config.dataPath config) url
       case maybeContent of
-        Nothing      -> left $ error400 noNewContentMessage
+        Nothing      -> noNewContentError
         Just content -> redirect $ Internal.contentId content
-      where
-        noNewContentMessage = "We are currently not processing new content."
-        -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
-        -- permanent HTTP 301 redirects:
-        redirect contentId =
-          let location = BC.pack $ "/v1/content/" ++ unId contentId in
-          left $ err301{
-            -- HACK: Redirect using error: http://git.io/vBCz9
-            errHeaders = [("Location", location)]
-          }
 
 embed :: BaseURI ->
          ContentBaseURI ->
@@ -157,3 +147,17 @@ viewContentById baseURI contentBaseURI dataPath contentId = do
 -- Helpers
 error404Message :: ContentId -> String
 error404Message contentId = "No content with ID: " ++ unId contentId
+
+noNewContentError :: Handler a
+noNewContentError =
+  left $ error400 "We are currently not processing new content."
+
+-- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
+-- permanent HTTP 301 redirects:
+redirect :: ContentId -> Handler a
+redirect contentId =
+  let location = BC.pack $ "/v1/content/" ++ unId contentId in
+  left $ err301{
+    -- HACK: Redirect using error: http://git.io/vBCz9
+    errHeaders = [("Location", location)]
+  }
