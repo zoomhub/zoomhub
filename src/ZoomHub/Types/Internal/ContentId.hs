@@ -42,14 +42,14 @@ fromString s
 
 -- NOTE: Duplicated from `hashids`: https://git.io/vgpT4
 -- TODO: Use this for `hashids` initialization.
-validChars :: [Char]
+validChars :: String
 validChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']
 
 validCharsSet :: S.Set Char
 validCharsSet = S.fromList validChars
 
 isValid :: String -> Bool
-isValid s = all ((flip S.member) validCharsSet) s
+isValid = all ((flip S.member) validCharsSet)
 
 -- Text
 instance FromText ContentId where
