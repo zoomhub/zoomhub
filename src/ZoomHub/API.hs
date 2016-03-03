@@ -148,6 +148,7 @@ viewContentById baseURI contentBaseURI dataPath contentId = do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
 
+-- TODO: Add support for submission, i.e. create content in the background:
 viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
 viewContentByURL dataPath contentURI = do
   maybeContent <- liftIO $ getByURL dataPath (show contentURI)
