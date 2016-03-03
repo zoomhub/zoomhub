@@ -45,6 +45,7 @@ library
     , ZoomHub.Types.OpenSeadragonViewerConfig
     , ZoomHub.Types.ViewContent
     , ZoomHub.Utils
+    , ZoomHub.Web.Errors
   default-language: Haskell2010
   ghc-options:      -Wall
   hs-source-dirs:   src
