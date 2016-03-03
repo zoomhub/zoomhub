@@ -8,14 +8,11 @@ module ZoomHub.API
 
 import           Control.Monad.IO.Class            (liftIO)
 import           Control.Monad.Trans.Either        (EitherT, left)
-import qualified Data.ByteString                   as B
 import qualified Data.ByteString.Char8             as BC
 import           Data.Maybe                        (fromMaybe, fromJust)
-import           Data.Monoid                       ((<>))
 import           Data.Proxy                        (Proxy (Proxy))
-import           Debug.Trace                       (traceIO)
 import           Network.URI                       (URI, parseRelativeReference)
-import           Network.Wai                       (Application, rawPathInfo)
+import           Network.Wai                       (Application)
 import           Servant                           ((:<|>) (..), (:>), Capture,
                                                     Get, JSON, QueryParam, Raw,
                                                     ServantErr, Server, err301,
@@ -65,16 +62,15 @@ type API =
 api :: Proxy API
 api = Proxy
 
-server :: Config -> B.ByteString -> Server API
-server config rawPath =
-         viewContentByURL dataPath rawPath
-    :<|> health
-    :<|> version (Config.version config)
-    :<|> contentById baseURI contentBaseURI dataPath
-    :<|> contentByURL config
-    :<|> embed baseURI contentBaseURI dataPath viewerScript
-    :<|> viewContentById baseURI contentBaseURI dataPath
-    :<|> serveDirectory (Config.publicPath config)
+server :: Config -> Server API
+server config = viewContentByURL dataPath
+           :<|> health
+           :<|> version (Config.version config)
+           :<|> contentById baseURI contentBaseURI dataPath
+           :<|> contentByURL config
+           :<|> embed baseURI contentBaseURI dataPath viewerScript
+           :<|> viewContentById baseURI contentBaseURI dataPath
+           :<|> serveDirectory (Config.publicPath config)
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
@@ -82,9 +78,7 @@ server config rawPath =
     viewerScript = Config.openseadragonScript config
 
 app :: Config -> Application
-app config request respond = do
-  let rawPath = rawPathInfo request
-  serve api (server config rawPath) request respond
+app config = serve api (server config)
 
 -- Handlers
 health :: Handler String
@@ -140,9 +134,8 @@ embed baseURI cBaseURI dataPath script embedId maybeId width height = do
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
-viewContentByURL :: FilePath -> B.ByteString -> ContentURI -> Handler ViewContent
-viewContentByURL dataPath rawPath contentURI = do
-  liftIO . traceIO $ show ("viewContentByURL: " <> rawPath)
+viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
+viewContentByURL dataPath contentURI = do
   maybeContent <- liftIO $ getByURL dataPath (show contentURI)
   case maybeContent of
     Nothing -> noNewContentError
