@@ -25,6 +25,7 @@ import           ZoomHub.API.ContentTypes          (JavaScript)
 import           ZoomHub.API.Errors                (error400, error404)
 import           ZoomHub.Config                    (Config)
 import qualified ZoomHub.Config                    as Config
+import           ZoomHub.Servant.RawCapture        (RawCapture)
 import           ZoomHub.Storage.File              (getById, getByURL)
 import           ZoomHub.Types.BaseURI             (BaseURI)
 import           ZoomHub.Types.Content             (Content, fromInternal)
@@ -45,7 +46,7 @@ type Handler a = EitherT ServantErr IO a
 type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx
-       Capture "viewURI" ContentURI :> Get '[HTML] ViewContent
+       RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
   :<|> "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
