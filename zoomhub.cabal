@@ -84,6 +84,7 @@ library
     , unix
     , utf8-string
     , wai
+    , wai-cors
     , warp
     , wreq == 0.4.*
 

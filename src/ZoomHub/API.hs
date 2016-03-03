@@ -14,6 +14,7 @@ import           Data.Proxy                         (Proxy (Proxy))
 import           Network.URI                        (URI,
                                                      parseRelativeReference)
 import           Network.Wai                        (Application)
+import           Network.Wai.Middleware.Cors        (simpleCors)
 import           Servant                            ((:<|>) (..), (:>), Capture,
                                                      Get, JSON, QueryParam, Raw,
                                                      ServantErr, Server, err301,
@@ -86,7 +87,7 @@ server config = health
     viewerScript = Config.openseadragonScript config
 
 app :: Config -> Application
-app config = serve api (server config)
+app config = simpleCors $ serve api (server config)
 
 -- Handlers
 health :: Handler String
