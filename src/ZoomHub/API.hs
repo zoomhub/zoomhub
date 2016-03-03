@@ -59,6 +59,7 @@ type API =
        :> Get '[JavaScript] Embed
   :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
   :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] ViewContent
+  :<|> RequiredQueryParam "url" String :> Get '[HTML] ViewContent
   :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
   :<|> Raw
 
@@ -74,6 +75,7 @@ server config = health
            :<|> embed baseURI contentBaseURI dataPath viewerScript
            :<|> viewContentById baseURI contentBaseURI dataPath
            :<|> viewContentByURL dataPath
+           :<|> invalidURLParam
            :<|> viewContentByURL dataPath
            :<|> serveDirectory (Config.publicPath config)
   where
@@ -151,6 +153,10 @@ viewContentById baseURI contentBaseURI dataPath contentId = do
     Just c  -> do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
+
+invalidURLParam :: String -> Handler ViewContent
+invalidURLParam _ =
+  left . error400 $ "Please give us the full URL, including ‘http://’ or ‘https://’."
 
 -- TODO: Add support for submission, i.e. create content in the background:
 viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
