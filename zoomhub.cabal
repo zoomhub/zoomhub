@@ -82,6 +82,7 @@ library
     , time
     , transformers
     , unix
+    , utf8-string
     , wai
     , warp
     , wreq == 0.4.*
