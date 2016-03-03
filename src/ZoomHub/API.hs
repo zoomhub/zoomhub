@@ -59,6 +59,7 @@ type API =
        :> Get '[JavaScript] Embed
   :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
   :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] ViewContent
+  -- Error handler for invalid URLs which will always match `String`:
   :<|> RequiredQueryParam "url" String :> Get '[HTML] ViewContent
   :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
   :<|> Raw
