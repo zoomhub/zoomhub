@@ -6,9 +6,9 @@ module ZoomHub.API.Errors
   )
   where
 
-import qualified Data.ByteString.Lazy.Char8 as BLC
-import           Servant                    (ServantErr, err400, err404,
-                                             errBody, errHeaders)
+import qualified Data.ByteString.Lazy.UTF8 as BU
+import           Servant                   (ServantErr, err400, err404, errBody,
+                                            errHeaders)
 
 error400 :: String -> ServantErr
 error400 = mkError err400
@@ -18,6 +18,6 @@ error404 = mkError err404
 
 mkError :: ServantErr -> String -> ServantErr
 mkError errorType message = errorType
-  { errHeaders = [("Content-Type", "text/plain")]
-  , errBody = BLC.pack message
+  { errHeaders = [("Content-Type", "text/plain; charset=utf-8")]
+  , errBody = BU.fromString message
   }
