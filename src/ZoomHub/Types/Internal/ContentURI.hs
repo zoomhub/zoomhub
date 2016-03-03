@@ -23,7 +23,13 @@ instance Show ContentURI where
 
 -- Text
 instance FromText ContentURI where
-  fromText t = parseAbsoluteURI (T.unpack t) >>= Just . ContentURI
+  fromText t =
+    let maybeURI = parseAbsoluteURI s in
+    case maybeURI of
+      -- TODO: Only accept `http://` and `https://` URIs:
+      Just uri -> Just (ContentURI uri)
+      _ -> Nothing
+    where s = T.unpack t
 
 -- JSON
 instance ToJSON ContentURI where
