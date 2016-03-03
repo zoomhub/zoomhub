@@ -46,8 +46,7 @@ type Handler a = EitherT ServantErr IO a
 type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx
-       RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
-  :<|> "health" :> Get '[HTML] String
+       "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
@@ -57,6 +56,7 @@ type API =
        :> QueryParam "height" EmbedDimension
        :> Get '[JavaScript] Embed
   :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
+  :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
   :<|> Raw
 
 -- API
@@ -64,13 +64,13 @@ api :: Proxy API
 api = Proxy
 
 server :: Config -> Server API
-server config = viewContentByURL dataPath
-           :<|> health
+server config = health
            :<|> version (Config.version config)
            :<|> contentById baseURI contentBaseURI dataPath
            :<|> contentByURL config
            :<|> embed baseURI contentBaseURI dataPath viewerScript
            :<|> viewContentById baseURI contentBaseURI dataPath
+           :<|> viewContentByURL dataPath
            :<|> serveDirectory (Config.publicPath config)
   where
     baseURI = Config.baseURI config
@@ -135,13 +135,6 @@ embed baseURI cBaseURI dataPath script embedId maybeId width height = do
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
-viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
-viewContentByURL dataPath contentURI = do
-  maybeContent <- liftIO $ getByURL dataPath (show contentURI)
-  case maybeContent of
-    Nothing -> noNewContentError
-    Just c  -> redirectToView $ Internal.contentId c
-
 viewContentById :: BaseURI ->
                    ContentBaseURI ->
                    FilePath ->
@@ -154,6 +147,13 @@ viewContentById baseURI contentBaseURI dataPath contentId = do
     Just c  -> do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
+
+viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
+viewContentByURL dataPath contentURI = do
+  maybeContent <- liftIO $ getByURL dataPath (show contentURI)
+  case maybeContent of
+    Nothing -> noNewContentError
+    Just c  -> redirectToView $ Internal.contentId c
 
 -- Helpers
 error404Message :: ContentId -> String
