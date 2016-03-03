@@ -75,6 +75,7 @@ library
     , servant-lucid == 0.4.4.5
     , servant-server == 0.4.4.6
     , stm
+    , string-conversions
     , temporary
     , text
     , time
