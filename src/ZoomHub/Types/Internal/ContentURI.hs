@@ -7,7 +7,7 @@ module ZoomHub.Types.Internal.ContentURI
 
 import           Data.Aeson  (ToJSON, Value (String), toJSON)
 import qualified Data.Text   as T
-import           Network.URI (URI, parseAbsoluteURI)
+import           Network.URI (URI, parseAbsoluteURI, uriScheme)
 import           Servant     (FromText, fromText)
 
 
@@ -26,9 +26,11 @@ instance FromText ContentURI where
   fromText t =
     let maybeURI = parseAbsoluteURI s in
     case maybeURI of
-      -- TODO: Only accept `http://` and `https://` URIs:
-      Just uri -> Just (ContentURI uri)
-      _ -> Nothing
+      Just uri -> case uriScheme uri of
+        "http:"  -> Just (ContentURI uri)
+        "https:" -> Just (ContentURI uri)
+        _        -> Nothing
+      _        -> Nothing
     where s = T.unpack t
 
 -- JSON
