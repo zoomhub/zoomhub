@@ -8,10 +8,13 @@ module ZoomHub.API
 
 import           Control.Monad.IO.Class            (liftIO)
 import           Control.Monad.Trans.Either        (EitherT, left)
+import qualified Data.ByteString                   as B
 import qualified Data.ByteString.Char8             as BC
 import           Data.Maybe                        (fromMaybe)
+import           Data.Monoid                       ((<>))
 import           Data.Proxy                        (Proxy (Proxy))
-import           Network.Wai                       (Application)
+import           Debug.Trace                       (traceIO)
+import           Network.Wai                       (Application, rawPathInfo)
 import           Servant                           ((:<|>) (..), (:>), Capture,
                                                     Get, JSON, QueryParam, Raw,
                                                     ServantErr, Server, err301,
@@ -44,7 +47,8 @@ type Handler a = EitherT ServantErr IO a
 type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx
-       "health" :> Get '[HTML] String
+       Capture "viewURI" ContentURI :> Get '[HTML] ViewContent
+  :<|> "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
@@ -53,7 +57,6 @@ type API =
        :> QueryParam "width" EmbedDimension
        :> QueryParam "height" EmbedDimension
        :> Get '[JavaScript] Embed
-  :<|> Capture "viewURI" ContentURI :> Get '[HTML] ViewContent
   :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
   :<|> Raw
 
@@ -61,15 +64,16 @@ type API =
 api :: Proxy API
 api = Proxy
 
-server :: Config -> Server API
-server config = health
-           :<|> version (Config.version config)
-           :<|> contentById baseURI contentBaseURI dataPath
-           :<|> contentByURL config
-           :<|> embed baseURI contentBaseURI dataPath viewerScript
-           :<|> viewContentByURL dataPath
-           :<|> viewContentById baseURI contentBaseURI dataPath
-           :<|> serveDirectory (Config.publicPath config)
+server :: Config -> B.ByteString -> Server API
+server config rawPath =
+         viewContentByURL dataPath rawPath
+    :<|> health
+    :<|> version (Config.version config)
+    :<|> contentById baseURI contentBaseURI dataPath
+    :<|> contentByURL config
+    :<|> embed baseURI contentBaseURI dataPath viewerScript
+    :<|> viewContentById baseURI contentBaseURI dataPath
+    :<|> serveDirectory (Config.publicPath config)
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
@@ -77,7 +81,9 @@ server config = health
     viewerScript = Config.openseadragonScript config
 
 app :: Config -> Application
-app config = serve api (server config)
+app config request respond = do
+  let rawPath = rawPathInfo request
+  serve api (server config rawPath) request respond
 
 -- Handlers
 health :: Handler String
@@ -133,8 +139,9 @@ embed baseURI cBaseURI dataPath script embedId maybeId width height = do
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
-viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
-viewContentByURL dataPath contentURI = do
+viewContentByURL :: FilePath -> B.ByteString -> ContentURI -> Handler ViewContent
+viewContentByURL dataPath rawPath contentURI = do
+  liftIO . traceIO $ show ("viewContentByURL: " <> rawPath)
   maybeContent <- liftIO $ getByURL dataPath (show contentURI)
   case maybeContent of
     Nothing -> noNewContentError
