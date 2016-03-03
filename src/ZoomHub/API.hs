@@ -9,7 +9,7 @@ module ZoomHub.API
 import           Control.Monad.IO.Class            (liftIO)
 import           Control.Monad.Trans.Either        (EitherT, left)
 import qualified Data.ByteString.Char8             as BC
-import           Data.Maybe                        (fromMaybe, fromJust)
+import           Data.Maybe                        (fromJust, fromMaybe)
 import           Data.Proxy                        (Proxy (Proxy))
 import           Network.URI                       (URI, parseRelativeReference)
 import           Network.Wai                       (Application)
