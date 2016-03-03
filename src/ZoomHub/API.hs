@@ -10,10 +10,11 @@ import           Control.Monad.IO.Class            (liftIO)
 import           Control.Monad.Trans.Either        (EitherT, left)
 import qualified Data.ByteString                   as B
 import qualified Data.ByteString.Char8             as BC
-import           Data.Maybe                        (fromMaybe)
+import           Data.Maybe                        (fromMaybe, fromJust)
 import           Data.Monoid                       ((<>))
 import           Data.Proxy                        (Proxy (Proxy))
 import           Debug.Trace                       (traceIO)
+import           Network.URI                       (URI, parseRelativeReference)
 import           Network.Wai                       (Application, rawPathInfo)
 import           Servant                           ((:<|>) (..), (:>), Capture,
                                                     Get, JSON, QueryParam, Raw,
@@ -114,7 +115,7 @@ contentByURL config maybeURL = case maybeURL of
       maybeContent <- liftIO $ getByURL (Config.dataPath config) url
       case maybeContent of
         Nothing      -> noNewContentError
-        Just content -> redirect $ Internal.contentId content
+        Just content -> redirectToAPI $ Internal.contentId content
 
 embed :: BaseURI ->
          ContentBaseURI ->
@@ -145,7 +146,7 @@ viewContentByURL dataPath rawPath contentURI = do
   maybeContent <- liftIO $ getByURL dataPath (show contentURI)
   case maybeContent of
     Nothing -> noNewContentError
-    Just c  -> redirect $ Internal.contentId c
+    Just c  -> redirectToView $ Internal.contentId c
 
 viewContentById :: BaseURI ->
                    ContentBaseURI ->
@@ -168,13 +169,22 @@ noNewContentError :: Handler a
 noNewContentError =
   left $ error400 "We are currently not processing new content."
 
+redirectToView :: ContentId -> Handler ViewContent
+redirectToView contentId =
+  -- TODO: Look into Servant ‘Links’ for type safe link generation:
+  redirect . fromJust . parseRelativeReference $ "/" ++ unId contentId
+
+redirectToAPI :: ContentId -> Handler Content
+redirectToAPI contentId =
+  -- TODO: Look into Servant ‘Links’ for type safe link generation:
+  redirect . fromJust . parseRelativeReference $
+    "/v1/content/" ++ unId contentId
+
 -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
 -- permanent HTTP 301 redirects:
-redirect :: ContentId -> Handler a
-redirect contentId =
-  -- TODO: Look into Servant ‘Links’ for type safe link generation:
-  let location = BC.pack $ "/v1/content/" ++ unId contentId in
+redirect :: URI -> Handler a
+redirect location =
   left $ err301{
     -- HACK: Redirect using error: http://git.io/vBCz9
-    errHeaders = [("Location", location)]
+    errHeaders = [("Location", BC.pack (show location))]
   }
