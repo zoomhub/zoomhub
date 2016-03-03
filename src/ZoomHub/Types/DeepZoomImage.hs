@@ -76,7 +76,7 @@ instance ToJSON DeepZoomImage where
 
 -- Types
 newtype DeepZoomImageURI = DeepZoomImageURI { unDeepZoomImageURI :: URI }
-  deriving (Eq)
+  deriving Eq
 
 instance Show DeepZoomImageURI where
   show = show . unDeepZoomImageURI
