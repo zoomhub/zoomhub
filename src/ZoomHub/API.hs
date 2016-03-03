@@ -24,7 +24,7 @@ import           Servant.HTML.Lucid                 (HTML)
 import           System.Random                      (randomRIO)
 
 import           ZoomHub.API.ContentTypes           (JavaScript)
-import           ZoomHub.API.Errors                 (error400, error404)
+import qualified ZoomHub.API.Errors                 as API
 import           ZoomHub.Config                     (Config)
 import qualified ZoomHub.Config                     as Config
 import           ZoomHub.Servant.RawCapture         (RawCapture)
@@ -40,6 +40,7 @@ import qualified ZoomHub.Types.Internal.Content     as Internal
 import           ZoomHub.Types.Internal.ContentId   (ContentId, unId)
 import           ZoomHub.Types.Internal.ContentURI  (ContentURI)
 import           ZoomHub.Types.ViewContent          (ViewContent, mkViewContent)
+import qualified ZoomHub.Web.Errors                 as Web
 
 
 -- Servant default handler type
@@ -104,12 +105,12 @@ contentById :: BaseURI ->
 contentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left . error404 $ error404Message contentId
+    Nothing      -> left . API.error404 $ error404Message contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
-  Nothing  -> left . error400 $ unwords
+  Nothing  -> left . API.error400 $ unwords
     [ "Missing ID or URL."
     , "Please provide ID, e.g. `/v1/content/<id>`,"
     , "or URL via `/v1/content?url=<url>` query parameter."
@@ -117,7 +118,7 @@ contentByURL config maybeURL = case maybeURL of
   Just url -> do
       maybeContent <- liftIO $ getByURL (Config.dataPath config) url
       case maybeContent of
-        Nothing      -> noNewContentError
+        Nothing      -> noNewContentErrorAPI
         Just content -> redirectToAPI $ Internal.contentId content
 
 embed :: BaseURI ->
@@ -132,7 +133,7 @@ embed :: BaseURI ->
 embed baseURI cBaseURI dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left . error404 $ error404Message contentId
+    Nothing      -> left . Web.error404 $ error404Message contentId
     Just content -> do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
@@ -151,30 +152,36 @@ viewContentById :: BaseURI ->
 viewContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing -> left . error404 $ error404Message contentId
+    Nothing -> left . Web.error404 $ error404Message contentId
     Just c  -> do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
 
 invalidURLParam :: String -> Handler ViewContent
-invalidURLParam _ =
-  left . error400 $ "Please give us the full URL, including ‘http://’ or ‘https://’."
+invalidURLParam _ = left . Web.error400 $
+  "Please give us the full URL, including ‘http://’ or ‘https://’."
 
 -- TODO: Add support for submission, i.e. create content in the background:
 viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
 viewContentByURL dataPath contentURI = do
   maybeContent <- liftIO $ getByURL dataPath (show contentURI)
   case maybeContent of
-    Nothing -> noNewContentError
+    Nothing -> noNewContentErrorWeb
     Just c  -> redirectToView $ Internal.contentId c
 
 -- Helpers
 error404Message :: ContentId -> String
 error404Message contentId = "No content with ID: " ++ unId contentId
 
-noNewContentError :: Handler a
-noNewContentError =
-  left $ error400 "We are currently not processing new content."
+noNewContentErrorWeb :: Handler ViewContent
+noNewContentErrorWeb = noNewContentError Web.error400
+
+noNewContentErrorAPI :: Handler Content
+noNewContentErrorAPI = noNewContentError API.error400
+
+noNewContentError :: (String -> ServantErr) -> Handler a
+noNewContentError err =
+  left . err $ "We are currently not processing new content."
 
 redirectToView :: ContentId -> Handler ViewContent
 redirectToView contentId =
