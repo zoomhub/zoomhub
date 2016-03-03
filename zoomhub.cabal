@@ -27,6 +27,7 @@ library
     , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
+    , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.File
     , ZoomHub.Storage.Internal.File
     , ZoomHub.Types.BaseURI
