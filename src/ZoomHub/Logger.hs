@@ -4,10 +4,12 @@
 module ZoomHub.Logger (formatAsJSON) where
 
 import qualified Blaze.ByteString.Builder             as BB
-import           Data.Aeson                           (Value (String), encode,
-                                                       object, toJSON, (.=))
+import           Data.Aeson                           (ToJSON, Value (String),
+                                                       encode, object, toJSON,
+                                                       (.=))
 import qualified Data.ByteString.Char8                as S8
 import           Data.CaseInsensitive                 (original)
+import qualified Data.HashMap.Strict                  as HM
 import           Data.IP                              (fromHostAddress,
                                                        fromIPv4)
 import           Data.Monoid                          ((<>))
@@ -58,7 +60,7 @@ requestToJSON duration req reqBody =
   object
     [ "method" .= decodeUtf8 (requestMethod req)
     , "path" .= decodeUtf8 (rawPathInfo req)
-    , "queryString" .= map queryItemToJSON (queryString req)
+    , "queryString" .= toObject (map queryItemToJSON (queryString req))
     , "durationMs" .= (readAsDouble . printf "%.2f" . rationalToDouble $
                        toRational duration * 1000)
     , "size" .= requestBodyLengthToJSON (requestBodyLength req)
@@ -87,18 +89,22 @@ sockToJSON (SockAddrUnix sock) =
 sockToJSON (SockAddrCan i) =
   object [ "can" .= i ]
 
-queryItemToJSON :: QueryItem -> Value
-queryItemToJSON (name, mValue) = toJSON (decodeUtf8 name, fmap decodeUtf8 mValue)
+toObject :: ToJSON a => [(Text, a)] -> Value
+toObject = toJSON . HM.fromList
+
+queryItemToJSON :: QueryItem -> (Text, Maybe Value)
+queryItemToJSON (name, maybeValue) =
+  (decodeUtf8 name, fmap (String . decodeUtf8) maybeValue)
 
 requestHeadersToJSON :: RequestHeaders -> Value
-requestHeadersToJSON = toJSON . map hToJ where
+requestHeadersToJSON = toObject . map hToJ where
   -- Redact cookies
-  hToJ ("Cookie", _) = toJSON ("Cookie" :: Text, "-RDCT-" :: Text)
+  hToJ ("Cookie", _) = ("Cookie" :: Text, "<redacted>" :: Text)
   hToJ hd = headerToJSON hd
 
-headerToJSON :: Header -> Value
+headerToJSON :: Header -> (Text, Text)
 headerToJSON (headerName, header) =
-  toJSON (decodeUtf8 . original $ headerName, decodeUtf8 header)
+  (decodeUtf8 . original $ headerName, decodeUtf8 header)
 
 portToJSON :: PortNumber -> Value
 portToJSON = toJSON . toInteger
