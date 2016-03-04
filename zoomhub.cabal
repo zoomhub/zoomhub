@@ -91,6 +91,7 @@ library
     , time
     , transformers
     , unix
+    , unordered-containers
     , utf8-string
     , wai
     , wai-app-static
