@@ -53,6 +53,7 @@ type API =
        "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
+  :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
   :<|> Capture "id" EmbedId
        :> QueryParam "id" String
@@ -74,6 +75,7 @@ server :: Config -> Server API
 server config = health
            :<|> version (Config.version config)
            :<|> contentById baseURI contentBaseURI dataPath
+           :<|> invalidContentId
            :<|> contentByURL config
            :<|> embed baseURI contentBaseURI dataPath viewerScript
            :<|> viewContentById baseURI contentBaseURI dataPath
@@ -107,6 +109,10 @@ contentById baseURI contentBaseURI dataPath contentId = do
   case maybeContent of
     Nothing      -> left . API.error404 $ error404Message contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
+
+invalidContentId :: String -> Handler Content
+invalidContentId contentId = left . API.error404 $
+  noContentWithIdMessage ++ contentId
 
 contentByURL :: Config -> Maybe String -> Handler Content
 contentByURL config maybeURL = case maybeURL of
@@ -171,7 +177,10 @@ viewContentByURL dataPath contentURI = do
 
 -- Helpers
 error404Message :: ContentId -> String
-error404Message contentId = "No content with ID: " ++ unId contentId
+error404Message contentId = noContentWithIdMessage ++ unId contentId
+
+noContentWithIdMessage :: String
+noContentWithIdMessage = "No content with ID: "
 
 noNewContentErrorWeb :: Handler ViewContent
 noNewContentErrorWeb = noNewContentError Web.error400
