@@ -24,6 +24,7 @@ library
     , ZoomHub.API.Errors
     , ZoomHub.Config
     , ZoomHub.Main
+    , ZoomHub.Logger
     , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
@@ -56,20 +57,26 @@ library
     , aeson-pretty
     , atomic-write
     , base >= 4.8 && < 5
+    , blaze-builder
     , bytestring
     , containers
+    , case-insensitive
     , cryptonite == 0.10.*
+    , data-default
     , directory
     , either
     , envy
+    , fast-logger
     , filepath
     , hashids
     , http-client
     , http-media
     , http-types
+    , iproute
     , lens == 4.13.*
     , lens-aeson == 1.*
     , lucid
+    , network
     , network-uri
     , process
     , random
@@ -88,6 +95,7 @@ library
     , wai
     , wai-app-static
     , wai-cors
+    , wai-extra
     , warp
     , wreq == 0.4.*
 
