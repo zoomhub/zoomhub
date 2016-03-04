@@ -9,6 +9,7 @@ module ZoomHub.Config
   , dataPath
   , defaultPort
   , encodeId
+  , error404
   , jobs
   , lastId
   , openseadragonScript
@@ -21,6 +22,7 @@ module ZoomHub.Config
   ) where
 
 import           Control.Concurrent.STM       (TChan, TVar)
+import qualified Data.ByteString.Lazy         as BL
 import           GHC.Generics                 (Generic)
 import           System.Envy                  (DefConfig, FromEnv, Option (..),
                                                customPrefix, defConfig,
@@ -39,6 +41,7 @@ data Config = Config
   , contentBaseURI      :: ContentBaseURI
   , dataPath            :: FilePath
   , encodeId            :: Integer -> String
+  , error404            :: BL.ByteString
   , jobs                :: TChan String
   , lastId              :: TVar Integer
   , openseadragonScript :: String

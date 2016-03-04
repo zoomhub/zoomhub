@@ -18,8 +18,7 @@ import           Network.Wai.Middleware.Cors        (simpleCors)
 import           Servant                            ((:<|>) (..), (:>), Capture,
                                                      Get, JSON, QueryParam, Raw,
                                                      ServantErr, Server, err301,
-                                                     errHeaders, serve,
-                                                     serveDirectory)
+                                                     errHeaders, serve)
 import           Servant.HTML.Lucid                 (HTML)
 import           System.Random                      (randomRIO)
 
@@ -41,6 +40,7 @@ import           ZoomHub.Types.Internal.ContentId   (ContentId, unId)
 import           ZoomHub.Types.Internal.ContentURI  (ContentURI)
 import           ZoomHub.Types.ViewContent          (ViewContent, mkViewContent)
 import qualified ZoomHub.Web.Errors                 as Web
+import           ZoomHub.Web.Static                 (serveDirectory)
 
 
 -- Servant default handler type
@@ -82,11 +82,12 @@ server config = health
            :<|> viewContentByURL dataPath
            :<|> invalidURLParam
            :<|> viewContentByURL dataPath
-           :<|> serveDirectory (Config.publicPath config)
+           :<|> serveDirectory (Config.error404 config) publicPath
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dataPath = Config.dataPath config
+    publicPath = Config.publicPath config
     viewerScript = Config.openseadragonScript config
 
 app :: Config -> Application
