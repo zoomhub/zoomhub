@@ -125,8 +125,8 @@ main = do
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           config = Config{..}
-      putStrLn $ "Welcome to zoomhub." ++
-        " Go to <" ++ show baseURI ++ "> and have fun!"
+      putStrLn $ "{\"message\": \"Welcome to zoomhub." ++
+        " Go to <" ++ show baseURI ++ "> and have fun!\"}"
       run (fromIntegral port) (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
       "` environment variable.\nThis secret salt enables zoomhub to encode" ++
