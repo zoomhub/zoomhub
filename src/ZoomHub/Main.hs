@@ -3,30 +3,35 @@
 
 module ZoomHub.Main (main) where
 
-import           Control.Concurrent               (forkIO, threadDelay)
-import           Control.Concurrent.STM           (TChan, TVar, atomically,
-                                                   newTChan, newTVar, readTChan,
-                                                   readTVar)
-import           Control.Exception                (tryJust)
-import           Control.Monad                    (forever, guard)
-import           Control.Monad.IO.Class           (liftIO)
-import qualified Data.ByteString.Char8            as BC
-import qualified Data.ByteString.Lazy             as BL
-import           Data.Maybe                       (fromJust, fromMaybe)
-import           Network.URI                      (parseAbsoluteURI)
-import           Network.Wai.Handler.Warp         (run)
-import           System.AtomicWrite.Writer.String (atomicWriteFile)
-import           System.Directory                 (getCurrentDirectory)
-import           System.Environment               (lookupEnv)
-import           System.Envy                      (decodeEnv)
-import           System.FilePath.Posix            ((</>))
-import           System.IO.Error                  (isDoesNotExistError)
-import           Web.Hashids                      (encode, hashidsSimple)
+import           Control.Concurrent                   (forkIO, threadDelay)
+import           Control.Concurrent.STM               (TChan, TVar, atomically,
+                                                       newTChan, newTVar,
+                                                       readTChan, readTVar)
+import           Control.Exception                    (tryJust)
+import           Control.Monad                        (forever, guard)
+import           Control.Monad.IO.Class               (liftIO)
+import qualified Data.ByteString.Char8                as BC
+import qualified Data.ByteString.Lazy                 as BL
+import           Data.Default                         (def)
+import           Data.Maybe                           (fromJust, fromMaybe)
+import           Network.URI                          (parseAbsoluteURI)
+import           Network.Wai.Handler.Warp             (run)
+import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
+                                                       mkRequestLogger,
+                                                       outputFormat)
+import           System.AtomicWrite.Writer.String     (atomicWriteFile)
+import           System.Directory                     (getCurrentDirectory)
+import           System.Environment                   (lookupEnv)
+import           System.Envy                          (decodeEnv)
+import           System.FilePath.Posix                ((</>))
+import           System.IO.Error                      (isDoesNotExistError)
+import           Web.Hashids                          (encode, hashidsSimple)
 
-import           ZoomHub.API                      (app)
-import           ZoomHub.Config                   (Config (..), defaultPort)
-import           ZoomHub.Types.BaseURI            (BaseURI (BaseURI))
-import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.API                          (app)
+import           ZoomHub.Config                       (Config (..), defaultPort)
+import           ZoomHub.Logger                       (formatAsJSON)
+import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
+import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
 -- import           ZoomHub.Pipeline                 (process)
 
 
@@ -98,6 +103,9 @@ main = do
         "` '" ++ uriString ++ "' is not a valid URL."
     Nothing -> error $ "Please set required `" ++ baseURIEnvName ++
       "` environment variable."
+  logger <- mkRequestLogger def {
+    outputFormat = CustomOutputFormatWithDetails formatAsJSON
+  }
   let acceptNewContent = False
       defaultDataPath = currentDirectory </> "data"
       dataPath = fromMaybe defaultDataPath maybeDataPath
