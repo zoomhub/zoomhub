@@ -11,6 +11,7 @@ import           Control.Exception                (tryJust)
 import           Control.Monad                    (forever, guard)
 import           Control.Monad.IO.Class           (liftIO)
 import qualified Data.ByteString.Char8            as BC
+import qualified Data.ByteString.Lazy             as BL
 import           Data.Maybe                       (fromJust, fromMaybe)
 import           Network.URI                      (parseAbsoluteURI)
 import           Network.Wai.Handler.Warp         (run)
@@ -82,6 +83,7 @@ main = do
   currentDirectory <- getCurrentDirectory
   openseadragonScript <- readFile $ currentDirectory </>
     "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
+  error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
