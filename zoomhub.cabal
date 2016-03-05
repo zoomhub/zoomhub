@@ -122,6 +122,8 @@ executable sqlite-import
     , filepath
     , sqlite-simple
     , text
+    , time
+    , zoomhub
 
 test-suite tests
   default-language: Haskell2010
