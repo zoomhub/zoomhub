@@ -5,8 +5,7 @@ import           Data.Maybe                           (fromJust)
 import           Data.Monoid                          ((<>))
 import           Data.Time.Clock                      (UTCTime)
 import           Database.SQLite.Simple               (Query, close, execute,
-                                                       execute_, field, open,
-                                                       query_)
+                                                       execute_, field, open)
 import           Database.SQLite.Simple.FromRow       (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField       (toField)
 import           Database.SQLite.Simple.ToRow         (ToRow, toRow)
@@ -134,15 +133,16 @@ main = do
     idFilenames <- filter (\f -> takeExtension f == ".json") <$>
       getDirectoryContents idPath
     let ids = map (toId . dropExtension) idFilenames
-    cs <- mapM (getById dataPath . fromString) ids
     conn <- open (dataPath </> "content.db")
     execute_ conn deleteContentTableQuery
     execute_ conn createContentTableQuery
-    mapM_ (insert conn . fromJust) cs
-    r <- query_ conn "SELECT * FROM content" :: IO [ContentRow]
-    mapM_ print r
+    mapM_ (readAndInsert dataPath conn) ids
     close conn
   where
+    readAndInsert dataPath conn cId = do
+      c <- getById dataPath (fromString cId)
+      insert conn (fromJust c)
+
     insert conn content = execute conn "INSERT INTO content (\
       \ hashId, url, ready, failed, progress, mime, size, active, \
       \ activeAt, finishedAt, rawPath, dzi_width, dzi_height, dzi_tileSize, \
