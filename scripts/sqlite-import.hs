@@ -107,7 +107,7 @@ createContentTableQuery =
   "CREATE TABLE IF NOT EXISTS content (" <>
     "id INTEGER PRIMARY KEY," <>
     "hashId TEXT UNIQUE NOT NULL," <>
-    "url TEXT UNIQUE NOT NULL," <>
+    "url TEXT NOT NULL," <>
     "ready BOOLEAN DEFAULT 0 NOT NULL," <>
     "failed BOOLEAN DEFAULT 0 NOT NULL," <>
     "progress REAL DEFAULT 0.0 NOT NULL," <>
