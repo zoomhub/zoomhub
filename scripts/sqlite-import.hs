@@ -1,19 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
+import           Data.Maybe                           (fromJust)
 import           Data.Monoid                          ((<>))
 import           Data.Time.Clock                      (UTCTime)
-import           Database.SQLite.Simple               (Query, close,
-                                                       execute, execute_, field,
-                                                       open, query_)
+import           Database.SQLite.Simple               (Query, close, execute,
+                                                       execute_, field, open,
+                                                       query_)
 import           Database.SQLite.Simple.FromRow       (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField       (toField)
 import           Database.SQLite.Simple.ToRow         (ToRow, toRow)
-import           System.Directory                     (getCurrentDirectory)
-import           System.FilePath.Posix                ((</>))
+import           System.Directory                     (getCurrentDirectory,
+                                                       getDirectoryContents)
+import           System.FilePath.Posix                (dropExtension,
+                                                       takeExtension, (</>))
 
-import           ZoomHub.Types.Internal.Content       (Content,
-                                                       contentActive,
+import           ZoomHub.Storage.File                 (getById)
+import           ZoomHub.Storage.Internal.File        (toId)
+import           ZoomHub.Types.Internal.Content       (Content, contentActive,
                                                        contentActiveAt,
                                                        contentDzi,
                                                        contentFailed,
@@ -23,8 +27,7 @@ import           ZoomHub.Types.Internal.Content       (Content,
                                                        contentProgress,
                                                        contentRawPath,
                                                        contentReady,
-                                                       contentSize, contentUrl,
-                                                       fromURL)
+                                                       contentSize, contentUrl)
 import           ZoomHub.Types.Internal.ContentId     (fromString, unId)
 import           ZoomHub.Types.Internal.DeepZoomImage (dziHeight, dziTileFormat,
                                                        dziTileOverlap,
@@ -58,8 +61,7 @@ instance FromRow ContentRow where
 
 instance ToRow ContentRow where
   toRow (ContentRow{..}) =
-    [ toField crId
-    , toField crHashId
+    [ toField crHashId
     , toField crUrl
     , toField crReady
     , toField crFailed
@@ -79,7 +81,7 @@ instance ToRow ContentRow where
 
 contentToRow :: Content -> ContentRow
 contentToRow c = ContentRow
-    { crId = 0
+    { crId = -1
     , crHashId = unId $ contentId c
     , crUrl = contentUrl c
     , crReady = contentReady c
@@ -126,18 +128,23 @@ createContentTableQuery =
 
 main :: IO ()
 main = do
-  cd <- getCurrentDirectory
-  conn <- open (cd </> "data" </> "content.db")
-
-  execute_ conn deleteContentTableQuery
-  execute_ conn createContentTableQuery
-
-  let sample = contentToRow (fromURL (fromString "abc") "http://example.com")
-  execute conn "INSERT INTO content (id, hashId, url, ready, failed, progress, \
-    \ mime, size, active, activeAt, finishedAt, rawPath, dzi_width, \
-    \ dzi_height, dzi_tileSize, dzi_tileOverlap, dzi_tileFormat) \
-    \ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" sample
-  r <- query_ conn "SELECT * FROM content" :: IO [ContentRow]
-  mapM_ print r
-
-  close conn
+    cd <- getCurrentDirectory
+    let dataPath = cd </> "data"
+    let idPath = dataPath </> "content-by-id"
+    idFilenames <- filter (\f -> takeExtension f == ".json") <$>
+      getDirectoryContents idPath
+    let ids = map (toId . dropExtension) idFilenames
+    cs <- mapM (getById dataPath . fromString) ids
+    conn <- open (dataPath </> "content.db")
+    execute_ conn deleteContentTableQuery
+    execute_ conn createContentTableQuery
+    mapM_ (insert conn . fromJust) cs
+    r <- query_ conn "SELECT * FROM content" :: IO [ContentRow]
+    mapM_ print r
+    close conn
+  where
+    insert conn content = execute conn "INSERT INTO content (\
+      \ hashId, url, ready, failed, progress, mime, size, active, \
+      \ activeAt, finishedAt, rawPath, dzi_width, dzi_height, dzi_tileSize, \
+      \ dzi_tileOverlap, dzi_tileFormat) \
+      \ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" (contentToRow content)
