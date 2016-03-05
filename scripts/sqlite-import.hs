@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-import           Data.Maybe                           (fromJust)
 import           Data.Monoid                          ((<>))
 import           Data.Time.Clock                      (UTCTime)
 import           Database.SQLite.Simple               (Query, close, execute,
@@ -128,21 +127,27 @@ createContentTableQuery =
 
 main :: IO ()
 main = do
+    putStrLn "--- BEGIN ---"
     cd <- getCurrentDirectory
     let dataPath = cd </> "data"
     let idPath = dataPath </> "content-by-id"
     idFilenames <- filter (\f -> takeExtension f == ".json") <$>
       getDirectoryContents idPath
-    let ids = map (toId . dropExtension) idFilenames
+    let ids = map (fromString . toId . dropExtension) idFilenames
     conn <- open (dataPath </> "content.db")
     execute_ conn deleteContentTableQuery
     execute_ conn createContentTableQuery
     withTransaction conn (mapM_ (readAndInsert dataPath conn) ids)
     close conn
+    putStrLn "--- DONE ---"
   where
-    readAndInsert dataPath conn cId = do
-      c <- getById dataPath (fromString cId)
-      insert conn (fromJust c)
+    readAndInsert dataPath conn contentId = do
+      let cId = unId contentId
+      putStrLn $ "Processing " ++ cId
+      maybeContent <- getById dataPath contentId
+      case maybeContent of
+        Nothing      -> putStrLn $ "Invalid ID: " ++ cId
+        Just content -> insert conn content
 
     insert conn content = execute conn "INSERT INTO content (\
       \ hashId, url, ready, failed, progress, mime, size, active, \
