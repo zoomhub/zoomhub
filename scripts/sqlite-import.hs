@@ -5,7 +5,8 @@ import           Data.Maybe                           (fromJust)
 import           Data.Monoid                          ((<>))
 import           Data.Time.Clock                      (UTCTime)
 import           Database.SQLite.Simple               (Query, close, execute,
-                                                       execute_, field, open)
+                                                       execute_, field, open,
+                                                       withTransaction)
 import           Database.SQLite.Simple.FromRow       (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField       (toField)
 import           Database.SQLite.Simple.ToRow         (ToRow, toRow)
@@ -136,7 +137,7 @@ main = do
     conn <- open (dataPath </> "content.db")
     execute_ conn deleteContentTableQuery
     execute_ conn createContentTableQuery
-    mapM_ (readAndInsert dataPath conn) ids
+    withTransaction conn (mapM_ (readAndInsert dataPath conn) ids)
     close conn
   where
     readAndInsert dataPath conn cId = do
