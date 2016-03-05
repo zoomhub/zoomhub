@@ -47,8 +47,8 @@ data Content = Content
   , contentActive     :: Maybe Bool
   , contentActiveAt   :: Maybe UTCTime
   , contentFinishedAt :: Maybe UTCTime
-  , contentDzi        :: Maybe DeepZoomImage
   , contentRawPath    :: Maybe FilePath
+  , contentDzi        :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
 -- Constructor
