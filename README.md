@@ -66,6 +66,8 @@ Special thanks to:
   Maintaining any open-source project is work, but running a live, production
   service on top of that is something even more.
 
+- [Marcin Mierzejewski](https://github.com/zenzire) for the Ansible Ubuntu
+  setup scripts: https://github.com/zenzire/ansible-bootstrap-ubuntu
 
 ## License
 

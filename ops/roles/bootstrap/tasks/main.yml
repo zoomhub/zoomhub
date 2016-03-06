@@ -1,0 +1,6 @@
+---
+- include: hostname.yml
+- include: apt.yml
+- include: secure.yml
+- include: locale.yml
+
