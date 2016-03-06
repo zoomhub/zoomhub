@@ -34,12 +34,6 @@ root: ..
 listeners:
     # HTTP
     - host: "*4" # Listen on all IPv4 hosts
-      #port: 80 # Could be used to modify port
-    # HTTPS
-    - host: "*4"
-      #port: 443
-      key: key.pem
-      certificate: certificate.pem
 
 # User to run applications as
 
