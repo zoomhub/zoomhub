@@ -23,6 +23,6 @@
       private: no
 
     - name: "sudoers"
-      prompt: "Add user to sudoers group (y/n)"
-      default: 'n'
+      prompt: "Add user to `sudoers` group (yes/no)"
+      default: "no"
       private: no
