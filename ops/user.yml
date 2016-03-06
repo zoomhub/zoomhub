@@ -7,18 +7,17 @@
 
   vars_prompt:
     - name: "username"
-      prompt: "Enter username"
-      default: "admin"
+      prompt: "New username"
       private: no
 
     - name: "password"
-      prompt: "Enter password"
+      prompt: "New password"
       encrypt: "md5_crypt"
       salt_size: 7
       confirm: yes
 
     - name: "id_rsa_path"
-      prompt: "Enter id_rsa.pub path"
+      prompt: "SSH public key path"
       default: "~/.ssh/id_rsa.pub"
       private: no
 
