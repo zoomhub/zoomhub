@@ -14,11 +14,11 @@
               regexp="{{ username }} ALL"
               line="{{ username }} ALL=(ALL) ALL"
               state=present
-  when: sudoers == 'y'
+  when: (sudoers == 'y') or (sudoers == 'yes')
 
 - name: Remove user from sudoers
   lineinfile: dest=/etc/sudoers
               regexp="{{ username }} ALL"
               line="{{ username }} ALL=(ALL) ALL"
               state=absent
-  when: sudoers == 'n'
+  when: (sudoers == 'n') or (sudoers == 'no')
