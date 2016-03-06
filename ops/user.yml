@@ -12,8 +12,7 @@
 
     - name: "password"
       prompt: "New password"
-      encrypt: "md5_crypt"
-      salt_size: 7
+      encrypt: "sha512_crypt"
       confirm: yes
 
     - name: "id_rsa_path"
