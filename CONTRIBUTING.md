@@ -46,22 +46,18 @@ enforce that all changes are committed to Git:
 
 ### Prerequisites
 
--   Install [Ansible](http://docs.ansible.com/).
--   Install [pip](https://pypi.python.org/pypi/pip).
--   Copy `deployment/hosts.sample` to `deployment/hosts` and replace
-    `localhost` with your server IP.
--   Copy `credentials/userpassword.sample` to
-    `deployment/credentials/userpassword` and paste in your password.
+-   Install [Ansible](http://docs.ansible.com/): `brew install ansible`.
+    We have tested our setup with Ansible 1.9.4.
 
 ### Commands
 
-`zh` is a script for managing ZoomHub. Currently, we support the following
+`./zh` is a script for managing ZoomHub. Currently, we support the following
 commands:
 
--   `./zh bootstrap`: Bootstrap server(s); only required once per user.
--   `./zh ping`: Ping production machines.
--   `./zh setup`: Setup server(s).
--   `./zh deploy`: Deploy latest app code from Git.
+-   `./zh ops create-admin-user [admin|production|staging]`:
+    Bootstrap admin user on server(s); only required once per server.
+-   `./zh ops ping [admin|production|staging]`: Ping production machines.
+-   `./zh ops setup [admin|production|staging]`: Setup server(s).
 
 
 [Haskell]: https://www.haskell.org

@@ -3,59 +3,21 @@
 # HACK: Support specifying a different hosts file for non-production envs,
 # e.g. `./zh setup deployment/hosts.staging`.
 # TODO: Move this logic into specific commands, or use an arg parser?
-hosts=$2
-if [ -z $2 ]; then
-  hosts=deployment/hosts
+hosts="ops/$3"
+if [ -z "$3" ]; then
+  hosts=ops/staging
 fi
+
+# Helpers
+separator () {
+    echo '------------------------------------------------------------------------------'
+}
 
 # Commands
 case "$1" in
 init)
     brew install https://raw.githubusercontent.com/Homebrew/homebrew/bda8d64e0e9011aab1612868eac2f709e631c503/Library/Formula/haskell-stack.rb
     stack setup
-    ;;
-run)
-    stack build --file-watch --exec ./scripts/run-development.sh
-    ;;
-test)
-    stack test
-    ;;
-ping)
-    ansible --user zoomhub --inventory-file ${hosts} all -m ping
-    ;;
-bootstrap)
-    # Pre-req: sshpass
-    if ! [ $(which sshpass) ]; then
-        echo "Installing sshpass..."
-        # Via: http://www.hashbangcode.com/blog/installing-sshpass-osx-mavericks
-        curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz \
-            && tar xvzf sshpass-1.05.tar.gz
-        rm sshpass-1.05.tar.gz
-        cd sshpass-1.05
-        ./configure
-        make
-        echo "Running sudo command; enter your sudo password when prompted."
-        sudo make install
-        cd - > /dev/null
-        rm -rf sshpass-1.05
-    fi
-
-    # Pre-req: passlib
-    if ! [ $(pip freeze | grep passlib) ]; then
-        echo "Installing passlib..."
-        # Via: https://pythonhosted.org/passlib/install.html
-        echo 'If the next step doesn’t work, re-run this command with `sudo`.'
-        pip install passlib
-    fi
-
-    echo "Bootstrapping server; enter server’s root password when prompted."
-    ansible-playbook --inventory-file ${hosts} deployment/bootstrap.yml --ask-pass
-    ;;
-setup)
-    ansible-playbook --inventory-file ${hosts} deployment/setup.yml --ask-vault-pass
-    ;;
-deploy)
-    ansible-playbook --inventory-file ${hosts} deployment/deploy.yml --ask-vault-pass
     ;;
 lint)
     git diff-files --quiet
@@ -66,7 +28,44 @@ lint)
     fi
     git ls-files | grep '.hs$' | xargs stylish-haskell --inplace
     ;;
+ops)
+    case "$2" in
+    create-admin-user)
+        separator
+        echo 'WARNING: Running ./zh ops create-admin-user more than once will'
+        echo '         fail as `root` user will no longer have password access'
+        echo '         to the server.'
+        separator
+        echo "Hosts:   $(basename $hosts)"
+        separator
+        echo 'Enter `root` SSH password:'
+        ansible-playbook --inventory-file "${hosts}" \
+            ops/user.yml --user root --ask-pass \
+            --extra-vars "sudoers=y username=admin"
+        ;;
+    ping)
+        ansible --inventory-file ${hosts} all -m ping
+        ;;
+    setup)
+        separator
+        echo "Hosts:   $(basename $hosts)"
+        separator
+        echo 'Enter `admin` user password:'
+        ansible-playbook --inventory-file "${hosts}" \
+            ops/bootstrap.yml --ask-sudo
+        ;;
+    *)
+        echo "Invalid command: $0 $@"
+        exit 1
+    esac
+    ;;
+run)
+    stack build --file-watch --exec ./scripts/run-development.sh
+    ;;
+test)
+    stack test
+    ;;
 *)
-    echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"
+    echo "Unknown command: $1. Try: init|lint|ops|run|test"
     ;;
 esac
