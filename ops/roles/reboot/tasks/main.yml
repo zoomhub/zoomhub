@@ -1,0 +1,13 @@
+---
+- name: restart machine
+  command: shutdown -r now "Ansible updates triggered"
+  async: 0
+  poll: 0
+  ignore_errors: true
+  when: reboot == "yes"
+
+- name: waiting for server to come back
+  sudo: False
+  local_action: wait_for host="{{ inventory_hostname }}"
+                port=22 delay=1 timeout=300
+  when: reboot == "yes"
