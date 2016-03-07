@@ -9,7 +9,7 @@ dependencies:
     - stack setup
     - stack build --ghc-options="-Wall -Werror"
   post:
-    - ./deployment/keter-bundle.sh
+    - ./ops/keter-bundle.sh
     - cp zoomhub.keter $CIRCLE_ARTIFACTS
 
 test:
