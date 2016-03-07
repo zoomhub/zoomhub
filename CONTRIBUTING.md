@@ -46,20 +46,24 @@ enforce that all changes are committed to Git:
 
 ### Prerequisites
 
--   Install [Ansible](http://docs.ansible.com/): `brew install ansible`.
+-   Install [Ansible]: `brew install ansible`.
     We have tested our setup with Ansible 1.9.4.
 
 ### Commands
 
-`./zh` is a script for managing ZoomHub. Currently, we support the following
-commands:
+`./zh` is a script for managing ZoomHub. We support the following commands:
 
--   `./zh ops create-admin-user [admin|production|staging]`:
-    Bootstrap admin user on server(s); only required once per server.
--   `./zh ops ping [admin|production|staging]`: Ping production machines.
--   `./zh ops setup [admin|production|staging]`: Setup server(s).
+-   `./zh ops bootstrap [admin|production|staging]`:
+    Bootstrap admin user on server(s).
+    **IMPORTANT:** Can only be run once per server!
+-   `./zh ops ping [admin|production|staging]`: Ping servers.
+-   `./zh ops setup-server [admin|production|staging]`:
+    Basic setup server(s) for all servers.
+-   `./zh ops setup-admin-server`: Set up admin server.
+-   `./zh ops setup-web-server [production|staging]`: Set up web server(s).
 
 
+[Ansible]: http://docs.ansible.com
 [Haskell]: https://www.haskell.org
-[Homebrew]: http://brew.sh/
+[Homebrew]: http://brew.sh
 [Stack]: http://docs.haskellstack.org/en/stable/README.html

@@ -1,0 +1,1 @@
+deb http://download.fpcomplete.com/ubuntu {{ lsb_release.stdout }} main

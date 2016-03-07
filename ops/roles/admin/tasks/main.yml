@@ -1,0 +1,4 @@
+---
+- include: python.yml
+- include: cloudfiles.yml
+- include: keter.yml

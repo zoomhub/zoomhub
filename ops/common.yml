@@ -1,6 +1,6 @@
 ---
 - name: Bootstrap Ubuntu servers
-  hosts: server
+  hosts: all
   sudo: yes
   roles:
-    - bootstrap
+    - common

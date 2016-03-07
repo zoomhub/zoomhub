@@ -1,0 +1,10 @@
+---
+locale: 'en_US.UTF-8'
+language: 'en_US:en'
+timezone: 'America/Los_Angeles'
+ntp_server: 'pool.ntp.org'
+admin_user: admin
+
+# Rackspace
+rackspace_cloudfiles_region: 'IAD'
+rackspace_cloudfiles_admin_container: 'admin'

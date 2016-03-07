@@ -1,0 +1,7 @@
+---
+- name: Set up admin server
+  hosts: admin
+  sudo: yes
+  roles:
+    - common
+    - admin

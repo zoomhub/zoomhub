@@ -1,6 +1,10 @@
 ---
 - name: Add or update user and set password
-  user: name={{ username }} password={{ password }} shell=/bin/bash
+  user:
+    name={{ username }}
+    password={{ password }}
+    generate_ssh_key=yes
+    shell=/bin/bash
 
 - name: Change user directory permissions to 750
   file: path=/home/{{ username }} state=directory mode=750
