@@ -42,5 +42,5 @@
     group=root
     owner=root
 
-- name: Start `keter`
-  command: start keter
+- name: Restart `keter`
+  service: name=keter state=restarted
