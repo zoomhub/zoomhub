@@ -10,3 +10,15 @@ rackspace_username: "{{ vault_rackspace_username }}"
 rackspace_api_key: "{{ vault_rackspace_api_key }}"
 rackspace_cloudfiles_region: 'IAD'
 rackspace_cloudfiles_admin_container: 'admin'
+
+# Splunk
+splunk_indexer_host: admin.zoomhub.net
+splunk_indexer_port: 8000
+splunk_indexer_management_port: 8089
+splunk_indexer_receiving_port: 9997
+
+splunk_username: "{{ vault_splunk_username }}"
+splunk_password: "{{ vault_splunk_password }}"
+
+splunk_forwarder_username: "{{ vault_splunk_forwarder_username }}"
+splunk_forwarder_password: "{{ vault_splunk_forwarder_password }}"
