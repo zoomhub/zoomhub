@@ -6,4 +6,4 @@ if [ -z "$remote" ] ; then
   exit 1
 fi
 
-scp $CIRCLE_ARTIFACTS/zoomhub.keter circleci_deploy@$remote:/opt/keter/incoming
+scp $CIRCLE_ARTIFACTS/zoomhub.keter admin@$remote:/opt/keter/incoming
