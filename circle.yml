@@ -20,7 +20,7 @@ deployment:
   staging:
     branch: /^((?!master).)*$/  # all branches but master
     commands:
-      - ./deployment/deploy.sh staging.zoomhub.net
+      - ./ops/deploy.sh staging.zoomhub.net
 
   production:
     branch: master
