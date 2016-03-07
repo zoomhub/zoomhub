@@ -6,44 +6,41 @@ module ZoomHub.API
   ( app
   ) where
 
-import           Control.Monad.IO.Class               (liftIO)
-import           Control.Monad.Trans.Either           (EitherT, left)
-import qualified Data.ByteString.Char8                as BC
-import           Data.Maybe                           (fromJust, fromMaybe)
-import           Data.Proxy                           (Proxy (Proxy))
-import           Network.URI                          (URI,
-                                                       parseRelativeReference)
-import           Network.Wai                          (Application)
-import           Network.Wai.Middleware.Cors          (simpleCors)
-import           Servant                              ((:<|>) (..), (:>),
-                                                       Capture, Get, JSON,
-                                                       QueryParam, Raw,
-                                                       ServantErr, Server,
-                                                       err301, errHeaders,
-                                                       serve)
-import           Servant.HTML.Lucid                   (HTML)
-import           System.Random                        (randomRIO)
+import           Control.Monad.IO.Class             (liftIO)
+import           Control.Monad.Trans.Either         (EitherT, left)
+import qualified Data.ByteString.Char8              as BC
+import           Data.Maybe                         (fromJust, fromMaybe)
+import           Data.Proxy                         (Proxy (Proxy))
+import           Network.URI                        (URI,
+                                                     parseRelativeReference)
+import           Network.Wai                        (Application)
+import           Network.Wai.Middleware.Cors        (simpleCors)
+import           Servant                            ((:<|>) (..), (:>), Capture,
+                                                     Get, JSON, QueryParam, Raw,
+                                                     ServantErr, Server, err301,
+                                                     errHeaders, serve)
+import           Servant.HTML.Lucid                 (HTML)
+import           System.Random                      (randomRIO)
 
-import           ZoomHub.API.ContentTypes             (JavaScript)
-import qualified ZoomHub.API.Errors                   as API
-import           ZoomHub.Config                       (Config)
-import qualified ZoomHub.Config                       as Config
-import           ZoomHub.Servant.RawCapture           (RawCapture)
-import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
-import           ZoomHub.Storage.File                 (getById, getByURL)
-import           ZoomHub.Types.BaseURI                (BaseURI)
-import           ZoomHub.Types.Content                (Content, fromInternal)
-import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
-import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
-import           ZoomHub.Types.EmbedDimension         (EmbedDimension)
-import           ZoomHub.Types.EmbedId                (EmbedId, unEmbedId)
-import qualified ZoomHub.Types.Internal.Content       as Internal
-import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
-import           ZoomHub.Types.Internal.ContentURI    (ContentURI)
-import           ZoomHub.Types.ViewContent            (ViewContent,
-                                                       mkViewContent)
-import qualified ZoomHub.Web.Errors                   as Web
-import           ZoomHub.Web.Static                   (serveDirectory)
+import           ZoomHub.API.ContentTypes           (JavaScript)
+import qualified ZoomHub.API.Errors                 as API
+import           ZoomHub.Config                     (Config)
+import qualified ZoomHub.Config                     as Config
+import           ZoomHub.Servant.RawCapture         (RawCapture)
+import           ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
+import           ZoomHub.Storage.File               (getById, getByURL)
+import           ZoomHub.Types.BaseURI              (BaseURI)
+import           ZoomHub.Types.Content              (Content, fromInternal)
+import           ZoomHub.Types.ContentBaseURI       (ContentBaseURI)
+import           ZoomHub.Types.Embed                (Embed, mkEmbed)
+import           ZoomHub.Types.EmbedDimension       (EmbedDimension)
+import           ZoomHub.Types.EmbedId              (EmbedId, unEmbedId)
+import qualified ZoomHub.Types.Internal.Content     as Internal
+import           ZoomHub.Types.Internal.ContentId   (ContentId, unId)
+import           ZoomHub.Types.Internal.ContentURI  (ContentURI)
+import           ZoomHub.Types.ViewContent          (ViewContent, mkViewContent)
+import qualified ZoomHub.Web.Errors                 as Web
+import           ZoomHub.Web.Static                 (serveDirectory)
 
 
 -- Servant default handler type
