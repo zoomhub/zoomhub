@@ -1,25 +1,43 @@
 # Ops
 
+The `./zh ops` subcommands let you manage ZoomHub ops.
+
 ### Prerequisites
 
 -   Install [Ansible]: `brew install ansible`.
     We have tested our setup with Ansible 1.9.4.
 
-### Commands
+## Initial Server Setup
 
-`./zh` is a script for managing ZoomHub. We support the following commands:
+-   Create server on Rackspace using Ubuntu 14.04 LTS (Trusty Tahr) image:
+    <https://mycloud.rackspace.com/>
+-   Note `root` password. You will need it in subsequent steps.
+-   **Optional:** Create DNS entry for server.
+-   Add hostname or IP to one of the hosts files: `ops/admin`,
+    `ops/staging`, or `ops/production`.
+-   Create `admin` user and bootstrap server using:
+    `./zh ops bootstrap [admin|production|staging]`.
+    **IMPORTANT:** This command can only be run once per server!
+-   Run `./zh ops ping [admin|production|staging]` to test whether you can reach
+    your new server.
 
--   `./zh ops bootstrap [admin|production|staging]`:
-    Bootstrap admin user on server(s).
-    **IMPORTANT:** Can only be run once per server!
--   `./zh ops setup-admin-server`: Set up admin server.
--   `./zh ops setup-web-server [production|staging]`: Set up web server(s).
--   `./zh ops ping [admin|production|staging]`: Ping servers.
+## Web servers
 
-### Manual Steps
+Run `./zh ops setup-web-server [production|staging]` and follow the steps to
+set up a web server.
+
+## Admin server
+
+Run `./zh ops setup-admin-server` and follow the steps to set up an admin server.
+
+## Manual Steps
 
 - Mount block storage volume:
   https://support.rackspace.com/how-to/prepare-your-cloud-block-storage-volume/
+
+- Create SSH key entry for each target deploy host in CircleCI using
+  `circleci_deploy.id_rsa` private key:
+  <https://circleci.com/gh/gasi/zoomhub/edit#ssh>
 
 ## Ansible Vault
 
@@ -29,21 +47,18 @@ The best place to read about the `ansible-vault` is on the
 
 ### Quickstart
 
-Editing the ansible vault is straight-forward.
-
-```bash
-ansible-vault edit ops/secrets.vault.yml
-```
+Editing the Ansible vault is straightforward using:
+`ansible-vault edit ops/secrets.vault.yml`.
 
 Saving changes will mark the vault as dirty in your repository, simply `git add`
-and `git commit` as with any other file. Whenever you run `./zh setup` or
-`./zh deploy` you'll be prompted for the vault password
+and `git commit` as with any other file. Whenever you run any of the `./zh ops`
+commands you’ll be prompted for the vault password.
 
 ### Local Overrides
 
-If you want to over-ride any ansible variables without having to edit configs,
-you can put a value in `vars.yml`, which is .gitignored so you can't commit it.
-This is a convenient way to develop new features before encrypting in the vault.
+If you want to override any ansible variables without having to edit configs,
+you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commit
+it. This is a convenient way to develop new features before using the vault.
 
 
 [Ansible]: http://docs.ansible.com
