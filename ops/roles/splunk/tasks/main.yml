@@ -1,0 +1,26 @@
+---
+- stat: path=/opt/splunk/bin/splunk
+  register: splunk_bin
+
+- name: Download Splunk from Rackspace CloudFiles
+  rax_files_objects:
+    container={{ rackspace_cloudfiles_admin_container }}
+    region={{ rackspace_cloudfiles_region }}
+    method=get
+    src=splunklight-6.3.3-f44afce176d0-linux-2.6-amd64.deb
+    dest={{ ansible_env.HOME}}
+    username={{ rackspace_username }}
+    api_key={{ rackspace_api_key }}
+  when: splunk_bin.stat.exists == False
+
+- name: Install Splunk
+  apt:
+    deb="{{ ansible_env.HOME}}/splunklight-6.3.3-f44afce176d0-linux-2.6-amd64.deb"
+    state=present
+
+- name: Open up port 8000
+  shell: ufw allow 8000/tcp
+
+- name: Start Splunk
+  shell: /opt/splunk/bin/splunk start
+         --accept-license --answer-yes --auto-ports --no-prompt
