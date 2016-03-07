@@ -39,6 +39,10 @@ Run `./zh ops setup-admin-server` and follow the steps to set up an admin server
   `circleci_deploy.id_rsa` private key:
   <https://circleci.com/gh/gasi/zoomhub/edit#ssh>
 
+- Add new server to Splunk:
+  1. <http://admin.zoomhub.net:8000/en-US/manager/search/adddata/selectforwarders>
+  2. Watch file: `/opt/keter/log/app-zoomhub/current.log`
+
 ## Ansible Vault
 
 We use `ansible-vault` to secure sensitive information in our repository.
