@@ -60,6 +60,11 @@ enforce that all changes are committed to Git:
 -   `./zh ops setup-web-server [production|staging]`: Set up web server(s).
 -   `./zh ops ping [admin|production|staging]`: Ping servers.
 
+### How To
+
+- Mount block storage volume:
+  https://support.rackspace.com/how-to/prepare-your-cloud-block-storage-volume/
+
 
 [Ansible]: http://docs.ansible.com
 [Haskell]: https://www.haskell.org
