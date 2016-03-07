@@ -10,17 +10,6 @@ separator () {
     echo '------------------------------------------------------------------------------'
 }
 
-ensure_rackspace_credentials () {
-    if [ -z "$RAX_USERNAME" ]; then
-        RAX_USERNAME='zoomingservice'
-    fi
-
-    if [ -z "$RAX_API_KEY" ]; then
-        echo 'Please set `RAX_API_KEY` (Rackspace API key)'
-        exit 1
-    fi
-}
-
 print_hosts () {
     separator
     echo "Hosts:   $(basename $hosts)"
@@ -62,21 +51,16 @@ ops)
         ansible --inventory-file "$hosts" all -m ping
         ;;
     setup-admin-server)
-        ensure_rackspace_credentials
-
-        ansible-playbook -v --inventory-file ops/admin --ask-sudo \
-            --extra-vars="rackspace_username=$RAX_USERNAME \
-                          rackspace_api_key=$RAX_API_KEY" \
+        ansible-playbook -v --inventory-file ops/admin \
+            --ask-sudo --ask-vault-pass \
             ops/admin.yml
         ;;
     setup-web-server)
         print_hosts
-        ensure_rackspace_credentials
 
         echo 'Enter `admin` user password:'
-        ansible-playbook -v --inventory-file "$hosts" --ask-sudo \
-            --extra-vars="rackspace_username=$RAX_USERNAME \
-                          rackspace_api_key=$RAX_API_KEY" \
+        ansible-playbook -v --inventory-file "$hosts" \
+            --ask-sudo --ask-vault-pass \
             ops/web.yml
         ;;
     *)

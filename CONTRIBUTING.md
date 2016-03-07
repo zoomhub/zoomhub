@@ -5,7 +5,7 @@ well as run the app.
 
 ### Prerequisites
 
--   [Homebrew]
+- [Homebrew]
 
 ### Setup
 
@@ -42,31 +42,7 @@ enforce that all changes are committed to Git:
 ./zh lint
 ```
 
-## Administation
 
-### Prerequisites
-
--   Install [Ansible]: `brew install ansible`.
-    We have tested our setup with Ansible 1.9.4.
-
-### Commands
-
-`./zh` is a script for managing ZoomHub. We support the following commands:
-
--   `./zh ops bootstrap [admin|production|staging]`:
-    Bootstrap admin user on server(s).
-    **IMPORTANT:** Can only be run once per server!
--   `./zh ops setup-admin-server`: Set up admin server.
--   `./zh ops setup-web-server [production|staging]`: Set up web server(s).
--   `./zh ops ping [admin|production|staging]`: Ping servers.
-
-### How To
-
-- Mount block storage volume:
-  https://support.rackspace.com/how-to/prepare-your-cloud-block-storage-volume/
-
-
-[Ansible]: http://docs.ansible.com
 [Haskell]: https://www.haskell.org
 [Homebrew]: http://brew.sh
 [Stack]: http://docs.haskellstack.org/en/stable/README.html
