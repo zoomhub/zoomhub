@@ -2,7 +2,7 @@
 - name: Update APT package cache
   apt: update_cache=yes
 
-- name: Upgrade APT to the lastest packages
+- name: Upgrade APT to the latest packages
   apt: upgrade=safe
 
 - name: Install unattended-upgrades
