@@ -15,11 +15,8 @@ cabal.sandbox.config
 # Sublime Text
 *.sublime-workspace
 
-# Private
-/deployment/hosts
-/deployment/vars.yml
-/deployment/hosts.staging
-/deployment/credentials/userpassword
+# Ops
+/ops/vars.yml
 
 # PID
 /zoomhub.pid
