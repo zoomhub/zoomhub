@@ -1,6 +1,6 @@
 # Development
 
-This app is built on [Haskell]. We use [Stack] to manage dependencies, build, as
+ZoomHub is built on [Haskell]. We use [Stack] to manage dependencies, build, as
 well as run the app.
 
 ### Prerequisites
