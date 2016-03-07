@@ -1,16 +1,18 @@
 ---
 - name: Update APT package cache
-  action: apt update_cache=yes
+  apt: update_cache=yes
 
 - name: Upgrade APT to the lastest packages
-  action: apt upgrade=safe
+  apt: upgrade=safe
 
 - name: Install unattended-upgrades
-  action: apt pkg=unattended-upgrades state=present
+  apt: pkg=unattended-upgrades state=present
 
 - name: Adjust APT update intervals
   template: src=apt/10periodic dest=/etc/apt/apt.conf.d/10periodic
 
 - name: Ensure unattended-upgrades only installs from security
-  action: lineinfile dest=/etc/apt/apt.conf.d/50unattended-upgrades
-          regexp="distro_codename\}\-updates" state=absent
+  lineinfile:
+    dest=/etc/apt/apt.conf.d/50unattended-upgrades
+    regexp="distro_codename\}\-updates"
+    state=absent
