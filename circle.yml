@@ -25,7 +25,7 @@ deployment:
   production:
     branch: master
     commands:
-      - ./ops/deploy.sh v2.zoomhub.net
+      - ./ops/deploy.sh next.zoomhub.net
 
 notify:
   webhooks:
