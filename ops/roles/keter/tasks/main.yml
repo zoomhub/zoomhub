@@ -1,0 +1,46 @@
+---
+- name: Determine Ubuntu release
+  command: lsb_release -sc
+  register: lsb_release
+
+- name: Create `/opt/keter` directories
+  file: dest=/opt/keter/{{ item }} state=directory
+  with_items:
+    - bin
+    - etc
+
+- name: Add `/opt/keter/incoming`
+  file: path=/opt/keter/incoming owner={{ admin_user }} state=directory
+
+- name: Download `keter` binary from Rackspace CloudFiles
+  rax_files_objects:
+    container={{ rackspace_cloudfiles_admin_container }}
+    region={{ rackspace_cloudfiles_region }}
+    method=get
+    dest=/opt/keter/bin
+    src="keter-{{ lsb_release.stdout }}"
+    username={{ rackspace_username }}
+    api_key={{ rackspace_api_key }}
+
+- name: Drop `keter` release suffix
+  command: mv /opt/keter/bin/keter-{{ lsb_release.stdout }} /opt/keter/bin/keter
+
+- name: Make `/opt/keter/bin/keter` executable
+  file: path=/opt/keter/bin/keter mode=0755
+
+- name: Create `/opt/keter/etc/keter-config.yaml`
+  template:
+    src=keter-config.yaml.j2
+    dest=/opt/keter/etc/keter-config.yaml
+    group=root
+    owner=root
+
+- name: Create `/etc/init/keter.conf`
+  template:
+    src=keter.conf
+    dest=/etc/init/keter.conf
+    group=root
+    owner=root
+
+- name: Start `keter`
+  command: start keter

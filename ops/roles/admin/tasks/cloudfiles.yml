@@ -1,0 +1,7 @@
+---
+- name: Create Rackspace CloudFiles admin container
+  rax_files:
+    container={{ rackspace_cloudfiles_admin_container }}
+    region={{ rackspace_cloudfiles_region }}
+    username={{ rackspace_username }}
+    api_key={{ rackspace_api_key }}

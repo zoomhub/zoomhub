@@ -1,6 +1,6 @@
 ---
 - name: Reboot server
-  hosts: server
+  hosts: all
   sudo: yes
   roles:
     - reboot

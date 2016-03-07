@@ -1,6 +1,6 @@
 ---
 - name: Add or update the existing user on Ubuntu servers
-  hosts: server
+  hosts: all
   sudo: yes
   roles:
     - user

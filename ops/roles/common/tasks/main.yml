@@ -3,4 +3,5 @@
 - include: apt.yml
 - include: secure.yml
 - include: locale.yml
-
+- include: python.yml
+- include: rackspace.yml

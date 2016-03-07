@@ -1,16 +1,30 @@
 #!/bin/bash
 
-# HACK: Support specifying a different hosts file for non-production envs,
-# e.g. `./zh setup deployment/hosts.staging`.
-# TODO: Move this logic into specific commands, or use an arg parser?
 hosts="ops/$3"
 if [ -z "$3" ]; then
-  hosts=ops/staging
+  hosts='ops/staging'
 fi
 
 # Helpers
 separator () {
     echo '------------------------------------------------------------------------------'
+}
+
+ensure_rackspace_credentials () {
+    if [ -z "$RAX_USERNAME" ]; then
+        RAX_USERNAME='zoomingservice'
+    fi
+
+    if [ -z "$RAX_API_KEY" ]; then
+        echo 'Please set `RAX_API_KEY` (Rackspace API key)'
+        exit 1
+    fi
+}
+
+print_hosts () {
+    separator
+    echo "Hosts:   $(basename $hosts)"
+    separator
 }
 
 # Commands
@@ -30,32 +44,50 @@ lint)
     ;;
 ops)
     case "$2" in
-    create-admin-user)
+    bootstrap)
         separator
-        echo 'WARNING: Running ./zh ops create-admin-user more than once will'
-        echo '         fail as `root` user will no longer have password access'
-        echo '         to the server.'
+        echo 'WARNING: Running ./zh ops bootstrap more than once will fail'
+        echo '         as `root` user will no longer have password access to '
+        echo '         the server.'
         separator
         echo "Hosts:   $(basename $hosts)"
         separator
         echo 'Enter `root` SSH password:'
-        ansible-playbook --inventory-file "${hosts}" \
+        ansible-playbook --inventory-file "$hosts" \
             ops/user.yml --user root --ask-pass \
             --extra-vars "sudoers=y username=admin"
         ;;
     ping)
-        ansible --inventory-file ${hosts} all -m ping
+        print_hosts
+        ansible --inventory-file "$hosts" all -m ping
         ;;
-    setup)
-        separator
-        echo "Hosts:   $(basename $hosts)"
-        separator
+    setup-admin-server)
+        ensure_rackspace_credentials
+
+        ansible-playbook -v --inventory-file ops/admin --ask-sudo \
+            --extra-vars="rackspace_username=$RAX_USERNAME \
+                          rackspace_api_key=$RAX_API_KEY" \
+            ops/admin.yml
+        ;;
+    setup-server)
+        print_hosts
+
         echo 'Enter `admin` user password:'
-        ansible-playbook --inventory-file "${hosts}" \
-            ops/bootstrap.yml --ask-sudo
+        ansible-playbook --inventory-file "$hosts" ops/common.yml --ask-sudo
+        ;;
+    setup-web-server)
+        print_hosts
+        ensure_rackspace_credentials
+
+        echo 'Enter `admin` user password:'
+        ansible-playbook -v --inventory-file "$hosts" --ask-sudo \
+            --extra-vars="rackspace_username=$RAX_USERNAME \
+                          rackspace_api_key=$RAX_API_KEY" \
+            ops/web.yml
         ;;
     *)
-        echo "Invalid command: $0 $@"
+        echo "Unknown command: $0 $@. Try $0 $1 \
+bootstrap|ping|setup-admin-server|setup-server|setup-web-server"
         exit 1
     esac
     ;;
@@ -66,6 +98,6 @@ test)
     stack test
     ;;
 *)
-    echo "Unknown command: $1. Try: init|lint|ops|run|test"
+    echo "Unknown command: $0 $@. Try: $0 init|lint|ops|run|test"
     ;;
 esac

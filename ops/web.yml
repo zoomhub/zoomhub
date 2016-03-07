@@ -1,0 +1,7 @@
+---
+- name: Set up web server
+  hosts: web
+  sudo: yes
+  roles:
+    - common
+    - keter
