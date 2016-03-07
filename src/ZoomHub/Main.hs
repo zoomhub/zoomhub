@@ -14,6 +14,7 @@ import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
 import           Data.Maybe                           (fromJust, fromMaybe)
+import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
 import           Network.Wai.Handler.Warp             (run)
 import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
@@ -95,14 +96,8 @@ main = do
   maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
   maybeRaxConfig <- decodeEnv
+  hostname <- getHostName
   maybeBaseURI <- lookupEnv baseURIEnvName
-  baseURI <- case maybeBaseURI of
-    Just uriString -> case parseAbsoluteURI uriString of
-      Just uri  -> return $ BaseURI uri
-      Nothing -> error $ "Provided environment variable `" ++ baseURIEnvName ++
-        "` '" ++ uriString ++ "' is not a valid URL."
-    Nothing -> error $ "Please set required `" ++ baseURIEnvName ++
-      "` environment variable."
   logger <- mkRequestLogger def {
     outputFormat = CustomOutputFormatWithDetails formatAsJSON
   }
@@ -110,6 +105,9 @@ main = do
       defaultDataPath = currentDirectory </> "data"
       dataPath = fromMaybe defaultDataPath maybeDataPath
       port = maybe defaultPort read maybePort
+      baseURI = case maybeBaseURI of
+        Just uriString -> toBaseURI uriString
+        Nothing        -> toBaseURI ("http://" ++ toHost hostname port)
       contentBaseURI = ContentBaseURI $
         fromJust . parseAbsoluteURI $ "http://content.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
@@ -133,3 +131,14 @@ main = do
       " integer IDs as short, non-sequential string IDs which make it harder" ++
       " to guess valid content IDs."
     (_, Left message) -> error $ "Failed to read Rackspace config: " ++ message
+  where
+    toBaseURI :: String -> BaseURI
+    toBaseURI uriString =
+      case parseAbsoluteURI uriString of
+        Just uri -> BaseURI uri
+        Nothing  -> error $ "'" ++ uriString ++ "' is not a valid URL. Please\
+        \ set `" ++ baseURIEnvName ++ "` to override usage of hostname."
+
+    toHost hostname p = hostname ++ portSuffix p
+    portSuffix p | p == 80    = ""
+                 | otherwise  = ":" ++ show p
