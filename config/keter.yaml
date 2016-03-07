@@ -2,6 +2,8 @@ stanzas:
   - type: webapp
     exec: ../zoomhub
     hosts:
+      - next.api.zoomhub.net
+      - next.zoomhub.net
       - openzoom.net
       - openzoom.org
       - staging.zoom.it
