@@ -6,5 +6,7 @@ ntp_server: 'pool.ntp.org'
 admin_user: admin
 
 # Rackspace
+rackspace_username: "{{ vault_rackspace_username }}"
+rackspace_api_key: "{{ vault_rackspace_api_key }}"
 rackspace_cloudfiles_region: 'IAD'
 rackspace_cloudfiles_admin_container: 'admin'
