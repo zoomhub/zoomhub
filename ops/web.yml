@@ -10,3 +10,4 @@
     - keter
     - circleci
     - vips
+    - splunk-forwarder

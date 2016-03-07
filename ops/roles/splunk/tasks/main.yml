@@ -18,9 +18,28 @@
     deb="{{ ansible_env.HOME}}/splunklight-6.3.3-f44afce176d0-linux-2.6-amd64.deb"
     state=present
 
-- name: Open up port 8000
-  shell: ufw allow 8000/tcp
+- name: Open up port for Splunk web UI
+  command: ufw allow {{ splunk_indexer_port }}/tcp
+
+- name: Open up port for indexing
+  command: ufw allow {{ splunk_indexer_receiving_port }}/tcp
+
+- name: Open up port for management
+  command: ufw allow {{ splunk_indexer_management_port }}/tcp
 
 - name: Start Splunk
-  shell: /opt/splunk/bin/splunk start
+  command: /opt/splunk/bin/splunk start
          --accept-license --answer-yes --auto-ports --no-prompt
+
+- name: Change Splunk password
+  command: /opt/splunk/bin/splunk
+          edit user {{ splunk_username }}
+           -password {{ splunk_password }}
+           -role admin
+           -auth admin:changeme
+  ignore_errors: yes
+
+- name: Configure Splunk to receive data on indexer port
+  command: /opt/splunk/bin/splunk enable listen
+          {{ splunk_indexer_receiving_port }}
+          -auth {{ splunk_username }}:{{ splunk_password }}
