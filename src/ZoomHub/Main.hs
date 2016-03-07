@@ -107,7 +107,7 @@ main = do
       port = maybe defaultPort read maybePort
       baseURI = case maybeBaseURI of
         Just uriString -> toBaseURI uriString
-        Nothing        -> toBaseURI ("http://" ++ toHost hostname port)
+        Nothing        -> toBaseURI ("http://" ++ hostname)
       contentBaseURI = ContentBaseURI $
         fromJust . parseAbsoluteURI $ "http://content.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
@@ -138,7 +138,3 @@ main = do
         Just uri -> BaseURI uri
         Nothing  -> error $ "'" ++ uriString ++ "' is not a valid URL. Please\
         \ set `" ++ baseURIEnvName ++ "` to override usage of hostname."
-
-    toHost hostname p = hostname ++ portSuffix p
-    portSuffix p | p == 80    = ""
-                 | otherwise  = ":" ++ show p
