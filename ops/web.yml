@@ -5,3 +5,4 @@
   roles:
     - common
     - keter
+    - circleci
