@@ -14,4 +14,3 @@ stanzas:
     env:
       DATA_PATH: '/mnt/datavolume/zoomhub/data'
       HASHIDS_SALT: 'CHANGE-ME-IN-PRODUCTION'
-      BASE_URI: 'http://v2.zoomhub.net'
