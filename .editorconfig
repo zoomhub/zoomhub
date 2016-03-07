@@ -6,12 +6,10 @@ root = true
 # Unix-style newlines with a newline ending every file
 [*]
 end_of_line = lf
+indent_size = 2
 indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
-
-[{*.hs,*.cabal}]
-indent_size = 2
 
 [{*.md}]
 indent_size = 4
