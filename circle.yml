@@ -17,12 +17,15 @@ test:
     - stack test
 
 deployment:
-  development:
-    # During development, deploy all branches. Restrict to `master` once
-    # we are further along:
-    branch: /.*/
+  staging:
+    branch: /^((?!master).)*$/  # all branches but master
     commands:
-      - ./deployment/deploy.sh
+      - ./deployment/deploy.sh staging.zoomhub.net
+
+  production:
+    branch: master
+    commands:
+      - ./ops/deploy.sh v2.zoomhub.net
 
 notify:
   webhooks:
