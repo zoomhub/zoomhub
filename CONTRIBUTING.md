@@ -56,11 +56,9 @@ enforce that all changes are committed to Git:
 -   `./zh ops bootstrap [admin|production|staging]`:
     Bootstrap admin user on server(s).
     **IMPORTANT:** Can only be run once per server!
--   `./zh ops ping [admin|production|staging]`: Ping servers.
--   `./zh ops setup-server [admin|production|staging]`:
-    Basic setup server(s) for all servers.
 -   `./zh ops setup-admin-server`: Set up admin server.
 -   `./zh ops setup-web-server [production|staging]`: Set up web server(s).
+-   `./zh ops ping [admin|production|staging]`: Ping servers.
 
 
 [Ansible]: http://docs.ansible.com

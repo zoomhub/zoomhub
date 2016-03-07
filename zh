@@ -69,12 +69,6 @@ ops)
                           rackspace_api_key=$RAX_API_KEY" \
             ops/admin.yml
         ;;
-    setup-server)
-        print_hosts
-
-        echo 'Enter `admin` user password:'
-        ansible-playbook --inventory-file "$hosts" ops/common.yml --ask-sudo
-        ;;
     setup-web-server)
         print_hosts
         ensure_rackspace_credentials
