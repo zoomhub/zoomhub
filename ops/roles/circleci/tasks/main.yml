@@ -1,4 +1,4 @@
 - name: Set up `authorized_keys` for CircleCI deployments
-  authorized_key: user=circleci_deploy key="{{ item }}"
+  authorized_key: user={{ admin_user }} key="{{ item }}"
   with_file:
     - ssh/circleci_deploy.id_rsa.pub
