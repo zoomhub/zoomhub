@@ -8,7 +8,8 @@ for as much back-compat as we want to retain.
 ### Formats
 
 The API returns data in **JSON** format.
-***XML is no longer supported.*** *Sorry!*
+Our logs show that XML (`?format=xml`) wasn’t used by external API clients,
+so ***XML is no longer supported*** due to developer time constraints.
 
 The API supports both a **RESTful** and **non-RESTful** response format.
 ([Zoom.it archived docs on this][zoomit-api-formats])
