@@ -27,6 +27,12 @@
 - name: Open up port for management
   command: ufw allow {{ splunk_indexer_management_port }}/tcp
 
+- name: Add custom `props.conf`
+  template: src=props.conf dest=/opt/splunk/etc/system/local/props.conf
+
+- name: Add custom `transforms.conf`
+  template: src=transforms.conf dest=/opt/splunk/etc/system/local/transforms.conf
+
 - name: Start Splunk
   command: /opt/splunk/bin/splunk start
          --accept-license --answer-yes --auto-ports --no-prompt
