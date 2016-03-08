@@ -13,10 +13,10 @@ The API returns data in **JSON** format.
 The API supports both a **RESTful** and **non-RESTful** response format.
 ([Zoom.it archived docs on this][zoomit-api-formats])
 
-- RESTful means that we'll return proper status codes (e.g. 404, 301) and
+- RESTful means that we’ll return proper status codes (e.g. 404, 301) and
   return resources directly.
 
-- Non-RESTful means that we'll always return a 200 status code, and wrap our
+- Non-RESTful means that we’ll always return a 200 status code, and wrap our
   resources in a "response" object.
 
 The API is RESTful by default. To specify non-RESTful, add `?format=json` to
@@ -43,9 +43,9 @@ To request JSONP, add a `?callback` parameter to API URLs.
 - `url` (string; the original source URL)
 - `ready` (boolean)
 - `failed` (boolean)
-- `progress` (double; between 0 and 1; ***NOTE:*** *This isn't actually wired up yet.*)
+- `progress` (double; between 0 and 1; ***NOTE:*** *This isn’t actually wired up yet.*)
 - `shareUrl` (string; the URL for viewing)
-- `embedHtml` (string; HTML snippet for this content's embeddable viewer)
+- `embedHtml` (string; HTML snippet for this content’s embeddable viewer)
 - `title` (optional string; ***TODO?***)
 - `attributionText` (optional string; ***TODO?***)
 - `attributionUrl` (optional string; ***TODO?***)
@@ -68,7 +68,7 @@ Note that all response objects have a `content`, `dzi`, or `error` object.
 `GET /v1/content/:id`
 
 - 200 w/ Content object if exists
-- 404 w/ error message if doesn't exist
+- 404 w/ error message if doesn’t exist
 
 `GET /v1/content?url=<url>` (be sure to percent-encode the URL)
 
@@ -126,7 +126,7 @@ response format?
 - Add an `error` property for semantic failure codes/reasons.
   (We were routinely asked for this.)
 
-- Remove the `ready` and `failed` boolean properties; it's equivalent --
+- Remove the `ready` and `failed` boolean properties; it’s equivalent --
   but more robust -- to just check for `dzi` and `error` directly.
 
 - Rename `url` to `sourceURL`, to disambiguate from our other URLs?
@@ -147,13 +147,13 @@ response format?
 
 - Should we move to the OpenSeadragon JSON format?
   (A straight-up XML-to-JSON representation of the DZI XML.)
-  If there's no strong benefit in doing so, maybe not worth it?
+  If there’s no strong benefit in doing so, maybe not worth it?
 
 **Error** objects would be nicer than plaintext messages:
 
-- `code` (string; semantic code that'll be documented here)
+- `code` (string; semantic code that’ll be documented here)
 - `message` (string; developer-facing to help in debugging, NOT user-facing)
-- `data` (arbitrary and optional; will be documented w/ code if it's needed)
+- `data` (arbitrary and optional; will be documented w/ code if it’s needed)
 
 ### Routes
 
