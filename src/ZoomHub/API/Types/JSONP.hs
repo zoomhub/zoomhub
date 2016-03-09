@@ -15,8 +15,8 @@ data JSONP a = ToJSON a => JSONP
   , jsonpCallback :: Callback
   }
 
-mkJSONP :: ToJSON a => a -> Callback -> JSONP a
-mkJSONP body callback = JSONP
+mkJSONP :: ToJSON a => Callback -> a -> JSONP a
+mkJSONP callback body = JSONP
   { jsonpBody = body
   , jsonpCallback = callback
   }

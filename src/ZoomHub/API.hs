@@ -118,8 +118,7 @@ contentByIdJSONP baseURI contentBaseURI dataPath contentId callback = do
   case maybeContent of
     -- TODO: Return non-RESTful error:
     Nothing      -> left . API.error404 $ error404Message contentId
-    Just content ->
-      return $ mkJSONP (fromInternal baseURI contentBaseURI content) callback
+      return $ mkJSONP callback (fromInternal baseURI contentBaseURI content)
 
 contentById :: BaseURI ->
                ContentBaseURI ->
