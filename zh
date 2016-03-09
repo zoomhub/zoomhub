@@ -65,7 +65,7 @@ ops)
         ;;
     *)
         echo "Unknown command: $0 $@. Try $0 $1 \
-bootstrap|ping|setup-admin-server|setup-server|setup-web-server"
+bootstrap|ping|setup-admin-server|setup-web-server"
         exit 1
     esac
     ;;
