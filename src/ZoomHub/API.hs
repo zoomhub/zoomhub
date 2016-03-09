@@ -57,6 +57,7 @@ type Handler a = EitherT ServantErr IO a
 type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx
+  -- TODO: Use `ContentURI` instead of `String`:
        "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :>
