@@ -6,43 +6,48 @@ module ZoomHub.API
   ( app
   ) where
 
-import           Control.Monad.IO.Class             (liftIO)
-import           Control.Monad.Trans.Either         (EitherT, left)
-import qualified Data.ByteString.Char8              as BC
-import           Data.Maybe                         (fromJust, fromMaybe)
-import           Data.Proxy                         (Proxy (Proxy))
-import           Network.URI                        (URI,
-                                                     parseRelativeReference)
-import           Network.Wai                        (Application)
-import           Network.Wai.Middleware.Cors        (simpleCors)
-import           Servant                            ((:<|>) (..), (:>), Capture,
-                                                     Get, JSON, QueryParam, Raw,
-                                                     ServantErr, Server, err301,
-                                                     errHeaders, serve)
-import           Servant.HTML.Lucid                 (HTML)
-import           System.Random                      (randomRIO)
+import           Control.Monad.IO.Class               (liftIO)
+import           Control.Monad.Trans.Either           (EitherT, left)
+import qualified Data.ByteString.Char8                as BC
+import           Data.Maybe                           (fromJust, fromMaybe)
+import           Data.Proxy                           (Proxy (Proxy))
+import           Network.URI                          (URI,
+                                                       parseRelativeReference)
+import           Network.Wai                          (Application)
+import           Network.Wai.Middleware.Cors          (simpleCors)
+import           Servant                              ((:<|>) (..), (:>),
+                                                       Capture, Get, JSON,
+                                                       QueryParam, Raw,
+                                                       ServantErr, Server,
+                                                       err301, errHeaders,
+                                                       serve)
+import           Servant.HTML.Lucid                   (HTML)
+import           System.Random                        (randomRIO)
 
-import           ZoomHub.API.ContentTypes           (JavaScript)
-import qualified ZoomHub.API.Errors                 as API
-import           ZoomHub.API.Types.Callback         (Callback)
-import           ZoomHub.API.Types.JSONP            (JSONP, mkJSONP)
-import           ZoomHub.Config                     (Config)
-import qualified ZoomHub.Config                     as Config
-import           ZoomHub.Servant.RawCapture         (RawCapture)
-import           ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
-import           ZoomHub.Storage.File               (getById, getByURL)
-import           ZoomHub.Types.BaseURI              (BaseURI)
-import           ZoomHub.Types.Content              (Content, fromInternal)
-import           ZoomHub.Types.ContentBaseURI       (ContentBaseURI)
-import           ZoomHub.Types.Embed                (Embed, mkEmbed)
-import           ZoomHub.Types.EmbedDimension       (EmbedDimension)
-import           ZoomHub.Types.EmbedId              (EmbedId, unEmbedId)
-import qualified ZoomHub.Types.Internal.Content     as Internal
-import           ZoomHub.Types.Internal.ContentId   (ContentId, unId)
-import           ZoomHub.Types.Internal.ContentURI  (ContentURI)
-import           ZoomHub.Types.ViewContent          (ViewContent, mkViewContent)
-import qualified ZoomHub.Web.Errors                 as Web
-import           ZoomHub.Web.Static                 (serveDirectory)
+import           ZoomHub.API.ContentTypes             (JavaScript)
+import qualified ZoomHub.API.Errors                   as API
+import           ZoomHub.API.Types.Callback           (Callback)
+import           ZoomHub.API.Types.JSONP              (JSONP, mkJSONP)
+import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse,
+                                                       mkNonRESTful200)
+import           ZoomHub.Config                       (Config)
+import qualified ZoomHub.Config                       as Config
+import           ZoomHub.Servant.RawCapture           (RawCapture)
+import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
+import           ZoomHub.Storage.File                 (getById, getByURL)
+import           ZoomHub.Types.BaseURI                (BaseURI)
+import           ZoomHub.Types.Content                (Content, fromInternal)
+import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
+import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
+import           ZoomHub.Types.EmbedDimension         (EmbedDimension)
+import           ZoomHub.Types.EmbedId                (EmbedId, unEmbedId)
+import qualified ZoomHub.Types.Internal.Content       as Internal
+import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
+import           ZoomHub.Types.Internal.ContentURI    (ContentURI)
+import           ZoomHub.Types.ViewContent            (ViewContent,
+                                                       mkViewContent)
+import qualified ZoomHub.Web.Errors                   as Web
+import           ZoomHub.Web.Static                   (serveDirectory)
 
 
 -- Servant default handler type
@@ -56,7 +61,7 @@ type API =
   :<|> "version" :> Get '[HTML] String
   :<|> "v1" :> "content" :> Capture "id" ContentId :>
        RequiredQueryParam "callback" Callback :>
-       Get '[JavaScript] (JSONP Content)
+       Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
@@ -112,13 +117,15 @@ contentByIdJSONP :: BaseURI ->
                     FilePath ->
                     ContentId ->
                     Callback ->
-                    Handler (JSONP Content)
+                    Handler (JSONP (NonRESTfulResponse Content))
 contentByIdJSONP baseURI contentBaseURI dataPath contentId callback = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     -- TODO: Return non-RESTful error:
     Nothing      -> left . API.error404 $ error404Message contentId
-      return $ mkJSONP callback (fromInternal baseURI contentBaseURI content)
+    Just content -> do
+      let publicContent = fromInternal baseURI contentBaseURI content
+      return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
 
 contentById :: BaseURI ->
                ContentBaseURI ->
