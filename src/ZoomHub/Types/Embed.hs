@@ -20,7 +20,7 @@ import           GHC.Generics                            (Generic)
 import           Network.URI                             (parseRelativeReference,
                                                           relativeTo)
 
-import           ZoomHub.API.ContentTypes                (ToJS, toJS)
+import           ZoomHub.API.ContentTypes.JavaScript     (ToJS, toJS)
 import           ZoomHub.Types.BaseURI                   (BaseURI)
 import           ZoomHub.Types.Content                   (Content, contentDzi,
                                                           contentReady)
