@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 
-module ZoomHub.API.ContentTypes
+module ZoomHub.API.ContentTypes.JavaScript
   ( ToJS
   , JavaScript
   , toJS

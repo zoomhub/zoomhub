@@ -24,7 +24,7 @@ import           Servant                              ((:<|>) (..), (:>),
 import           Servant.HTML.Lucid                   (HTML)
 import           System.Random                        (randomRIO)
 
-import           ZoomHub.API.ContentTypes             (JavaScript)
+import           ZoomHub.API.ContentTypes.JavaScript  (JavaScript)
 import qualified ZoomHub.API.Errors                   as API
 import           ZoomHub.API.Types.Callback           (Callback)
 import           ZoomHub.API.Types.JSONP              (JSONP, mkJSONP)
