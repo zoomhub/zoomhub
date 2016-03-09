@@ -22,6 +22,8 @@ library
       ZoomHub.API
     , ZoomHub.API.ContentTypes
     , ZoomHub.API.Errors
+    , ZoomHub.API.Types.Callback
+    , ZoomHub.API.Types.JSONP
     , ZoomHub.Config
     , ZoomHub.Main
     , ZoomHub.Logger
