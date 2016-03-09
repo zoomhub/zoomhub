@@ -37,7 +37,7 @@ mkNonRESTful301 key body redirectLocation = NonRESTfulResponse
   , nrrRedirectLocation = Just redirectLocation
   }
 
-
+-- JSON
 instance ToJSON a => ToJSON (NonRESTfulResponse a) where
   toJSON r = object
       [ "status" .= statusCode status
