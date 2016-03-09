@@ -24,6 +24,8 @@ import           System.Random                      (randomRIO)
 
 import           ZoomHub.API.ContentTypes           (JavaScript)
 import qualified ZoomHub.API.Errors                 as API
+import           ZoomHub.API.Types.Callback         (Callback)
+import           ZoomHub.API.Types.JSONP            (JSONP, mkJSONP)
 import           ZoomHub.Config                     (Config)
 import qualified ZoomHub.Config                     as Config
 import           ZoomHub.Servant.RawCapture         (RawCapture)
@@ -52,6 +54,9 @@ type API =
   -- despite a hint here: https://git.io/vzEZx
        "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
+  :<|> "v1" :> "content" :> Capture "id" ContentId :>
+       RequiredQueryParam "callback" Callback :>
+       Get '[JavaScript] (JSONP Content)
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
@@ -74,6 +79,7 @@ api = Proxy
 server :: Config -> Server API
 server config = health
            :<|> version (Config.version config)
+           :<|> contentByIdJSONP baseURI contentBaseURI dataPath
            :<|> contentById baseURI contentBaseURI dataPath
            :<|> invalidContentId
            :<|> contentByURL config
@@ -100,6 +106,20 @@ health = return "up"
 
 version :: String -> Handler String
 version = return
+
+contentByIdJSONP :: BaseURI ->
+                    ContentBaseURI ->
+                    FilePath ->
+                    ContentId ->
+                    Callback ->
+                    Handler (JSONP Content)
+contentByIdJSONP baseURI contentBaseURI dataPath contentId callback = do
+  maybeContent <- liftIO $ getById dataPath contentId
+  case maybeContent of
+    -- TODO: Return non-RESTful error:
+    Nothing      -> left . API.error404 $ error404Message contentId
+    Just content ->
+      return $ mkJSONP (fromInternal baseURI contentBaseURI content) callback
 
 contentById :: BaseURI ->
                ContentBaseURI ->
