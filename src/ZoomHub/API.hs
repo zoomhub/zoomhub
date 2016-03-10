@@ -209,10 +209,10 @@ noContentWithIdMessage :: String
 noContentWithIdMessage = "No content with ID: "
 
 noNewContentErrorWeb :: Handler ViewContent
-noNewContentErrorWeb = noNewContentError Web.error400
+noNewContentErrorWeb = noNewContentError Web.error503
 
-noNewContentErrorAPI :: Handler Content
-noNewContentErrorAPI = noNewContentError API.error400
+noNewContentErrorAPI :: Handler a
+noNewContentErrorAPI = noNewContentError API.error503
 
 noNewContentError :: (String -> ServantErr) -> Handler a
 noNewContentError err =
