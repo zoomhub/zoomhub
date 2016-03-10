@@ -216,7 +216,10 @@ noNewContentErrorAPI = noNewContentError API.error503
 
 noNewContentError :: (String -> ServantErr) -> Handler a
 noNewContentError err =
-  left . err $ "We are currently not processing new content."
+  left . err $ noNewContentErrorMessage
+
+noNewContentErrorMessage :: String
+noNewContentErrorMessage = "We are currently not processing new content."
 
 apiMissingIdOrURLMessage :: String
 apiMissingIdOrURLMessage = unwords
