@@ -12,7 +12,8 @@ import qualified Data.ByteString.Char8                as BC
 import           Data.Maybe                           (fromJust, fromMaybe)
 import           Data.Proxy                           (Proxy (Proxy))
 import           Network.URI                          (URI,
-                                                       parseRelativeReference)
+                                                       parseRelativeReference,
+                                                       relativeTo)
 import           Network.Wai                          (Application)
 import           Network.Wai.Middleware.Cors          (simpleCors)
 import           Servant                              ((:<|>) (..), (:>),
@@ -35,7 +36,7 @@ import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
 import           ZoomHub.Storage.File                 (getById, getByURL)
-import           ZoomHub.Types.BaseURI                (BaseURI)
+import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
 import           ZoomHub.Types.Content                (Content, fromInternal)
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
 import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
@@ -88,12 +89,12 @@ server config = health
            :<|> contentByIdJSONP baseURI contentBaseURI dataPath
            :<|> contentById baseURI contentBaseURI dataPath
            :<|> invalidContentId
-           :<|> contentByURL config
+           :<|> contentByURL baseURI dataPath
            :<|> embed baseURI contentBaseURI dataPath viewerScript
            :<|> viewContentById baseURI contentBaseURI dataPath
-           :<|> viewContentByURL dataPath
+           :<|> viewContentByURL baseURI dataPath
            :<|> invalidURLParam
-           :<|> viewContentByURL dataPath
+           :<|> viewContentByURL baseURI dataPath
            :<|> serveDirectory (Config.error404 config) publicPath
   where
     baseURI = Config.baseURI config
@@ -143,18 +144,18 @@ invalidContentId :: String -> Handler Content
 invalidContentId contentId = left . API.error404 $
   noContentWithIdMessage ++ contentId
 
-contentByURL :: Config -> Maybe String -> Handler Content
-contentByURL config maybeURL = case maybeURL of
+contentByURL :: BaseURI -> FilePath -> Maybe String -> Handler Content
+contentByURL baseURI dataPath maybeURL = case maybeURL of
   Nothing  -> left . API.error400 $ unwords
     [ "Missing ID or URL."
     , "Please provide ID, e.g. `/v1/content/<id>`,"
     , "or URL via `/v1/content?url=<url>` query parameter."
     ]
   Just url -> do
-      maybeContent <- liftIO $ getByURL (Config.dataPath config) url
-      case maybeContent of
-        Nothing      -> noNewContentErrorAPI
-        Just content -> redirectToAPI $ Internal.contentId content
+    maybeContent <- liftIO $ getByURL dataPath url
+    case maybeContent of
+      Nothing      -> noNewContentErrorAPI
+      Just content -> redirectToAPI baseURI (Internal.contentId content)
 
 embed :: BaseURI ->
          ContentBaseURI ->
@@ -197,12 +198,12 @@ invalidURLParam _ = left . Web.error400 $
   "Please give us the full URL, including ‘http://’ or ‘https://’."
 
 -- TODO: Add support for submission, i.e. create content in the background:
-viewContentByURL :: FilePath -> ContentURI -> Handler ViewContent
-viewContentByURL dataPath contentURI = do
+viewContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler ViewContent
+viewContentByURL baseURI dataPath contentURI = do
   maybeContent <- liftIO $ getByURL dataPath (show contentURI)
   case maybeContent of
     Nothing -> noNewContentErrorWeb
-    Just c  -> redirectToView $ Internal.contentId c
+    Just c  -> redirectToView baseURI (Internal.contentId c)
 
 -- Helpers
 error404Message :: ContentId -> String
@@ -221,16 +222,26 @@ noNewContentError :: (String -> ServantErr) -> Handler a
 noNewContentError err =
   left . err $ "We are currently not processing new content."
 
-redirectToView :: ContentId -> Handler ViewContent
-redirectToView contentId =
+redirectToView :: BaseURI -> ContentId -> Handler ViewContent
+redirectToView baseURI contentId =
   -- TODO: Look into Servant ‘Links’ for type safe link generation:
-  redirect . fromJust . parseRelativeReference $ "/" ++ unId contentId
+  redirect $ webRedirectURI baseURI contentId
 
-redirectToAPI :: ContentId -> Handler Content
-redirectToAPI contentId =
+redirectToAPI :: BaseURI -> ContentId -> Handler Content
+redirectToAPI baseURI contentId =
   -- TODO: Look into Servant ‘Links’ for type safe link generation:
-  redirect . fromJust . parseRelativeReference $
-    "/v1/content/" ++ unId contentId
+  redirect $ apiRedirectURI baseURI contentId
+
+apiRedirectURI :: BaseURI -> ContentId -> URI
+apiRedirectURI = redirectURI "/v1/content/"
+
+webRedirectURI :: BaseURI -> ContentId -> URI
+webRedirectURI = redirectURI "/"
+
+redirectURI :: String -> BaseURI -> ContentId -> URI
+redirectURI pathPrefix baseURI contentId =
+  (fromJust . parseRelativeReference $ pathPrefix ++ unId contentId)
+    `relativeTo` unBaseURI baseURI
 
 -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test
 -- permanent HTTP 301 redirects:
