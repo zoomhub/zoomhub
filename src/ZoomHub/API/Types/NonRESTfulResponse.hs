@@ -63,7 +63,9 @@ instance ToJSON a => ToJSON (NonRESTfulResponse a) where
       [ "status" .= statusCode status
       , "statusText" .= decodeUtf8 (statusMessage status)
       , bodyKey .= toJSON (nrrBody r)
+      , "redirectLocation" .= redirectLocation
       ]
     where
       bodyKey = T.pack (nrrBodyKey r)
+      redirectLocation = toJSON (show <$> nrrRedirectLocation r)
       status = nrrStatus r
