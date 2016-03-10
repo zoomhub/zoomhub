@@ -5,8 +5,8 @@ module ZoomHub.API.Types.Callback
   , unCallback
   ) where
 
-import qualified Data.Text   as T
-import           Servant     (FromText, fromText)
+import qualified Data.Text as T
+import           Servant   (FromText, fromText)
 
 
 newtype Callback = Callback { unCallback :: String } deriving (Eq, Show)
