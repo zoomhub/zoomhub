@@ -30,7 +30,8 @@ import qualified ZoomHub.API.Errors                   as API
 import           ZoomHub.API.Types.Callback           (Callback)
 import           ZoomHub.API.Types.JSONP              (JSONP, mkJSONP)
 import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse,
-                                                       mkNonRESTful200)
+                                                       mkNonRESTful200,
+                                                       mkNonRESTful301)
 import           ZoomHub.Config                       (Config)
 import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
@@ -64,6 +65,10 @@ type API =
   :<|> "v1" :> "content" :> Capture "id" ContentId :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
+  :<|> "v1" :> "content" :>
+       QueryParam "url" ContentURI :>
+       RequiredQueryParam "callback" Callback :>
+       Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
@@ -87,6 +92,7 @@ server :: Config -> Server API
 server config = health
            :<|> version (Config.version config)
            :<|> contentByIdJSONP baseURI contentBaseURI dataPath
+           :<|> contentByURLJSONP baseURI contentBaseURI dataPath
            :<|> contentById baseURI contentBaseURI dataPath
            :<|> invalidContentId
            :<|> contentByURL baseURI dataPath
@@ -128,6 +134,29 @@ contentByIdJSONP baseURI contentBaseURI dataPath contentId callback = do
     Just content -> do
       let publicContent = fromInternal baseURI contentBaseURI content
       return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
+
+contentByURLJSONP :: BaseURI ->
+                     ContentBaseURI ->
+                     FilePath ->
+                     Maybe ContentURI ->
+                     Callback ->
+                     Handler (JSONP (NonRESTfulResponse Content))
+contentByURLJSONP baseURI contentBaseURI dataPath maybeURL callback =
+  case maybeURL of
+    -- TODO: Make `NonRESTfulResponse`
+    -- Nothing -> return $ mkNonRESTful400 apiMissingIdOrURLMessage
+    Nothing  -> left . API.error400 $ apiMissingIdOrURLMessage
+    Just url -> do
+      maybeContent <- liftIO $ getByURL dataPath (show url)
+      case maybeContent of
+        -- Nothing      -> return $ mkNonRESTful503 noNewContentErrorMessage
+        Nothing      -> noNewContentErrorAPI
+        Just content -> do
+          let publicContent = fromInternal baseURI contentBaseURI content
+              redirectLocation =
+                apiRedirectURI baseURI (Internal.contentId content)
+          return $ mkJSONP callback $
+            mkNonRESTful301 "content" publicContent redirectLocation
 
 contentById :: BaseURI ->
                ContentBaseURI ->
