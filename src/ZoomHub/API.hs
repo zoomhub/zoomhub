@@ -146,11 +146,7 @@ invalidContentId contentId = left . API.error404 $
 
 contentByURL :: BaseURI -> FilePath -> Maybe String -> Handler Content
 contentByURL baseURI dataPath maybeURL = case maybeURL of
-  Nothing  -> left . API.error400 $ unwords
-    [ "Missing ID or URL."
-    , "Please provide ID, e.g. `/v1/content/<id>`,"
-    , "or URL via `/v1/content?url=<url>` query parameter."
-    ]
+  Nothing  -> left . API.error400 $ apiMissingIdOrURLMessage
   Just url -> do
     maybeContent <- liftIO $ getByURL dataPath url
     case maybeContent of
@@ -221,6 +217,13 @@ noNewContentErrorAPI = noNewContentError API.error400
 noNewContentError :: (String -> ServantErr) -> Handler a
 noNewContentError err =
   left . err $ "We are currently not processing new content."
+
+apiMissingIdOrURLMessage :: String
+apiMissingIdOrURLMessage = unwords
+  [ "Missing ID or URL."
+  , "Please provide ID, e.g. `/v1/content/<id>`,"
+  , "or URL via `/v1/content?url=<url>` query parameter."
+  ]
 
 redirectToView :: BaseURI -> ContentId -> Handler ViewContent
 redirectToView baseURI contentId =
