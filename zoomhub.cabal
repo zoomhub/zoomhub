@@ -20,11 +20,15 @@ source-repository head
 library
   exposed-modules:
       ZoomHub.API
-    , ZoomHub.API.ContentTypes
+    , ZoomHub.API.ContentTypes.JavaScript
     , ZoomHub.API.Errors
+    , ZoomHub.API.JSONP.Errors
+    , ZoomHub.API.Types.Callback
+    , ZoomHub.API.Types.JSONP
+    , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
-    , ZoomHub.Main
     , ZoomHub.Logger
+    , ZoomHub.Main
     , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
