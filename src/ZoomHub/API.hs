@@ -64,8 +64,10 @@ type API =
   -- TODO: Figure out how to route to `/`. Apparently `""` nor `"/"` works
   -- despite a hint here: https://git.io/vzEZx. Solution: `:<|> Get '[HTML]`
   -- TODO: Use `ContentURI` instead of `String`:
+  -- Meta
        "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
+  -- JSONP
   :<|> "v1" :> "content" :>
        Capture "id" ContentId :>
        RequiredQueryParam "callback" Callback :>
@@ -74,23 +76,35 @@ type API =
        RequiredQueryParam "url" ContentURI :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
+  -- JSONP: Error handler
   :<|> "v1" :> "content" :>
        QueryParam "url" String :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse String))
+  -- API: RESTful
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
-  :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
-  :<|> Capture "embedId" EmbedId
-       :> QueryParam "id" String
-       :> QueryParam "width" EmbedDimension
-       :> QueryParam "height" EmbedDimension
-       :> Get '[JavaScript] Embed
+  :<|> "v1" :> "content" :>
+       RequiredQueryParam "url" ContentURI :>
+       Get '[JSON] Content
+  -- API: RESTful: Error handler
+  :<|> "v1" :> "content" :>
+       QueryParam "url" String :>
+       Get '[JSON] Content
+  -- Embed
+  :<|> Capture "embedId" EmbedId :>
+       QueryParam "id" String :>
+       QueryParam "width" EmbedDimension :>
+       QueryParam "height" EmbedDimension :>
+       Get '[JavaScript] Embed
+  -- Web: View
   :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
   :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] ViewContent
-  -- Error handler for invalid URLs which will always match `String`:
+  -- Web: View: Invalid URL
   :<|> RequiredQueryParam "url" String :> Get '[HTML] ViewContent
+  -- Web: Shortcut: `http://zoomhub.com/http://example.com`:
   :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
+  -- Static files
   :<|> Raw
 
 -- API
@@ -98,20 +112,28 @@ api :: Proxy API
 api = Proxy
 
 server :: Config -> Server API
-server config = health
-           :<|> version (Config.version config)
-           :<|> jsonpContentById baseURI contentBaseURI dataPath
-           :<|> jsonpContentByURL baseURI contentBaseURI dataPath
-           :<|> jsonpInvalidURLParam
-           :<|> contentById baseURI contentBaseURI dataPath
-           :<|> invalidContentId
-           :<|> contentByURL baseURI dataPath
-           :<|> embed baseURI contentBaseURI dataPath viewerScript
-           :<|> viewContentById baseURI contentBaseURI dataPath
-           :<|> viewContentByURL baseURI dataPath
-           :<|> invalidURLParam
-           :<|> viewContentByURL baseURI dataPath
-           :<|> serveDirectory (Config.error404 config) publicPath
+server config =
+    -- Meta
+         health
+    :<|> version (Config.version config)
+    -- API: JSONP
+    :<|> jsonpContentById baseURI contentBaseURI dataPath
+    :<|> jsonpContentByURL baseURI contentBaseURI dataPath
+    :<|> jsonpInvalidRequest
+    -- API: RESTful
+    :<|> restContentById baseURI contentBaseURI dataPath
+    :<|> restInvalidContentId
+    :<|> restContentByURL baseURI dataPath
+    :<|> restInvalidRequest
+    -- Web: Embed
+    :<|> webEmbed baseURI contentBaseURI dataPath viewerScript
+    -- Web: View
+    :<|> webContentById baseURI contentBaseURI dataPath
+    :<|> webContentByURL baseURI dataPath
+    :<|> webInvalidURLParam
+    :<|> webContentByURL baseURI dataPath
+    -- Web: Static files
+    :<|> serveDirectory (Config.error404 config) publicPath
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
@@ -119,17 +141,21 @@ server config = health
     publicPath = Config.publicPath config
     viewerScript = Config.openseadragonScript config
 
+-- App
 app :: Config -> Application
 app config = logger . simpleCors $ serve api (server config)
   where logger = Config.logger config
 
 -- Handlers
+
+-- Meta
 health :: Handler String
 health = return "up"
 
 version :: String -> Handler String
 version = return
 
+-- API: JSONP
 jsonpContentById :: BaseURI ->
                     ContentBaseURI ->
                     FilePath ->
@@ -163,50 +189,55 @@ jsonpContentByURL baseURI contentBaseURI dataPath url callback = do
       return $ mkJSONP callback $
         mkNonRESTful301 "content" publicContent redirectLocation
 
-jsonpInvalidURLParam :: Maybe String ->
+jsonpInvalidRequest :: Maybe String ->
                         Callback ->
                         Handler (JSONP (NonRESTfulResponse String))
-jsonpInvalidURLParam maybeURL callback =
+jsonpInvalidRequest maybeURL callback =
   case maybeURL of
     Nothing ->
       return $ mkJSONP callback (mkNonRESTful400 apiMissingIdOrURLMessage)
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-contentById :: BaseURI ->
+-- API: RESTful
+restContentById :: BaseURI ->
                ContentBaseURI ->
                FilePath ->
                ContentId ->
                Handler Content
-contentById baseURI contentBaseURI dataPath contentId = do
+restContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left . API.error404 $ error404Message contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
 
-invalidContentId :: String -> Handler Content
-invalidContentId contentId = left . API.error404 $
+restInvalidContentId :: String -> Handler Content
+restInvalidContentId contentId = left . API.error404 $
   noContentWithIdMessage ++ contentId
 
-contentByURL :: BaseURI -> FilePath -> Maybe String -> Handler Content
-contentByURL baseURI dataPath maybeURL = case maybeURL of
-  Nothing  -> left . API.error400 $ apiMissingIdOrURLMessage
-  Just url -> do
-    maybeContent <- liftIO $ getByURL dataPath url
-    case maybeContent of
-      Nothing      -> noNewContentErrorAPI
-      Just content -> redirectToAPI baseURI (Internal.contentId content)
+restContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler Content
+restContentByURL baseURI dataPath url = do
+  maybeContent <- liftIO $ getByURL dataPath (show url)
+  case maybeContent of
+    Nothing      -> noNewContentErrorAPI
+    Just content -> redirectToAPI baseURI (Internal.contentId content)
 
-embed :: BaseURI ->
-         ContentBaseURI ->
-         FilePath ->
-         String ->
-         EmbedId ->
-         Maybe String ->
-         Maybe EmbedDimension ->
-         Maybe EmbedDimension ->
-         Handler Embed
-embed baseURI cBaseURI dataPath script embedId maybeId width height = do
+restInvalidRequest :: Maybe String -> Handler Content
+restInvalidRequest maybeURL = case maybeURL of
+  Nothing  -> left . API.error400 $ apiMissingIdOrURLMessage
+  Just _   -> left . API.error400 $ invalidURLErrorMessage
+
+-- Web: Embed
+webEmbed :: BaseURI ->
+            ContentBaseURI ->
+            FilePath ->
+            String ->
+            EmbedId ->
+            Maybe String ->
+            Maybe EmbedDimension ->
+            Maybe EmbedDimension ->
+            Handler Embed
+webEmbed baseURI cBaseURI dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left . Web.error404 $ error404Message contentId
@@ -220,12 +251,13 @@ embed baseURI cBaseURI dataPath script embedId maybeId width height = do
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
 
-viewContentById :: BaseURI ->
+-- Web: View
+webContentById :: BaseURI ->
                    ContentBaseURI ->
                    FilePath ->
                    ContentId ->
                    Handler ViewContent
-viewContentById baseURI contentBaseURI dataPath contentId = do
+webContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing -> left . Web.error404 $ error404Message contentId
@@ -233,16 +265,16 @@ viewContentById baseURI contentBaseURI dataPath contentId = do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
 
-viewInvalidURLParam :: String -> Handler ViewContent
-viewInvalidURLParam _ = left . Web.error400 $ invalidURLErrorMessage
-
 -- TODO: Add support for submission, i.e. create content in the background:
-viewContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler ViewContent
-viewContentByURL baseURI dataPath contentURI = do
+webContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler ViewContent
+webContentByURL baseURI dataPath contentURI = do
   maybeContent <- liftIO $ getByURL dataPath (show contentURI)
   case maybeContent of
     Nothing -> noNewContentErrorWeb
     Just c  -> redirectToView baseURI (Internal.contentId c)
+
+webInvalidURLParam :: String -> Handler ViewContent
+webInvalidURLParam _ = left . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
 error404Message :: ContentId -> String
