@@ -203,7 +203,7 @@ jsonpInvalidContentId :: String ->
                          Handler (JSONP (NonRESTfulResponse String))
 jsonpInvalidContentId contentId callback =
     return $ mkJSONP callback (mkNonRESTful404 message)
-  where message = noContentWithIdMessage ++ contentId
+  where message = noContentWithIdMessage contentId
 
 jsonpInvalidRequest :: Maybe String ->
                        Callback ->
@@ -228,8 +228,8 @@ restContentById baseURI contentBaseURI dataPath contentId = do
     Just content -> return $ fromInternal baseURI contentBaseURI content
 
 restInvalidContentId :: String -> Handler Content
-restInvalidContentId contentId = left . API.error404 $
-  noContentWithIdMessage ++ contentId
+restInvalidContentId contentId =
+  left . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler Content
 restContentByURL baseURI dataPath url = do
@@ -294,10 +294,10 @@ webInvalidURLParam _ = left . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
 error404Message :: ContentId -> String
-error404Message contentId = noContentWithIdMessage ++ unId contentId
+error404Message contentId = noContentWithIdMessage (unId contentId)
 
-noContentWithIdMessage :: String
-noContentWithIdMessage = "No content with ID: "
+noContentWithIdMessage :: String -> String
+noContentWithIdMessage contentId = "No content with ID: " ++ contentId
 
 noNewContentErrorWeb :: Handler ViewContent
 noNewContentErrorWeb = noNewContentError Web.error503
