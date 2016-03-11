@@ -73,6 +73,10 @@ type API =
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
   :<|> "v1" :> "content" :>
+       Capture "id" String :>
+       RequiredQueryParam "callback" Callback :>
+       Get '[JavaScript] (JSONP (NonRESTfulResponse String))
+  :<|> "v1" :> "content" :>
        RequiredQueryParam "url" ContentURI :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
@@ -118,6 +122,7 @@ server config =
     :<|> version (Config.version config)
     -- API: JSONP
     :<|> jsonpContentById baseURI contentBaseURI dataPath
+    :<|> jsonpInvalidContentId
     :<|> jsonpContentByURL baseURI contentBaseURI dataPath
     :<|> jsonpInvalidRequest
     -- API: RESTful
@@ -188,6 +193,13 @@ jsonpContentByURL baseURI contentBaseURI dataPath url callback = do
           contentId = Internal.contentId content
       return $ mkJSONP callback $
         mkNonRESTful301 "content" publicContent redirectLocation
+
+jsonpInvalidContentId :: String ->
+                         Callback ->
+                         Handler (JSONP (NonRESTfulResponse String))
+jsonpInvalidContentId contentId callback =
+    return $ mkJSONP callback (mkNonRESTful404 message)
+  where message = noContentWithIdMessage ++ contentId
 
 jsonpInvalidRequest :: Maybe String ->
                         Callback ->
