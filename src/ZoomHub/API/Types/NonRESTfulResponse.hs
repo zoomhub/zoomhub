@@ -6,6 +6,7 @@ module ZoomHub.API.Types.NonRESTfulResponse
   , mkNonRESTful200
   , mkNonRESTful301
   , mkNonRESTful400
+  , mkNonRESTful404
   , mkNonRESTful503
   ) where
 
@@ -13,7 +14,7 @@ import           Data.Aeson                (ToJSON, object, toJSON, (.=))
 import qualified Data.Text                 as T
 import           Data.Text.Encoding        (decodeUtf8)
 import           Network.HTTP.Types.Status (Status, badRequest400,
-                                            movedPermanently301, ok200,
+                                            movedPermanently301, ok200, notFound404,
                                             serviceUnavailable503, statusCode,
                                             statusMessage)
 import           Network.URI               (URI)
@@ -44,6 +45,14 @@ mkNonRESTful301 key body redirectLocation = NonRESTfulResponse
 mkNonRESTful400 :: String -> NonRESTfulResponse String
 mkNonRESTful400 message = NonRESTfulResponse
   { nrrStatus = badRequest400
+  , nrrBodyKey = "error"
+  , nrrBody = message
+  , nrrRedirectLocation = Nothing
+  }
+
+mkNonRESTful404 :: String -> NonRESTfulResponse String
+mkNonRESTful404 message = NonRESTfulResponse
+  { nrrStatus = notFound404
   , nrrBodyKey = "error"
   , nrrBody = message
   , nrrRedirectLocation = Nothing
