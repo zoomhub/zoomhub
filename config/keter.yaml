@@ -2,7 +2,9 @@ stanzas:
   - type: webapp
     exec: ../zoomhub
     hosts:
+      - 162.242.235.90
       - api.zoom.it
+      - api.zoomhub.net
       - next.api.zoomhub.net
       - next.zoomhub.net
       - openzoom.net
@@ -12,7 +14,9 @@ stanzas:
       - staging.zoomhub.org
       - teamteam.team
       - www.zoom.it
+      - www.zoomhub.net
       - zoom.it
+      - zoomhub.net
     env:
       DATA_PATH: '/mnt/datavolume/zoomhub/data'
       HASHIDS_SALT: 'CHANGE-ME-IN-PRODUCTION'
