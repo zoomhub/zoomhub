@@ -175,7 +175,7 @@ jsonpContentById baseURI contentBaseURI dataPath contentId callback = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
     Nothing      -> left $ JSONP.mkError $
-      mkJSONP callback (mkNonRESTful404 (error404Message contentId))
+      mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
     Just content -> do
       let publicContent = fromInternal baseURI contentBaseURI content
       return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
@@ -224,7 +224,7 @@ restContentById :: BaseURI ->
 restContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left . API.error404 $ error404Message contentId
+    Nothing      -> left . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
 
 restInvalidContentId :: String -> Handler Content
@@ -256,7 +256,7 @@ webEmbed :: BaseURI ->
 webEmbed baseURI cBaseURI dataPath script embedId maybeId width height = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing      -> left . Web.error404 $ error404Message contentId
+    Nothing      -> left . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
@@ -276,7 +276,7 @@ webContentById :: BaseURI ->
 webContentById baseURI contentBaseURI dataPath contentId = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    Nothing -> left . Web.error404 $ error404Message contentId
+    Nothing -> left . Web.error404 $ contentNotFoundMessage contentId
     Just c  -> do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
@@ -293,8 +293,8 @@ webInvalidURLParam :: String -> Handler ViewContent
 webInvalidURLParam _ = left . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
-error404Message :: ContentId -> String
-error404Message contentId = noContentWithIdMessage (unId contentId)
+contentNotFoundMessage :: ContentId -> String
+contentNotFoundMessage contentId = noContentWithIdMessage (unId contentId)
 
 noContentWithIdMessage :: String -> String
 noContentWithIdMessage contentId = "No content with ID: " ++ contentId
