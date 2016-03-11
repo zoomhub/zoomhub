@@ -67,31 +67,35 @@ type API =
   -- Meta
        "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
-  -- JSONP
+  -- JSONP: ID
   :<|> "v1" :> "content" :>
        Capture "id" ContentId :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
+  -- JSONP: Error: ID
   :<|> "v1" :> "content" :>
        Capture "id" String :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse String))
+  -- JSONP: URL
   :<|> "v1" :> "content" :>
        RequiredQueryParam "url" ContentURI :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
-  -- JSONP: Error handler
+  -- JSONP: Error: URL
   :<|> "v1" :> "content" :>
        QueryParam "url" String :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse String))
-  -- API: RESTful
+  -- API: RESTful: ID
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
+  -- API: RESTful: Error: ID
   :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
+  -- API: RESTful: URL
   :<|> "v1" :> "content" :>
        RequiredQueryParam "url" ContentURI :>
        Get '[JSON] Content
-  -- API: RESTful: Error handler
+  -- API: RESTful: Error: URL
   :<|> "v1" :> "content" :>
        QueryParam "url" String :>
        Get '[JSON] Content
@@ -104,7 +108,7 @@ type API =
   -- Web: View
   :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
   :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] ViewContent
-  -- Web: View: Invalid URL
+  -- Web: View: Error: Invalid URL
   :<|> RequiredQueryParam "url" String :> Get '[HTML] ViewContent
   -- Web: Shortcut: `http://zoomhub.com/http://example.com`:
   :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
