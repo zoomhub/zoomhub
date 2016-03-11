@@ -120,7 +120,7 @@ server config = health
     viewerScript = Config.openseadragonScript config
 
 app :: Config -> Application
-app config = simpleCors . logger $ serve api (server config)
+app config = logger . simpleCors $ serve api (server config)
   where logger = Config.logger config
 
 -- Handlers
