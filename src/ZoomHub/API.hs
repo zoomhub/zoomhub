@@ -206,8 +206,8 @@ jsonpInvalidContentId contentId callback =
   where message = noContentWithIdMessage ++ contentId
 
 jsonpInvalidRequest :: Maybe String ->
-                        Callback ->
-                        Handler (JSONP (NonRESTfulResponse String))
+                       Callback ->
+                       Handler (JSONP (NonRESTfulResponse String))
 jsonpInvalidRequest maybeURL callback =
   case maybeURL of
     Nothing ->
