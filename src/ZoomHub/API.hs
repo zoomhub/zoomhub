@@ -27,11 +27,15 @@ import           System.Random                        (randomRIO)
 
 import           ZoomHub.API.ContentTypes.JavaScript  (JavaScript)
 import qualified ZoomHub.API.Errors                   as API
+import qualified ZoomHub.API.JSONP.Errors             as JSONP
 import           ZoomHub.API.Types.Callback           (Callback)
 import           ZoomHub.API.Types.JSONP              (JSONP, mkJSONP)
 import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse,
                                                        mkNonRESTful200,
-                                                       mkNonRESTful301)
+                                                       mkNonRESTful301,
+                                                       mkNonRESTful400,
+                                                       mkNonRESTful404,
+                                                       mkNonRESTful503)
 import           ZoomHub.Config                       (Config)
 import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
@@ -62,17 +66,22 @@ type API =
   -- TODO: Use `ContentURI` instead of `String`:
        "health" :> Get '[HTML] String
   :<|> "version" :> Get '[HTML] String
-  :<|> "v1" :> "content" :> Capture "id" ContentId :>
+  :<|> "v1" :> "content" :>
+       Capture "id" ContentId :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
   :<|> "v1" :> "content" :>
-       QueryParam "url" ContentURI :>
+       RequiredQueryParam "url" ContentURI :>
        RequiredQueryParam "callback" Callback :>
        Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
+  :<|> "v1" :> "content" :>
+       QueryParam "url" String :>
+       RequiredQueryParam "callback" Callback :>
+       Get '[JavaScript] (JSONP (NonRESTfulResponse String))
   :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
   :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
   :<|> "v1" :> "content" :> QueryParam "url" String :> Get '[JSON] Content
-  :<|> Capture "id" EmbedId
+  :<|> Capture "embedId" EmbedId
        :> QueryParam "id" String
        :> QueryParam "width" EmbedDimension
        :> QueryParam "height" EmbedDimension
@@ -91,8 +100,9 @@ api = Proxy
 server :: Config -> Server API
 server config = health
            :<|> version (Config.version config)
-           :<|> contentByIdJSONP baseURI contentBaseURI dataPath
-           :<|> contentByURLJSONP baseURI contentBaseURI dataPath
+           :<|> jsonpContentById baseURI contentBaseURI dataPath
+           :<|> jsonpContentByURL baseURI contentBaseURI dataPath
+           :<|> jsonpInvalidURLParam
            :<|> contentById baseURI contentBaseURI dataPath
            :<|> invalidContentId
            :<|> contentByURL baseURI dataPath
@@ -120,43 +130,48 @@ health = return "up"
 version :: String -> Handler String
 version = return
 
-contentByIdJSONP :: BaseURI ->
+jsonpContentById :: BaseURI ->
                     ContentBaseURI ->
                     FilePath ->
                     ContentId ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
-contentByIdJSONP baseURI contentBaseURI dataPath contentId callback = do
+jsonpContentById baseURI contentBaseURI dataPath contentId callback = do
   maybeContent <- liftIO $ getById dataPath contentId
   case maybeContent of
-    -- TODO: Return non-RESTful error:
-    Nothing      -> left . API.error404 $ error404Message contentId
+    Nothing      -> left $ JSONP.mkError $
+      mkJSONP callback (mkNonRESTful404 (error404Message contentId))
     Just content -> do
       let publicContent = fromInternal baseURI contentBaseURI content
       return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
 
-contentByURLJSONP :: BaseURI ->
+jsonpContentByURL :: BaseURI ->
                      ContentBaseURI ->
                      FilePath ->
-                     Maybe ContentURI ->
+                     ContentURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
-contentByURLJSONP baseURI contentBaseURI dataPath maybeURL callback =
+jsonpContentByURL baseURI contentBaseURI dataPath url callback = do
+  maybeContent <- liftIO $ getByURL dataPath (show url)
+  case maybeContent of
+    Nothing      -> left . JSONP.mkError $
+      mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
+    Just content -> do
+      let publicContent = fromInternal baseURI contentBaseURI content
+          redirectLocation = apiRedirectURI baseURI contentId
+          contentId = Internal.contentId content
+      return $ mkJSONP callback $
+        mkNonRESTful301 "content" publicContent redirectLocation
+
+jsonpInvalidURLParam :: Maybe String ->
+                        Callback ->
+                        Handler (JSONP (NonRESTfulResponse String))
+jsonpInvalidURLParam maybeURL callback =
   case maybeURL of
-    -- TODO: Make `NonRESTfulResponse`
-    -- Nothing -> return $ mkNonRESTful400 apiMissingIdOrURLMessage
-    Nothing  -> left . API.error400 $ apiMissingIdOrURLMessage
-    Just url -> do
-      maybeContent <- liftIO $ getByURL dataPath (show url)
-      case maybeContent of
-        -- Nothing      -> return $ mkNonRESTful503 noNewContentErrorMessage
-        Nothing      -> noNewContentErrorAPI
-        Just content -> do
-          let publicContent = fromInternal baseURI contentBaseURI content
-              redirectLocation =
-                apiRedirectURI baseURI (Internal.contentId content)
-          return $ mkJSONP callback $
-            mkNonRESTful301 "content" publicContent redirectLocation
+    Nothing ->
+      return $ mkJSONP callback (mkNonRESTful400 apiMissingIdOrURLMessage)
+    Just _ ->
+      return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
 contentById :: BaseURI ->
                ContentBaseURI ->
@@ -218,9 +233,8 @@ viewContentById baseURI contentBaseURI dataPath contentId = do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
 
-invalidURLParam :: String -> Handler ViewContent
-invalidURLParam _ = left . Web.error400 $
-  "Please give us the full URL, including ‘http://’ or ‘https://’."
+viewInvalidURLParam :: String -> Handler ViewContent
+viewInvalidURLParam _ = left . Web.error400 $ invalidURLErrorMessage
 
 -- TODO: Add support for submission, i.e. create content in the background:
 viewContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler ViewContent
@@ -256,6 +270,10 @@ apiMissingIdOrURLMessage = unwords
   , "Please provide ID, e.g. `/v1/content/<id>`,"
   , "or URL via `/v1/content?url=<url>` query parameter."
   ]
+
+invalidURLErrorMessage :: String
+invalidURLErrorMessage =
+  "Please give us the full URL, including ‘http://’ or ‘https://’."
 
 redirectToView :: BaseURI -> ContentId -> Handler ViewContent
 redirectToView baseURI contentId =

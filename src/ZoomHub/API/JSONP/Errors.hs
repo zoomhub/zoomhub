@@ -1,34 +1,35 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.API.JSONP.Errors
-  ( error400
-  , error404
-  , error503
+  ( mkError
   )
   where
 
 import           Data.Aeson                           (ToJSON)
-import qualified Data.ByteString.Lazy.UTF8            as BU
-import           Servant                              (ServantErr, err400,
-                                                       err404, err503, errBody,
-                                                       errHeaders)
+import qualified Data.ByteString.UTF8            as BU
+import qualified Data.ByteString.Lazy.UTF8            as BLU
+import           Servant.Server                       (ServantErr (ServantErr),
+                                                       errBody, errHTTPCode,
+                                                       errHeaders,
+                                                       errReasonPhrase)
+import Network.HTTP.Types.Status (ok200, statusCode, statusMessage)
 
 import           ZoomHub.API.ContentTypes.JavaScript  (toJS)
 import           ZoomHub.API.Types.JSONP              (JSONP)
 import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse)
 
 
-error400 :: ToJSON a => JSONP (NonRESTfulResponse a) -> ServantErr
-error400 = mkError err400
-
-error404 :: ToJSON a => JSONP (NonRESTfulResponse a) -> ServantErr
-error404 = mkError err404
-
-error503 :: ToJSON a => JSONP (NonRESTfulResponse a) -> ServantErr
-error503 = mkError err503
-
-mkError :: ToJSON a => ServantErr -> JSONP (NonRESTfulResponse a) -> ServantErr
-mkError errorType body = errorType
-  { errHeaders = [("Content-Type", "text/javascript; charset=utf-8")]
-  , errBody = BU.fromString (toJS body)
-  }
+-- HACK: JSONP errors need to be HTTP status 200 so clients are able to parse
+-- them. Because their payload doesn’t match the regular response type, e.g.
+-- `JSONP (NonRESTful Content)` for success vs `JSONP (NonRESTful String)` for
+-- an error, we need to use `ServantErr` as an escape hatch, hence we create a
+-- `ServantErr` with HTTP status 200:
+mkError :: ToJSON a => JSONP (NonRESTfulResponse a) -> ServantErr
+mkError body = ServantErr
+    { errHTTPCode = statusCode status
+    , errReasonPhrase = BU.toString (statusMessage status)
+    -- TODO: Deduplicate using `JavaScript` content type:
+    , errHeaders = [("Content-Type", "text/javascript; charset=utf-8")]
+    , errBody = BLU.fromString (toJS body)
+    }
+  where status = ok200
