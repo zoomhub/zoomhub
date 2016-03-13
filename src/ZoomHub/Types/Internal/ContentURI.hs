@@ -6,33 +6,28 @@ module ZoomHub.Types.Internal.ContentURI
   ) where
 
 import           Data.Aeson  (ToJSON, Value (String), toJSON)
+import           Data.Text   (Text)
 import qualified Data.Text   as T
-import           Network.URI (URI, parseAbsoluteURI, uriScheme)
 import           Servant     (FromText, fromText)
 
 
 -- TODO: Use record syntax, i.e. `ContentURI { unContentURI :: URI }` without
 -- introducing `{"contentURI": <contentURI>}` JSON serialization:
-newtype ContentURI = ContentURI URI deriving Eq
+newtype ContentURI = ContentURI Text deriving Eq
 
-unContentURI :: ContentURI -> URI
+unContentURI :: ContentURI -> Text
 unContentURI (ContentURI uri) = uri
 
 instance Show ContentURI where
-  show = show . unContentURI
+  show = show . T.unpack . unContentURI
 
 -- Text
 instance FromText ContentURI where
-  fromText t =
-    let maybeURI = parseAbsoluteURI s in
-    case maybeURI of
-      Just uri -> case uriScheme uri of
-        "http:"  -> Just (ContentURI uri)
-        "https:" -> Just (ContentURI uri)
-        _        -> Nothing
-      _        -> Nothing
-    where s = T.unpack t
+  fromText t
+    | "http://"  `T.isPrefixOf` t = Just (ContentURI t)
+    | "https://" `T.isPrefixOf` t = Just (ContentURI t)
+    | otherwise = Nothing
 
 -- JSON
 instance ToJSON ContentURI where
-  toJSON = String . T.pack . show . unContentURI
+  toJSON = String . unContentURI

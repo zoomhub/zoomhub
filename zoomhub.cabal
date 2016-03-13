@@ -128,4 +128,6 @@ test-suite tests
     , hspec == 2.*
     , QuickCheck
     , quickcheck-instances
+    , servant-server
+    , text
     , zoomhub
