@@ -60,7 +60,7 @@ requestToJSON duration req reqBody =
   object
     [ "method" .= decodeUtf8 (requestMethod req)
     , "path" .= decodeUtf8 (rawPathInfo req)
-    , "queryString" .= toObject (map queryItemToJSON (queryString req))
+    , "query" .= toObject (map queryItemToJSON (queryString req))
     , "durationMs" .= (readAsDouble . printf "%.2f" . rationalToDouble $
                        toRational duration * 1000)
     , "size" .= requestBodyLengthToJSON (requestBodyLength req)
