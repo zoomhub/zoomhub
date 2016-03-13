@@ -61,8 +61,7 @@ requestToJSON duration req reqBody =
     [ "method" .= decodeUtf8 (requestMethod req)
     , "path" .= decodeUtf8 (rawPathInfo req)
     , "query" .= toObject (map queryItemToJSON (queryString req))
-    , "durationMs" .= (readAsDouble . printf "%.2f" . rationalToDouble $
-                       toRational duration * 1000)
+    , "duration" .= toMilliseconds duration
     , "size" .= requestBodyLengthToJSON (requestBodyLength req)
     , "body" .= decodeUtf8 (S8.concat reqBody)
     , "remoteHost" .= sockToJSON (remoteHost req)
@@ -72,6 +71,10 @@ requestToJSON duration req reqBody =
   where
     rationalToDouble :: Rational -> Double
     rationalToDouble = fromRational
+
+    toMilliseconds :: NominalDiffTime -> Double
+    toMilliseconds d = readAsDouble . printf "%.2f" . rationalToDouble $
+      toRational duration * 1000
 
 sockToJSON :: SockAddr -> Value
 sockToJSON (SockAddrInet pn ha) =
