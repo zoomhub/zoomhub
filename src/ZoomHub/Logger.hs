@@ -74,7 +74,7 @@ requestToJSON duration req reqBody =
 
     toMilliseconds :: NominalDiffTime -> Double
     toMilliseconds d = readAsDouble . printf "%.2f" . rationalToDouble $
-      toRational duration * 1000
+      toRational d * 1000
 
 sockToJSON :: SockAddr -> Value
 sockToJSON (SockAddrInet pn ha) =
