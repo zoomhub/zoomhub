@@ -6,13 +6,14 @@ module ZoomHub.API.JSONP.Errors
   where
 
 import           Data.Aeson                           (ToJSON)
-import qualified Data.ByteString.UTF8            as BU
 import qualified Data.ByteString.Lazy.UTF8            as BLU
+import qualified Data.ByteString.UTF8                 as BU
+import           Network.HTTP.Types.Status            (ok200, statusCode,
+                                                       statusMessage)
 import           Servant.Server                       (ServantErr (ServantErr),
                                                        errBody, errHTTPCode,
                                                        errHeaders,
                                                        errReasonPhrase)
-import Network.HTTP.Types.Status (ok200, statusCode, statusMessage)
 
 import           ZoomHub.API.ContentTypes.JavaScript  (toJS)
 import           ZoomHub.API.Types.JSONP              (JSONP)
