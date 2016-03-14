@@ -5,13 +5,9 @@ module ZoomHub.APISpec
   , spec
   ) where
 
-import           Data.Default                         (def)
 import           Data.Maybe                           (fromJust)
 import           Network.URI                          (URI, parseAbsoluteURI)
-import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
-                                                       mkRequestLogger,
-                                                       outputFormat)
-import           System.IO.Unsafe                     (unsafePerformIO)
+import           Network.Wai                          (Middleware)
 import           Test.Hspec                           (Spec, context, describe,
                                                        hspec, it)
 import           Test.Hspec.Wai                       (get, shouldRespondWith,
@@ -19,7 +15,6 @@ import           Test.Hspec.Wai                       (get, shouldRespondWith,
 
 import           ZoomHub.API                          (app)
 import           ZoomHub.Config                       (Config (..))
-import           ZoomHub.Logger                       (formatAsJSON)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
 
@@ -31,6 +26,9 @@ main = hspec spec
 toURI :: String -> URI
 toURI = fromJust . parseAbsoluteURI
 
+nullLogger :: Middleware
+nullLogger = id
+
 config :: Config
 config = Config
   { acceptNewContent = False
@@ -41,9 +39,7 @@ config = Config
   , error404 = "404"
   , jobs = undefined
   , lastId = undefined
-  , logger = unsafePerformIO (mkRequestLogger def {
-      outputFormat = CustomOutputFormatWithDetails formatAsJSON
-    })
+  , logger = nullLogger
   , openseadragonScript = "osd"
   , port = 8000
   , publicPath = "./public"

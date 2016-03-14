@@ -135,5 +135,5 @@ test-suite tests
     , servant-server
     , text
     , network-uri
-    , wai-extra
+    , wai
     , zoomhub
