@@ -49,6 +49,10 @@ config = Config
 
 spec :: Spec
 spec = with (return $ app config) $ do
+  describe "GET /v1/health" $
+    it "respond with `up` and status 200" $
+      get "/health" `shouldRespondWith` "up" {matchStatus = 200}
+
   describe "GET /v1/content" $
     context "without `id` or `url` query parameter" $
       it "responds with 400" $
