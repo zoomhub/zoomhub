@@ -119,8 +119,9 @@ test-suite tests
   main-is:          Spec.hs
   type:             exitcode-stdio-1.0
   other-modules:
-    ZoomHub.Storage.Internal.FileTest
-    ZoomHub.Types.Internal.ContentIdTest
+    ZoomHub.Storage.Internal.FileSpec
+    ZoomHub.Types.Internal.ContentIdSpec
+    ZoomHub.Types.Internal.ContentURISpec
   build-depends:
       aeson
     , base
@@ -128,4 +129,6 @@ test-suite tests
     , hspec == 2.*
     , QuickCheck
     , quickcheck-instances
+    , servant-server
+    , text
     , zoomhub
