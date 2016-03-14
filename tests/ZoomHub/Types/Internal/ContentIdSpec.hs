@@ -1,13 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ZoomHub.Types.Internal.ContentIdTest where
+module ZoomHub.Types.Internal.ContentIdSpec
+  ( main
+  , spec
+  ) where
 
 import           Data.Aeson                       (decode, encode)
+import           Test.Hspec                       (context, describe, hspec, it, Spec)
 import           Test.QuickCheck                  (Property, elements, listOf,
-                                                   suchThat, (==>))
+                                                   property, suchThat, (==>))
 import           Test.QuickCheck.Arbitrary        (Arbitrary, arbitrary)
 import           Test.QuickCheck.Instances        ()
+
 import           ZoomHub.Types.Internal.ContentId (ContentId, fromString,
                                                    isValid, unId, validChars)
 
@@ -17,4 +22,13 @@ instance Arbitrary ContentId where
     return $ fromString validId
 
 prop_invertible :: ContentId -> Property
-prop_invertible x = (isValid $ unId x) ==> (decode . encode) x == Just x
+prop_invertible x = isValid (unId x) ==> (decode . encode) x == Just x
+
+main :: IO ()
+main = hspec spec
+
+spec :: Spec
+spec =
+  describe "encode" $
+    context "when used with valid strings, i.e. no underscores," $
+      it "is inverse to `decode`" $ property prop_invertible
