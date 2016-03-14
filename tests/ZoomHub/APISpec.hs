@@ -5,18 +5,18 @@ module ZoomHub.APISpec
   , spec
   ) where
 
-import           Data.Maybe                           (fromJust)
-import           Network.URI                          (URI, parseAbsoluteURI)
-import           Network.Wai                          (Middleware)
-import           Test.Hspec                           (Spec, context, describe,
-                                                       hspec, it)
-import           Test.Hspec.Wai                       (get, shouldRespondWith,
-                                                       with)
+import           Data.Maybe                   (fromJust)
+import           Network.URI                  (URI, parseAbsoluteURI)
+import           Network.Wai                  (Middleware)
+import           Test.Hspec                   (Spec, context, describe, hspec,
+                                               it)
+import           Test.Hspec.Wai               (get, matchStatus,
+                                               shouldRespondWith, with)
 
-import           ZoomHub.API                          (app)
-import           ZoomHub.Config                       (Config (..))
-import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
-import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.API                  (app)
+import           ZoomHub.Config               (Config (..))
+import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
+import           ZoomHub.Types.ContentBaseURI (ContentBaseURI (ContentBaseURI))
 
 
 
@@ -49,7 +49,10 @@ config = Config
 
 spec :: Spec
 spec = with (return $ app config) $ do
-  describe "GET /v1/content" $ do
-    context "without `id` or `url` query parameter" $ do
-      it "responds with 400" $ do
-        get "/v1/content" `shouldRespondWith` 400
+  describe "GET /v1/content" $
+    context "without `id` or `url` query parameter" $
+      it "responds with 400" $
+        get "/v1/content" `shouldRespondWith` "Missing ID or URL.\
+          \ Please provide ID, e.g. `/v1/content/<id>`,\
+          \ or URL via `/v1/content?url=<url>` query parameter."
+          {matchStatus = 400}
