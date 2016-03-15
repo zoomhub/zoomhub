@@ -35,6 +35,9 @@ plainTextUTF8 = "Content-Type" <:> "text/plain; charset=utf-8"
 plainText :: MatchHeader
 plainText = "Content-Type" <:> "text/plain"
 
+javaScriptUTF8 :: MatchHeader
+javaScriptUTF8 = "Content-Type" <:> "application/javascript;charset=utf-8"
+
 -- Config
 nullLogger :: Middleware
 nullLogger = id
@@ -109,4 +112,17 @@ spec = with (return $ app config) $ do
           "Only GET or HEAD is supported"
           { matchStatus = 405
           , matchHeaders = [plainText]
+          }
+
+  -- JSONP
+  describe "GET /v1/content?callback=handleContent" $
+      it "responds with 200 and payload" $
+        get "/v1/content?callback=handleContent" `shouldRespondWith`
+          "/**/ typeof handleContent === 'function' &&\
+          \ handleContent({\"status\":400,\"error\":\"Missing ID or URL.\
+          \ Please provide ID, e.g. `/v1/content/<id>`, or URL via\
+          \ `/v1/content?url=<url>` query parameter.\",\"statusText\":\
+          \\"Bad Request\",\"redirectLocation\":null});"
+          { matchStatus = 200
+          , matchHeaders = [javaScriptUTF8]
           }
