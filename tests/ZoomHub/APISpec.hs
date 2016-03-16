@@ -104,10 +104,6 @@ config = Config
 
 spec :: Spec
 spec = with (return $ app config) $ do
-  describe "Health" $
-    it "respond with `up` and status 200" $
-      get "/health" `shouldRespondWith` "up" {matchStatus = 200}
-
   describe "RESTful" $ do
     describe "List (GET /v1/content)" $
         it "should be interpreted as a ‘get by URL’, with no URL given" $
@@ -214,3 +210,12 @@ spec = with (return $ app config) $ do
             , applicationJSON
             ]
         }
+
+  describe "Meta" $ do
+    describe "Health (/health)" $
+      it "should respond with `up`" $
+        get "/health" `shouldRespondWith` "up" {matchStatus = 200}
+
+    describe "Version (/version)" $
+      it "should respond with version" $
+        get "/version" `shouldRespondWith` "test" {matchStatus = 200}
