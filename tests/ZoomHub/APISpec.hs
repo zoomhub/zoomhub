@@ -59,6 +59,13 @@ invalidHTTPMethod =
   , matchHeaders = [plainText]
   }
 
+noNewContent :: ResponseMatcher
+noNewContent =
+  "We are currently not processing new content."
+  { matchStatus = 503
+  , matchHeaders = [plainTextUTF8]
+  }
+
 restRedirect :: ContentId -> ResponseMatcher
 restRedirect cId =
     ""
@@ -130,10 +137,7 @@ spec = with (return $ app config) $ do
 
       it "should reject new HTTP URLs (for now)" $
         get "/v1/content?url=http://example.com" `shouldRespondWith`
-          "We are currently not processing new content."
-          { matchStatus = 503
-          , matchHeaders = [plainTextUTF8]
-          }
+          noNewContent
 
       it "should redirect existing (converted) HTTP URLs to ID" $
         let (existingId, existingURL) = existingContent in
