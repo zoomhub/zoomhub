@@ -8,14 +8,15 @@ module ZoomHub.APISpec
 import qualified Data.ByteString.Char8            as BC
 import           Data.Maybe                       (fromJust)
 import           Data.Monoid                      ((<>))
+import           Network.HTTP.Types               (methodGet)
 import           Network.URI                      (URI, parseAbsoluteURI)
 import           Network.Wai                      (Middleware)
 import           Test.Hspec                       (Spec, describe, hspec, it)
 import           Test.Hspec.Wai                   (MatchHeader, ResponseMatcher,
                                                    get, matchHeaders,
                                                    matchStatus, post, put,
-                                                   shouldRespondWith, with,
-                                                   (<:>))
+                                                   request, shouldRespondWith,
+                                                   with, (<:>))
 
 import           ZoomHub.API                      (app)
 import           ZoomHub.Config                   (Config (..))
@@ -36,6 +37,9 @@ existingContent = (fromString "h",
   "http://upload.wikimedia.org/wikipedia/commons/3/36/SeattleI5Skyline.jpg")
 
 -- Matchers
+applicationJSON :: MatchHeader
+applicationJSON = "Content-Type" <:> "application/json"
+
 plainTextUTF8 :: MatchHeader
 plainTextUTF8 = "Content-Type" <:> "text/plain; charset=utf-8"
 
@@ -199,3 +203,14 @@ spec = with (return $ app config) $ do
           { matchStatus = 200
           , matchHeaders = [javaScriptUTF8]
           }
+
+  describe "CORS" $
+    it "should allow all origins" $
+      let getWithHeader path headers = request methodGet path headers "" in
+      getWithHeader "/v1/content/4rcn" [("Origin", "http://example.com")]
+        `shouldRespondWith` 200 {
+          matchHeaders =
+            [ "Access-Control-Allow-Origin" <:> "*"
+            , applicationJSON
+            ]
+        }
