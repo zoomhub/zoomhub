@@ -19,7 +19,7 @@ unContentURI :: ContentURI -> Text
 unContentURI (ContentURI uri) = uri
 
 instance Show ContentURI where
-  show = show . T.unpack . unContentURI
+  show = T.unpack . unContentURI
 
 -- Text
 instance FromText ContentURI where

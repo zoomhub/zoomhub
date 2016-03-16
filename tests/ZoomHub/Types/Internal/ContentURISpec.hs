@@ -10,7 +10,7 @@ import           Servant                           (fromText)
 import           Test.Hspec                        (Spec, context, describe,
                                                     hspec, it, shouldBe)
 
-import           ZoomHub.Types.Internal.ContentURI (ContentURI)
+import           ZoomHub.Types.Internal.ContentURI (ContentURI, unContentURI)
 
 
 -- International Resource Locator
@@ -24,4 +24,4 @@ spec :: Spec
 spec =
   describe "fromText" $
     it "supports IRI (Internationalized Resource Identifier)" $
-      show <$> (fromText iri :: Maybe ContentURI) `shouldBe` (show <$> Just iri)
+      unContentURI <$> (fromText iri :: Maybe ContentURI) `shouldBe` Just iri
