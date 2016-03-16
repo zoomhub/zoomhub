@@ -130,6 +130,7 @@ test-suite tests
     , data-default
     , hspec == 2.*
     , hspec-wai
+    , http-types
     , QuickCheck
     , quickcheck-instances
     , servant-server
