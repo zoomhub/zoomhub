@@ -7,8 +7,8 @@ module ZoomHub.Types.Internal.ContentURISpec
 
 import qualified Data.Text                         as T
 import           Servant                           (fromText)
-import           Test.Hspec                        (Spec, context, describe,
-                                                    hspec, it, shouldBe)
+import           Test.Hspec                        (Spec, describe, hspec, it,
+                                                    shouldBe)
 
 import           ZoomHub.Types.Internal.ContentURI (ContentURI, unContentURI)
 

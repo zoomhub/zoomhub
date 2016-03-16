@@ -54,8 +54,9 @@ create config contentURL = do
       enqueue :: URL -> IO ()
       enqueue url = atomically $ writeTChan (Config.jobs config) url
 
-      idPath = getByIdPath (Config.dataPath config)
-      urlPath = getByURLPath (Config.dataPath config)
+      dataPath = Config.dataPath config
+      idPath = getByIdPath dataPath
+      urlPath = getByURLPath dataPath
       encode = encodePretty' prettyEncodeConfig
 
 getById :: FilePath -> ContentId -> IO (Maybe Content)

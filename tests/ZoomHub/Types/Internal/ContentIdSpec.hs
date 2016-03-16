@@ -7,7 +7,8 @@ module ZoomHub.Types.Internal.ContentIdSpec
   ) where
 
 import           Data.Aeson                       (decode, encode)
-import           Test.Hspec                       (context, describe, hspec, it, Spec)
+import           Test.Hspec                       (Spec, context, describe,
+                                                   hspec, it)
 import           Test.QuickCheck                  (Property, elements, listOf,
                                                    property, suchThat, (==>))
 import           Test.QuickCheck.Arbitrary        (Arbitrary, arbitrary)
