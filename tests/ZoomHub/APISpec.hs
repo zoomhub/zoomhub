@@ -104,9 +104,8 @@ spec = with (return $ app config) $ do
     it "respond with `up` and status 200" $
       get "/health" `shouldRespondWith` "up" {matchStatus = 200}
 
-  -- RESTful
   describe "RESTful" $ do
-    describe "GET /v1/content" $
+    describe "List (GET /v1/content)" $
         it "should be interpreted as a ‘get by URL’, with no URL given" $
           get "/v1/content" `shouldRespondWith` "Missing ID or URL.\
             \ Please provide ID, e.g. `/v1/content/<id>`,\
@@ -115,7 +114,7 @@ spec = with (return $ app config) $ do
             , matchHeaders = [plainTextUTF8]
             }
 
-    describe "GET /v1/content?url=…" $ do
+    describe "Get by URL (GET /v1/content?url=…)" $ do
       it "should reject empty URLs" $
         get "/v1/content?url=" `shouldRespondWith`
           invalidURL
@@ -154,7 +153,6 @@ spec = with (return $ app config) $ do
         put "/v1/content?url=http://example.com" "" `shouldRespondWith`
           invalidHTTPMethod
 
-  -- JSONP
   describe "JSONP" $ do
     describe "GET /v1/content?url=…&callback=…" $
       it "should accept `callback` query parameter" $
