@@ -143,6 +143,28 @@ spec = with (return $ app config) $ do
         get ("/v1/content?url=" <> BC.pack existingURL) `shouldRespondWith`
           restRedirect existingId
 
+    describe "Get by ID (GET /v1/content/:id)" $ do
+      it "should return correct data for existing content" $
+        get "/v1/content/4rcn" `shouldRespondWith`
+          "{\"dzi\":{\"height\":3750,\"url\":\
+            \\"http://localhost:9000/dzis/4rcn.dzi\",\"width\":5058,\
+            \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
+            \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
+            \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
+            \\"<script src=\\\"http://localhost:8000/4rcn.js?width=auto&\
+            \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:8000\
+            \/4rcn\",\"id\":\"4rcn\",\"ready\":true,\"failed\":false}"
+          { matchStatus = 200
+          , matchHeaders = [applicationJSON]
+          }
+
+      it "should return 404 non-existent content" $
+        get "/v1/content/nonExistentContent" `shouldRespondWith`
+          "No content with ID: nonExistentContent"
+          { matchStatus = 404
+          , matchHeaders = [plainTextUTF8]
+          }
+
     describe "POST /v1/content?url=…" $
       it "should be rejected" $
         post "/v1/content?url=http://example.com" "" `shouldRespondWith`
