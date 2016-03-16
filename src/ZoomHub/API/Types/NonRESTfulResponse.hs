@@ -14,9 +14,9 @@ import           Data.Aeson                (ToJSON, object, toJSON, (.=))
 import qualified Data.Text                 as T
 import           Data.Text.Encoding        (decodeUtf8)
 import           Network.HTTP.Types.Status (Status, badRequest400,
-                                            movedPermanently301, ok200, notFound404,
-                                            serviceUnavailable503, statusCode,
-                                            statusMessage)
+                                            movedPermanently301, notFound404,
+                                            ok200, serviceUnavailable503,
+                                            statusCode, statusMessage)
 import           Network.URI               (URI)
 
 data NonRESTfulResponse a = ToJSON a => NonRESTfulResponse

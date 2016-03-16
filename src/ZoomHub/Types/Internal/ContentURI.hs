@@ -5,10 +5,10 @@ module ZoomHub.Types.Internal.ContentURI
   , unContentURI
   ) where
 
-import           Data.Aeson  (ToJSON, Value (String), toJSON)
-import           Data.Text   (Text)
-import qualified Data.Text   as T
-import           Servant     (FromText, fromText)
+import           Data.Aeson (ToJSON, Value (String), toJSON)
+import           Data.Text  (Text)
+import qualified Data.Text  as T
+import           Servant    (FromText, fromText)
 
 
 -- TODO: Use record syntax, i.e. `ContentURI { unContentURI :: URI }` without
