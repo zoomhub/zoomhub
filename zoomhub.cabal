@@ -131,10 +131,10 @@ test-suite tests
     , hspec == 2.*
     , hspec-wai
     , http-types
+    , network-uri
     , QuickCheck
     , quickcheck-instances
     , servant-server
     , text
-    , network-uri
     , wai
     , zoomhub
