@@ -76,7 +76,7 @@ instance ToHtml ViewContent where
                      )
            body_ $ script_ [src_ (T.pack $ show scriptURI)] emptyBody
     where
-      title = "zoomhub · Share and view high-resolution images effortlessly"
+      title = "ZoomHub · Share and view high-resolution images effortlessly"
       titleSeparator = " — "
       content = vcContent vc
       cId = unId $ contentId content
