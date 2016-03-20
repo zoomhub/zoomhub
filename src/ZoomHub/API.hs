@@ -110,7 +110,7 @@ type API =
   :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] ViewContent
   -- Web: View: Error: Invalid URL
   :<|> RequiredQueryParam "url" String :> Get '[HTML] ViewContent
-  -- Web: Shortcut: `http://zoomhub.com/http://example.com`:
+  -- Web: Shortcut: `http://zoomhub.net/http://example.com`:
   :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
   -- Static files
   :<|> Raw
