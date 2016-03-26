@@ -38,6 +38,7 @@ library
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
     , ZoomHub.Types.ContentBaseURI
+    , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.Embed
     , ZoomHub.Types.EmbedDimension

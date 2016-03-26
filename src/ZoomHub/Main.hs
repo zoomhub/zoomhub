@@ -33,6 +33,7 @@ import           ZoomHub.Config                       (Config (..), defaultPort)
 import           ZoomHub.Logger                       (formatAsJSON)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath))
 -- import           ZoomHub.Pipeline                 (process)
 
 
@@ -65,11 +66,14 @@ printJobs tchan interval = forever $ atomically (readTChan tchan)
   >> threadDelay interval
 
 -- Environment
-hashidsSaltEnvName :: String
-hashidsSaltEnvName = "HASHIDS_SALT"
-
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
+
+dbPathEnvName :: String
+dbPathEnvName = "DB_PATH"
+
+hashidsSaltEnvName :: String
+hashidsSaltEnvName = "HASHIDS_SALT"
 
 -- Config
 readVersion :: FilePath -> IO String
@@ -93,6 +97,7 @@ main = do
   version <- readVersion currentDirectory
   maybePort <- lookupEnv "PORT"
   maybeDataPath <- lookupEnv "DATA_PATH"
+  maybeDBPath <- (fmap . fmap) DatabasePath (lookupEnv dbPathEnvName)
   maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
   maybeRaxConfig <- decodeEnv
@@ -103,7 +108,10 @@ main = do
   }
   let acceptNewContent = False
       defaultDataPath = currentDirectory </> "data"
+      defaultDBPath = DatabasePath $
+        currentDirectory </> "data" </> "content-development.sqlite3"
       dataPath = fromMaybe defaultDataPath maybeDataPath
+      dbPath = fromMaybe defaultDBPath maybeDBPath
       port = maybe defaultPort read maybePort
       baseURI = case maybeBaseURI of
         Just uriString -> toBaseURI uriString
