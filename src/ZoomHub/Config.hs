@@ -7,6 +7,7 @@ module ZoomHub.Config
   , baseURI
   , contentBaseURI
   , dataPath
+  , dbPath
   , defaultPort
   , encodeId
   , error404
@@ -33,6 +34,8 @@ import           System.Envy                  (DefConfig, FromEnv, Option (..),
 
 import           ZoomHub.Types.BaseURI        (BaseURI)
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
+import           ZoomHub.Types.DatabasePath   (DatabasePath)
+
 
 defaultPort :: Integer
 defaultPort = 8000
@@ -42,6 +45,7 @@ data Config = Config
   , baseURI             :: BaseURI
   , contentBaseURI      :: ContentBaseURI
   , dataPath            :: FilePath
+  , dbPath              :: DatabasePath
   , encodeId            :: Integer -> String
   , error404            :: BL.ByteString
   , jobs                :: TChan String
