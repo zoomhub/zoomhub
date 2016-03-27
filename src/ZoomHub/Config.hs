@@ -8,6 +8,7 @@ module ZoomHub.Config
   , contentBaseURI
   , dataPath
   , dbPath
+  , dbConnection
   , defaultPort
   , encodeId
   , error404
@@ -22,6 +23,7 @@ module ZoomHub.Config
   ) where
 
 import qualified Data.ByteString.Lazy         as BL
+import           Database.SQLite.Simple       (Connection)
 import           GHC.Generics                 (Generic)
 import           Network.Wai                  (Middleware)
 import           System.Envy                  (DefConfig, FromEnv, Option (..),
@@ -43,6 +45,7 @@ data Config = Config
   , contentBaseURI      :: ContentBaseURI
   , dataPath            :: FilePath
   , dbPath              :: DatabasePath
+  , dbConnection        :: Connection
   , encodeId            :: Integer -> String
   , error404            :: BL.ByteString
   , logger              :: Middleware

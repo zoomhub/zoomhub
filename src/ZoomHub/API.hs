@@ -11,6 +11,7 @@ import           Control.Monad.Trans.Either           (EitherT, left)
 import qualified Data.ByteString.Char8                as BC
 import           Data.Maybe                           (fromJust, fromMaybe)
 import           Data.Proxy                           (Proxy (Proxy))
+import           Database.SQLite.Simple               (Connection)
 import           Network.URI                          (URI,
                                                        parseRelativeReference,
                                                        relativeTo)
@@ -40,7 +41,7 @@ import           ZoomHub.Config                       (Config)
 import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
-import           ZoomHub.Storage.File                 (getById, getByURL)
+import           ZoomHub.Storage.SQLite               (getById, getByURL)
 import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
 import           ZoomHub.Types.Content                (Content, fromInternal)
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
@@ -125,28 +126,28 @@ server config =
          health
     :<|> version (Config.version config)
     -- API: JSONP
-    :<|> jsonpContentById baseURI contentBaseURI dataPath
+    :<|> jsonpContentById baseURI contentBaseURI dbConn
     :<|> jsonpInvalidContentId
-    :<|> jsonpContentByURL baseURI contentBaseURI dataPath
+    :<|> jsonpContentByURL baseURI contentBaseURI dbConn
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restContentById baseURI contentBaseURI dataPath
+    :<|> restContentById baseURI contentBaseURI dbConn
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dataPath
+    :<|> restContentByURL baseURI dbConn
     :<|> restInvalidRequest
     -- Web: Embed
-    :<|> webEmbed baseURI contentBaseURI dataPath viewerScript
+    :<|> webEmbed baseURI contentBaseURI dbConn viewerScript
     -- Web: View
-    :<|> webContentById baseURI contentBaseURI dataPath
-    :<|> webContentByURL baseURI dataPath
+    :<|> webContentById baseURI contentBaseURI dbConn
+    :<|> webContentByURL baseURI dbConn
     :<|> webInvalidURLParam
-    :<|> webContentByURL baseURI dataPath
+    :<|> webContentByURL baseURI dbConn
     -- Web: Static files
     :<|> serveDirectory (Config.error404 config) publicPath
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
-    dataPath = Config.dataPath config
+    dbConn = Config.dbConnection config
     publicPath = Config.publicPath config
     viewerScript = Config.openseadragonScript config
 
@@ -167,12 +168,12 @@ version = return
 -- API: JSONP
 jsonpContentById :: BaseURI ->
                     ContentBaseURI ->
-                    FilePath ->
+                    Connection ->
                     ContentId ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
-jsonpContentById baseURI contentBaseURI dataPath contentId callback = do
-  maybeContent <- liftIO $ getById dataPath contentId
+jsonpContentById baseURI contentBaseURI dbConn contentId callback = do
+  maybeContent <- liftIO $ getById dbConn contentId
   case maybeContent of
     Nothing      -> left $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
@@ -182,12 +183,12 @@ jsonpContentById baseURI contentBaseURI dataPath contentId callback = do
 
 jsonpContentByURL :: BaseURI ->
                      ContentBaseURI ->
-                     FilePath ->
+                     Connection ->
                      ContentURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
-jsonpContentByURL baseURI contentBaseURI dataPath url callback = do
-  maybeContent <- liftIO $ getByURL dataPath (show url)
+jsonpContentByURL baseURI contentBaseURI dbConn url callback = do
+  maybeContent <- liftIO $ getByURL dbConn url
   case maybeContent of
     Nothing      -> left . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
@@ -217,12 +218,12 @@ jsonpInvalidRequest maybeURL callback =
 
 -- API: RESTful
 restContentById :: BaseURI ->
-               ContentBaseURI ->
-               FilePath ->
-               ContentId ->
-               Handler Content
-restContentById baseURI contentBaseURI dataPath contentId = do
-  maybeContent <- liftIO $ getById dataPath contentId
+                   ContentBaseURI ->
+                   Connection ->
+                   ContentId ->
+                   Handler Content
+restContentById baseURI contentBaseURI dbConn contentId = do
+  maybeContent <- liftIO $ getById dbConn contentId
   case maybeContent of
     Nothing      -> left . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
@@ -231,9 +232,9 @@ restInvalidContentId :: String -> Handler Content
 restInvalidContentId contentId =
   left . API.error404 $ noContentWithIdMessage contentId
 
-restContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler Content
-restContentByURL baseURI dataPath url = do
-  maybeContent <- liftIO $ getByURL dataPath (show url)
+restContentByURL :: BaseURI -> Connection -> ContentURI -> Handler Content
+restContentByURL baseURI dbConn url = do
+  maybeContent <- liftIO $ getByURL dbConn url
   case maybeContent of
     Nothing      -> noNewContentErrorAPI
     Just content -> redirectToAPI baseURI (Internal.contentId content)
@@ -246,15 +247,15 @@ restInvalidRequest maybeURL = case maybeURL of
 -- Web: Embed
 webEmbed :: BaseURI ->
             ContentBaseURI ->
-            FilePath ->
+            Connection ->
             String ->
             EmbedId ->
             Maybe String ->
             Maybe EmbedDimension ->
             Maybe EmbedDimension ->
             Handler Embed
-webEmbed baseURI cBaseURI dataPath script embedId maybeId width height = do
-  maybeContent <- liftIO $ getById dataPath contentId
+webEmbed baseURI cBaseURI dbConn script embedId maybeId width height = do
+  maybeContent <- liftIO $ getById dbConn contentId
   case maybeContent of
     Nothing      -> left . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
@@ -269,12 +270,12 @@ webEmbed baseURI cBaseURI dataPath script embedId maybeId width height = do
 
 -- Web: View
 webContentById :: BaseURI ->
-                   ContentBaseURI ->
-                   FilePath ->
-                   ContentId ->
-                   Handler ViewContent
-webContentById baseURI contentBaseURI dataPath contentId = do
-  maybeContent <- liftIO $ getById dataPath contentId
+                  ContentBaseURI ->
+                  Connection ->
+                  ContentId ->
+                  Handler ViewContent
+webContentById baseURI contentBaseURI dbConn contentId = do
+  maybeContent <- liftIO $ getById dbConn contentId
   case maybeContent of
     Nothing -> left . Web.error404 $ contentNotFoundMessage contentId
     Just c  -> do
@@ -282,9 +283,9 @@ webContentById baseURI contentBaseURI dataPath contentId = do
       return $ mkViewContent baseURI content
 
 -- TODO: Add support for submission, i.e. create content in the background:
-webContentByURL :: BaseURI -> FilePath -> ContentURI -> Handler ViewContent
-webContentByURL baseURI dataPath contentURI = do
-  maybeContent <- liftIO $ getByURL dataPath (show contentURI)
+webContentByURL :: BaseURI -> Connection -> ContentURI -> Handler ViewContent
+webContentByURL baseURI dbConn contentURI = do
+  maybeContent <- liftIO $ getByURL dbConn contentURI
   case maybeContent of
     Nothing -> noNewContentErrorWeb
     Just c  -> redirectToView baseURI (Internal.contentId c)
