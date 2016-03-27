@@ -68,9 +68,21 @@ data ContentRow = ContentRow
 
 instance FromRow ContentRow where
   fromRow = ContentRow <$>
-    field <*> field <*> field <*> field <*> field <*> field <*> field <*>
-    field <*> field <*> field <*> field <*> field <*> field <*> field <*>
-    field
+    field <*> -- id
+    field <*> -- hashId
+    field <*> -- url
+    field <*> -- state
+    field <*> -- initializedAt
+    field <*> -- activeAt
+    field <*> -- completedAt
+    field <*> -- mime
+    field <*> -- size
+    field <*> -- progress
+    field <*> -- dziWidth
+    field <*> -- dziHeight
+    field <*> -- dziTileSize
+    field <*> -- dziTileOverlap
+    field     -- dziTileFormat
 
 rowToContent :: ContentRow -> Content
 rowToContent cr = Content
