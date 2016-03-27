@@ -27,13 +27,14 @@ mkOpenSeadragonViewerConfig :: ContentBaseURI ->
                                String ->
                                OpenSeadragonTileSource ->
                                OpenSeadragonViewerConfig
-mkOpenSeadragonViewerConfig cbu i ts = OpenSeadragonViewerConfig
-  { osvcContainerId = i
-  , oscvTileSource = ts
-  , osvcPrefixURI = prefixURI
-  }
+mkOpenSeadragonViewerConfig contentBaseURI containerId tileSource =
+  OpenSeadragonViewerConfig
+    { osvcContainerId = containerId
+    , oscvTileSource = tileSource
+    , osvcPrefixURI = prefixURI
+    }
   where
-    prefixURI = prefixPath `relativeTo` unContentBaseURI cbu
+    prefixURI = prefixPath `relativeTo` unContentBaseURI contentBaseURI
     prefixPath = fromJust . parseRelativeReference $ "/openseadragon-images/"
 
 -- JSON
