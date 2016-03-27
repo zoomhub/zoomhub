@@ -1,4 +1,4 @@
-module ZoomHub.Types.EmbedDimension
+module ZoomHub.Web.Types.EmbedDimension
   ( EmbedDimension(..)
   , toCSSValue
   , parseCSSValue

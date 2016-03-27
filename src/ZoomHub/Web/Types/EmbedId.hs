@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.EmbedId
+module ZoomHub.Web.Types.EmbedId
   ( EmbedId
   , unEmbedId
   ) where

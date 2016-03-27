@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module ZoomHub.Types.ViewContent
+module ZoomHub.Web.Types.ViewContent
   ( ViewContent
   , mkViewContent
   )

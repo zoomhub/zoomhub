@@ -1,21 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.OpenSeadragonViewerConfig
+module ZoomHub.Web.Types.OpenSeadragonViewerConfig
   ( OpenSeadragonViewerConfig
   , mkOpenSeadragonViewerConfig
   ) where
 
-import           Data.Aeson                            (ToJSON, object, toJSON,
-                                                        (.=))
-import           Data.Maybe                            (fromJust)
-import qualified Data.Text                             as T
-import           Network.URI                           (URI,
-                                                        parseRelativeReference,
-                                                        relativeTo)
+import           Data.Aeson                                (ToJSON, object,
+                                                            toJSON, (.=))
+import           Data.Maybe                                (fromJust)
+import qualified Data.Text                                 as T
+import           Network.URI                               (URI, parseRelativeReference,
+                                                            relativeTo)
 
-import           ZoomHub.Types.ContentBaseURI          (ContentBaseURI,
-                                                        unContentBaseURI)
-import           ZoomHub.Types.OpenSeadragonTileSource (OpenSeadragonTileSource)
+import           ZoomHub.Types.ContentBaseURI              (ContentBaseURI,
+                                                            unContentBaseURI)
+import           ZoomHub.Web.Types.OpenSeadragonTileSource (OpenSeadragonTileSource)
 
 
 data OpenSeadragonViewerConfig = OpenSeadragonViewerConfig

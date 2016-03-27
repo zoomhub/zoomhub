@@ -48,13 +48,13 @@ import qualified ZoomHub.Types.Content                as Internal
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
 import           ZoomHub.Types.ContentId              (ContentId, unId)
 import           ZoomHub.Types.ContentURI             (ContentURI)
-import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
-import           ZoomHub.Types.EmbedDimension         (EmbedDimension)
-import           ZoomHub.Types.EmbedId                (EmbedId, unEmbedId)
-import           ZoomHub.Types.ViewContent            (ViewContent,
-                                                       mkViewContent)
 import qualified ZoomHub.Web.Errors                   as Web
 import           ZoomHub.Web.Static                   (serveDirectory)
+import           ZoomHub.Web.Types.Embed              (Embed, mkEmbed)
+import           ZoomHub.Web.Types.EmbedDimension     (EmbedDimension)
+import           ZoomHub.Web.Types.EmbedId            (EmbedId, unEmbedId)
+import           ZoomHub.Web.Types.ViewContent        (ViewContent,
+                                                       mkViewContent)
 
 
 -- Servant default handler type
