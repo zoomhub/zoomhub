@@ -42,16 +42,6 @@ dbPathEnvName = "DB_PATH"
 hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
 
--- Config
-readVersion :: FilePath -> IO String
-readVersion currentDirectory = do
-  r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
-  return $ case r of
-    Left _        -> "unknown"
-    Right version -> version
-  where
-    versionPath = currentDirectory </> "version.txt"
-
 -- Main
 main :: IO ()
 main = do
@@ -117,3 +107,12 @@ main = do
       unless exists $
         error $ "Couldn’t find a database at " ++ unDatabasePath dbPath ++
           ". Please check `" ++ dbPathEnvName ++ "`."
+
+    readVersion :: FilePath -> IO String
+    readVersion currentDirectory = do
+      r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
+      return $ case r of
+        Left _        -> "unknown"
+        Right version -> version
+      where
+        versionPath = currentDirectory </> "version.txt"
