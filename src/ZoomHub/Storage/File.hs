@@ -4,18 +4,18 @@ module ZoomHub.Storage.File
   )
   where
 
-import           Prelude                                  hiding (fromInteger)
+import           Prelude                          hiding (fromInteger)
 
-import           Control.Exception                        (tryJust)
-import           Control.Monad                            (guard)
-import           Data.Aeson                               (decode)
-import qualified Data.ByteString.Lazy                     as BL
-import           System.FilePath.Posix                    ((<.>), (</>))
-import           System.IO.Error                          (isDoesNotExistError)
+import           Control.Exception                (tryJust)
+import           Control.Monad                    (guard)
+import           Data.Aeson                       (decode)
+import qualified Data.ByteString.Lazy             as BL
+import           System.FilePath.Posix            ((<.>), (</>))
+import           System.IO.Error                  (isDoesNotExistError)
 
-import           ZoomHub.Storage.Internal.File            (hashURL, toFilename)
-import           ZoomHub.Types.Internal.Content           (Content)
-import           ZoomHub.Types.Internal.ContentId         (ContentId, unId)
+import           ZoomHub.Storage.Internal.File    (hashURL, toFilename)
+import           ZoomHub.Types.Internal.Content   (Content)
+import           ZoomHub.Types.Internal.ContentId (ContentId, unId)
 
 
 -- TODO: Introduce `ContentURL` `newtype`:
