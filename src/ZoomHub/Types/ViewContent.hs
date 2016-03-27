@@ -19,8 +19,8 @@ import           Lucid                            (ToHtml, body_, charset_,
 import           Network.URI                      (parseRelativeReference,
                                                    relativeTo)
 
+import           ZoomHub.API.Types.Content        (Content, contentId)
 import           ZoomHub.Types.BaseURI            (BaseURI, unBaseURI)
-import           ZoomHub.Types.Content            (Content, contentId)
 import           ZoomHub.Types.Internal.ContentId (unId)
 
 data ViewContent = ViewContent

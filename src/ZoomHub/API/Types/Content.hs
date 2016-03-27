@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.Content
+module ZoomHub.API.Types.Content
   ( Content
   , ContentShareURI
   , contentDzi
