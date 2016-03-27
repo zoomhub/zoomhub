@@ -44,5 +44,10 @@ downloadURL url dest = do
 -- createDZI ::  FilePath -> FilePath -> IO DeepZoomImage
 createDZI :: FilePath -> FilePath -> IO ()
 createDZI src dest =
-  callProcess "vips" [
-    "dzsave", "--tile-size", "254", src, dest, "--vips-progress"]
+  callProcess "vips"
+    [ "dzsave"
+    , "--tile-size", "254"
+    , src
+    , dest
+    , "--vips-progress"
+    ]
