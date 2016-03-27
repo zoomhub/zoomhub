@@ -32,7 +32,7 @@ data DeepZoomImage = DeepZoomImage
   { dziUrl         :: DeepZoomImageURI
   , dziWidth       :: Integer
   , dziHeight      :: Integer
-  , dziTileSize    :: Integer
+  , dziTileSize    :: Internal.TileSize
   , dziTileOverlap :: Internal.TileOverlap
   , dziTileFormat  :: Internal.TileFormat
   } deriving (Eq, Show, Generic)
@@ -55,7 +55,7 @@ fromInternal baseURI cId dzi = DeepZoomImage
 mkDeepZoomImage :: DeepZoomImageURI ->
                    Integer ->
                    Integer ->
-                   Integer ->
+                   Internal.TileSize ->
                    Internal.TileOverlap ->
                    Internal.TileFormat ->
                    DeepZoomImage

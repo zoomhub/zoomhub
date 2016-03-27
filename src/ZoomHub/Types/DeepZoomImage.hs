@@ -4,6 +4,7 @@ module ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage(DeepZoomImage)
   , TileFormat(JPEG, PNG)
   , TileOverlap(TileOverlap1, TileOverlap0)
+  , TileSize(..)
   , dziWidth
   , dziHeight
   , dziTileSize
@@ -26,10 +27,33 @@ import           Database.SQLite.Simple.ToField   (ToField, toField)
 data DeepZoomImage = DeepZoomImage
   { dziWidth       :: Integer
   , dziHeight      :: Integer
-  , dziTileSize    :: Integer
+  , dziTileSize    :: TileSize
   , dziTileOverlap :: TileOverlap
   , dziTileFormat  :: TileFormat
   } deriving (Eq, Show)
+
+-- Tile size
+data TileSize = TileSize254 | TileSize256 | TileSize1024
+  deriving (Bounded, Enum, Eq, Show)
+
+-- Tile size: JSON
+instance ToJSON TileSize where
+  toJSON TileSize254 = Number 254
+  toJSON TileSize256 = Number 256
+  toJSON TileSize1024 = Number 1024
+
+-- Tile size: SQLite
+instance ToField TileSize where
+  toField TileSize254 = SQLInteger 254
+  toField TileSize256 = SQLInteger 256
+  toField TileSize1024 = SQLInteger 1024
+
+instance FromField TileSize where
+  fromField (Field (SQLInteger 254) _) = Ok TileSize254
+  fromField (Field (SQLInteger 256) _) = Ok TileSize256
+  fromField (Field (SQLInteger 1024) _) = Ok TileSize1024
+  fromField f =
+    returnError ConversionFailed f "Invalid Deep Zoom image tile size"
 
 -- Tile overlap
 data TileOverlap = TileOverlap1 | TileOverlap0 deriving (Eq, Show)

@@ -30,7 +30,7 @@ import           ZoomHub.API.Types.DeepZoomImage             (DeepZoomImageURI (
 import           ZoomHub.Types.BaseURI                       (BaseURI)
 import           ZoomHub.Types.ContentBaseURI                (ContentBaseURI,
                                                               unContentBaseURI)
-import           ZoomHub.Types.DeepZoomImage                 (TileFormat (PNG), TileOverlap (TileOverlap1))
+import           ZoomHub.Types.DeepZoomImage                 (TileFormat (PNG), TileOverlap (TileOverlap1), TileSize (TileSize256))
 import           ZoomHub.Web.Types.EmbedDimension            (EmbedDimension (..),
                                                               toCSSValue)
 import           ZoomHub.Web.Types.OpenSeadragonTileSource   (fromDeepZoomImage)
@@ -123,7 +123,8 @@ instance ToJS Embed where
       script = embedBody embed
       content = embedContent embed
       maybeDZI = contentDzi content
-      queuedDZI = mkDeepZoomImage queuedDZIURI 8000 6000 254 TileOverlap1 PNG
+      queuedDZI =
+        mkDeepZoomImage queuedDZIURI 8000 6000 TileSize256 TileOverlap1 PNG
       queuedDZIURI = DeepZoomImageURI $
         queuedDZIPath `relativeTo` unContentBaseURI contentBaseURI
       queuedDZIPath = fromJust . parseRelativeReference $
