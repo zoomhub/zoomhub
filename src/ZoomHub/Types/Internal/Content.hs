@@ -66,7 +66,7 @@ fromURL cId url = Content
   , contentFinishedAt = Nothing
   , contentDzi = Nothing
   , contentRawPath = Nothing
-    }
+  }
 
 -- JSON
 instance ToJSON Content where
