@@ -3,6 +3,7 @@
 module ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage(DeepZoomImage)
   , TileFormat(JPEG, PNG)
+  , TileOverlap(TileOverlap1, TileOverlap0)
   , dziWidth
   , dziHeight
   , dziTileSize
@@ -11,10 +12,11 @@ module ZoomHub.Types.DeepZoomImage
   ) where
 
 
-import           Data.Aeson                       (ToJSON, Value (String),
+import           Data.Aeson                       (ToJSON,
+                                                   Value (Number, String),
                                                    toJSON)
 import qualified Data.Text                        as T
-import           Database.SQLite.Simple           (SQLData (SQLText))
+import           Database.SQLite.Simple           (SQLData (SQLText, SQLInteger))
 import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
                                                    fromField, returnError)
 import           Database.SQLite.Simple.Internal  (Field (Field))
@@ -25,9 +27,27 @@ data DeepZoomImage = DeepZoomImage
   { dziWidth       :: Integer
   , dziHeight      :: Integer
   , dziTileSize    :: Integer
-  , dziTileOverlap :: Integer
+  , dziTileOverlap :: TileOverlap
   , dziTileFormat  :: TileFormat
   } deriving (Eq, Show)
+
+-- Tile overlap
+data TileOverlap = TileOverlap1 | TileOverlap0 deriving (Eq, Show)
+
+-- Tile overlap: JSON
+instance ToJSON TileOverlap where
+  toJSON TileOverlap1 = Number 1
+  toJSON TileOverlap0 = Number 0
+
+-- Tile overlap: SQLite
+instance ToField TileOverlap where
+  toField TileOverlap1 = SQLInteger 1
+  toField TileOverlap0 = SQLInteger 0
+
+instance FromField TileOverlap where
+  fromField (Field (SQLInteger 1) _) = Ok TileOverlap1
+  fromField (Field (SQLInteger 0) _) = Ok TileOverlap0
+  fromField f = returnError ConversionFailed f "Invalid `TileOverlap`"
 
 -- Tile format
 data TileFormat = JPEG | PNG deriving Eq
