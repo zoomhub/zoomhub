@@ -33,8 +33,6 @@ library
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
-    , ZoomHub.Storage.File
-    , ZoomHub.Storage.Internal.File
     , ZoomHub.Storage.SQLite
     , ZoomHub.Storage.SQLite.Internal
     , ZoomHub.Types.BaseURI
@@ -124,7 +122,6 @@ test-suite tests
   type:             exitcode-stdio-1.0
   other-modules:
     ZoomHub.APISpec
-    ZoomHub.Storage.Internal.FileSpec
     ZoomHub.Types.Internal.ContentIdSpec
     ZoomHub.Types.Internal.ContentURISpec
   build-depends:
