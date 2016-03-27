@@ -1,15 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.DeepZoomImage
-  ( DeepZoomImage(DeepZoomImage)
-  , TileFormat(JPEG, PNG)
-  , TileOverlap(TileOverlap1, TileOverlap0)
+  ( DeepZoomImage(..)
+  , TileFormat(..)
+  , TileOverlap(..)
   , TileSize(..)
-  , dziWidth
-  , dziHeight
-  , dziTileSize
-  , dziTileOverlap
-  , dziTileFormat
   ) where
 
 

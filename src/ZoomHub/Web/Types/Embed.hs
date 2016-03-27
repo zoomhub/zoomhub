@@ -4,11 +4,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module ZoomHub.Web.Types.Embed
-  ( Embed
-  , embedBody
-  , embedContent
-  , embedHeight
-  , embedWidth
+  ( Embed(..)
   , mkEmbed
   ) where
 
