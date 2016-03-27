@@ -139,6 +139,7 @@ test-suite tests
     , QuickCheck
     , quickcheck-instances
     , servant-server
+    , sqlite-simple
     , text
     , wai
     , zoomhub
