@@ -64,8 +64,8 @@ library
     , base >= 4.8 && < 5
     , blaze-builder
     , bytestring
-    , containers
     , case-insensitive
+    , containers
     , cryptonite == 0.10.*
     , data-default
     , directory
