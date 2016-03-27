@@ -113,19 +113,6 @@ executable zoomhub
       base
     , zoomhub
 
-executable sqlite-import
-  default-language: Haskell2010
-  ghc-options:      -Wall
-  main-is:          scripts/sqlite-import.hs
-  build-depends:
-      base
-    , directory
-    , filepath
-    , sqlite-simple
-    , text
-    , time
-    , zoomhub
-
 test-suite tests
   default-language: Haskell2010
   ghc-options:      -Wall
