@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.Internal.ContentURI
+module ZoomHub.Types.ContentURI
   ( ContentURI
   , unContentURI
   ) where

@@ -14,24 +14,23 @@ module ZoomHub.API.Types.Content
   , unContentShareURI
   ) where
 
-import           Data.Aeson                          (ToJSON, Value (String),
-                                                      genericToJSON, toJSON)
-import           Data.Aeson.Casing                   (aesonPrefix, camelCase)
-import           Data.Maybe                          (fromJust)
-import qualified Data.Text                           as T
-import           GHC.Generics                        (Generic)
-import           Network.URI                         (URI,
-                                                      parseRelativeReference,
-                                                      relativeTo)
+import           Data.Aeson                      (ToJSON, Value (String),
+                                                  genericToJSON, toJSON)
+import           Data.Aeson.Casing               (aesonPrefix, camelCase)
+import           Data.Maybe                      (fromJust)
+import qualified Data.Text                       as T
+import           GHC.Generics                    (Generic)
+import           Network.URI                     (URI, parseRelativeReference,
+                                                  relativeTo)
 
-import           ZoomHub.Types.BaseURI               (BaseURI, unBaseURI)
-import           ZoomHub.Types.ContentBaseURI        (ContentBaseURI)
-import           ZoomHub.Types.DeepZoomImage         (DeepZoomImage)
-import qualified ZoomHub.Types.DeepZoomImage         as DZ
-import qualified ZoomHub.Types.Internal.Content      as Internal
-import           ZoomHub.Types.Internal.ContentId    (ContentId, unId)
-import           ZoomHub.Types.Internal.ContentState (ContentState (CompletedSuccess, CompletedFailure))
-import           ZoomHub.Types.Internal.ContentURI   (ContentURI)
+import           ZoomHub.API.Types.DeepZoomImage (DeepZoomImage)
+import qualified ZoomHub.API.Types.DeepZoomImage as DZ
+import           ZoomHub.Types.BaseURI           (BaseURI, unBaseURI)
+import qualified ZoomHub.Types.Content           as Internal
+import           ZoomHub.Types.ContentBaseURI    (ContentBaseURI)
+import           ZoomHub.Types.ContentId         (ContentId, unId)
+import           ZoomHub.Types.ContentState      (ContentState (CompletedSuccess, CompletedFailure))
+import           ZoomHub.Types.ContentURI        (ContentURI)
 
 
 -- Content

@@ -7,26 +7,25 @@ module ZoomHub.Storage.SQLite.Internal
   , crId
   ) where
 
-import           Data.Time.Clock                      (UTCTime)
-import           Database.SQLite.Simple               (field)
-import           Database.SQLite.Simple.FromRow       (FromRow, fromRow)
+import           Data.Time.Clock                (UTCTime)
+import           Database.SQLite.Simple         (field)
+import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
 
-import           ZoomHub.Types.Internal.Content       (Content (Content),
-                                                       contentActiveAt,
-                                                       contentCompletedAt,
-                                                       contentDzi, contentId,
-                                                       contentInitializedAt,
-                                                       contentMime,
-                                                       contentProgress,
-                                                       contentSize,
-                                                       contentState, contentUrl)
-import           ZoomHub.Types.Internal.ContentId     (ContentId)
-import           ZoomHub.Types.Internal.ContentState  (ContentState)
-import           ZoomHub.Types.Internal.ContentURI    (ContentURI)
-import           ZoomHub.Types.Internal.DeepZoomImage (DeepZoomImage (DeepZoomImage),
-                                                       dziHeight, dziTileFormat,
-                                                       dziTileOverlap,
-                                                       dziTileSize, dziWidth)
+import           ZoomHub.Types.Content          (Content (Content),
+                                                 contentActiveAt,
+                                                 contentCompletedAt, contentDzi,
+                                                 contentId,
+                                                 contentInitializedAt,
+                                                 contentMime, contentProgress,
+                                                 contentSize, contentState,
+                                                 contentUrl)
+import           ZoomHub.Types.ContentId        (ContentId)
+import           ZoomHub.Types.ContentState     (ContentState)
+import           ZoomHub.Types.ContentURI       (ContentURI)
+import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage (DeepZoomImage),
+                                                 dziHeight, dziTileFormat,
+                                                 dziTileOverlap, dziTileSize,
+                                                 dziWidth)
 
 data ContentRow = ContentRow
   { crId             :: Maybe Integer

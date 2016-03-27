@@ -44,13 +44,13 @@ import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
 import           ZoomHub.Storage.SQLite               (getById, getByURL)
 import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
+import qualified ZoomHub.Types.Content                as Internal
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
+import           ZoomHub.Types.ContentId              (ContentId, unId)
+import           ZoomHub.Types.ContentURI             (ContentURI)
 import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
 import           ZoomHub.Types.EmbedDimension         (EmbedDimension)
 import           ZoomHub.Types.EmbedId                (EmbedId, unEmbedId)
-import qualified ZoomHub.Types.Internal.Content       as Internal
-import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
-import           ZoomHub.Types.Internal.ContentURI    (ContentURI)
 import           ZoomHub.Types.ViewContent            (ViewContent,
                                                        mkViewContent)
 import qualified ZoomHub.Web.Errors                   as Web

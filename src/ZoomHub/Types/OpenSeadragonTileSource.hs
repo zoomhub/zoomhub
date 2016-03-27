@@ -5,14 +5,14 @@ module ZoomHub.Types.OpenSeadragonTileSource
   , fromDeepZoomImage
   ) where
 
-import           Data.Aeson                  (ToJSON, object, toJSON, (.=))
-import qualified Data.Text                   as T
-import           System.FilePath.Posix       (dropExtension)
+import           Data.Aeson                      (ToJSON, object, toJSON, (.=))
+import qualified Data.Text                       as T
+import           System.FilePath.Posix           (dropExtension)
 
-import           ZoomHub.Types.DeepZoomImage (DeepZoomImage, dziHeight,
-                                              dziTileFormat, dziTileFormat,
-                                              dziTileOverlap, dziTileSize,
-                                              dziUrl, dziWidth)
+import           ZoomHub.API.Types.DeepZoomImage (DeepZoomImage, dziHeight,
+                                                  dziTileFormat, dziTileFormat,
+                                                  dziTileOverlap, dziTileSize,
+                                                  dziUrl, dziWidth)
 
 
 newtype OpenSeadragonTileSource = OpenSeadragonTileSource

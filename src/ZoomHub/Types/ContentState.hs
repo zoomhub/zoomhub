@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.Internal.ContentState
+module ZoomHub.Types.ContentState
   ( ContentState(..)
   , fromString
   ) where

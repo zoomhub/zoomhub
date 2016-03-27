@@ -25,6 +25,7 @@ library
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
     , ZoomHub.API.Types.Content
+    , ZoomHub.API.Types.DeepZoomImage
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
@@ -37,17 +38,16 @@ library
     , ZoomHub.Storage.SQLite
     , ZoomHub.Storage.SQLite.Internal
     , ZoomHub.Types.BaseURI
+    , ZoomHub.Types.Content
     , ZoomHub.Types.ContentBaseURI
+    , ZoomHub.Types.ContentId
+    , ZoomHub.Types.ContentState
+    , ZoomHub.Types.ContentURI
     , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.Embed
     , ZoomHub.Types.EmbedDimension
     , ZoomHub.Types.EmbedId
-    , ZoomHub.Types.Internal.Content
-    , ZoomHub.Types.Internal.ContentId
-    , ZoomHub.Types.Internal.ContentState
-    , ZoomHub.Types.Internal.ContentURI
-    , ZoomHub.Types.Internal.DeepZoomImage
     , ZoomHub.Types.OpenSeadragonTileSource
     , ZoomHub.Types.OpenSeadragonViewerConfig
     , ZoomHub.Types.ViewContent
@@ -123,8 +123,8 @@ test-suite tests
   type:             exitcode-stdio-1.0
   other-modules:
     ZoomHub.APISpec
-    ZoomHub.Types.Internal.ContentIdSpec
-    ZoomHub.Types.Internal.ContentURISpec
+    ZoomHub.Types.ContentIdSpec
+    ZoomHub.Types.ContentURISpec
   build-depends:
       aeson
     , base

@@ -5,13 +5,13 @@ module ZoomHub.Storage.SQLite
   , getByURL
   ) where
 
-import           Database.SQLite.Simple            (Connection, Only (Only),
-                                                    Query, query)
+import           Database.SQLite.Simple          (Connection, Only (Only),
+                                                  Query, query)
 
-import           ZoomHub.Storage.SQLite.Internal   (rowToContent)
-import           ZoomHub.Types.Internal.Content    (Content)
-import           ZoomHub.Types.Internal.ContentId  (ContentId, unId)
-import           ZoomHub.Types.Internal.ContentURI (ContentURI)
+import           ZoomHub.Storage.SQLite.Internal (rowToContent)
+import           ZoomHub.Types.Content           (Content)
+import           ZoomHub.Types.ContentId         (ContentId, unId)
+import           ZoomHub.Types.ContentURI        (ContentURI)
 
 
 -- Public URL
