@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.OpenSeadragonTileSource
+module ZoomHub.Web.Types.OpenSeadragonTileSource
   ( OpenSeadragonTileSource
   , fromDeepZoomImage
   ) where
