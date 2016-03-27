@@ -9,6 +9,7 @@ import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
 import           Data.Maybe                           (fromJust, fromMaybe)
+import           Database.SQLite.Simple               (open)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
 import           Network.Wai.Handler.Warp             (run)
@@ -87,6 +88,7 @@ main = do
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath maybePublicPath
   ensureDBExists dbPath
+  dbConnection <- open (unDatabasePath dbPath)
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
       let encodeContext = hashidsSimple hashidsSalt
