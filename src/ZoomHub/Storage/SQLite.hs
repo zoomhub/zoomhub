@@ -31,20 +31,18 @@ import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage (DeepZoomImage),
                                                  dziTileFormat, dziTileOverlap,
                                                  dziTileSize, dziWidth)
 
-
-
--- Public URL
+-- Public API
 getById :: Connection -> ContentId -> IO (Maybe Content)
 getById conn cId =
-  get conn (getQuery "hashId") (unId cId)
+  getBy conn "hashId" (unId cId)
 
 getByURL :: Connection -> ContentURI -> IO (Maybe Content)
 getByURL conn uri =
-  get conn (getQuery "url") (show uri)
+  getBy conn "url" (show uri)
 
-get :: Connection -> Query -> String -> IO (Maybe Content)
-get conn q param = do
-  results <- query conn q (Only param)
+getBy :: Connection -> String -> String -> IO (Maybe Content)
+getBy conn fieldName param = do
+  results <- query conn (queryFor fieldName) (Only param)
   case results of
     (r:_) -> return . Just . rowToContent $ r
     _     -> return Nothing
@@ -101,8 +99,8 @@ rowToContent cr = Content
         Just DeepZoomImage{..}
       _ -> Nothing
 
-getQuery :: String -> Query
-getQuery fieldName = "SELECT id, hashId, url, state, initializedAt,\
+queryFor :: String -> Query
+queryFor fieldName = "SELECT id, hashId, url, state, initializedAt,\
     \ activeAt, completedAt, mime, size,progress, dzi_width, dzi_height,\
     \ dzi_tileSize, dzi_tileOverlap, dzi_tileFormat FROM content\
     \ WHERE " <> fromString fieldName <> " = ?"
