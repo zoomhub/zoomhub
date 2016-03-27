@@ -44,8 +44,8 @@ instance ToField ContentURI where
   toField = SQLText . unContentURI
 
 instance FromField ContentURI where
-  fromField f@(Field (SQLText t) _) =
+  fromField field@(Field (SQLText t) _) =
     case fromText t of
       Just r  -> Ok r
-      Nothing -> returnError ConversionFailed f "Invalid `ContentURI`"
-  fromField f = returnError ConversionFailed f "Invalid `ContentURI`"
+      Nothing -> returnError ConversionFailed field "Invalid `ContentURI`"
+  fromField field = returnError ConversionFailed field "Invalid `ContentURI`"
