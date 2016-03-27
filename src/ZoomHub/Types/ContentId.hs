@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.Internal.ContentId
+module ZoomHub.Types.ContentId
   ( ContentId
   , fromInteger
   , fromString

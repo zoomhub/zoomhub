@@ -23,11 +23,11 @@ import           Network.URI                             (parseRelativeReference
 import           ZoomHub.API.ContentTypes.JavaScript     (ToJS, toJS)
 import           ZoomHub.API.Types.Content               (Content, contentDzi,
                                                           contentReady)
+import           ZoomHub.API.Types.DeepZoomImage         (DeepZoomImageURI (..),
+                                                          mkDeepZoomImage)
 import           ZoomHub.Types.BaseURI                   (BaseURI)
 import           ZoomHub.Types.ContentBaseURI            (ContentBaseURI,
                                                           unContentBaseURI)
-import           ZoomHub.Types.DeepZoomImage             (DeepZoomImageURI (..),
-                                                          mkDeepZoomImage)
 import           ZoomHub.Types.EmbedDimension            (EmbedDimension (..),
                                                           toCSSValue)
 import           ZoomHub.Types.OpenSeadragonTileSource   (fromDeepZoomImage)

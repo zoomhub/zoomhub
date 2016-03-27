@@ -13,10 +13,10 @@ import           System.Process                           (callProcess)
 
 import           ZoomHub.Config                           (Config)
 import qualified ZoomHub.Config                           as Config
-import           ZoomHub.Types.Internal.Content           (Content, contentId,
+import           ZoomHub.Types.Content                    (Content, contentId,
                                                            contentUrl)
-import           ZoomHub.Types.Internal.ContentId         (unId)
--- import           ZoomHub.Types.Internal.DeepZoomImage     (DeepZoomImage)
+import           ZoomHub.Types.ContentId                  (unId)
+-- import           ZoomHub.Types.DeepZoomImage     (DeepZoomImage)
 
 
 process :: Config -> Content -> IO Content

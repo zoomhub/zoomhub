@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.Internal.Content
+module ZoomHub.Types.Content
   ( Content(Content)
   , contentId
   , contentUrl
@@ -14,12 +14,12 @@ module ZoomHub.Types.Internal.Content
   , contentDzi
   ) where
 
-import           Data.Time.Clock                      (UTCTime)
+import           Data.Time.Clock             (UTCTime)
 
-import           ZoomHub.Types.Internal.ContentId     (ContentId)
-import           ZoomHub.Types.Internal.ContentState  (ContentState)
-import           ZoomHub.Types.Internal.ContentURI    (ContentURI)
-import           ZoomHub.Types.Internal.DeepZoomImage (DeepZoomImage)
+import           ZoomHub.Types.ContentId     (ContentId)
+import           ZoomHub.Types.ContentState  (ContentState)
+import           ZoomHub.Types.ContentURI    (ContentURI)
+import           ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
 -- Content
 data Content = Content

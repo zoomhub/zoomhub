@@ -5,28 +5,27 @@ module ZoomHub.APISpec
   , spec
   ) where
 
-import qualified Data.ByteString.Char8            as BC
-import           Data.Maybe                       (fromJust)
-import           Data.Monoid                      ((<>))
-import           Database.SQLite.Simple           (open)
-import           Network.HTTP.Types               (methodGet)
-import           Network.URI                      (URI, parseAbsoluteURI)
-import           Network.Wai                      (Middleware)
-import           System.IO.Unsafe                 (unsafePerformIO)
-import           Test.Hspec                       (Spec, describe, hspec, it)
-import           Test.Hspec.Wai                   (MatchHeader, ResponseMatcher,
-                                                   get, matchHeaders,
-                                                   matchStatus, post, put,
-                                                   request, shouldRespondWith,
-                                                   with, (<:>))
+import qualified Data.ByteString.Char8        as BC
+import           Data.Maybe                   (fromJust)
+import           Data.Monoid                  ((<>))
+import           Database.SQLite.Simple       (open)
+import           Network.HTTP.Types           (methodGet)
+import           Network.URI                  (URI, parseAbsoluteURI)
+import           Network.Wai                  (Middleware)
+import           System.IO.Unsafe             (unsafePerformIO)
+import           Test.Hspec                   (Spec, describe, hspec, it)
+import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
+                                               get, matchHeaders, matchStatus,
+                                               post, put, request,
+                                               shouldRespondWith, with, (<:>))
 
-import           ZoomHub.API                      (app)
-import           ZoomHub.Config                   (Config (..))
-import qualified ZoomHub.Config                   as Config
-import           ZoomHub.Types.BaseURI            (BaseURI (BaseURI))
-import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI (ContentBaseURI))
-import           ZoomHub.Types.DatabasePath       (DatabasePath (DatabasePath))
-import           ZoomHub.Types.Internal.ContentId (ContentId, fromString, unId)
+import           ZoomHub.API                  (app)
+import           ZoomHub.Config               (Config (..))
+import qualified ZoomHub.Config               as Config
+import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
+import           ZoomHub.Types.ContentBaseURI (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.Types.ContentId      (ContentId, fromString, unId)
+import           ZoomHub.Types.DatabasePath   (DatabasePath (DatabasePath))
 
 main :: IO ()
 main = hspec spec
