@@ -36,7 +36,6 @@ library
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.SQLite
-    , ZoomHub.Storage.SQLite.Internal
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
     , ZoomHub.Types.ContentBaseURI
