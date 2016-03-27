@@ -71,7 +71,8 @@ instance ToField TileOverlap where
 instance FromField TileOverlap where
   fromField (Field (SQLInteger 1) _) = Ok TileOverlap1
   fromField (Field (SQLInteger 0) _) = Ok TileOverlap0
-  fromField f = returnError ConversionFailed f "Invalid `TileOverlap`"
+  fromField f =
+    returnError ConversionFailed f "Invalid Deep Zoom image tile overlap"
 
 -- Tile format
 data TileFormat = JPEG | PNG deriving Eq
@@ -91,4 +92,5 @@ instance ToField TileFormat where
 instance FromField TileFormat where
   fromField (Field (SQLText "jpg") _) = Ok JPEG
   fromField (Field (SQLText "png") _) = Ok PNG
-  fromField f = returnError ConversionFailed f "Invalid `TileFormat`"
+  fromField f =
+    returnError ConversionFailed f "Invalid Deep Zoom image tile format"
