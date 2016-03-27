@@ -8,9 +8,11 @@ module ZoomHub.APISpec
 import qualified Data.ByteString.Char8            as BC
 import           Data.Maybe                       (fromJust)
 import           Data.Monoid                      ((<>))
+import           Database.SQLite.Simple           (open)
 import           Network.HTTP.Types               (methodGet)
 import           Network.URI                      (URI, parseAbsoluteURI)
 import           Network.Wai                      (Middleware)
+import           System.IO.Unsafe                 (unsafePerformIO)
 import           Test.Hspec                       (Spec, describe, hspec, it)
 import           Test.Hspec.Wai                   (MatchHeader, ResponseMatcher,
                                                    get, matchHeaders,
@@ -23,6 +25,7 @@ import           ZoomHub.Config                   (Config (..))
 import qualified ZoomHub.Config                   as Config
 import           ZoomHub.Types.BaseURI            (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI     (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.Types.DatabasePath       (DatabasePath (DatabasePath))
 import           ZoomHub.Types.Internal.ContentId (ContentId, fromString, unId)
 
 main :: IO ()
@@ -90,10 +93,11 @@ config = Config
   , baseURI = BaseURI $ toURI "http://localhost:8000"
   , contentBaseURI = ContentBaseURI $ toURI "http://localhost:9000"
   , dataPath = "./data"
+  , dbPath = DatabasePath rawDBPath
+  -- TODO: How can we avoid `unsafePerformIO`?
+  , dbConnection = unsafePerformIO $ open rawDBPath
   , encodeId = show
   , error404 = "404"
-  , jobs = undefined
-  , lastId = undefined
   , logger = nullLogger
   , openseadragonScript = "osd"
   , port = 8000
@@ -101,6 +105,8 @@ config = Config
   , rackspace = undefined
   , version = "test"
   }
+  where
+    rawDBPath = "./data/content-development.sqlite3"
 
 spec :: Spec
 spec = with (return $ app config) $ do
