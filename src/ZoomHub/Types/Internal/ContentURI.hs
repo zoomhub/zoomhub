@@ -5,10 +5,17 @@ module ZoomHub.Types.Internal.ContentURI
   , unContentURI
   ) where
 
-import           Data.Aeson (ToJSON, Value (String), toJSON)
-import           Data.Text  (Text)
-import qualified Data.Text  as T
-import           Servant    (FromText, fromText)
+import           Data.Aeson                       (ToJSON, Value (String),
+                                                   toJSON)
+import           Data.Text                        (Text)
+import qualified Data.Text                        as T
+import           Database.SQLite.Simple           (SQLData (SQLText))
+import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
+                                                   fromField, returnError)
+import           Database.SQLite.Simple.Internal  (Field (Field))
+import           Database.SQLite.Simple.Ok        (Ok (Ok))
+import           Database.SQLite.Simple.ToField   (ToField, toField)
+import           Servant                          (FromText, fromText)
 
 
 -- TODO: Use record syntax, i.e. `ContentURI { unContentURI :: URI }` without
@@ -31,3 +38,14 @@ instance FromText ContentURI where
 -- JSON
 instance ToJSON ContentURI where
   toJSON = String . unContentURI
+
+-- SQLite
+instance ToField ContentURI where
+  toField = SQLText . unContentURI
+
+instance FromField ContentURI where
+  fromField f@(Field (SQLText t) _) =
+    case fromText t of
+      Just r  -> Ok r
+      Nothing -> returnError ConversionFailed f "Invalid `ContentURI`"
+  fromField f = returnError ConversionFailed f "Invalid `ContentURI`"

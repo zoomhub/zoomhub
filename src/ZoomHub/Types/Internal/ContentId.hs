@@ -10,16 +10,25 @@ module ZoomHub.Types.Internal.ContentId
   , validChars
   ) where
 
-import           Prelude           hiding (fromInteger)
+import           Prelude                          hiding (fromInteger)
 
-import           Data.Aeson        (FromJSON, ToJSON, genericParseJSON,
-                                    genericToJSON, parseJSON, toJSON)
-import           Data.Aeson.Casing (aesonPrefix, camelCase)
-import           Data.List         (intersperse)
-import qualified Data.Set          as S
-import qualified Data.Text         as T
-import           GHC.Generics      (Generic)
-import           Servant           (FromText, fromText)
+import           Data.Aeson                       (FromJSON, ToJSON,
+                                                   genericParseJSON,
+                                                   genericToJSON, parseJSON,
+                                                   toJSON)
+import           Data.Aeson.Casing                (aesonPrefix, camelCase)
+import           Data.List                        (intersperse)
+import qualified Data.Set                         as S
+import qualified Data.Text                        as T
+import           Database.SQLite.Simple           (SQLData (SQLText))
+import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
+                                                   fromField, returnError)
+import           Database.SQLite.Simple.Internal  (Field (Field))
+import           Database.SQLite.Simple.Ok        (Ok (Ok))
+import           Database.SQLite.Simple.ToField   (ToField, toField)
+import           GHC.Generics                     (Generic)
+import           Servant                          (FromText, fromText)
+
 
 
 -- TODO: Use record syntax, i.e. `ContentId { unId :: String }` without
@@ -63,3 +72,14 @@ instance ToJSON ContentId where
    toJSON = genericToJSON $ aesonPrefix camelCase
 instance FromJSON ContentId where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
+
+-- SQLite
+instance ToField ContentId where
+  toField = SQLText . T.pack . unId
+
+instance FromField ContentId where
+  fromField f@(Field (SQLText t) _) =
+    case fromText t of
+      Just r  -> Ok r
+      Nothing -> returnError ConversionFailed f "Invalid `ContentId`"
+  fromField f = returnError ConversionFailed f "Invalid `ContentId`"
