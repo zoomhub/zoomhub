@@ -51,7 +51,8 @@ instance FromField TileSize where
     returnError ConversionFailed f "Invalid Deep Zoom image tile size"
 
 -- Tile overlap
-data TileOverlap = TileOverlap1 | TileOverlap0 deriving (Eq, Show)
+data TileOverlap = TileOverlap0 | TileOverlap1
+  deriving (Bounded, Enum, Eq, Show)
 
 -- Tile overlap: JSON
 instance ToJSON TileOverlap where
