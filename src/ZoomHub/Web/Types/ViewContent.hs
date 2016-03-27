@@ -1,27 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module ZoomHub.Types.ViewContent
+module ZoomHub.Web.Types.ViewContent
   ( ViewContent
   , mkViewContent
   )
   where
 
-import           Data.Maybe                       (fromJust)
-import           Data.Monoid                      ((<>))
-import qualified Data.Text                        as T
-import           Lucid                            (ToHtml, body_, charset_,
-                                                   content_, doctypehtml_,
-                                                   head_, href_, link_, meta_,
-                                                   name_, rel_, script_, src_,
-                                                   style_, title_, toHtml,
-                                                   toHtmlRaw)
-import           Network.URI                      (parseRelativeReference,
-                                                   relativeTo)
+import           Data.Maybe                (fromJust)
+import           Data.Monoid               ((<>))
+import qualified Data.Text                 as T
+import           Lucid                     (ToHtml, body_, charset_, content_,
+                                            doctypehtml_, head_, href_, link_,
+                                            meta_, name_, rel_, script_, src_,
+                                            style_, title_, toHtml, toHtmlRaw)
+import           Network.URI               (parseRelativeReference, relativeTo)
 
-import           ZoomHub.Types.BaseURI            (BaseURI, unBaseURI)
-import           ZoomHub.Types.Content            (Content, contentId)
-import           ZoomHub.Types.Internal.ContentId (unId)
+import           ZoomHub.API.Types.Content (Content, contentId)
+import           ZoomHub.Types.BaseURI     (BaseURI, unBaseURI)
+import           ZoomHub.Types.ContentId   (unId)
 
 data ViewContent = ViewContent
   { vcContent :: Content

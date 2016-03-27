@@ -4,7 +4,8 @@
         {
             "path": ".",
             "file_exclude_patterns": [
-                "*.sublime-workspace"
+                "*.sublime-workspace",
+                "*.sqlite3"
             ],
             "folder_exclude_patterns": [
                 ".cabal-sandbox",

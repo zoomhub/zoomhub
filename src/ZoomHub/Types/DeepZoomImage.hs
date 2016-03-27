@@ -1,85 +1,92 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.DeepZoomImage
-  ( DeepZoomImage(DeepZoomImage)
-  , DeepZoomImageURI(DeepZoomImageURI)
-  , dziHeight
-  , dziTileFormat
-  , dziTileOverlap
-  , dziTileSize
-  , dziUrl
-  , dziWidth
-  , fromInternal
-  , mkDeepZoomImage
+  ( DeepZoomImage(..)
+  , TileFormat(..)
+  , TileOverlap(..)
+  , TileSize(..)
   ) where
 
-import           Data.Aeson                           (ToJSON, Value (String),
-                                                       genericToJSON, toJSON)
-import           Data.Aeson.Casing                    (aesonPrefix, camelCase)
-import           Data.Maybe                           (fromJust)
-import qualified Data.Text                            as T
-import           GHC.Generics                         (Generic)
-import           Network.URI                          (URI,
-                                                       parseRelativeReference,
-                                                       relativeTo)
 
-import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI,
-                                                       unContentBaseURI)
-import           ZoomHub.Types.Internal.ContentId     (ContentId, unId)
-import qualified ZoomHub.Types.Internal.DeepZoomImage as Internal
-
+import           Data.Aeson                       (ToJSON,
+                                                   Value (Number, String),
+                                                   toJSON)
+import qualified Data.Text                        as T
+import           Database.SQLite.Simple           (SQLData (SQLText, SQLInteger))
+import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
+                                                   fromField, returnError)
+import           Database.SQLite.Simple.Internal  (Field (Field))
+import           Database.SQLite.Simple.Ok        (Ok (Ok))
+import           Database.SQLite.Simple.ToField   (ToField, toField)
 
 data DeepZoomImage = DeepZoomImage
-  { dziUrl         :: DeepZoomImageURI
-  , dziWidth       :: Integer
+  { dziWidth       :: Integer
   , dziHeight      :: Integer
-  , dziTileSize    :: Integer
-  , dziTileOverlap :: Integer
-  , dziTileFormat  :: String
-  } deriving (Eq, Show, Generic)
+  , dziTileSize    :: TileSize
+  , dziTileOverlap :: TileOverlap
+  , dziTileFormat  :: TileFormat
+  } deriving (Eq, Show)
 
-fromInternal :: ContentBaseURI ->
-                ContentId ->
-                Internal.DeepZoomImage ->
-                DeepZoomImage
-fromInternal baseURI cId dzi = DeepZoomImage
-  { dziUrl = DeepZoomImageURI (dziPath `relativeTo` unContentBaseURI baseURI)
-  , dziWidth = Internal.dziWidth dzi
-  , dziHeight = Internal.dziHeight dzi
-  , dziTileSize = Internal.dziTileSize dzi
-  , dziTileOverlap = Internal.dziTileOverlap dzi
-  , dziTileFormat = Internal.dziTileFormat dzi
-  }
-  where
-    dziPath = fromJust . parseRelativeReference $ "/dzis/" ++ unId cId ++ ".dzi"
+-- Tile size
+data TileSize = TileSize254 | TileSize256 | TileSize1024
+  deriving (Bounded, Enum, Eq, Show)
 
-mkDeepZoomImage :: DeepZoomImageURI ->
-                   Integer ->
-                   Integer ->
-                   Integer ->
-                   Integer ->
-                   String ->
-                   DeepZoomImage
-mkDeepZoomImage uri width height tileSize tileOverlap tileFormat = DeepZoomImage
-  { dziUrl = uri
-  , dziWidth = width
-  , dziHeight = height
-  , dziTileSize = tileSize
-  , dziTileOverlap = tileOverlap
-  , dziTileFormat = tileFormat
-  }
+-- Tile size: JSON
+instance ToJSON TileSize where
+  toJSON TileSize254 = Number 254
+  toJSON TileSize256 = Number 256
+  toJSON TileSize1024 = Number 1024
 
--- JSON
-instance ToJSON DeepZoomImage where
-   toJSON = genericToJSON $ aesonPrefix camelCase
+-- Tile size: SQLite
+instance ToField TileSize where
+  toField TileSize254 = SQLInteger 254
+  toField TileSize256 = SQLInteger 256
+  toField TileSize1024 = SQLInteger 1024
 
--- Types
-newtype DeepZoomImageURI = DeepZoomImageURI { unDeepZoomImageURI :: URI }
-  deriving Eq
+instance FromField TileSize where
+  fromField (Field (SQLInteger 254) _) = Ok TileSize254
+  fromField (Field (SQLInteger 256) _) = Ok TileSize256
+  fromField (Field (SQLInteger 1024) _) = Ok TileSize1024
+  fromField f =
+    returnError ConversionFailed f "Invalid Deep Zoom image tile size"
 
-instance Show DeepZoomImageURI where
-  show = show . unDeepZoomImageURI
+-- Tile overlap
+data TileOverlap = TileOverlap0 | TileOverlap1
+  deriving (Bounded, Enum, Eq, Show)
 
-instance ToJSON DeepZoomImageURI where
-  toJSON = String . T.pack . show . unDeepZoomImageURI
+-- Tile overlap: JSON
+instance ToJSON TileOverlap where
+  toJSON TileOverlap1 = Number 1
+  toJSON TileOverlap0 = Number 0
+
+-- Tile overlap: SQLite
+instance ToField TileOverlap where
+  toField TileOverlap1 = SQLInteger 1
+  toField TileOverlap0 = SQLInteger 0
+
+instance FromField TileOverlap where
+  fromField (Field (SQLInteger 1) _) = Ok TileOverlap1
+  fromField (Field (SQLInteger 0) _) = Ok TileOverlap0
+  fromField f =
+    returnError ConversionFailed f "Invalid Deep Zoom image tile overlap"
+
+-- Tile format
+data TileFormat = JPEG | PNG deriving Eq
+
+instance Show TileFormat where
+  show JPEG = "jpg"
+  show PNG = "png"
+
+-- Tile format: JSON
+instance ToJSON TileFormat where
+  toJSON = String . T.pack . show
+
+-- Tile format: SQLite
+instance ToField TileFormat where
+  toField = SQLText . T.pack . show
+
+instance FromField TileFormat where
+  fromField (Field (SQLText "jpg") _) = Ok JPEG
+  fromField (Field (SQLText "png") _) = Ok PNG
+  fromField f =
+    returnError ConversionFailed f "Invalid Deep Zoom image tile format"

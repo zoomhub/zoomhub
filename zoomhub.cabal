@@ -24,6 +24,8 @@ library
     , ZoomHub.API.Errors
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
+    , ZoomHub.API.Types.Content
+    , ZoomHub.API.Types.DeepZoomImage
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
@@ -33,25 +35,24 @@ library
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
-    , ZoomHub.Storage.File
-    , ZoomHub.Storage.Internal.File
+    , ZoomHub.Storage.SQLite
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
     , ZoomHub.Types.ContentBaseURI
+    , ZoomHub.Types.ContentId
+    , ZoomHub.Types.ContentState
+    , ZoomHub.Types.ContentURI
+    , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
-    , ZoomHub.Types.Embed
-    , ZoomHub.Types.EmbedDimension
-    , ZoomHub.Types.EmbedId
-    , ZoomHub.Types.Internal.Content
-    , ZoomHub.Types.Internal.ContentId
-    , ZoomHub.Types.Internal.ContentURI
-    , ZoomHub.Types.Internal.DeepZoomImage
-    , ZoomHub.Types.OpenSeadragonTileSource
-    , ZoomHub.Types.OpenSeadragonViewerConfig
-    , ZoomHub.Types.ViewContent
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Static
+    , ZoomHub.Web.Types.Embed
+    , ZoomHub.Web.Types.EmbedDimension
+    , ZoomHub.Web.Types.EmbedId
+    , ZoomHub.Web.Types.OpenSeadragonTileSource
+    , ZoomHub.Web.Types.OpenSeadragonViewerConfig
+    , ZoomHub.Web.Types.ViewContent
   default-language: Haskell2010
   ghc-options:      -Wall
   hs-source-dirs:   src
@@ -63,8 +64,8 @@ library
     , base >= 4.8 && < 5
     , blaze-builder
     , bytestring
-    , containers
     , case-insensitive
+    , containers
     , cryptonite == 0.10.*
     , data-default
     , directory
@@ -88,6 +89,7 @@ library
     , servant == 0.4.4.6
     , servant-lucid == 0.4.4.5
     , servant-server == 0.4.4.6
+    , sqlite-simple
     , stm
     , string-conversions
     , temporary
@@ -120,9 +122,8 @@ test-suite tests
   type:             exitcode-stdio-1.0
   other-modules:
     ZoomHub.APISpec
-    ZoomHub.Storage.Internal.FileSpec
-    ZoomHub.Types.Internal.ContentIdSpec
-    ZoomHub.Types.Internal.ContentURISpec
+    ZoomHub.Types.ContentIdSpec
+    ZoomHub.Types.ContentURISpec
   build-depends:
       aeson
     , base
@@ -135,6 +136,7 @@ test-suite tests
     , QuickCheck
     , quickcheck-instances
     , servant-server
+    , sqlite-simple
     , text
     , wai
     , zoomhub

@@ -7,5 +7,5 @@
 rsync -avz \
   -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
   --progress \
-  root@104.130.230.137:/mnt/datavolume/zoomhub/data/content-by-id/ \
-  ~/zoomhub-backup
+  root@v1.zoomhub.net:/mnt/datavolume/zoomhub/data/content-by-id/ \
+  ~/zoomhub-backup/content-by-id/

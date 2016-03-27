@@ -1,19 +1,19 @@
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.EmbedId
+module ZoomHub.Web.Types.EmbedId
   ( EmbedId
   , unEmbedId
   ) where
 
-import qualified Data.ByteString.Char8            as BC
-import qualified Data.Text                        as T
-import           Network.HTTP.Types               (decodePath)
-import           Servant                          (FromText, fromText)
-import           System.FilePath.Posix            (splitExtension)
+import qualified Data.ByteString.Char8   as BC
+import qualified Data.Text               as T
+import           Network.HTTP.Types      (decodePath)
+import           Servant                 (FromText, fromText)
+import           System.FilePath.Posix   (splitExtension)
 
-import           ZoomHub.Types.Internal.ContentId (ContentId)
-import qualified ZoomHub.Types.Internal.ContentId as ContentId
+import           ZoomHub.Types.ContentId (ContentId)
+import qualified ZoomHub.Types.ContentId as ContentId
 
 newtype EmbedId = EmbedId { unEmbedId :: ContentId } deriving (Eq, Show)
 
