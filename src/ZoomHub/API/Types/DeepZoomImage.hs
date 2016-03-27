@@ -33,7 +33,7 @@ data DeepZoomImage = DeepZoomImage
   , dziWidth       :: Integer
   , dziHeight      :: Integer
   , dziTileSize    :: Integer
-  , dziTileOverlap :: Integer
+  , dziTileOverlap :: Internal.TileOverlap
   , dziTileFormat  :: Internal.TileFormat
   } deriving (Eq, Show, Generic)
 
@@ -56,7 +56,7 @@ mkDeepZoomImage :: DeepZoomImageURI ->
                    Integer ->
                    Integer ->
                    Integer ->
-                   Integer ->
+                   Internal.TileOverlap ->
                    Internal.TileFormat ->
                    DeepZoomImage
 mkDeepZoomImage uri width height tileSize tileOverlap tileFormat = DeepZoomImage
