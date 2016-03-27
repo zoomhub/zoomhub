@@ -1,64 +1,27 @@
 module ZoomHub.Storage.File
   ( getById
   , getByURL
-  , create
   )
   where
 
 import           Prelude                                  hiding (fromInteger)
 
-import           Control.Concurrent.STM                   (TVar, atomically,
-                                                           modifyTVar, readTVar,
-                                                           writeTChan)
 import           Control.Exception                        (tryJust)
 import           Control.Monad                            (guard)
 import           Data.Aeson                               (decode)
-import           Data.Aeson.Encode.Pretty                 (encodePretty')
 import qualified Data.ByteString.Lazy                     as BL
-import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
-import           System.Directory                         (doesFileExist)
 import           System.FilePath.Posix                    ((<.>), (</>))
 import           System.IO.Error                          (isDoesNotExistError)
-import           System.Posix.Files                       (createLink)
 
-import           ZoomHub.Config                           (Config)
-import qualified ZoomHub.Config                           as Config
 import           ZoomHub.Storage.Internal.File            (hashURL, toFilename)
-import           ZoomHub.Types.Internal.Content           (Content, contentId,
-                                                           fromURL,
-                                                           prettyEncodeConfig)
-import           ZoomHub.Types.Internal.ContentId         (ContentId,
-                                                           fromInteger, unId)
+import           ZoomHub.Types.Internal.Content           (Content)
+import           ZoomHub.Types.Internal.ContentId         (ContentId, unId)
 
 
 -- TODO: Introduce `ContentURL` `newtype`:
 type URL = String
 
 -- Public API
-create :: Config -> URL -> IO Content
-create config contentURL = do
-  newContentId <- createNewId config
-  let newContent = fromURL newContentId contentURL
-  write newContent
-  writeIndex (contentId newContent) contentURL
-  enqueue contentURL
-  return newContent
-  where
-      write :: Content -> IO ()
-      write newContent =
-        atomicWriteFile (idPath $ contentId newContent) (encode newContent)
-
-      writeIndex :: ContentId -> URL -> IO ()
-      writeIndex cId url = createLink (idPath cId) (urlPath url)
-
-      enqueue :: URL -> IO ()
-      enqueue url = atomically $ writeTChan (Config.jobs config) url
-
-      dataPath = Config.dataPath config
-      idPath = getByIdPath dataPath
-      urlPath = getByURLPath dataPath
-      encode = encodePretty' prettyEncodeConfig
-
 getById :: FilePath -> ContentId -> IO (Maybe Content)
 getById dataPath cId = readJSON $ getByIdPath dataPath cId
 
@@ -66,21 +29,6 @@ getByURL :: FilePath -> URL -> IO (Maybe Content)
 getByURL dataPath url = readJSON $ getByURLPath dataPath url
 
 -- Helpers
-createNewId :: Config -> IO ContentId
-createNewId config = do
-  newId <- incrementAndGet $ Config.lastId config
-  let newContentId = fromInteger (Config.encodeId config) newId
-  result <- doesIdExist (Config.dataPath config) newContentId
-  if result then createNewId config else return newContentId
-  where
-    incrementAndGet :: TVar Integer -> IO Integer
-    incrementAndGet tvar = atomically $ do
-      modifyTVar tvar (+1)
-      readTVar tvar
-
-doesIdExist :: FilePath -> ContentId -> IO Bool
-doesIdExist dataPath cId = doesFileExist $ getByIdPath dataPath cId
-
 getByIdPath :: FilePath -> ContentId -> FilePath
 getByIdPath dataPath cId =
   dataPath </> "content-by-id" </> filename <.> ".json"

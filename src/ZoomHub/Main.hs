@@ -3,13 +3,8 @@
 
 module ZoomHub.Main (main) where
 
-import           Control.Concurrent                   (forkIO, threadDelay)
-import           Control.Concurrent.STM               (TChan, TVar, atomically,
-                                                       newTChan, newTVar,
-                                                       readTChan, readTVar)
 import           Control.Exception                    (tryJust)
-import           Control.Monad                        (forever, guard)
-import           Control.Monad.IO.Class               (liftIO)
+import           Control.Monad                        (guard)
 import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
@@ -20,7 +15,6 @@ import           Network.Wai.Handler.Warp             (run)
 import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
                                                        mkRequestLogger,
                                                        outputFormat)
-import           System.AtomicWrite.Writer.String     (atomicWriteFile)
 import           System.Directory                     (getCurrentDirectory)
 import           System.Environment                   (lookupEnv)
 import           System.Envy                          (decodeEnv)
@@ -34,36 +28,6 @@ import           ZoomHub.Logger                       (formatAsJSON)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath))
--- import           ZoomHub.Pipeline                 (process)
-
-
--- TODO: Move to `Storage` module:
--- Last ID
-lastIdPath :: FilePath -> FilePath
-lastIdPath dataPath = dataPath </> "lastId.txt"
-
--- TODO: Figure out why `time-units` library doesn’t work:
-lastIdWriteInterval :: Int
-lastIdWriteInterval = 5 * 10^(6 :: Int) -- microseconds
-
-readLastId :: String -> IO Integer
-readLastId dataPath = do
-  r <- tryJust (guard . isDoesNotExistError) $ readFile (lastIdPath dataPath)
-  return $ case r of
-    Left _       -> 0
-    Right lastId -> read lastId
-
-writeLastId :: String -> TVar Integer -> Int -> IO ()
-writeLastId dataPath tvar interval = forever $ atomically (readTVar tvar)
-  >>= \lastId -> atomicWriteFile (lastIdPath dataPath) (show lastId)
-  >> threadDelay interval
-
--- Jobs
--- TODO: Implement job processing here:
-printJobs :: TChan String -> Int -> IO ()
-printJobs tchan interval = forever $ atomically (readTChan tchan)
-  >>= \job -> putStrLn ("Job: " ++ job)
-  >> threadDelay interval
 
 -- Environment
 baseURIEnvName :: String
@@ -122,11 +86,6 @@ main = do
       publicPath = fromMaybe defaultPublicPath maybePublicPath
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
-      initialLastId <- readLastId dataPath
-      lastId <- liftIO $ atomically $ newTVar initialLastId
-      _ <- forkIO $ writeLastId dataPath lastId lastIdWriteInterval
-      jobs <- liftIO $ atomically newTChan
-      _ <- forkIO $ printJobs jobs lastIdWriteInterval
       let encodeContext = hashidsSimple hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
