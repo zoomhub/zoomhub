@@ -41,6 +41,7 @@ data ContentRow = ContentRow
   , crProgress       :: Float
   , crMime           :: Maybe String
   , crSize           :: Maybe Integer
+  , crCreatedAt      :: UTCTime
   , crActive         :: Maybe Bool
   , crActiveAt       :: Maybe UTCTime
   , crFinishedAt     :: Maybe UTCTime
@@ -56,7 +57,7 @@ instance FromRow ContentRow where
   fromRow = ContentRow <$>
     field <*> field <*> field <*> field <*> field <*> field <*> field <*>
     field <*> field <*> field <*> field <*> field <*> field <*> field <*>
-    field <*> field <*> field
+    field <*> field <*> field <*> field
 
 instance ToRow ContentRow where
   toRow (ContentRow{..}) =
@@ -67,6 +68,7 @@ instance ToRow ContentRow where
     , toField crProgress
     , toField crMime
     , toField crSize
+    , toField crCreatedAt
     , toField crActive
     , toField crActiveAt
     , toField crFinishedAt
@@ -88,6 +90,7 @@ contentToRow c = ContentRow
     , crProgress = contentProgress c
     , crMime = contentMime c
     , crSize = contentSize c
+    , crCreatedAt = contentCreatedAt c
     , crActive = contentActive c
     , crActiveAt = contentActiveAt c
     , crFinishedAt = contentFinishedAt c
@@ -108,12 +111,13 @@ createContentTableQuery =
   "CREATE TABLE IF NOT EXISTS content (" <>
     "id INTEGER PRIMARY KEY," <>
     "hashId TEXT UNIQUE NOT NULL," <>
-    "url TEXT NOT NULL," <>
+    "url TEXT UNIQUE NOT NULL," <>
     "ready BOOLEAN DEFAULT 0 NOT NULL," <>
     "failed BOOLEAN DEFAULT 0 NOT NULL," <>
     "progress REAL DEFAULT 0.0 NOT NULL," <>
     "mime TEXT," <>
     "size INTEGER," <>
+    "createdAt DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,"
     "active BOOLEAN," <>
     "activeAt DATETIME," <>
     "finishedAt DATETIME," <>
@@ -150,7 +154,7 @@ main = do
         Just content -> insert conn content
 
     insert conn content = execute conn "INSERT INTO content (\
-      \ hashId, url, ready, failed, progress, mime, size, active, \
+      \ hashId, url, ready, failed, progress, mime, size, createdAt, active, \
       \ activeAt, finishedAt, rawPath, dzi_width, dzi_height, dzi_tileSize, \
       \ dzi_tileOverlap, dzi_tileFormat) \
-      \ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" (contentToRow content)
+      \ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)" (contentToRow content)

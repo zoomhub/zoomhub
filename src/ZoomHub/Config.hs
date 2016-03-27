@@ -11,8 +11,6 @@ module ZoomHub.Config
   , defaultPort
   , encodeId
   , error404
-  , jobs
-  , lastId
   , logger
   , openseadragonScript
   , port
@@ -23,7 +21,6 @@ module ZoomHub.Config
   , version
   ) where
 
-import           Control.Concurrent.STM       (TChan, TVar)
 import qualified Data.ByteString.Lazy         as BL
 import           GHC.Generics                 (Generic)
 import           Network.Wai                  (Middleware)
@@ -48,8 +45,6 @@ data Config = Config
   , dbPath              :: DatabasePath
   , encodeId            :: Integer -> String
   , error404            :: BL.ByteString
-  , jobs                :: TChan String
-  , lastId              :: TVar Integer
   , logger              :: Middleware
   , openseadragonScript :: String
   , port                :: Integer
