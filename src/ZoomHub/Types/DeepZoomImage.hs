@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage(DeepZoomImage)
+  , TileFormat(JPEG, PNG)
   , dziWidth
   , dziHeight
   , dziTileSize
@@ -9,22 +10,41 @@ module ZoomHub.Types.DeepZoomImage
   , dziTileFormat
   ) where
 
-import           Data.Aeson        (FromJSON, ToJSON, genericParseJSON,
-                                    genericToJSON, parseJSON, toJSON)
-import           Data.Aeson.Casing (aesonPrefix, camelCase)
-import           GHC.Generics      (Generic)
 
+import           Data.Aeson                       (ToJSON, Value (String),
+                                                   toJSON)
+import qualified Data.Text                        as T
+import           Database.SQLite.Simple           (SQLData (SQLText))
+import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
+                                                   fromField, returnError)
+import           Database.SQLite.Simple.Internal  (Field (Field))
+import           Database.SQLite.Simple.Ok        (Ok (Ok))
+import           Database.SQLite.Simple.ToField   (ToField, toField)
 
 data DeepZoomImage = DeepZoomImage
   { dziWidth       :: Integer
   , dziHeight      :: Integer
   , dziTileSize    :: Integer
   , dziTileOverlap :: Integer
-  , dziTileFormat  :: String -- TODO: Introduce type
-  } deriving (Eq, Show, Generic)
+  , dziTileFormat  :: TileFormat
+  } deriving (Eq, Show)
 
--- JSON
-instance ToJSON DeepZoomImage where
-   toJSON = genericToJSON $ aesonPrefix camelCase
-instance FromJSON DeepZoomImage where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
+-- Tile format
+data TileFormat = JPEG | PNG deriving Eq
+
+instance Show TileFormat where
+  show JPEG = "jpg"
+  show PNG = "png"
+
+-- Tile format: JSON
+instance ToJSON TileFormat where
+  toJSON = String . T.pack . show
+
+-- Tile format: SQLite
+instance ToField TileFormat where
+  toField = SQLText . T.pack . show
+
+instance FromField TileFormat where
+  fromField (Field (SQLText "jpg") _) = Ok JPEG
+  fromField (Field (SQLText "png") _) = Ok PNG
+  fromField f = returnError ConversionFailed f "Invalid `TileFormat`"
