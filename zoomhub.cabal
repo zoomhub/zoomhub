@@ -24,6 +24,7 @@ library
     , ZoomHub.API.Errors
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
+    , ZoomHub.API.Types.Content
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
@@ -36,7 +37,6 @@ library
     , ZoomHub.Storage.SQLite
     , ZoomHub.Storage.SQLite.Internal
     , ZoomHub.Types.BaseURI
-    , ZoomHub.Types.Content
     , ZoomHub.Types.ContentBaseURI
     , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage

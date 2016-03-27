@@ -21,9 +21,9 @@ import           Network.URI                             (parseRelativeReference
                                                           relativeTo)
 
 import           ZoomHub.API.ContentTypes.JavaScript     (ToJS, toJS)
-import           ZoomHub.Types.BaseURI                   (BaseURI)
-import           ZoomHub.Types.Content                   (Content, contentDzi,
+import           ZoomHub.API.Types.Content               (Content, contentDzi,
                                                           contentReady)
+import           ZoomHub.Types.BaseURI                   (BaseURI)
 import           ZoomHub.Types.ContentBaseURI            (ContentBaseURI,
                                                           unContentBaseURI)
 import           ZoomHub.Types.DeepZoomImage             (DeepZoomImageURI (..),

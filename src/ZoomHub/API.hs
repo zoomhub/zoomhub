@@ -30,6 +30,7 @@ import           ZoomHub.API.ContentTypes.JavaScript  (JavaScript)
 import qualified ZoomHub.API.Errors                   as API
 import qualified ZoomHub.API.JSONP.Errors             as JSONP
 import           ZoomHub.API.Types.Callback           (Callback)
+import           ZoomHub.API.Types.Content            (Content, fromInternal)
 import           ZoomHub.API.Types.JSONP              (JSONP, mkJSONP)
 import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse,
                                                        mkNonRESTful200,
@@ -43,7 +44,6 @@ import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
 import           ZoomHub.Storage.SQLite               (getById, getByURL)
 import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
-import           ZoomHub.Types.Content                (Content, fromInternal)
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
 import           ZoomHub.Types.Embed                  (Embed, mkEmbed)
 import           ZoomHub.Types.EmbedDimension         (EmbedDimension)
