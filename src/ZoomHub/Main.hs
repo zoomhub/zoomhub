@@ -4,7 +4,7 @@
 module ZoomHub.Main (main) where
 
 import           Control.Exception                    (tryJust)
-import           Control.Monad                        (guard)
+import           Control.Monad                        (guard, unless)
 import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
@@ -15,7 +15,8 @@ import           Network.Wai.Handler.Warp             (run)
 import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
                                                        mkRequestLogger,
                                                        outputFormat)
-import           System.Directory                     (getCurrentDirectory)
+import           System.Directory                     (doesFileExist,
+                                                       getCurrentDirectory)
 import           System.Environment                   (lookupEnv)
 import           System.Envy                          (decodeEnv)
 import           System.FilePath.Posix                ((</>))
@@ -27,7 +28,8 @@ import           ZoomHub.Config                       (Config (..), defaultPort)
 import           ZoomHub.Logger                       (formatAsJSON)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
-import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath))
+import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
+                                                       unDatabasePath)
 
 -- Environment
 baseURIEnvName :: String
@@ -84,6 +86,7 @@ main = do
         fromJust . parseAbsoluteURI $ "http://content.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath maybePublicPath
+  ensureDBExists dbPath
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
       let encodeContext = hashidsSimple hashidsSalt
@@ -105,3 +108,10 @@ main = do
         Just uri -> BaseURI uri
         Nothing  -> error $ "'" ++ uriString ++ "' is not a valid URL. Please\
         \ set `" ++ baseURIEnvName ++ "` to override usage of hostname."
+
+    ensureDBExists :: DatabasePath -> IO ()
+    ensureDBExists dbPath = do
+      exists <- doesFileExist (unDatabasePath dbPath)
+      unless exists $
+        error $ "Couldn’t find a database at " ++ unDatabasePath dbPath ++
+          ". Please check `" ++ dbPathEnvName ++ "`."
