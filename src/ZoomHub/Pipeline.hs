@@ -25,8 +25,8 @@ process config content = do
     -- let rawPath = tmpDir </> rawContentId
     let rawPath = tempPath </> rawContentId
     createDirectoryIfMissing False tempPath
-    putStrLn $ "Downloading: " ++ contentUrl content
-    downloadURL (contentUrl content) rawPath
+    putStrLn $ "Downloading: " ++ show (contentUrl content)
+    downloadURL (show (contentUrl content)) rawPath
     putStrLn $ "Creating DZI: " ++ rawContentId
     createDZI rawPath (rawPath <.> ".dzi")
     return content
