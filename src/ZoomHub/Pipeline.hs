@@ -47,6 +47,7 @@ createDZI src dest =
   callProcess "vips"
     [ "dzsave"
     , "--tile-size", "254"
+    , "--tile-overlap", "1"
     , src
     , dest
     , "--vips-progress"
