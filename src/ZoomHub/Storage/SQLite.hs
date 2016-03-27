@@ -40,6 +40,7 @@ getByURL :: Connection -> ContentURI -> IO (Maybe Content)
 getByURL conn uri =
   getBy conn "url" (show uri)
 
+-- Internal
 getBy :: Connection -> String -> String -> IO (Maybe Content)
 getBy conn fieldName param = do
   results <- query conn (queryFor fieldName) (Only param)
@@ -47,7 +48,13 @@ getBy conn fieldName param = do
     (r:_) -> return . Just . rowToContent $ r
     _     -> return Nothing
 
--- Internal
+-- IMPORTANT: The order of columns MUST match the definition of `ContentRow`:
+queryFor :: String -> Query
+queryFor fieldName = "SELECT id, hashId, url, state, initializedAt,\
+    \ activeAt, completedAt, mime, size,progress, dzi_width, dzi_height,\
+    \ dzi_tileSize, dzi_tileOverlap, dzi_tileFormat FROM content\
+    \ WHERE " <> fromString fieldName <> " = ?"
+
 data ContentRow = ContentRow
   { crId             :: Maybe Integer
   , crHashId         :: ContentId
@@ -110,9 +117,3 @@ rowToContent cr = Content
        Just dziTileSize, Just dziTileOverlap, Just dziTileFormat) ->
         Just DeepZoomImage{..}
       _ -> Nothing
-
-queryFor :: String -> Query
-queryFor fieldName = "SELECT id, hashId, url, state, initializedAt,\
-    \ activeAt, completedAt, mime, size,progress, dzi_width, dzi_height,\
-    \ dzi_tileSize, dzi_tileOverlap, dzi_tileFormat FROM content\
-    \ WHERE " <> fromString fieldName <> " = ?"
