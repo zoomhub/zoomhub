@@ -35,6 +35,8 @@ library
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.File
     , ZoomHub.Storage.Internal.File
+    , ZoomHub.Storage.SQLite
+    , ZoomHub.Storage.SQLite.Internal
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
     , ZoomHub.Types.ContentBaseURI
@@ -89,6 +91,7 @@ library
     , servant == 0.4.4.6
     , servant-lucid == 0.4.4.5
     , servant-server == 0.4.4.6
+    , sqlite-simple
     , stm
     , string-conversions
     , temporary

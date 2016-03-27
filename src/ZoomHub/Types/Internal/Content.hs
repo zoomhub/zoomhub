@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.Internal.Content
-  ( Content
+  ( Content(Content)
   , contentId
   , contentUrl
   , contentReady
