@@ -17,13 +17,7 @@ import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 import           Servant                          (FromText, fromText)
 
-
--- TODO: Use record syntax, i.e. `ContentURI { unContentURI :: URI }` without
--- introducing `{"contentURI": <contentURI>}` JSON serialization:
-newtype ContentURI = ContentURI Text deriving Eq
-
-unContentURI :: ContentURI -> Text
-unContentURI (ContentURI uri) = uri
+newtype ContentURI = ContentURI { unContentURI :: Text } deriving Eq
 
 instance Show ContentURI where
   show = T.unpack . unContentURI
