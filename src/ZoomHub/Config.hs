@@ -7,11 +7,11 @@ module ZoomHub.Config
   , baseURI
   , contentBaseURI
   , dataPath
+  , dbPath
+  , dbConnection
   , defaultPort
   , encodeId
   , error404
-  , jobs
-  , lastId
   , logger
   , openseadragonScript
   , port
@@ -22,8 +22,8 @@ module ZoomHub.Config
   , version
   ) where
 
-import           Control.Concurrent.STM       (TChan, TVar)
 import qualified Data.ByteString.Lazy         as BL
+import           Database.SQLite.Simple       (Connection)
 import           GHC.Generics                 (Generic)
 import           Network.Wai                  (Middleware)
 import           System.Envy                  (DefConfig, FromEnv, Option (..),
@@ -33,6 +33,8 @@ import           System.Envy                  (DefConfig, FromEnv, Option (..),
 
 import           ZoomHub.Types.BaseURI        (BaseURI)
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
+import           ZoomHub.Types.DatabasePath   (DatabasePath)
+
 
 defaultPort :: Integer
 defaultPort = 8000
@@ -42,10 +44,10 @@ data Config = Config
   , baseURI             :: BaseURI
   , contentBaseURI      :: ContentBaseURI
   , dataPath            :: FilePath
+  , dbPath              :: DatabasePath
+  , dbConnection        :: Connection
   , encodeId            :: Integer -> String
   , error404            :: BL.ByteString
-  , jobs                :: TChan String
-  , lastId              :: TVar Integer
   , logger              :: Middleware
   , openseadragonScript :: String
   , port                :: Integer

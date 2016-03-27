@@ -1,16 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Types.Internal.ContentURISpec
+module ZoomHub.Types.ContentURISpec
   ( main
   , spec
   ) where
 
-import qualified Data.Text                         as T
-import           Servant                           (fromText)
-import           Test.Hspec                        (Spec, describe, hspec, it,
-                                                    shouldBe)
+import qualified Data.Text                as T
+import           Servant                  (fromText)
+import           Test.Hspec               (Spec, describe, hspec, it, shouldBe)
 
-import           ZoomHub.Types.Internal.ContentURI (ContentURI, unContentURI)
+import           ZoomHub.Types.ContentURI (ContentURI, unContentURI)
 
 
 -- International Resource Locator

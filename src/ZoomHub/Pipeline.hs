@@ -13,10 +13,10 @@ import           System.Process                           (callProcess)
 
 import           ZoomHub.Config                           (Config)
 import qualified ZoomHub.Config                           as Config
-import           ZoomHub.Types.Internal.Content           (Content, contentId,
+import           ZoomHub.Types.Content                    (Content, contentId,
                                                            contentUrl)
-import           ZoomHub.Types.Internal.ContentId         (unId)
--- import           ZoomHub.Types.Internal.DeepZoomImage     (DeepZoomImage)
+import           ZoomHub.Types.ContentId                  (unId)
+-- import           ZoomHub.Types.DeepZoomImage     (DeepZoomImage)
 
 
 process :: Config -> Content -> IO Content
@@ -25,13 +25,13 @@ process config content = do
     -- let rawPath = tmpDir </> rawContentId
     let rawPath = tempPath </> rawContentId
     createDirectoryIfMissing False tempPath
-    putStrLn $ "Downloading: " ++ contentUrl content
-    downloadURL (contentUrl content) rawPath
+    putStrLn $ "Downloading: " ++ show (contentUrl content)
+    downloadURL (show (contentUrl content)) rawPath
     putStrLn $ "Creating DZI: " ++ rawContentId
     createDZI rawPath (rawPath <.> ".dzi")
     return content
   where
-    tempPath = (Config.dataPath config) </> "content-raw"
+    tempPath = Config.dataPath config </> "content-raw"
     rawContentId = unId $ contentId content
     -- template = rawContentId ++ "."
 
@@ -44,5 +44,11 @@ downloadURL url dest = do
 -- createDZI ::  FilePath -> FilePath -> IO DeepZoomImage
 createDZI :: FilePath -> FilePath -> IO ()
 createDZI src dest =
-  callProcess "vips" [
-    "dzsave", "--tile-size", "254", src, dest, "--vips-progress"]
+  callProcess "vips"
+    [ "dzsave"
+    , "--tile-size", "254"
+    , "--tile-overlap", "1"
+    , src
+    , dest
+    , "--vips-progress"
+    ]
