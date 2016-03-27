@@ -34,7 +34,7 @@ data DeepZoomImage = DeepZoomImage
   , dziHeight      :: Integer
   , dziTileSize    :: Integer
   , dziTileOverlap :: Integer
-  , dziTileFormat  :: String
+  , dziTileFormat  :: Internal.TileFormat
   } deriving (Eq, Show, Generic)
 
 fromInternal :: ContentBaseURI ->
@@ -57,7 +57,7 @@ mkDeepZoomImage :: DeepZoomImageURI ->
                    Integer ->
                    Integer ->
                    Integer ->
-                   String ->
+                   Internal.TileFormat ->
                    DeepZoomImage
 mkDeepZoomImage uri width height tileSize tileOverlap tileFormat = DeepZoomImage
   { dziUrl = uri

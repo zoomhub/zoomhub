@@ -23,9 +23,9 @@ import           ZoomHub.Types.ContentId        (ContentId)
 import           ZoomHub.Types.ContentState     (ContentState)
 import           ZoomHub.Types.ContentURI       (ContentURI)
 import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage (DeepZoomImage),
-                                                 dziHeight, dziTileFormat,
-                                                 dziTileOverlap, dziTileSize,
-                                                 dziWidth)
+                                                 TileFormat, dziHeight,
+                                                 dziTileFormat, dziTileOverlap,
+                                                 dziTileSize, dziWidth)
 
 data ContentRow = ContentRow
   { crId             :: Maybe Integer
@@ -42,7 +42,7 @@ data ContentRow = ContentRow
   , crDziHeight      :: Maybe Integer
   , crDziTileSize    :: Maybe Integer
   , crDziTileOverlap :: Maybe Integer
-  , crDziTileFormat  :: Maybe String
+  , crDziTileFormat  :: Maybe TileFormat
   } deriving (Show)
 
 instance FromRow ContentRow where
