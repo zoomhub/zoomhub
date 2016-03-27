@@ -31,7 +31,7 @@ process config content = do
     createDZI rawPath (rawPath <.> ".dzi")
     return content
   where
-    tempPath = (Config.dataPath config) </> "content-raw"
+    tempPath = Config.dataPath config </> "content-raw"
     rawContentId = unId $ contentId content
     -- template = rawContentId ++ "."
 
