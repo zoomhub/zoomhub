@@ -26,7 +26,7 @@ import           Web.Hashids                          (encode, hashidsSimple)
 
 import           ZoomHub.API                          (app)
 import           ZoomHub.Config                       (Config (..), defaultPort)
-import           ZoomHub.Logger                       (formatAsJSON)
+import           ZoomHub.Log.RequestLogger            (formatAsJSON)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),

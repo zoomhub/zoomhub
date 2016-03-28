@@ -29,7 +29,7 @@ library
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
-    , ZoomHub.Logger
+    , ZoomHub.Log.RequestLogger
     , ZoomHub.Main
     , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
