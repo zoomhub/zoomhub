@@ -63,6 +63,7 @@ instance FromEnv RackspaceConfig where
 
 -- ExistingContentStatus
 data ExistingContentStatus = ProcessExistingContent | IgnoreExistingContent
+  deriving (Eq, Show)
 
 toExistingContentStatus :: String -> ExistingContentStatus
 toExistingContentStatus "1"    = ProcessExistingContent
@@ -71,6 +72,7 @@ toExistingContentStatus _      = IgnoreExistingContent
 
 -- NewContentStatus
 data NewContentStatus = NewContentAllowed | NewContentDisallowed
+  deriving (Eq, Show)
 
 toNewContentStatus :: String -> NewContentStatus
 toNewContentStatus "1"    = NewContentAllowed
