@@ -1,15 +1,5 @@
 module ZoomHub.Types.Content
-  ( Content(Content)
-  , contentId
-  , contentUrl
-  , contentState
-  , contentInitializedAt
-  , contentActiveAt
-  , contentCompletedAt
-  , contentMime
-  , contentSize
-  , contentProgress
-  , contentDzi
+  ( Content(..)
   ) where
 
 import           Data.Time.Clock             (UTCTime)
