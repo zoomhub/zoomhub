@@ -70,7 +70,7 @@ create conn encode uri = withTransaction conn $ do
       let cId = ContentId.fromInteger show newId
           content = mkContent cId uri
       result <- tryJust (guard . isConstraintError) $
-        execute conn insertQuery (contentToRow content)
+        execute conn insertQuery (contentToRow newId content)
       case result of
         Left  _ -> do
           putStrLn ("Failed to insert ID: " ++ show newId)
@@ -106,7 +106,7 @@ fieldNames =
   ]
 
 fieldNamesWithDefaults :: Set Query
-fieldNamesWithDefaults = Set.fromList ["id", "initializedAt"]
+fieldNamesWithDefaults = Set.fromList ["initializedAt"]
 
 -- Filter out fields with default values
 insertFieldNames :: [Query]
@@ -169,10 +169,8 @@ instance FromRow ContentRow where
 
 instance ToRow ContentRow where
   toRow (ContentRow{..}) =
-    [{-
-      toField crId -- Omitted due to SQLite default value
-    ,-}
-      toField crHashId
+    [ toField crId
+    , toField crHashId
     , toField crUrl
     , toField crState
     -- , toField crInitializedAt -- Omitted due to SQLite default value
@@ -215,9 +213,9 @@ rowToContent cr = Content
         Just DeepZoomImage{..}
       _ -> Nothing
 
-contentToRow :: Content -> ContentRow
-contentToRow c = ContentRow
-    { crId = Nothing
+contentToRow :: Integer -> Content -> ContentRow
+contentToRow id_ c = ContentRow
+    { crId = Just id_
     , crHashId = contentId c
     , crUrl = contentUrl c
     , crState = contentState c
