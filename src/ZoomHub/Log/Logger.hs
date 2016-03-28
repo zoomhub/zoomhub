@@ -11,12 +11,13 @@ module ZoomHub.Log.Logger
   , logError_
   ) where
 
-import           Prelude          hiding (log)
+import           Prelude                    hiding (log)
 
-import           Data.Aeson       (encode, object, (.=))
-import           Data.Aeson.Types (Pair)
-import           Data.Text        (Text)
-import           Data.Time.Clock  (getCurrentTime)
+import           Data.Aeson                 (encode, object, (.=))
+import           Data.Aeson.Types           (Pair)
+import qualified Data.ByteString.Lazy.Char8 as BLC
+import           Data.Text                  (Text)
+import           Data.Time.Clock            (getCurrentTime)
 
 data Level = Debug | Info | Warning | Error deriving Eq
 
@@ -56,7 +57,7 @@ log_ level message = log level message []
 log :: Level -> String -> [Pair] -> IO ()
 log level message meta = do
   now <- getCurrentTime
-  print . encode . object $
+  putStrLn . BLC.unpack . encode . object $
     [ "time" .= now
     , "type" .= ("log" :: Text)
     , "level" .= show level
