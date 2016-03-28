@@ -20,4 +20,5 @@ stanzas:
     env:
       DATA_PATH: '/mnt/datavolume/zoomhub/data'
       DB_PATH: '/mnt/datavolume/zoomhub/data/content.sqlite3'
-      HASHIDS_SALT: 'CHANGE-ME-IN-PRODUCTION'
+    forward-env:
+      - HASHIDS_SALT

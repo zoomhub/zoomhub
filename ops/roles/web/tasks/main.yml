@@ -1,0 +1,5 @@
+---
+- name: Set `HASHIDS_SALT`
+  lineinfile: dest=/home/{{ admin_user }}/.profile
+              line="export HASHIDS_SALT={{ zoomhub_hashids_salt }}"
+              state=present
