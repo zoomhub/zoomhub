@@ -35,7 +35,8 @@ formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
   toLogStr (encode $
     object
-      [ "req" .= requestToJSON duration req reqBody
+      [ "type" .= ("access" :: Text)
+      , "req" .= requestToJSON duration req reqBody
       , "res" .=
       object
         [ "status" .= statusCode status
