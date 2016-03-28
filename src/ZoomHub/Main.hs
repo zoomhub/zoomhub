@@ -106,9 +106,17 @@ main = do
           config = Config{..}
       logInfo_ $ "Welcome to ZoomHub.\
         \ Go to <" ++ show baseURI ++ "> and have fun!"
+      logInfo "Environment"
+        [ "name" .= existingContentStatusEnvName
+        , "value" .= show existingContentStatus
+        ]
+      logInfo "Environment"
+        [ "name" .= newContentStatusEnvName
+        , "value" .= show newContentStatus
+        ]
       case existingContentStatus of
         ProcessExistingContent -> do
-          logInfo_ "Start worker: process existing content"
+          logInfo_ "Worker: Start processing existing content"
           _ <- forkIO (processExistingContent config)
           return ()
         _ -> return ()
