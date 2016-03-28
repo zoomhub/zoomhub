@@ -21,4 +21,6 @@ stanzas:
       DATA_PATH: '/mnt/datavolume/zoomhub/data'
       DB_PATH: '/mnt/datavolume/zoomhub/data/content.sqlite3'
     forward-env:
+      - EXISTING_CONTENT_PROCESSING_ENABLED
       - HASHIDS_SALT
+      - NEW_CONTENT_PROCESSING_ENABLED

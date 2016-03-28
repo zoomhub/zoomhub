@@ -25,7 +25,10 @@ import           System.IO.Error                      (isDoesNotExistError)
 import           Web.Hashids                          (encode, hashidsSimple)
 
 import           ZoomHub.API                          (app)
-import           ZoomHub.Config                       (Config (..), defaultPort)
+import           ZoomHub.Config                       (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed),
+                                                       defaultPort,
+                                                       toExistingContentStatus,
+                                                       toNewContentStatus)
 import           ZoomHub.Log.RequestLogger            (formatAsJSON)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
@@ -35,6 +38,12 @@ import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePat
 -- Environment
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
+
+existingContentStatusEnvName :: String
+existingContentStatusEnvName = "EXISTING_CONTENT_PROCESSING_ENABLED"
+
+newContentStatusEnvName :: String
+newContentStatusEnvName = "NEW_CONTENT_PROCESSING_ENABLED"
 
 dbPathEnvName :: String
 dbPathEnvName = "DB_PATH"
@@ -60,10 +69,16 @@ main = do
   maybeRaxConfig <- decodeEnv
   hostname <- getHostName
   maybeBaseURI <- lookupEnv baseURIEnvName
+  maybeExistingContentStatus <- (fmap . fmap) toExistingContentStatus
+    (lookupEnv existingContentStatusEnvName)
+  maybeNewContentStatus <- (fmap . fmap) toNewContentStatus
+    (lookupEnv newContentStatusEnvName)
   logger <- mkRequestLogger def {
     outputFormat = CustomOutputFormatWithDetails formatAsJSON
   }
-  let acceptNewContent = False
+  let existingContentStatus =
+        fromMaybe IgnoreExistingContent maybeExistingContentStatus
+      newContentStatus = fromMaybe NewContentDisallowed maybeNewContentStatus
       defaultDataPath = currentDirectory </> "data"
       defaultDBPath = DatabasePath $
         currentDirectory </> "data" </> "content-development.sqlite3"

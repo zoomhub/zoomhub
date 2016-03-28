@@ -1,25 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module ZoomHub.Config
-  ( Config(Config)
-  , RackspaceConfig
-  , acceptNewContent
-  , baseURI
-  , contentBaseURI
-  , dataPath
-  , dbPath
-  , dbConnection
+  ( Config(..)
+  , ExistingContentStatus(..)
+  , NewContentStatus(..)
   , defaultPort
-  , encodeId
-  , error404
-  , logger
-  , openseadragonScript
-  , port
-  , publicPath
-  , rackspace
-  , raxApiKey
-  , raxUsername
-  , version
+  , toExistingContentStatus
+  , toNewContentStatus
   ) where
 
 import qualified Data.ByteString.Lazy         as BL
@@ -40,23 +27,24 @@ defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { acceptNewContent    :: Bool
-  , baseURI             :: BaseURI
-  , contentBaseURI      :: ContentBaseURI
-  , dataPath            :: FilePath
-  , dbPath              :: DatabasePath
-  , dbConnection        :: Connection
-  , encodeId            :: Integer -> String
-  , error404            :: BL.ByteString
-  , logger              :: Middleware
-  , openseadragonScript :: String
-  , port                :: Integer
-  , publicPath          :: FilePath
-  , rackspace           :: RackspaceConfig
-  , version             :: String
+  { baseURI               :: BaseURI
+  , contentBaseURI        :: ContentBaseURI
+  , dataPath              :: FilePath
+  , dbConnection          :: Connection
+  , dbPath                :: DatabasePath
+  , encodeId              :: Integer -> String
+  , error404              :: BL.ByteString
+  , existingContentStatus :: ExistingContentStatus
+  , logger                :: Middleware
+  , newContentStatus      :: NewContentStatus
+  , openseadragonScript   :: String
+  , port                  :: Integer
+  , publicPath            :: FilePath
+  , rackspace             :: RackspaceConfig
+  , version               :: String
   }
 
--- Config: Rackspace
+-- Rackspace
 data RackspaceConfig = RackspaceConfig
   { raxUsername :: String -- RACKSPACE_USERNAME
   , raxApiKey   :: String -- RACKSPACE_API_KEY
@@ -72,3 +60,19 @@ instance FromEnv RackspaceConfig where
     { dropPrefixCount=3
     , customPrefix="RACKSPACE"
     }
+
+-- ExistingContentStatus
+data ExistingContentStatus = ProcessExistingContent | IgnoreExistingContent
+
+toExistingContentStatus :: String -> ExistingContentStatus
+toExistingContentStatus "1"    = ProcessExistingContent
+toExistingContentStatus "true" = ProcessExistingContent
+toExistingContentStatus _      = IgnoreExistingContent
+
+-- NewContentStatus
+data NewContentStatus = NewContentAllowed | NewContentDisallowed
+
+toNewContentStatus :: String -> NewContentStatus
+toNewContentStatus "1"    = NewContentAllowed
+toNewContentStatus "true" = NewContentAllowed
+toNewContentStatus _      = NewContentDisallowed
