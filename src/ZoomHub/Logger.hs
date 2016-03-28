@@ -35,17 +35,17 @@ formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
   toLogStr (encode $
     object
-      [ "req"  .= requestToJSON duration req reqBody
+      [ "req" .= requestToJSON duration req reqBody
       , "res" .=
       object
         [ "status" .= statusCode status
-        , "size"   .= responseSize
-        , "body"   .=
+        , "size" .= responseSize
+        , "body" .=
           if statusCode status >= 400
             then Just . decodeUtf8 . BB.toByteString $ response
             else Nothing
         ]
-      , "time"     .= decodeUtf8 date
+      , "time" .= decodeUtf8 date
       ]) <> "\n"
 
 word32ToHostAddress :: Word32 -> Text
