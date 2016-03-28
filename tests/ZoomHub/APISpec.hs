@@ -20,7 +20,7 @@ import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
                                                shouldRespondWith, with, (<:>))
 
 import           ZoomHub.API                  (app)
-import           ZoomHub.Config               (Config (..))
+import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
 import qualified ZoomHub.Config               as Config
 import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI (ContentBaseURI))
@@ -88,16 +88,17 @@ nullLogger = id
 
 config :: Config
 config = Config
-  { acceptNewContent = False
-  , baseURI = BaseURI $ toURI "http://localhost:8000"
+  { baseURI = BaseURI $ toURI "http://localhost:8000"
   , contentBaseURI = ContentBaseURI $ toURI "http://localhost:9000"
   , dataPath = "./data"
-  , dbPath = DatabasePath rawDBPath
   -- TODO: How can we avoid `unsafePerformIO`?
   , dbConnection = unsafePerformIO $ open rawDBPath
+  , dbPath = DatabasePath rawDBPath
   , encodeId = show
   , error404 = "404"
+  , existingContentStatus = IgnoreExistingContent
   , logger = nullLogger
+  , newContentStatus = NewContentDisallowed
   , openseadragonScript = "osd"
   , port = 8000
   , publicPath = "./public"
