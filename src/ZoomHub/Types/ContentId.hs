@@ -18,7 +18,8 @@ import           Data.Aeson                       (FromJSON, ToJSON,
                                                    toJSON)
 import           Data.Aeson.Casing                (aesonPrefix, camelCase)
 import           Data.List                        (intersperse)
-import qualified Data.Set                         as S
+import           Data.Set                         (Set)
+import qualified Data.Set                         as Set
 import qualified Data.Text                        as T
 import           Database.SQLite.Simple           (SQLData (SQLText))
 import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
@@ -54,11 +55,11 @@ fromString s
 validChars :: String
 validChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']
 
-validCharsSet :: S.Set Char
-validCharsSet = S.fromList validChars
+validCharsSet :: Set Char
+validCharsSet = Set.fromList validChars
 
 isValid :: String -> Bool
-isValid = all (`S.member` validCharsSet)
+isValid = all (`Set.member` validCharsSet)
 
 -- Text
 instance FromText ContentId where
