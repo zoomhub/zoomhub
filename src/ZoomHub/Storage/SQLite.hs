@@ -6,6 +6,9 @@ module ZoomHub.Storage.SQLite
   , getById
   , getByURL
   , getNextUnprocessed
+  , markAsActive
+  , markAsFailure
+  , markAsSuccess
   ) where
 
 import           Control.Exception              (tryJust)
@@ -15,9 +18,10 @@ import           Data.Monoid                    ((<>))
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
 import           Data.String                    (IsString (fromString))
-import           Data.Time.Clock                (UTCTime)
-import           Database.SQLite.Simple         (Connection, Only (Only), Query,
-                                                 execute, field, fromOnly,
+import           Data.Time.Clock                (UTCTime, getCurrentTime)
+import           Database.SQLite.Simple         (Connection, NamedParam ((:=)),
+                                                 Only (Only), Query, execute,
+                                                 executeNamed, field, fromOnly,
                                                  query, query_, withTransaction)
 import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField (toField)
@@ -36,7 +40,7 @@ import           ZoomHub.Types.Content          (Content (Content),
                                                  contentUrl, mkContent)
 import           ZoomHub.Types.ContentId        (ContentId, unId)
 import qualified ZoomHub.Types.ContentId        as ContentId
-import           ZoomHub.Types.ContentState     (ContentState)
+import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
 import           ZoomHub.Types.ContentURI       (ContentURI)
 import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage (DeepZoomImage),
                                                  TileFormat, TileOverlap,
@@ -87,6 +91,54 @@ getNextUnprocessed conn =
   get $ query conn ("SELECT * FROM " <> tableName <>
     " WHERE state = ? AND initializedAt IS NULL ORDER BY id ASC LIMIT 1")
     (Only Initialized)
+
+markAsActive :: Connection -> Content -> IO Content
+markAsActive conn content = do
+  now <- getCurrentTime
+  let content' = content
+        { contentState = Active
+        , contentActiveAt = Just now
+        }
+  withTransaction conn $
+    executeNamed conn "UPDATE content \
+      \ SET state = :state, activeAt = :activeAt WHERE hashId = :hashId"
+      [ ":state" := contentState content'
+      , ":activeAt" := contentActiveAt content'
+      , ":hashId" := contentId content'
+      ]
+  return content'
+
+markAsFailure :: Connection -> Content -> IO Content
+markAsFailure conn content = do
+  now <- getCurrentTime
+  let content' = content
+        { contentState = CompletedFailure
+        , contentCompletedAt = Just now
+        }
+  withTransaction conn $
+    executeNamed conn "UPDATE content \
+      \ SET state = :state, completedAt = :completedAt WHERE hashId = :hashId"
+      [ ":state" := contentState content'
+      , ":completedAt" := contentCompletedAt content'
+      , ":hashId" := contentId content'
+      ]
+  return content'
+
+markAsSuccess :: Connection -> Content -> IO Content
+markAsSuccess conn content = do
+  now <- getCurrentTime
+  let content' = content
+        { contentState = CompletedSuccess
+        , contentCompletedAt = Just now
+        }
+  withTransaction conn $
+    executeNamed conn "UPDATE content \
+      \ SET state = :state, completedAt = :completedAt WHERE hashId = :hashId"
+      [ ":state" := contentState content'
+      , ":completedAt" := contentCompletedAt content'
+      , ":hashId" := contentId content'
+      ]
+  return content'
 
 -- Internal
 getBy :: Connection -> String -> String -> IO (Maybe Content)
