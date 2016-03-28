@@ -9,6 +9,7 @@ module ZoomHub.Storage.SQLite
 
 import           Control.Exception              (tryJust)
 import           Control.Monad                  (guard)
+import           Data.Aeson                     ((.=))
 import           Data.Monoid                    ((<>))
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
@@ -23,6 +24,7 @@ import           Database.SQLite.Simple.ToRow   (ToRow, toRow)
 import           Database.SQLite3               (Error (ErrorConstraint),
                                                  SQLError (..))
 
+import           ZoomHub.Log.Logger             (logWarning)
 import           ZoomHub.Types.Content          (Content (Content),
                                                  contentActiveAt,
                                                  contentCompletedAt, contentDzi,
@@ -44,7 +46,7 @@ import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
 create :: Connection -> (Integer -> String) -> ContentURI -> IO Content
-create conn encode uri = withTransaction conn $ do
+create conn encodeId uri = withTransaction conn $ do
     (rowId:_) <- query_ conn lastContentRowInsertIdQuery :: IO [Only Integer]
     let newId = toInteger (fromOnly rowId) + 1
     insertWith newId
@@ -57,13 +59,19 @@ create conn encode uri = withTransaction conn $ do
         execute conn insertQuery (contentToRow newId content)
       case result of
         Left  _ -> do
-          putStrLn ("Failed to insert ID: " ++ show newId)
+          -- TODO: Implement proper logging:
+          logWarnExistingId newId cId
           insertWith (newId + 1)
         Right _ -> return content
 
     isConstraintError :: SQLError -> Bool
     isConstraintError (SQLError ErrorConstraint _ _) = True
     isConstraintError _ = True
+
+    logWarnExistingId :: Integer -> ContentId -> IO ()
+    logWarnExistingId nId cId =
+      logWarning "Failed to insert ID because it already exists" [
+        "id" .= nId, "hashId" .= cId]
 
 getById :: Connection -> ContentId -> IO (Maybe Content)
 getById conn cId =
