@@ -53,7 +53,7 @@ create conn encodeId uri = withTransaction conn $ do
   where
     insertWith :: Integer -> IO Content
     insertWith newId = do
-      let cId = ContentId.fromInteger show newId
+      let cId = ContentId.fromInteger encodeId newId
           content = mkContent cId uri
       result <- tryJust (guard . isConstraintError) $
         execute conn insertQuery (contentToRow newId content)
