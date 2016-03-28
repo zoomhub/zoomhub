@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS content (
-  id integer PRIMARY KEY,
+  id integer PRIMARY KEY AUTOINCREMENT,
   hashId text UNIQUE NOT NULL,
   url text UNIQUE NOT NULL,
   state text NOT NULL DEFAULT('initialized'),
