@@ -42,7 +42,8 @@ import           ZoomHub.Config                       (Config)
 import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
-import           ZoomHub.Storage.SQLite               (getById, getByURL)
+import           ZoomHub.Storage.SQLite               (create, getById,
+                                                       getByURL)
 import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content                as Internal
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
@@ -133,7 +134,7 @@ server config =
     -- API: RESTful
     :<|> restContentById baseURI contentBaseURI dbConn
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbConn
+    :<|> restContentByURL baseURI dbConn encodeId
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI dbConn viewerScript
@@ -148,6 +149,7 @@ server config =
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dbConn = Config.dbConnection config
+    encodeId = Config.encodeId config
     publicPath = Config.publicPath config
     viewerScript = Config.openseadragonScript config
 
@@ -232,11 +234,17 @@ restInvalidContentId :: String -> Handler Content
 restInvalidContentId contentId =
   left . API.error404 $ noContentWithIdMessage contentId
 
-restContentByURL :: BaseURI -> Connection -> ContentURI -> Handler Content
-restContentByURL baseURI dbConn url = do
+restContentByURL :: BaseURI ->
+                    Connection ->
+                    (Integer -> String) ->
+                    ContentURI ->
+                    Handler Content
+restContentByURL baseURI dbConn encodeId url = do
   maybeContent <- liftIO $ getByURL dbConn url
   case maybeContent of
-    Nothing      -> noNewContentErrorAPI
+    Nothing      -> do
+      newContent <- liftIO $ create dbConn encodeId url
+      redirectToAPI baseURI (Internal.contentId newContent)
     Just content -> redirectToAPI baseURI (Internal.contentId content)
 
 restInvalidRequest :: Maybe String -> Handler Content
