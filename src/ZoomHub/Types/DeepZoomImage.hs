@@ -57,7 +57,12 @@ instance FromField TileSize where
 
 -- Tile overlap
 data TileOverlap = TileOverlap0 | TileOverlap1
-  deriving (Bounded, Enum, Eq, Show)
+  deriving (Bounded, Enum, Eq)
+
+-- Tile overlap: Show
+instance Show TileOverlap where
+  show TileOverlap0 = "0"
+  show TileOverlap1 = "1"
 
 -- Tile overlap: JSON
 instance ToJSON TileOverlap where
