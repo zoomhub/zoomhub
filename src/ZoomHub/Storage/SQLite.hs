@@ -5,6 +5,7 @@ module ZoomHub.Storage.SQLite
   ( create
   , getById
   , getByURL
+  , getNextUnprocessed
   ) where
 
 import           Control.Exception              (tryJust)
@@ -80,6 +81,11 @@ getById conn cId =
 getByURL :: Connection -> ContentURI -> IO (Maybe Content)
 getByURL conn uri =
   getBy conn "url" (show uri)
+
+getNextUnprocessed :: Connection -> IO (Maybe Content)
+getNextUnprocessed conn =
+  get $ query_ conn ("SELECT * FROM " <> tableName <>
+    " WHERE initializedAt IS NULL ORDER BY id ASC LIMIT 1")
 
 -- Internal
 getBy :: Connection -> String -> String -> IO (Maybe Content)
