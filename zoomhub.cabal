@@ -68,6 +68,7 @@ library
     , containers
     , cryptonite == 0.10.*
     , data-default
+    , direct-sqlite
     , directory
     , either
     , envy
