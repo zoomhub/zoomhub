@@ -66,7 +66,7 @@ create conn encodeId uri = withTransaction conn $ do
 
     isConstraintError :: SQLError -> Bool
     isConstraintError (SQLError ErrorConstraint _ _) = True
-    isConstraintError _ = True
+    isConstraintError _ = False
 
     logWarnExistingId :: Integer -> ContentId -> IO ()
     logWarnExistingId nId cId =
