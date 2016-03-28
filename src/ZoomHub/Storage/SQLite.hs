@@ -43,22 +43,6 @@ import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage (DeepZoomImage),
 import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
-getById :: Connection -> ContentId -> IO (Maybe Content)
-getById conn cId =
-  getBy conn "hashId" (unId cId)
-
-getByURL :: Connection -> ContentURI -> IO (Maybe Content)
-getByURL conn uri =
-  getBy conn "url" (show uri)
-
--- Internal
-getBy :: Connection -> String -> String -> IO (Maybe Content)
-getBy conn fieldName param = do
-  results <- query conn (queryFor fieldName) (Only param)
-  case results of
-    (r:_) -> return . Just . rowToContent $ r
-    _     -> return Nothing
-
 create :: Connection -> (Integer -> String) -> ContentURI -> IO Content
 create conn encode uri = withTransaction conn $ do
     (rowId:_) <- query_ conn lastContentRowInsertIdQuery :: IO [Only Integer]
@@ -80,6 +64,22 @@ create conn encode uri = withTransaction conn $ do
     isConstraintError :: SQLError -> Bool
     isConstraintError (SQLError ErrorConstraint _ _) = True
     isConstraintError _ = True
+
+getById :: Connection -> ContentId -> IO (Maybe Content)
+getById conn cId =
+  getBy conn "hashId" (unId cId)
+
+getByURL :: Connection -> ContentURI -> IO (Maybe Content)
+getByURL conn uri =
+  getBy conn "url" (show uri)
+
+-- Internal
+getBy :: Connection -> String -> String -> IO (Maybe Content)
+getBy conn fieldName param = do
+  results <- query conn (queryFor fieldName) (Only param)
+  case results of
+    (r:_) -> return . Just . rowToContent $ r
+    _     -> return Nothing
 
 tableName :: Query
 tableName = "content"
