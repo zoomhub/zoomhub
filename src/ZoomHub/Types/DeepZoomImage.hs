@@ -29,7 +29,12 @@ data DeepZoomImage = DeepZoomImage
 
 -- Tile size
 data TileSize = TileSize254 | TileSize256 | TileSize1024
-  deriving (Bounded, Enum, Eq, Show)
+  deriving (Bounded, Enum, Eq)
+
+instance Show TileSize where
+  show TileSize254 = "254"
+  show TileSize256 = "256"
+  show TileSize1024 = "1024"
 
 -- Tile size: JSON
 instance ToJSON TileSize where
