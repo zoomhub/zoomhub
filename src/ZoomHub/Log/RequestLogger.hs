@@ -1,7 +1,7 @@
 -- Adapted from: https://git.io/v27pJ
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Logger (formatAsJSON) where
+module ZoomHub.Log.RequestLogger (formatAsJSON) where
 
 import qualified Blaze.ByteString.Builder             as BB
 import           Data.Aeson                           (ToJSON, Value (String),
