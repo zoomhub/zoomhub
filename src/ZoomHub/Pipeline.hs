@@ -16,7 +16,7 @@ import qualified ZoomHub.Config                           as Config
 import           ZoomHub.Types.Content                    (Content, contentId,
                                                            contentUrl)
 import           ZoomHub.Types.ContentId                  (unId)
--- import           ZoomHub.Types.DeepZoomImage     (DeepZoomImage)
+import           ZoomHub.Types.DeepZoomImage              (TileOverlap (TileOverlap1), TileSize (TileSize254))
 
 
 process :: Config -> Content -> IO Content
@@ -46,8 +46,8 @@ createDZI :: FilePath -> FilePath -> IO ()
 createDZI src dest =
   callProcess "vips"
     [ "dzsave"
-    , "--tile-size", "254"
-    , "--tile-overlap", "1"
+    , "--tile-size", show TileSize254
+    , "--tile-overlap", show TileOverlap1
     , src
     , dest
     , "--vips-progress"
