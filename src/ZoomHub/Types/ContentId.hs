@@ -58,7 +58,7 @@ validCharsSet :: S.Set Char
 validCharsSet = S.fromList validChars
 
 isValid :: String -> Bool
-isValid = all ((flip S.member) validCharsSet)
+isValid = all (`S.member` validCharsSet)
 
 -- Text
 instance FromText ContentId where
