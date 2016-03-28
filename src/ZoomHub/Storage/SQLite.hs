@@ -58,7 +58,7 @@ create conn encodeId uri = withTransaction conn $ do
       result <- tryJust (guard . isConstraintError) $
         execute conn insertQuery (contentToRow newId content)
       case result of
-        Left  _ -> do
+        Left _ -> do
           -- TODO: Implement proper logging:
           logWarnExistingId newId cId
           insertWith (newId + 1)
