@@ -38,7 +38,7 @@ import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse,
                                                        mkNonRESTful400,
                                                        mkNonRESTful404,
                                                        mkNonRESTful503)
-import           ZoomHub.Config                       (Config)
+import           ZoomHub.Config                       (Config, NewContentStatus(NewContentAllowed))
 import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
@@ -134,7 +134,7 @@ server config =
     -- API: RESTful
     :<|> restContentById baseURI contentBaseURI dbConn
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbConn encodeId
+    :<|> restContentByURL baseURI dbConn encodeId newContentStatus
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI dbConn viewerScript
@@ -150,6 +150,7 @@ server config =
     contentBaseURI = Config.contentBaseURI config
     dbConn = Config.dbConnection config
     encodeId = Config.encodeId config
+    newContentStatus = Config.newContentStatus config
     publicPath = Config.publicPath config
     viewerScript = Config.openseadragonScript config
 
@@ -237,13 +238,16 @@ restInvalidContentId contentId =
 restContentByURL :: BaseURI ->
                     Connection ->
                     (Integer -> String) ->
+                    NewContentStatus ->
                     ContentURI ->
                     Handler Content
-restContentByURL baseURI dbConn encodeId url = do
+restContentByURL baseURI dbConn encodeId newContentStatus url = do
   maybeContent <- liftIO $ getByURL dbConn url
   case maybeContent of
     Nothing      -> do
-      newContent <- liftIO $ create dbConn encodeId url
+      newContent <- case newContentStatus of
+        NewContentAllowed -> liftIO $ create dbConn encodeId url
+        _ -> noNewContentErrorAPI
       redirectToAPI baseURI (Internal.contentId newContent)
     Just content -> redirectToAPI baseURI (Internal.contentId content)
 
