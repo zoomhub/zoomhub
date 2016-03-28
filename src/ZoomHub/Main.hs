@@ -3,6 +3,7 @@
 
 module ZoomHub.Main (main) where
 
+import           Control.Concurrent                   (forkIO)
 import           Control.Exception                    (tryJust)
 import           Control.Monad                        (guard, unless)
 import           Data.Aeson                           ((.=))
@@ -26,7 +27,7 @@ import           System.IO.Error                      (isDoesNotExistError)
 import           Web.Hashids                          (encode, hashidsSimple)
 
 import           ZoomHub.API                          (app)
-import           ZoomHub.Config                       (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed),
+import           ZoomHub.Config                       (Config (..), ExistingContentStatus (ProcessExistingContent, IgnoreExistingContent), NewContentStatus (NewContentDisallowed),
                                                        defaultPort,
                                                        toExistingContentStatus,
                                                        toNewContentStatus)
@@ -36,6 +37,7 @@ import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
                                                        unDatabasePath)
+import           ZoomHub.Worker                       (processExistingContent)
 
 -- Environment
 baseURIEnvName :: String
@@ -104,6 +106,12 @@ main = do
           config = Config{..}
       logInfo_ $ "Welcome to ZoomHub.\
         \ Go to <" ++ show baseURI ++ "> and have fun!"
+      case existingContentStatus of
+        ProcessExistingContent -> do
+          logInfo_ "Start worker: process existing content"
+          _ <- forkIO (processExistingContent config)
+          return ()
+        _ -> return ()
       logInfo "Start web server" ["port" .= port]
       run (fromIntegral port) (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
