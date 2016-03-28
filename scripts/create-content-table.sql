@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS content (
   id integer PRIMARY KEY AUTOINCREMENT,
   hashId text UNIQUE NOT NULL,
   url text UNIQUE NOT NULL,
-  state text NOT NULL DEFAULT('initialized'),
+  state text NOT NULL,
   initializedAt datetime DEFAULT(CURRENT_TIMESTAMP),
   activeAt datetime,
   completedAt datetime,
