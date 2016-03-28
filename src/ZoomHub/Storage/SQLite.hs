@@ -84,8 +84,9 @@ getByURL conn uri =
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
 getNextUnprocessed conn =
-  get $ query_ conn ("SELECT * FROM " <> tableName <>
-    " WHERE initializedAt IS NULL ORDER BY id ASC LIMIT 1")
+  get $ query conn ("SELECT * FROM " <> tableName <>
+    " WHERE state = ? AND initializedAt IS NULL ORDER BY id ASC LIMIT 1")
+    (Only Initialized)
 
 -- Internal
 getBy :: Connection -> String -> String -> IO (Maybe Content)
