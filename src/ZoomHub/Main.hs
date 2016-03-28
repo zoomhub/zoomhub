@@ -5,6 +5,7 @@ module ZoomHub.Main (main) where
 
 import           Control.Exception                    (tryJust)
 import           Control.Monad                        (guard, unless)
+import           Data.Aeson                           ((.=))
 import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
@@ -29,6 +30,7 @@ import           ZoomHub.Config                       (Config (..), ExistingCont
                                                        defaultPort,
                                                        toExistingContentStatus,
                                                        toNewContentStatus)
+import           ZoomHub.Log.Logger                   (logInfo, logInfo_)
 import           ZoomHub.Log.RequestLogger            (formatAsJSON)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
@@ -100,8 +102,9 @@ main = do
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
           config = Config{..}
-      putStrLn $ "{\"message\": \"Welcome to ZoomHub." ++
-        " Go to <" ++ show baseURI ++ "> and have fun!\"}"
+      logInfo_ $ "Welcome to ZoomHub.\
+        \ Go to <" ++ show baseURI ++ "> and have fun!"
+      logInfo "Start web server" ["port" .= port]
       run (fromIntegral port) (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
       "` environment variable.\nThis secret salt enables ZoomHub to encode" ++
