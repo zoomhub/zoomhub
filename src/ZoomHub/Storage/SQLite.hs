@@ -83,8 +83,12 @@ getByURL conn uri =
 
 -- Internal
 getBy :: Connection -> String -> String -> IO (Maybe Content)
-getBy conn fieldName param = do
-  results <- query conn (queryFor fieldName) (Only param)
+getBy conn fieldName param =
+  get $ query conn (queryFor fieldName) (Only param)
+
+get :: IO [ContentRow] -> IO (Maybe Content)
+get queryAction = do
+  results <- queryAction
   case results of
     (r:_) -> return . Just . rowToContent $ r
     _     -> return Nothing
