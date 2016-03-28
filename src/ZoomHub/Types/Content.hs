@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ZoomHub.Types.Content
   ( Content(Content)
   , contentId
