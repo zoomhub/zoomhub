@@ -88,8 +88,8 @@ getByURL conn uri =
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
 getNextUnprocessed conn =
-  get $ query conn ("SELECT * FROM " <> tableName <>
-    " WHERE state = ? AND initializedAt IS NULL ORDER BY id ASC LIMIT 1")
+  get $ query conn "SELECT * FROM content WHERE state = ? AND\
+    \ initializedAt IS NULL ORDER BY id ASC LIMIT 1"
     (Only Initialized)
 
 markAsActive :: Connection -> Content -> IO Content
@@ -152,9 +152,6 @@ get queryAction = do
     (r:_) -> return . Just . rowToContent $ r
     _     -> return Nothing
 
-tableName :: Query
-tableName = "content"
-
 -- IMPORTANT:
 -- The order of field names MUST match the definition of `ContentRow`:
 fieldNames :: [Query]
@@ -185,13 +182,13 @@ insertFieldNames =
   filter (`Set.notMember` fieldNamesWithDefaults) fieldNames
 
 queryFor :: String -> Query
-queryFor fieldName = "SELECT " <> columns <> " FROM " <> tableName <> "\
+queryFor fieldName = "SELECT " <> columns <> " FROM content\
     \ WHERE " <> fromString fieldName <> " = ?"
   where
     columns = intercalate ", " fieldNames
 
 insertQuery :: Query
-insertQuery = "INSERT INTO " <> tableName <> " (" <> columns <> ")\
+insertQuery = "INSERT INTO content (" <> columns <> ")\
     \ VALUES (" <> placeholders <> ")"
   where
     names = insertFieldNames
@@ -200,7 +197,7 @@ insertQuery = "INSERT INTO " <> tableName <> " (" <> columns <> ")\
 
 lastContentRowInsertIdQuery :: Query
 lastContentRowInsertIdQuery =
-  "SELECT seq FROM sqlite_sequence WHERE name=\"" <> tableName <> "\""
+  "SELECT seq FROM sqlite_sequence WHERE name=\"content\""
 
 data ContentRow = ContentRow
   { crId             :: Maybe Integer
