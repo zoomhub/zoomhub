@@ -40,6 +40,7 @@ import           ZoomHub.Types.Content          (Content (Content),
                                                  contentURL, mkContent)
 import           ZoomHub.Types.ContentId        (ContentId, unId)
 import qualified ZoomHub.Types.ContentId        as ContentId
+import           ZoomHub.Types.ContentMIME      (ContentMIME)
 import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
 import           ZoomHub.Types.ContentURI       (ContentURI)
 import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage (DeepZoomImage),
@@ -124,19 +125,46 @@ markAsFailure conn content = do
       ]
   return content'
 
-markAsSuccess :: Connection -> Content -> IO Content
-markAsSuccess conn content = do
+markAsSuccess :: Connection ->
+                 Content ->
+                 DeepZoomImage ->
+                 Maybe ContentMIME ->
+                 Integer ->
+                 IO Content
+markAsSuccess conn content dzi maybeMIME size = do
   now <- getCurrentTime
   let content' = content
         { contentState = CompletedSuccess
         , contentCompletedAt = Just now
+        , contentMIME = maybeMIME
+        , contentSize = Just size
+        , contentProgress = 1.0
+        , contentDZI = Just dzi
         }
   withTransaction conn $
     executeNamed conn "UPDATE content \
-      \ SET state = :state, completedAt = :completedAt WHERE hashId = :hashId"
-      [ ":state" := contentState content'
+      \ SET state = :state\
+      \   , completedAt = :completedAt\
+      \   , mime = :mime\
+      \   , size = :size\
+      \   , progress = :progress\
+      \   , dzi_width = :dzi_width\
+      \   , dzi_height = :dzi_height\
+      \   , dzi_tileSize = :dzi_tileSize\
+      \   , dzi_tileOverlap = :dzi_tileOverlap\
+      \   , dzi_tileFormat = :dzi_tileFormat\
+      \ WHERE hashId = :hashId"
+      [ ":hashId" := contentId content'
+      , ":state" := contentState content'
       , ":completedAt" := contentCompletedAt content'
-      , ":hashId" := contentId content'
+      , ":mime" := contentMIME content'
+      , ":size" := contentSize content'
+      , ":progress" := contentProgress content'
+      , ":dzi_width" := Just (dziWidth dzi)
+      , ":dzi_height" := Just (dziHeight dzi)
+      , ":dzi_tileSize" := Just (dziTileSize dzi)
+      , ":dzi_tileOverlap" := Just (dziTileOverlap dzi)
+      , ":dzi_tileFormat" := Just (dziTileFormat dzi)
       ]
   return content'
 
