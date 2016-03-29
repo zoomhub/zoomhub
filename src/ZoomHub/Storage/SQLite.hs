@@ -207,7 +207,7 @@ data ContentRow = ContentRow
   , crInitializedAt  :: Maybe UTCTime
   , crActiveAt       :: Maybe UTCTime
   , crCompletedAt    :: Maybe UTCTime
-  , crMIME           :: Maybe String
+  , crMIME           :: Maybe ContentMIME
   , crSize           :: Maybe Integer
   , crProgress       :: Float
   , crDZIWidth       :: Maybe Integer
