@@ -82,5 +82,5 @@ instance FromField ContentId where
   fromField f@(Field (SQLText t) _) =
     case fromText t of
       Just r  -> Ok r
-      Nothing -> returnError ConversionFailed f "Invalid `ContentId`"
-  fromField f = returnError ConversionFailed f "Invalid `ContentId`"
+      Nothing -> returnError ConversionFailed f "invalid content ID"
+  fromField f = returnError ConversionFailed f "invalid content ID"
