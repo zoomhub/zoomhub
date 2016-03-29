@@ -53,7 +53,7 @@ instance FromField TileSize where
   fromField (Field (SQLInteger 256) _) = Ok TileSize256
   fromField (Field (SQLInteger 1024) _) = Ok TileSize1024
   fromField f =
-    returnError ConversionFailed f "Invalid Deep Zoom image tile size"
+    returnError ConversionFailed f "invalid Deep Zoom image tile size"
 
 -- Tile overlap
 data TileOverlap = TileOverlap0 | TileOverlap1
@@ -78,7 +78,7 @@ instance FromField TileOverlap where
   fromField (Field (SQLInteger 1) _) = Ok TileOverlap1
   fromField (Field (SQLInteger 0) _) = Ok TileOverlap0
   fromField f =
-    returnError ConversionFailed f "Invalid Deep Zoom image tile overlap"
+    returnError ConversionFailed f "invalid Deep Zoom image tile overlap"
 
 -- Tile format
 data TileFormat = JPEG | PNG deriving Eq
@@ -99,4 +99,4 @@ instance FromField TileFormat where
   fromField (Field (SQLText "jpg") _) = Ok JPEG
   fromField (Field (SQLText "png") _) = Ok PNG
   fromField f =
-    returnError ConversionFailed f "Invalid Deep Zoom image tile format"
+    returnError ConversionFailed f "invalid Deep Zoom image tile format"
