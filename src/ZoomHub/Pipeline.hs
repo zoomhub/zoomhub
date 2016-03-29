@@ -12,6 +12,9 @@ import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import           System.Directory                         (createDirectoryIfMissing)
 import           System.FilePath.Posix                    ((<.>), (</>))
 -- import           System.IO.Temp
+import           Codec.MIME.Parse                         (parseMIMEType)
+import           System.Posix                             (fileSize,
+                                                           getFileStatus)
 import           System.Process                           (callProcess)
 
 import           ZoomHub.Config                           (Config)
@@ -22,14 +25,23 @@ import           ZoomHub.Storage.SQLite                   (markAsActive,
 import           ZoomHub.Types.Content                    (Content, contentId,
                                                            contentURL)
 import           ZoomHub.Types.ContentId                  (unId)
+import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
 import           ZoomHub.Types.ContentURI                 (ContentURI)
-import           ZoomHub.Types.DeepZoomImage              (TileOverlap (TileOverlap1), TileSize (TileSize254))
+import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage (DeepZoomImage),
+                                                           TileFormat (JPEG), TileOverlap (TileOverlap1), TileSize (TileSize254),
+                                                           dziHeight,
+                                                           dziTileFormat,
+                                                           dziTileOverlap,
+                                                           dziTileSize,
+                                                           dziWidth)
 
 process :: Config -> Content -> IO Content
 process config content = do
   -- withTempDirectory tempPath template $ \tmpDir -> do
     -- let rawPath = tmpDir </> rawContentId
     let rawPath = tempPath </> rawContentId
+        dziPath = rawPath <.> ".dzi"
+
     createDirectoryIfMissing False tempPath
 
     logInfo "Mark content as active" ["id" .= contentId content]
@@ -41,16 +53,28 @@ process config content = do
       ]
     downloadURL (contentURL content) rawPath
 
-    logInfo "Create DZI" ["contentId" .= contentId content]
-    createDZI rawPath (rawPath <.> ".dzi")
-
-    logInfo "Set content state: 'completed:success'"
-      ["contentId" .= contentId content]
-    markAsSuccess (Config.dbConnection config) activeContent
+    logInfo "Create DZI" ["id" .= contentId content]
+    createDZI rawPath dziPath
+    -- TODO: Implement DZI parsing from output file:
+    let dzi = DeepZoomImage
+              { dziWidth = 1024
+              , dziHeight = 1024
+              , dziTileOverlap = TileOverlap1
+              , dziTileFormat = JPEG
+              , dziTileSize = TileSize254
+              }
+        maybeMime = ContentMIME <$> parseMIMEType "image/jpeg"
+    rawSize <- getFileSize rawPath
+    logInfo "Mark content as successfully completed" ["id" .= contentId content]
+    markAsSuccess conn activeContent dzi maybeMime rawSize
   where
+    conn = Config.dbConnection config
     tempPath = Config.dataPath config </> "content-raw"
     rawContentId = unId $ contentId content
     -- template = rawContentId ++ "."
+
+    getFileSize :: FilePath -> IO Integer
+    getFileSize path = (toInteger . fileSize) <$> getFileStatus path
 
 downloadURL :: ContentURI -> FilePath -> IO ()
 downloadURL url dest = do
