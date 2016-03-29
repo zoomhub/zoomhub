@@ -20,7 +20,7 @@ import           ZoomHub.Log.Logger                       (logInfo)
 import           ZoomHub.Storage.SQLite                   (markAsActive,
                                                            markAsSuccess)
 import           ZoomHub.Types.Content                    (Content, contentId,
-                                                           contentUrl)
+                                                           contentURL)
 import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentURI                 (ContentURI)
 import           ZoomHub.Types.DeepZoomImage              (TileOverlap (TileOverlap1), TileSize (TileSize254))
@@ -37,9 +37,9 @@ process config content = do
 
     logInfo "Download content"
       [ "id" .= contentId content
-      , "url" .= contentUrl content
+      , "url" .= contentURL content
       ]
-    downloadURL (contentUrl content) rawPath
+    downloadURL (contentURL content) rawPath
 
     logInfo "Create DZI" ["contentId" .= contentId content]
     createDZI rawPath (rawPath <.> ".dzi")

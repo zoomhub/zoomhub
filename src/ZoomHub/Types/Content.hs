@@ -13,27 +13,27 @@ import           ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 -- Content
 data Content = Content
   { contentId            :: ContentId
-  , contentUrl           :: ContentURI
+  , contentURL           :: ContentURI
   , contentState         :: ContentState
   , contentInitializedAt :: Maybe UTCTime
   , contentActiveAt      :: Maybe UTCTime
   , contentCompletedAt   :: Maybe UTCTime
-  , contentMime          :: Maybe String -- TODO: Use proper MIME type
+  , contentMIME          :: Maybe String -- TODO: Use proper MIME type
   , contentSize          :: Maybe Integer
   , contentProgress      :: Float
-  , contentDzi           :: Maybe DeepZoomImage
+  , contentDZI           :: Maybe DeepZoomImage
   } deriving (Eq, Show)
 
 mkContent :: ContentId -> ContentURI -> Content
 mkContent cId uri = Content
   { contentId = cId
-  , contentUrl = uri
+  , contentURL = uri
   , contentState = Initialized
   , contentInitializedAt = Nothing
   , contentActiveAt = Nothing
   , contentCompletedAt = Nothing
-  , contentMime = Nothing
+  , contentMIME = Nothing
   , contentSize = Nothing
   , contentProgress = 0.0
-  , contentDzi = Nothing
+  , contentDZI = Nothing
   }

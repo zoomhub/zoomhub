@@ -32,12 +32,12 @@ import           Database.SQLite3               (Error (ErrorConstraint),
 import           ZoomHub.Log.Logger             (logWarning)
 import           ZoomHub.Types.Content          (Content (Content),
                                                  contentActiveAt,
-                                                 contentCompletedAt, contentDzi,
+                                                 contentCompletedAt, contentDZI,
                                                  contentId,
                                                  contentInitializedAt,
-                                                 contentMime, contentProgress,
+                                                 contentMIME, contentProgress,
                                                  contentSize, contentState,
-                                                 contentUrl, mkContent)
+                                                 contentURL, mkContent)
 import           ZoomHub.Types.ContentId        (ContentId, unId)
 import qualified ZoomHub.Types.ContentId        as ContentId
 import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
@@ -202,19 +202,19 @@ lastContentRowInsertIdQuery =
 data ContentRow = ContentRow
   { crId             :: Maybe Integer
   , crHashId         :: ContentId
-  , crUrl            :: ContentURI
+  , crURL            :: ContentURI
   , crState          :: ContentState
   , crInitializedAt  :: Maybe UTCTime
   , crActiveAt       :: Maybe UTCTime
   , crCompletedAt    :: Maybe UTCTime
-  , crMime           :: Maybe String
+  , crMIME           :: Maybe String
   , crSize           :: Maybe Integer
   , crProgress       :: Float
-  , crDziWidth       :: Maybe Integer
-  , crDziHeight      :: Maybe Integer
-  , crDziTileSize    :: Maybe TileSize
-  , crDziTileOverlap :: Maybe TileOverlap
-  , crDziTileFormat  :: Maybe TileFormat
+  , crDZIWidth       :: Maybe Integer
+  , crDZIHeight      :: Maybe Integer
+  , crDZITileSize    :: Maybe TileSize
+  , crDZITileOverlap :: Maybe TileOverlap
+  , crDZITileFormat  :: Maybe TileFormat
   } deriving (Show)
 
 instance FromRow ContentRow where
@@ -239,40 +239,40 @@ instance ToRow ContentRow where
   toRow (ContentRow{..}) =
     [ toField crId
     , toField crHashId
-    , toField crUrl
+    , toField crURL
     , toField crState
     -- , toField crInitializedAt -- Omitted due to SQLite default value
     , toField crActiveAt
     , toField crCompletedAt
-    , toField crMime
+    , toField crMIME
     , toField crSize
     , toField crProgress
-    , toField crDziWidth
-    , toField crDziHeight
-    , toField crDziTileSize
-    , toField crDziTileOverlap
-    , toField crDziTileFormat
+    , toField crDZIWidth
+    , toField crDZIHeight
+    , toField crDZITileSize
+    , toField crDZITileOverlap
+    , toField crDZITileFormat
     ]
 
 rowToContent :: ContentRow -> Content
 rowToContent cr = Content
     { contentId = crHashId cr
-    , contentUrl = crUrl cr
+    , contentURL = crURL cr
     , contentState = crState cr
     , contentInitializedAt = crInitializedAt cr
     , contentActiveAt = crActiveAt cr
     , contentCompletedAt = crCompletedAt cr
-    , contentMime = crMime cr
+    , contentMIME = crMIME cr
     , contentSize = crSize cr
     , contentProgress = crProgress cr
-    , contentDzi = maybeDZI
+    , contentDZI = maybeDZI
     }
   where
-    maybeDZIWidth = crDziWidth cr
-    maybeDZIHeight = crDziHeight cr
-    maybeDZITileSize = crDziTileSize cr
-    maybeDZITileOverlap = crDziTileOverlap cr
-    maybeDZITileFormat = crDziTileFormat cr
+    maybeDZIWidth = crDZIWidth cr
+    maybeDZIHeight = crDZIHeight cr
+    maybeDZITileSize = crDZITileSize cr
+    maybeDZITileOverlap = crDZITileOverlap cr
+    maybeDZITileFormat = crDZITileFormat cr
     maybeDZI =
       case (maybeDZIWidth, maybeDZIHeight, maybeDZITileSize,
             maybeDZITileOverlap, maybeDZITileFormat) of
@@ -285,18 +285,18 @@ contentToRow :: Integer -> Content -> ContentRow
 contentToRow id_ c = ContentRow
     { crId = Just id_
     , crHashId = contentId c
-    , crUrl = contentUrl c
+    , crURL = contentURL c
     , crState = contentState c
     , crInitializedAt = contentInitializedAt c
     , crActiveAt = contentActiveAt c
     , crCompletedAt = contentCompletedAt c
-    , crMime = contentMime c
+    , crMIME = contentMIME c
     , crSize = contentSize c
     , crProgress = contentProgress c
-    , crDziWidth = dziWidth <$> dzi
-    , crDziHeight = dziHeight <$> dzi
-    , crDziTileSize = dziTileSize <$> dzi
-    , crDziTileOverlap = dziTileOverlap  <$> dzi
-    , crDziTileFormat = dziTileFormat  <$> dzi
+    , crDZIWidth = dziWidth <$> dzi
+    , crDZIHeight = dziHeight <$> dzi
+    , crDZITileSize = dziTileSize <$> dzi
+    , crDZITileOverlap = dziTileOverlap  <$> dzi
+    , crDZITileFormat = dziTileFormat  <$> dzi
     }
-  where dzi = contentDzi c
+  where dzi = contentDZI c
