@@ -6,6 +6,7 @@ module ZoomHub.Types.Content
 import           Data.Time.Clock             (UTCTime)
 
 import           ZoomHub.Types.ContentId     (ContentId)
+import           ZoomHub.Types.ContentMIME   (ContentMIME)
 import           ZoomHub.Types.ContentState  (ContentState (Initialized))
 import           ZoomHub.Types.ContentURI    (ContentURI)
 import           ZoomHub.Types.DeepZoomImage (DeepZoomImage)
@@ -18,7 +19,7 @@ data Content = Content
   , contentInitializedAt :: Maybe UTCTime
   , contentActiveAt      :: Maybe UTCTime
   , contentCompletedAt   :: Maybe UTCTime
-  , contentMIME          :: Maybe String -- TODO: Use proper MIME type
+  , contentMIME          :: Maybe ContentMIME
   , contentSize          :: Maybe Integer
   , contentProgress      :: Float
   , contentDZI           :: Maybe DeepZoomImage
