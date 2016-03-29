@@ -16,12 +16,11 @@ CREATE TABLE IF NOT EXISTS content (
   dzi_tileFormat text
 );
 
-CREATE INDEX IF NOT EXISTS state_index ON content (state);
-
-CREATE INDEX IF NOT EXISTS url_index ON content (url);
-
+CREATE INDEX IF NOT EXISTS activeAt_index ON content (activeAt);
+CREATE INDEX IF NOT EXISTS completedAt_index ON content (completedAt);
 CREATE INDEX IF NOT EXISTS hashId_index ON content (hashId);
-
+CREATE INDEX IF NOT EXISTS initializedAt_index ON content (initializedAt);
+CREATE INDEX IF NOT EXISTS state_index ON content (state);
+CREATE INDEX IF NOT EXISTS url_index ON content (url);
 CREATE UNIQUE INDEX IF NOT EXISTS hashId_index_unique ON content (hashId);
-
 CREATE UNIQUE INDEX IF NOT EXISTS url_index_unique ON content (url);
