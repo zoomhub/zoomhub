@@ -38,7 +38,7 @@ import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse,
                                                        mkNonRESTful400,
                                                        mkNonRESTful404,
                                                        mkNonRESTful503)
-import           ZoomHub.Config                       (Config, NewContentStatus(NewContentAllowed))
+import           ZoomHub.Config                       (Config, NewContentStatus (NewContentAllowed))
 import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
