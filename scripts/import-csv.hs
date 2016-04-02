@@ -1,54 +1,73 @@
 #!/usr/bin/env stack runhaskell
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
-import qualified Data.ByteString.Lazy as BL
-import           Data.Char            (ord)
-import           Data.Csv
-import qualified Data.Vector          as V
+import           Control.Monad        (forM_)
+import           Data.Either          (isLeft)
+import           Data.Monoid          ((<>))
+import           Data.Text            (Text)
+import qualified Data.Text            as T
+import qualified Data.Text.IO         as T
 import System.Environment (getArgs)
 
 data Content = Content
-  { partitionKey    :: !String
-  , rowKey          :: !String
-  , timestamp       :: !String
-  , abuseLevel      :: !Int
-  , attributionLink :: !String
-  , attributionText :: !String
-  , blob            :: !String
-  , error_          :: !String
-  , id_             :: !String
-  , mime            :: !String
-  , numAbuseReports :: !Int
-  , progress        :: !Int
-  , size            :: !Int
-  , stage           :: !Int
-  , title           :: !String
-  , type_           :: !String
-  , url             :: !String
-  , version         :: !Int
+  { partitionKey    :: !Text -- :: !String
+  , rowKey          :: !Text -- :: !String
+  , timestamp       :: !Text -- :: !String
+  , abuseLevel      :: !Text -- :: !Int
+  , attributionLink :: !Text -- :: !String
+  , attributionText :: !Text -- :: !String
+  , blob            :: !Text -- :: !String
+  , error_          :: !Text -- :: !String
+  , id_             :: !Text -- :: !String
+  , mime            :: !Text -- :: !String
+  , numAbuseReports :: !Text -- :: !Int
+  , progress        :: !Text -- :: !Int
+  , size            :: !Text -- :: !Int
+  , stage           :: !Text -- :: !Int
+  , title           :: !Text -- :: !String
+  , type_           :: !Text -- :: !String
+  , url             :: !Text -- :: !String
+  , version         :: !Text -- :: !Int
   } deriving Eq
 
-decodeOptions = defaultDecodeOptions {
-  decDelimiter = fromIntegral (ord '\t')
-}
+instance Show Content where
+  show Content {..} =
+    "Content { partitionKey = " ++ show partitionKey ++ "\n" ++
+    ", rowKey = " ++ show rowKey ++ "\n" ++
+    ", timestamp = " ++ show timestamp ++ "\n" ++
+    ", abuseLevel = " ++ show abuseLevel ++ "\n" ++
+    ", attributionLink = " ++ show attributionLink ++ "\n" ++
+    ", attributionText = " ++ show attributionText ++ "\n" ++
+    ", blob = " ++ show blob ++ "\n" ++
+    ", version = " ++ show version ++ "\n" ++
+    ", error_ = " ++ show error_ ++ "\n" ++
+    ", id_ = " ++ show id_ ++ "\n" ++
+    ", mime = " ++ show mime ++ "\n" ++
+    ", numAbuseReports = " ++ show numAbuseReports ++ "\n" ++
+    ", progress = " ++ show progress ++ "\n" ++
+    ", size = " ++ show size ++ "\n" ++
+    ", stage = " ++ show stage ++ "\n" ++
+    ", title = " ++ show title ++ "\n" ++
+    ", type_ = " ++ show type_ ++ "\n" ++
+    ", url = " ++ show url ++ "\n" ++
+    "}"
 
-instance FromNamedRecord Content where
-    parseNamedRecord r = Content <$> r .: "PartitionKey" <*> r .: "RowKey" <*>
-      r .: "Timestamp" <*> r .: "AbuseLevel" <*> r .: "AttributionLink" <*>
-      r .: "AttributionText" <*> r .: "Blob" <*> r .: "Error" <*>
-      r .: "Id" <*> r .: "Mime" <*> r .: "NumAbuseReports" <*>
-      r .: "Progress" <*> r .: "Size" <*> r .: "Stage" <*> r .: "Title" <*>
-      r .: "Type" <*> r .: "Url" <*> r .: "Version"
+toContent :: [Text] -> Either Text Content
+toContent [] = Left "nothing"
+-- toContent (partitionKey:rowKey:timestamp:abuseLevel:blob:error_:id_:mime:numAbuseReports:progress:size:stage:type_:url:version:attributionLink:attributionText:title:rest) -- v3
+toContent (partitionKey:rowKey:timestamp:abuseLevel:attributionLink:attributionText:blob:error_:id_:mime:numAbuseReports:progress:size:stage:title:type_:url:version:rest) -- v4
+  | null rest = Right Content {..}
+  | otherwise = Left $ "more columns" <> T.pack (show rest)
+toContent bad = Left $ "bad text: " <> T.pack (show bad)
 
 main :: IO ()
 main = do
-    args <- getArgs
-    case args of
-      (file:_) -> do
-        csvData <- BL.readFile file
-        case decodeByNameWith decodeOptions csvData of
-            Left err -> putStrLn err
-            Right (_, v) -> V.forM_ v $ \p ->
-                putStrLn $ "ID: " ++ id_ p ++ ", URL: " ++ url p
-      _ -> error "Please provide a filename."
+  args <- getArgs
+  case args of
+    (file:_) -> do
+      csvData <- T.readFile file
+      let rawContent = map (T.split (=='\t')) (T.lines csvData)
+      forM_ (map toContent rawContent) print
+    _ -> error "Please provide a filename."
