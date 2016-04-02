@@ -43,6 +43,7 @@ library
     , ZoomHub.Types.ContentId
     , ZoomHub.Types.ContentMIME
     , ZoomHub.Types.ContentState
+    , ZoomHub.Types.ContentType
     , ZoomHub.Types.ContentURI
     , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
