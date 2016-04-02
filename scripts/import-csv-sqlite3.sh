@@ -58,4 +58,6 @@ if [[ "$numMismatchingIdRowKeyGroup2" != '0' ]] ; then
   exit 1
 fi
 
+open output/zoomhub.sqlite3
+
 cd - > /dev/null
