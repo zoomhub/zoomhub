@@ -24,11 +24,12 @@ mv $group2 output/group2
 echo '===> Initialize database'
 cat $WORKING_DIRECTORY/scripts/create-db.sql | sqlite3 output/zoomhub.sqlite3
 
+echo '===> Import `ContentInfo` (group 1) into SQLite'
 cat $(find output/group1 -type f | head -n 1) | head -n 1 > output/output-group1.csv
 cat output/group1/* | grep --invert '^#Attributes PartitionKey' >> output/output-group1.csv
 printf '.mode tab\n.import output/output-group1.csv ContentInfoGroup1' | sqlite3 output/zoomhub.sqlite3
 
-echo '===> Import group 2 `ContentInfo` into SQLite'
+echo '===> Import `ContentInfo` (group 2) into SQLite'
 cat $(find output/group2 -type f | head -n 1) | head -n 1 > output/output-group2.csv
 cat output/group2/* | grep --invert '^#Attributes PartitionKey' >> output/output-group2.csv
 printf '.mode tab\n.import output/output-group2.csv ContentInfoGroup2' | sqlite3 output/zoomhub.sqlite3
