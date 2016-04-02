@@ -1,5 +1,6 @@
 #!/bin/bash
 
+WORKING_DIRECTORY=$PWD
 cd ~/zoom-it-data-git
 
 echo '===> Initialize output directories'
@@ -20,7 +21,9 @@ group2=$(grep --files-with-matches -R '^#Attributes PartitionKey\tRowKey\tTimest
 mv $group1 output/group1
 mv $group2 output/group2
 
-echo '===> Import group 1 `ContentInfo` into SQLite'
+echo '===> Initialize database'
+cat $WORKING_DIRECTORY/scripts/create-db.sql | sqlite3 output/zoomhub.sqlite3
+
 cat $(find output/group1 -type f | head -n 1) | head -n 1 > output/output-group1.csv
 cat output/group1/* | grep --invert '^#Attributes PartitionKey' >> output/output-group1.csv
 printf '.mode tab\n.import output/output-group1.csv ContentInfoGroup1' | sqlite3 output/zoomhub.sqlite3
