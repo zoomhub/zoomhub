@@ -4,7 +4,7 @@ cd ~/zoom-it-data-git
 
 rm -rf output
 mkdir -p output
-csplit -n 4 -f './output/split-ContentInfo-' -k ~/zoom-it-data-git/ContentInfo.txt '/^#Attributes.*/' '{9999}'
+csplit -n 4 -f './output/split-ContentInfo-' -k ~/zoom-it-data-git/ContentInfo.txt '/^#Attributes PartitionKey/' '{9999}'
 
 # Print unique header lines:
 cat output/* | grep '^#Attributes' | sort | uniq
