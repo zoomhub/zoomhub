@@ -40,4 +40,18 @@ cat FlickrPhotoInfo.txt | head -n 1 > output/FlickrPhotoInfo.csv
 cat FlickrPhotoInfo.txt | grep --invert '^#Attributes PartitionKey' >> output/FlickrPhotoInfo.csv
 printf '.mode tab\n.import output/FlickrPhotoInfo.csv FlickrPhotoInfo' | sqlite3 output/zoomhub.sqlite3
 
+echo '===> Check consistency of `ContentInfoGroup1` table'
+numMismatchingIdRowKeyGroup1=$(echo 'SELECT COUNT(*) FROM ContentInfoGroup1 WHERE RowKey <> Id;' | sqlite3 output/zoomhub.sqlite3)
+if [[ "$numMismatchingIdRowKeyGroup1" != '0' ]] ; then
+  echo "Found $numMismatchingIdRowKeyGroup1 rows in \`ContentInfoGroup1\` that have mismatching \`Id\` and \`RowKey\` columns."
+  exit 1
+fi
+
+echo '===> Check consistency of `ContentInfoGroup2` table'
+numMismatchingIdRowKeyGroup2=$(echo 'SELECT COUNT(*) FROM ContentInfoGroup2 WHERE RowKey <> Id;' | sqlite3 output/zoomhub.sqlite3)
+if [[ "$numMismatchingIdRowKeyGroup2" != '0' ]] ; then
+  echo "Found $numMismatchingIdRowKeyGroup2 rows in \`ContentInfoGroup2\` that have mismatching \`Id\` and \`RowKey\` columns."
+  exit 1
+fi
+
 cd - > /dev/null
