@@ -19,7 +19,10 @@ main = do
     normalizeMIMEType :: Connection -> (Integer, Maybe Text) -> IO ()
     normalizeMIMEType conn (id_, maybeMIME) =
       case maybeMIME of
-        Just mime ->
+        Just mime -> do
+          putStrLn $ "Updating MIME: " ++ show id_
           execute conn "UPDATE content SET mime = ? WHERE id = ?"
             (showType <$> parseMIMEType mime, id_)
-        Nothing -> return ()
+        Nothing -> do
+          putStrLn $ "No MIME: " ++ show id_
+          return ()
