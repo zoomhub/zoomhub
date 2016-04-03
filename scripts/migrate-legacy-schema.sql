@@ -17,6 +17,7 @@ INSERT INTO content (/* id
   , progress
   , abuseLevelId
   , numAbuseReports
+  , version
   )
     SELECT
     /* NULL -- id
@@ -36,6 +37,7 @@ INSERT INTO content (/* id
     , Progress
     , AbuseLevel
     , NumAbuseReports
+    , Version
     FROM ContentInfoGroup1
 
     UNION
@@ -58,6 +60,7 @@ INSERT INTO content (/* id
       , Progress
       , AbuseLevel
       , NumAbuseReports
+      , Version
       FROM ContentInfoGroup2
 
   ORDER BY Timestamp ASC;
