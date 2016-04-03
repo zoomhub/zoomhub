@@ -84,11 +84,11 @@ create conn encodeId uri = withTransaction conn $ do
 
 getById :: Connection -> ContentId -> IO (Maybe Content)
 getById conn cId =
-  getBy conn "hashId" (unId cId)
+  getBy conn "content.hashId" (unId cId)
 
 getByURL :: Connection -> ContentURI -> IO (Maybe Content)
 getByURL conn uri =
-  getBy conn "url" (show uri)
+  getBy conn "content.url" (show uri)
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
 getNextUnprocessed conn =
@@ -187,25 +187,25 @@ get queryAction = do
 -- The order of field names MUST match the definition of `ContentRow`:
 fieldNames :: [Query]
 fieldNames =
-  [ "id"
-  , "hashId"
-  , "url"
-  , "state"
-  , "initializedAt"
-  , "activeAt"
-  , "completedAt"
-  , "mime"
-  , "size"
-  , "progress"
-  , "dzi_width"
-  , "dzi_height"
-  , "dzi_tileSize"
-  , "dzi_tileOverlap"
-  , "dzi_tileFormat"
+  [ "content.id"
+  , "content.hashId"
+  , "content.url"
+  , "content.state"
+  , "content.initializedAt"
+  , "content.activeAt"
+  , "content.completedAt"
+  , "content.mime"
+  , "content.size"
+  , "content.progress"
+  , "image.width AS image_width"
+  , "image.height AS image_height"
+  , "image.tileSize AS image_tileSize"
+  , "image.tileOverlap AS image_tileOverlap"
+  , "image.tileFormat AS image_tileFormat"
   ]
 
 fieldNamesWithDefaults :: Set Query
-fieldNamesWithDefaults = Set.fromList ["initializedAt"]
+fieldNamesWithDefaults = Set.fromList ["content.initializedAt"]
 
 -- Filter out fields with default values
 insertFieldNames :: [Query]
@@ -213,8 +213,10 @@ insertFieldNames =
   filter (`Set.notMember` fieldNamesWithDefaults) fieldNames
 
 queryFor :: String -> Query
-queryFor fieldName = "SELECT " <> columns <> " FROM content\
-    \ WHERE " <> fromString fieldName <> " = ?"
+queryFor fieldName =
+  "SELECT " <> columns <> " FROM content\
+  \ JOIN image ON content.id = image.contentId\
+  \ WHERE " <> fromString fieldName <> " = ?"
   where
     columns = intercalate ", " fieldNames
 
