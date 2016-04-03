@@ -48,21 +48,33 @@ cat $ROOT/FlickrPhotoInfo.txt | head -n 1 > $ROOT/output/FlickrPhotoInfo.csv
 cat $ROOT/FlickrPhotoInfo.txt | grep --invert '^#Attributes PartitionKey' >> $ROOT/output/FlickrPhotoInfo.csv
 printf ".mode tab\n.import $ROOT/output/FlickrPhotoInfo.csv FlickrPhotoInfo" | sqlite3 $ROOT/output/zoomhub.sqlite3
 
-echo '===> Check consistency of `ContentInfoGroup1` table'
-numMismatchingIdRowKeyGroup1=$(echo 'SELECT COUNT(*) FROM ContentInfoGroup1 WHERE RowKey <> Id;' | sqlite3 $ROOT/output/zoomhub.sqlite3)
-if [[ "$numMismatchingIdRowKeyGroup1" != '0' ]] ; then
-  echo "Found $numMismatchingIdRowKeyGroup1 rows in \`ContentInfoGroup1\` that have mismatching \`Id\` and \`RowKey\` columns."
-  exit 1
-fi
+echo '===> Migration'
+echo '---> Table: `content`'
+cat ./scripts/migrate-legacy-schema-01-content.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
 
-echo '===> Import legacy data into new schema'
-cat ./scripts/migrate-legacy-schema.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+echo '---> Table: `image`'
+cat ./scripts/migrate-legacy-schema-02-image.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+
+echo '---> Table: `flickr`'
+cat ./scripts/migrate-legacy-schema-03-flickr.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+
+echo '---> Normalize columns'
+cat ./scripts/migrate-legacy-schema-04-normalize-columns.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+
+echo '---> Import missing `mime` column data from `error` column'
+cat ./scripts/migrate-legacy-schema-05-fix-mime.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+
+echo '---> Drop legacy tables'
+cat ./scripts/migrate-legacy-schema-06-drop-legacy-tables.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+
+echo '---> Vacuum database'
+echo 'VACUUM;' | sqlite3 $ROOT/output/zoomhub.sqlite3
 
 echo '===> Build database normalization script'
 stack build zoomhub:normalize-db
 
 echo '===> Normalize database'
-stack exec normalize-db -- $ROOT/output/zoomhub.sqlite3 | tee $ROOT/output/normalize-db.log
+time stack exec normalize-db -- $ROOT/output/zoomhub.sqlite3 | tee $ROOT/output/normalize-db.log
 
 echo '===> Check `content` table for completeness'
 numContentRows=$(echo 'SELECT COUNT(*) FROM content;' | sqlite3 $ROOT/output/zoomhub.sqlite3)
