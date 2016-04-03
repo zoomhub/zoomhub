@@ -2,10 +2,13 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module ZoomHub.Storage.SQLite
-  ( create
-  , getById
+  (
+  -- ** Read operations
+    getById
   , getByURL
   , getNextUnprocessed
+  -- ** Write operations
+  , create
   , markAsActive
   , markAsFailure
   , markAsSuccess
