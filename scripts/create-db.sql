@@ -38,7 +38,7 @@ CREATE TABLE flickr (
   serverId integer NOT NULL,
   photoId text NOT NULL,
   secret text NOT NULL,
-  sizeType integer NOT NULL,
+  sizeId integer NOT NULL,
   isPublic integer NOT NULL,
   licenseId integer NOT NULL,
   originalExtension text,

@@ -96,7 +96,7 @@ INSERT INTO image (
   , serverId
   , photoId
   , secret
-  , sizeType
+  , sizeId
   , isPublic
   , licenseId
   , originalExtension
