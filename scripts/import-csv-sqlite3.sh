@@ -58,6 +58,12 @@ fi
 echo '===> Import legacy data into new schema'
 cat ./scripts/migrate-legacy-schema.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
 
+echo '===> Build database normalization script'
+stack build zoomhub:normalize-db
+
+echo '===> Normalize database'
+stack exec normalize-db -- $ROOT/output/zoomhub.sqlite3 | tee $ROOT/output/normalize-db.log
+
 echo '===> Check `content` table for completeness'
 numContentRows=$(echo 'SELECT COUNT(*) FROM content;' | sqlite3 $ROOT/output/zoomhub.sqlite3)
 if [[ "$numContentRows" != '1550351' ]] ; then
