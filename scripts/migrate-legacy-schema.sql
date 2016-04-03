@@ -90,7 +90,7 @@ END TRANSACTION;
 
 -- Import `FlickrPhotoInfo` table:
 BEGIN TRANSACTION;
-INSERT INTO image (
+INSERT INTO flickr (
     contentId
   , farmId
   , serverId
