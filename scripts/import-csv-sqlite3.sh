@@ -55,14 +55,28 @@ if [[ "$numMismatchingIdRowKeyGroup1" != '0' ]] ; then
   exit 1
 fi
 
-echo '===> Check consistency of `ContentInfoGroup2` table'
-numMismatchingIdRowKeyGroup2=$(echo 'SELECT COUNT(*) FROM ContentInfoGroup2 WHERE RowKey <> Id;' | sqlite3 $ROOT/output/zoomhub.sqlite3)
-if [[ "$numMismatchingIdRowKeyGroup2" != '0' ]] ; then
-  echo "Found $numMismatchingIdRowKeyGroup2 rows in \`ContentInfoGroup2\` that have mismatching \`Id\` and \`RowKey\` columns."
+echo '===> Import legacy data into new schema'
+cat ./scripts/migrate-legacy-schema.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+
+echo '===> Check `content` table for completeness'
+numContentRows=$(echo 'SELECT COUNT(*) FROM content;' | sqlite3 $ROOT/output/zoomhub.sqlite3)
+if [[ "$numContentRows" != '1550351' ]] ; then
+  echo "Found $numContentRows rows in \`content\` but expected 1550351."
   exit 1
 fi
 
-echo '===> Import legacy data into new schema'
-cat ./scripts/migrate-legacy-schema.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+echo '===> Check `image` table for completeness'
+numImageRows=$(echo 'SELECT COUNT(*) FROM image;' | sqlite3 $ROOT/output/zoomhub.sqlite3)
+if [[ "$numImageRows" != '1430690' ]] ; then
+  echo "Found $numImageRows rows in \`image\` but expected 1430690."
+  exit 1
+fi
+
+echo '===> Check `flickr` table for completeness'
+numFlickrRows=$(echo 'SELECT COUNT(*) FROM flickr;' | sqlite3 $ROOT/output/zoomhub.sqlite3)
+if [[ "$numFlickrRows" != '21871' ]] ; then
+  echo "Found $numFlickrRows rows in \`flickr\` but expected 21871."
+  exit 1
+fi
 
 open $ROOT/output/zoomhub.sqlite3
