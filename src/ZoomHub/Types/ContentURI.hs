@@ -25,8 +25,9 @@ instance Show ContentURI where
 -- Text
 instance FromText ContentURI where
   fromText t
-    | "http://"  `T.isPrefixOf` t = Just (ContentURI t)
-    | "https://" `T.isPrefixOf` t = Just (ContentURI t)
+    | "http://" `T.isPrefixOf` t             = Just (ContentURI t)
+    | "https://" `T.isPrefixOf` t            = Just (ContentURI t)
+    | "zoomit://thumbnail/" `T.isPrefixOf` t = Just (ContentURI t)
     | otherwise = Nothing
 
 -- JSON
