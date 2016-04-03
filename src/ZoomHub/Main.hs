@@ -85,7 +85,7 @@ main = do
       newContentStatus = fromMaybe NewContentDisallowed maybeNewContentStatus
       defaultDataPath = currentDirectory </> "data"
       defaultDBPath = DatabasePath $
-        currentDirectory </> "data" </> "content-development.sqlite3"
+        currentDirectory </> "data" </> "zoomhub-development.sqlite3"
       dataPath = fromMaybe defaultDataPath maybeDataPath
       dbPath = fromMaybe defaultDBPath maybeDBPath
       port = maybe defaultPort read maybePort
