@@ -168,5 +168,13 @@ WHERE
   AND mime IS NULL;
 END TRANSACTION;
 
+-- Drop legacy tables:
+BEGIN TRANSACTION;
+DROP TABLE ContentInfoGroup1;
+DROP TABLE ContentInfoGroup2;
+DROP TABLE FlickrPhotoInfo;
+DROP TABLE ImageInfo;
+END TRANSACTION;
+
 -- Compact database:
 VACUUM;
