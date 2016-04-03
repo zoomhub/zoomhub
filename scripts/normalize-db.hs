@@ -26,7 +26,8 @@ main = do
     normalize conn (id_, initializedAt, maybeMIME) =
       case maybeMIME of
         Just mime -> do
-          putStrLn $ "Updating row: " ++ show id_
+          putStrLn $ "Updating row: " ++ show id_ ++
+            " (initializedAt: " ++ show initializedAt ++ ")"
           execute conn "UPDATE content SET initializedAt = ?, mime = ?\
             \ WHERE id = ?"
             (initializedAt, showType <$> parseMIMEType mime, id_)
