@@ -62,8 +62,9 @@ create conn encodeId uri = withTransaction conn $ do
   where
     insertWith :: Integer -> IO Content
     insertWith newId = do
+      initializedAt <- getCurrentTime
       let cId = ContentId.fromInteger encodeId newId
-          content = mkContent cId uri
+          content = mkContent cId uri initializedAt
       result <- tryJust (guard . isConstraintError) $
         execute conn insertQuery (contentToRow newId content)
       case result of
@@ -237,7 +238,7 @@ data ContentRow = ContentRow
   , crHashId         :: ContentId
   , crURL            :: ContentURI
   , crState          :: ContentState
-  , crInitializedAt  :: Maybe UTCTime
+  , crInitializedAt  :: UTCTime
   , crActiveAt       :: Maybe UTCTime
   , crCompletedAt    :: Maybe UTCTime
   , crMIME           :: Maybe ContentMIME

@@ -16,7 +16,7 @@ data Content = Content
   { contentId            :: ContentId
   , contentURL           :: ContentURI
   , contentState         :: ContentState
-  , contentInitializedAt :: Maybe UTCTime
+  , contentInitializedAt :: UTCTime
   , contentActiveAt      :: Maybe UTCTime
   , contentCompletedAt   :: Maybe UTCTime
   , contentMIME          :: Maybe ContentMIME
@@ -25,12 +25,12 @@ data Content = Content
   , contentDZI           :: Maybe DeepZoomImage
   } deriving (Eq, Show)
 
-mkContent :: ContentId -> ContentURI -> Content
-mkContent cId uri = Content
+mkContent :: ContentId -> ContentURI -> UTCTime -> Content
+mkContent cId uri initializedAt = Content
   { contentId = cId
   , contentURL = uri
   , contentState = Initialized
-  , contentInitializedAt = Nothing
+  , contentInitializedAt = initializedAt
   , contentActiveAt = Nothing
   , contentCompletedAt = Nothing
   , contentMIME = Nothing
