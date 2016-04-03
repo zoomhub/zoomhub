@@ -121,15 +121,16 @@ executable zoomhub
       base
     , zoomhub
 
-executable normalize-mime
+executable normalize-db
   default-language: Haskell2010
   ghc-options:      -Wall
-  main-is:          scripts/normalize-mime.hs
+  main-is:          scripts/normalize-db.hs
   build-depends:
       base
     , mime
     , sqlite-simple
     , text
+    , time
 
 test-suite tests
   default-language: Haskell2010
