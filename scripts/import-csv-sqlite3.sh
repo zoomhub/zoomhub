@@ -62,7 +62,7 @@ if [[ "$numMismatchingIdRowKeyGroup2" != '0' ]] ; then
   exit 1
 fi
 
-echo '===> Import  `ContentInfoGroup1` and `ContentInfoGroup2` tables into `content`'
-cat ./scripts/import-legacy-data.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+echo '===> Import legacy data into new schema'
+cat ./scripts/migrate-legacy-schema.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
 
 open $ROOT/output/zoomhub.sqlite3
