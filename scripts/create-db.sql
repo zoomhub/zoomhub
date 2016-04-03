@@ -22,7 +22,6 @@ CREATE TABLE content (
 
 CREATE TABLE image (
   contentId integer PRIMARY KEY,
-  hashId text UNIQUE NOT NULL,
   initializedAt datetime NOT NULL DEFAULT(CURRENT_TIMESTAMP),
   width integer NOT NULL,
   height integer NOT NULL,
@@ -34,7 +33,6 @@ CREATE TABLE image (
 
 CREATE TABLE flickr (
   contentId integer PRIMARY KEY,
-  hashId text UNIQUE NOT NULL,
   farmId integer NOT NULL,
   serverId integer NOT NULL,
   photoId text NOT NULL,
@@ -59,5 +57,3 @@ CREATE INDEX content_state_index ON content (state);
 CREATE INDEX content_url_index ON content (url);
 CREATE UNIQUE INDEX content_hashId_index_unique ON content (hashId);
 CREATE UNIQUE INDEX content_url_index_unique ON content (url);
-
-CREATE UNIQUE INDEX image_hashId_index_unique ON image (hashId);
