@@ -17,7 +17,8 @@ CREATE TABLE content (
   error text,
   progress real NOT NULL DEFAULT(0.0),
   abuseLevelId integer NOT NULL DEFAULT(0),
-  numAbuseReports integer NOT NULL DEFAULT(0)
+  numAbuseReports integer NOT NULL DEFAULT(0),
+  version integer NOT NULL DEFAULT(4) -- legacy `Version` column
 );
 
 CREATE TABLE image (
@@ -55,5 +56,6 @@ CREATE INDEX content_hashId_index ON content (hashId);
 CREATE INDEX content_initializedAt_index ON content (initializedAt);
 CREATE INDEX content_state_index ON content (state);
 CREATE INDEX content_url_index ON content (url);
+CREATE INDEX content_version_index ON content (version);
 CREATE UNIQUE INDEX content_hashId_index_unique ON content (hashId);
 CREATE UNIQUE INDEX content_url_index_unique ON content (url);
