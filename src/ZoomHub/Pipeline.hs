@@ -5,14 +5,14 @@ module ZoomHub.Pipeline
   )
   where
 
+import           Codec.MIME.Parse                         (parseMIMEType)
 import           Control.Lens                             ((^.))
 import           Data.Aeson                               ((.=))
 import           Network.Wreq                             (get, responseBody)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import           System.Directory                         (createDirectoryIfMissing)
 import           System.FilePath.Posix                    ((<.>), (</>))
--- import           System.IO.Temp
-import           Codec.MIME.Parse                         (parseMIMEType)
+-- import           System.IO.Temp                           (withTempDirectory)
 import           System.Posix                             (fileSize,
                                                            getFileStatus)
 import           System.Process                           (callProcess)
