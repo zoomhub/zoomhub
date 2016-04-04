@@ -10,8 +10,10 @@ module ZoomHub.Rackspace.CloudFiles
   , Endpoint
   , parseEndpoint
   , getContent
+  , putContent
   ) where
 
+import qualified Codec.MIME.Type       as MIME
 import           Control.Exception     (tryJust)
 import           Control.Lens          as Lens hiding ((.=))
 import           Control.Monad         (guard)
@@ -84,3 +86,6 @@ getContent meta urlPath =
       is404 :: HttpException -> Bool
       is404 (StatusCodeException s _ _) = s ^. statusCode == 404
       is404 _ = False
+
+putContent :: Metadata -> FilePath -> MIME.Type -> IO (Maybe BL.ByteString)
+putContent meta path mime = undefined
