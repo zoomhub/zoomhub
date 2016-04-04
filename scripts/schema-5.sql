@@ -1,4 +1,4 @@
-PRAGMA user_version = 1;
+PRAGMA user_version = 5;
 
 CREATE TABLE content (
   id integer PRIMARY KEY AUTOINCREMENT,
@@ -18,7 +18,7 @@ CREATE TABLE content (
   progress real NOT NULL DEFAULT(0.0),
   abuseLevelId integer NOT NULL DEFAULT(0),
   numAbuseReports integer NOT NULL DEFAULT(0),
-  version integer NOT NULL DEFAULT(4) -- legacy `Version` column
+  version integer NOT NULL DEFAULT(5) -- legacy `Version` column
 );
 
 CREATE TABLE image (
