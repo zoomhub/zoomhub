@@ -26,6 +26,10 @@ import           Database.SQLite.Simple.FromField (FromField, ResultError (Conve
 import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
+import           Text.Read                        (readMaybe)
+import           Text.XML.Light                   (QName (QName))
+import           Text.XML.Light.Input             (parseXMLDoc)
+import           Text.XML.Light.Proc              (findAttr, findElement)
 
 data DeepZoomImage = DeepZoomImage
   { dziWidth       :: Integer
@@ -45,11 +49,31 @@ mkDeepZoomImage dziWidth dziHeight dziTileSize dziTileOverlap dziTileFormat =
   DeepZoomImage{..}
 
 fromXML :: String -> Maybe DeepZoomImage
-fromXML _ = Nothing
+fromXML xml =
+      parseXMLDoc xml >>=
+      findElement (tag "Image") >>=
+      \image -> attr "TileSize" image >>= toTileSize >>=
+      \tileSize -> attr "Overlap" image >>= toTileOverlap >>=
+      \tileOverlap -> attr "Format" image >>= toTileFormat >>=
+      \tileFormat -> findElement (tag "Size") image >>=
+      \size -> attr "Width" size >>= readMaybe >>=
+      \width -> attr "Height" size >>= readMaybe >>=
+      \height ->
+        Just $ mkDeepZoomImage width height tileSize tileOverlap tileFormat
+  where
+    tag name = QName name (Just namespace) Nothing
+    attr name = findAttr (QName name Nothing Nothing)
+    namespace = "http://schemas.microsoft.com/deepzoom/2008"
 
 -- Tile size
 data TileSize = TileSize254 | TileSize256 | TileSize1024
   deriving (Bounded, Enum, Eq)
+
+toTileSize :: String -> Maybe TileSize
+toTileSize "254" = Just TileSize254
+toTileSize "256" = Just TileSize256
+toTileSize "1024" = Just TileSize1024
+toTileSize _ = Nothing
 
 instance Show TileSize where
   show TileSize254 = "254"
@@ -79,6 +103,11 @@ instance FromField TileSize where
 data TileOverlap = TileOverlap0 | TileOverlap1
   deriving (Bounded, Enum, Eq)
 
+toTileOverlap :: String -> Maybe TileOverlap
+toTileOverlap "0" = Just TileOverlap0
+toTileOverlap "1" = Just TileOverlap1
+toTileOverlap _ = Nothing
+
 -- Tile overlap: Show
 instance Show TileOverlap where
   show TileOverlap0 = "0"
@@ -102,6 +131,12 @@ instance FromField TileOverlap where
 
 -- Tile format
 data TileFormat = JPEG | PNG deriving Eq
+
+toTileFormat :: String -> Maybe TileFormat
+toTileFormat "jpg" = Just JPEG
+toTileFormat "jpeg" = Just JPEG
+toTileFormat "png" = Just JPEG
+toTileFormat _ = Nothing
 
 instance Show TileFormat where
   show JPEG = "jpg"
