@@ -9,12 +9,15 @@ import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
 import           Control.Lens                             ((^.))
 import           Data.Aeson                               ((.=))
+import           Data.Monoid                              ((<>))
 import           Data.Text.Encoding                       (decodeUtf8)
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
-import           System.Directory                         (createDirectoryIfMissing)
-import           System.FilePath.Posix                    ((<.>), (</>))
+import           System.Directory                         (createDirectoryIfMissing,
+                                                           listDirectory)
+import           System.FilePath.Posix                    (dropExtension, (<.>),
+                                                           (</>))
 -- import           System.IO.Temp                           (withTempDirectory)
 import           System.Posix                             (fileSize,
                                                            getFileStatus)
@@ -31,7 +34,7 @@ import           ZoomHub.Types.Content                    (Content, contentId,
 import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
 import           ZoomHub.Types.ContentURI                 (ContentURI)
-import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage,
+import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFormat (JPEG, PNG), TileOverlap (TileOverlap1), TileSize (TileSize254),
                                                            fromXML)
 
 process :: Config -> Content -> IO Content
@@ -60,7 +63,7 @@ process config content = do
 
     logInfo "Create DZI"
       ["id" .= contentId content]
-    maybeDZI <- createDZI rawPath dziPath
+    maybeDZI <- createDZI rawPath dziPath (toTileFormat maybeMIME)
 
     logInfo "Content metadata"
       [ "mime" .= maybeMIME
@@ -70,7 +73,13 @@ process config content = do
 
     case maybeDZI of
       Just dzi -> do
-        -- TODO: Upload to Rackspace
+        logInfo "Upload DZI"
+          [ "id" .= contentId content
+          , "dzi" .= dzi
+          , "dziPath" .= dziPath
+          ]
+        uploadDZI dziPath
+
         logInfo "Succeeded to process content"
           ["id" .= contentId content]
         markAsSuccess conn activeContent dzi maybeMIME rawSize
@@ -96,15 +105,38 @@ downloadURL url dest = do
   atomicWriteFile dest body
   return $ parseMIMEType . decodeUtf8 $ res ^. responseHeader "content-type"
 
-createDZI :: FilePath -> FilePath -> IO (Maybe DeepZoomImage)
-createDZI src dest = do
+createDZI :: FilePath -> FilePath -> TileFormat -> IO (Maybe DeepZoomImage)
+createDZI src dest tileFormat = do
   callProcess "vips"
     [ "dzsave"
-    , "--tile-size", show TileSize254
-    , "--overlap", show TileOverlap1
+    , "--tile-size=" <> show TileSize254
+    , "--overlap=" <> show TileOverlap1
     , src
     , dest
+    , "--suffix=" <> toVIPSSuffix tileFormat
     , "--vips-progress"
     ]
   dzi <- readFile dest
   return $ fromXML dzi
+
+uploadDZI :: FilePath -> IO ()
+uploadDZI dziPath = do
+  tilePaths <- getDZITilePaths dziPath
+  print tilePaths
+
+getDZITilePaths :: FilePath -> IO [FilePath]
+getDZITilePaths dziPath = do
+    levelDirs <- map (filesDir </>) <$> listDirectory filesDir
+    concat <$> mapM (\levelDir -> map (levelDir </>) <$> listDirectory levelDir)
+      levelDirs
+  where
+    filesDir = dropExtension dziPath <> "_files"
+
+toTileFormat :: Maybe ContentMIME -> TileFormat
+toTileFormat (Just (ContentMIME (MIME.Type (MIME.Image "png") _)))       = PNG
+toTileFormat (Just (ContentMIME (MIME.Type (MIME.Application "pdf") _))) = PNG
+toTileFormat _                                                           = JPEG
+
+toVIPSSuffix :: TileFormat -> String
+toVIPSSuffix PNG = ".png"
+toVIPSSuffix JPEG = ".jpg[Q=90]"
