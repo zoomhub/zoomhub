@@ -67,7 +67,8 @@ create conn encodeId uri = withTransaction conn $ do
     insertWith newId = do
       initializedAt <- getCurrentTime
       let cId = ContentId.fromInteger encodeId newId
-          content = mkContent cId uri initializedAt
+          -- TODO: Infer content type:
+          content = mkContent Image cId uri initializedAt
       result <- tryJust (guard . isConstraintError) $
         execute conn insertQuery (contentToRow newId content)
       case result of
