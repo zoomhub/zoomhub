@@ -74,7 +74,7 @@ library
     , cryptonite == 0.10.*
     , data-default
     , direct-sqlite
-    , directory
+    , directory == 1.2.5.1
     , either
     , envy
     , fast-logger
