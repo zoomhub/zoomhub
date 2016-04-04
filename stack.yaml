@@ -11,6 +11,7 @@ packages:
 extra-deps:
 - aeson-casing-0.1.0.2
 - atomic-write-0.2.0.4
+- directory-1.2.5.1
 - envy-1.1.0.0
 - hashids-1.0.2.2
 - mime-0.4.0.2
