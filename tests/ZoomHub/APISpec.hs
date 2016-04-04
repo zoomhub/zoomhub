@@ -106,7 +106,7 @@ config = Config
   , version = "test"
   }
   where
-    rawDBPath = "./data/content-development.sqlite3"
+    rawDBPath = "./data/zoomhub-development.sqlite3"
 
 spec :: Spec
 spec = with (return $ app config) $ do
