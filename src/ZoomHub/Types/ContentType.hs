@@ -12,7 +12,7 @@ import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 
 data ContentType =
-    LegacyType0
+    Unknown
   | Image
   | Webpage
   | FlickrImage
@@ -24,7 +24,7 @@ data ContentType =
   deriving (Eq, Show)
 
 instance ToField ContentType where
-  toField LegacyType0      = SQLInteger  0
+  toField Unknown          = SQLInteger  0
   toField Image            = SQLInteger  1
   toField Webpage          = SQLInteger  2
   toField FlickrImage      = SQLInteger  3
@@ -35,7 +35,7 @@ instance ToField ContentType where
   toField WebpageThumbnail = SQLInteger 14
 
 instance FromField ContentType where
-  fromField (Field (SQLInteger  0) _) = Ok LegacyType0
+  fromField (Field (SQLInteger  0) _) = Ok Unknown
   fromField (Field (SQLInteger  1) _) = Ok Image
   fromField (Field (SQLInteger  2) _) = Ok Webpage
   fromField (Field (SQLInteger  3) _) = Ok FlickrImage
