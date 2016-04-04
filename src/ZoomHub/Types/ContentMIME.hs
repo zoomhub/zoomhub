@@ -5,6 +5,7 @@ module ZoomHub.Types.ContentMIME
 
 import           Codec.MIME.Parse                 (parseMIMEType)
 import           Codec.MIME.Type                  (Type, showType)
+import           Data.Aeson                       (Value (String), ToJSON, toJSON)
 import qualified Data.Text                        as T
 import           Database.SQLite.Simple           (SQLData (SQLText))
 import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
@@ -27,3 +28,7 @@ instance FromField ContentMIME where
       Nothing -> returnError ConversionFailed f
         ("couldn’t parse MIME type: " ++ T.unpack t)
   fromField f = returnError ConversionFailed f "invalid MIME type"
+
+-- JSON
+instance ToJSON ContentMIME where
+  toJSON = String . showType . unContentMIME
