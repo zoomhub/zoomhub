@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -18,7 +19,8 @@ module ZoomHub.Types.DeepZoomImage
 
 import           Data.Aeson                       (ToJSON,
                                                    Value (Number, String),
-                                                   toJSON)
+                                                   genericToJSON, toJSON)
+import           Data.Aeson.Casing                (aesonPrefix, camelCase)
 import qualified Data.Text                        as T
 import           Database.SQLite.Simple           (SQLData (SQLText, SQLInteger))
 import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
@@ -26,6 +28,7 @@ import           Database.SQLite.Simple.FromField (FromField, ResultError (Conve
 import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
+import           GHC.Generics                     (Generic)
 import           Text.Read                        (readMaybe)
 import           Text.XML.Light                   (QName (QName))
 import           Text.XML.Light.Input             (parseXMLDoc)
@@ -37,7 +40,7 @@ data DeepZoomImage = DeepZoomImage
   , dziTileSize    :: TileSize
   , dziTileOverlap :: TileOverlap
   , dziTileFormat  :: TileFormat
-  } deriving (Eq, Show)
+  } deriving (Eq, Generic, Show)
 
 mkDeepZoomImage :: Integer ->
                    Integer ->
@@ -64,6 +67,10 @@ fromXML xml =
     tag name = QName name (Just namespace) Nothing
     attr name = findAttr (QName name Nothing Nothing)
     namespace = "http://schemas.microsoft.com/deepzoom/2008"
+
+-- JSON
+instance ToJSON DeepZoomImage where
+   toJSON = genericToJSON $ aesonPrefix camelCase
 
 -- Tile size
 data TileSize = TileSize254 | TileSize256 | TileSize1024
