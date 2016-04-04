@@ -29,24 +29,23 @@ import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentM
 import           ZoomHub.Types.ContentURI                 (ContentURI)
 import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage,
                                                            TileFormat (JPEG), TileOverlap (TileOverlap1), TileSize (TileSize254),
-                                                           dziHeight,
-                                                           dziTileFormat,
-                                                           dziTileOverlap,
-                                                           dziTileSize,
-                                                           dziWidth,
                                                            mkDeepZoomImage)
 
 process :: Config -> Content -> IO Content
 process config content = do
+    createDirectoryIfMissing True tempPath
+
   -- withTempDirectory tempPath template $ \tmpDir -> do
-    -- let rawPath = tmpDir </> rawContentId
     let rawPath = tempPath </> rawContentId
+    -- let rawPath = tmpDir </> rawContentId
         dziPath = rawPath <.> ".dzi"
 
-    createDirectoryIfMissing False tempPath
+    logInfo "Create temporary working directory"
+      ["id" .= contentId content, "path" .= tempPath]
+    createDirectoryIfMissing True tempPath
 
     logInfo "Mark content as active" ["id" .= contentId content]
-    activeContent <- markAsActive (Config.dbConnection config) content
+    activeContent <- markAsActive conn content
 
     logInfo "Download content"
       [ "id" .= contentId content
@@ -66,7 +65,7 @@ process config content = do
     conn = Config.dbConnection config
     tempPath = Config.dataPath config </> "content-raw"
     rawContentId = unId $ contentId content
-    -- template = rawContentId ++ "."
+    template = rawContentId ++ "_"
 
     getFileSize :: FilePath -> IO Integer
     getFileSize path = (toInteger . fileSize) <$> getFileStatus path
