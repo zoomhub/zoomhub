@@ -65,7 +65,7 @@ process config content = do
     conn = Config.dbConnection config
     tempPath = Config.dataPath config </> "content-raw"
     rawContentId = unId $ contentId content
-    template = rawContentId ++ "_"
+    -- template = rawContentId ++ "_"
 
     getFileSize :: FilePath -> IO Integer
     getFileSize path = (toInteger . fileSize) <$> getFileStatus path
