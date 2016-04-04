@@ -3,11 +3,13 @@ module ZoomHub.Types.Content
   , mkContent
   ) where
 
+import           Data.Text                   (Text)
 import           Data.Time.Clock             (UTCTime)
 
 import           ZoomHub.Types.ContentId     (ContentId)
 import           ZoomHub.Types.ContentMIME   (ContentMIME)
 import           ZoomHub.Types.ContentState  (ContentState (Initialized))
+import           ZoomHub.Types.ContentType   (ContentType)
 import           ZoomHub.Types.ContentURI    (ContentURI)
 import           ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
@@ -15,6 +17,7 @@ import           ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 data Content = Content
   { contentId            :: ContentId
   , contentURL           :: ContentURI
+  , contentType          :: ContentType
   , contentState         :: ContentState
   , contentInitializedAt :: UTCTime
   , contentActiveAt      :: Maybe UTCTime
@@ -22,6 +25,7 @@ data Content = Content
   , contentMIME          :: Maybe ContentMIME
   , contentSize          :: Maybe Integer
   , contentProgress      :: Float
+  , contentError         :: Maybe Text
   , contentDZI           :: Maybe DeepZoomImage
   } deriving (Eq, Show)
 
@@ -36,5 +40,6 @@ mkContent cId uri initializedAt = Content
   , contentMIME = Nothing
   , contentSize = Nothing
   , contentProgress = 0.0
+  , contentError = Nothing
   , contentDZI = Nothing
   }
