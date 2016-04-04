@@ -29,10 +29,11 @@ data Content = Content
   , contentDZI           :: Maybe DeepZoomImage
   } deriving (Eq, Show)
 
-mkContent :: ContentId -> ContentURI -> UTCTime -> Content
-mkContent cId uri initializedAt = Content
+mkContent :: ContentType -> ContentId -> ContentURI -> UTCTime -> Content
+mkContent type_ cId uri initializedAt = Content
   { contentId = cId
   , contentURL = uri
+  , contentType = type_
   , contentState = Initialized
   , contentInitializedAt = initializedAt
   , contentActiveAt = Nothing
