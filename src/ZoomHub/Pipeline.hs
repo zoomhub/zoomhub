@@ -6,9 +6,12 @@ module ZoomHub.Pipeline
   where
 
 import           Codec.MIME.Parse                         (parseMIMEType)
+import qualified Codec.MIME.Type                          as MIME
 import           Control.Lens                             ((^.))
 import           Data.Aeson                               ((.=))
-import           Network.Wreq                             (get, responseBody)
+import           Data.Text.Encoding                       (decodeUtf8)
+import           Network.Wreq                             (get, responseBody,
+                                                           responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import           System.Directory                         (createDirectoryIfMissing)
 import           System.FilePath.Posix                    ((<.>), (</>))
@@ -21,14 +24,16 @@ import           ZoomHub.Config                           (Config)
 import qualified ZoomHub.Config                           as Config
 import           ZoomHub.Log.Logger                       (logInfo)
 import           ZoomHub.Storage.SQLite                   (markAsActive,
+                                                           markAsFailure,
                                                            markAsSuccess)
 import           ZoomHub.Types.Content                    (Content, contentId,
                                                            contentURL)
 import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
 import           ZoomHub.Types.ContentURI                 (ContentURI)
-import           ZoomHub.Types.DeepZoomImage              (TileFormat (JPEG), TileOverlap (TileOverlap1), TileSize (TileSize254),
-                                                           mkDeepZoomImage)
+import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage,
+                                                           TileFormat (JPEG), TileOverlap (TileOverlap1), TileSize (TileSize254),
+                                                           fromXML)
 
 process :: Config -> Content -> IO Content
 process config content = do
@@ -50,16 +55,32 @@ process config content = do
       [ "id" .= contentId content
       , "url" .= contentURL content
       ]
-    downloadURL (contentURL content) rawPath
-
-    logInfo "Create DZI" ["id" .= contentId content]
-    createDZI rawPath dziPath
-    -- TODO: Implement DZI parsing from output file:
-    let dzi = mkDeepZoomImage 1024 1024 TileSize254 TileOverlap1 JPEG
-        maybeMime = ContentMIME <$> parseMIMEType "image/jpeg"
+    maybeMIME <-
+      ((<$>) . (<$>)) ContentMIME $ downloadURL (contentURL content) rawPath
     rawSize <- getFileSize rawPath
-    logInfo "Mark content as successfully completed" ["id" .= contentId content]
-    markAsSuccess conn activeContent dzi maybeMime rawSize
+
+    logInfo "Create DZI"
+      ["id" .= contentId content]
+    maybeDZI <- createDZI rawPath dziPath
+
+    logInfo "Content metadata"
+      [ "mime" .= maybeMIME
+      , "size" .= rawSize
+      , "dzi" .= maybeDZI
+      ]
+
+    case maybeDZI of
+      Just dzi -> do
+        -- TODO: Upload to Rackspace
+        logInfo "Succeeded to process content"
+          ["id" .= contentId content]
+        markAsSuccess conn activeContent dzi maybeMIME rawSize
+
+      _ -> do
+        logInfo "Failed to process content"
+          ["id" .= contentId content]
+        let error_ = Nothing
+        markAsFailure conn activeContent error_
   where
     conn = Config.dbConnection config
     tempPath = Config.dataPath config </> "content-raw"
@@ -69,15 +90,15 @@ process config content = do
     getFileSize :: FilePath -> IO Integer
     getFileSize path = (toInteger . fileSize) <$> getFileStatus path
 
-downloadURL :: ContentURI -> FilePath -> IO ()
+downloadURL :: ContentURI -> FilePath -> IO (Maybe MIME.Type)
 downloadURL url dest = do
-  resp <- get (show url)
-  let body = resp ^. responseBody
+  res <- get (show url)
+  let body = res ^. responseBody
   atomicWriteFile dest body
+  return $ parseMIMEType . decodeUtf8 $ res ^. responseHeader "content-type"
 
--- createDZI ::  FilePath -> FilePath -> IO DeepZoomImage
-createDZI :: FilePath -> FilePath -> IO ()
-createDZI src dest =
+createDZI :: FilePath -> FilePath -> IO (Maybe DeepZoomImage)
+createDZI src dest = do
   callProcess "vips"
     [ "dzsave"
     , "--tile-size", show TileSize254
@@ -86,3 +107,5 @@ createDZI src dest =
     , dest
     , "--vips-progress"
     ]
+  dzi <- readFile dest
+  return $ fromXML dzi
