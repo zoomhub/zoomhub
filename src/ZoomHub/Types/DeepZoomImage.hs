@@ -12,6 +12,7 @@ module ZoomHub.Types.DeepZoomImage
   , dziTileOverlap
   , dziTileFormat
   , mkDeepZoomImage
+  , fromXML
   ) where
 
 
@@ -42,6 +43,9 @@ mkDeepZoomImage :: Integer ->
                    DeepZoomImage
 mkDeepZoomImage dziWidth dziHeight dziTileSize dziTileOverlap dziTileFormat =
   DeepZoomImage{..}
+
+fromXML :: String -> Maybe DeepZoomImage
+fromXML _ = Nothing
 
 -- Tile size
 data TileSize = TileSize254 | TileSize256 | TileSize1024
