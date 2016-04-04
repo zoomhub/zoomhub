@@ -80,8 +80,8 @@ create conn encodeId uri = withTransaction conn $ do
 
     logWarnExistingId :: Integer -> ContentId -> IO ()
     logWarnExistingId nId cId =
-      logWarning "Failed to insert ID because it already exists" [
-        "id" .= nId, "hashId" .= cId]
+      logWarning "Failed to insert ID because it already exists"
+        ["id" .= nId, "hashId" .= cId]
 
 getById :: Connection -> ContentId -> IO (Maybe Content)
 getById conn cId =
