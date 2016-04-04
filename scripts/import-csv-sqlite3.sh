@@ -26,7 +26,7 @@ mv $group1 $ROOT/output/group1
 mv $group2 $ROOT/output/group2
 
 echo '===> Initialize database'
-cat ./scripts/create-db.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
+cat ./scripts/schema-5.sql | sqlite3 $ROOT/output/zoomhub.sqlite3
 
 echo '===> Import `ContentInfo` (group 1) into SQLite'
 cat $(find $ROOT/output/group1 -type f | head -n 1) | head -n 1 > $ROOT/output/output-group1.csv
