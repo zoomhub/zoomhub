@@ -32,7 +32,6 @@ import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
 import           ZoomHub.Types.ContentURI                 (ContentURI)
 import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage,
-                                                           TileFormat (JPEG), TileOverlap (TileOverlap1), TileSize (TileSize254),
                                                            fromXML)
 
 process :: Config -> Content -> IO Content
