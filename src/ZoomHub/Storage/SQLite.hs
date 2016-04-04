@@ -49,11 +49,11 @@ import           ZoomHub.Types.ContentMIME      (ContentMIME)
 import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
 import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
 import           ZoomHub.Types.ContentURI       (ContentURI)
-import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage (DeepZoomImage),
-                                                 TileFormat, TileOverlap,
-                                                 TileSize, dziHeight,
-                                                 dziTileFormat, dziTileOverlap,
-                                                 dziTileSize, dziWidth)
+import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage, TileFormat,
+                                                 TileOverlap, TileSize,
+                                                 dziHeight, dziTileFormat,
+                                                 dziTileOverlap, dziTileSize,
+                                                 dziWidth, mkDeepZoomImage)
 import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
@@ -367,7 +367,8 @@ rowToContent cr = Content
             maybeDZITileOverlap, maybeDZITileFormat) of
       (Just dziWidth, Just dziHeight,
        Just dziTileSize, Just dziTileOverlap, Just dziTileFormat) ->
-        Just DeepZoomImage{..}
+        Just $ mkDeepZoomImage dziWidth dziHeight dziTileSize
+          dziTileOverlap dziTileFormat
       _ -> Nothing
 
 contentToRow :: Integer -> Content -> ContentRow

@@ -1,10 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module ZoomHub.Types.DeepZoomImage
-  ( DeepZoomImage(..)
+  ( DeepZoomImage
   , TileFormat(..)
   , TileOverlap(..)
   , TileSize(..)
+  , dziWidth
+  , dziHeight
+  , dziTileSize
+  , dziTileOverlap
+  , dziTileFormat
+  , mkDeepZoomImage
   ) where
 
 
@@ -26,6 +33,15 @@ data DeepZoomImage = DeepZoomImage
   , dziTileOverlap :: TileOverlap
   , dziTileFormat  :: TileFormat
   } deriving (Eq, Show)
+
+mkDeepZoomImage :: Integer ->
+                   Integer ->
+                   TileSize ->
+                   TileOverlap ->
+                   TileFormat ->
+                   DeepZoomImage
+mkDeepZoomImage dziWidth dziHeight dziTileSize dziTileOverlap dziTileFormat =
+  DeepZoomImage{..}
 
 -- Tile size
 data TileSize = TileSize254 | TileSize256 | TileSize1024

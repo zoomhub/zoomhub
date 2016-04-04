@@ -27,13 +27,14 @@ import           ZoomHub.Types.Content                    (Content, contentId,
 import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
 import           ZoomHub.Types.ContentURI                 (ContentURI)
-import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage (DeepZoomImage),
+import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage,
                                                            TileFormat (JPEG), TileOverlap (TileOverlap1), TileSize (TileSize254),
                                                            dziHeight,
                                                            dziTileFormat,
                                                            dziTileOverlap,
                                                            dziTileSize,
-                                                           dziWidth)
+                                                           dziWidth,
+                                                           mkDeepZoomImage)
 
 process :: Config -> Content -> IO Content
 process config content = do
@@ -56,13 +57,7 @@ process config content = do
     logInfo "Create DZI" ["id" .= contentId content]
     createDZI rawPath dziPath
     -- TODO: Implement DZI parsing from output file:
-    let dzi = DeepZoomImage
-              { dziWidth = 1024
-              , dziHeight = 1024
-              , dziTileOverlap = TileOverlap1
-              , dziTileFormat = JPEG
-              , dziTileSize = TileSize254
-              }
+    let dzi = mkDeepZoomImage 1024 1024 TileSize254 TileOverlap1 JPEG
         maybeMime = ContentMIME <$> parseMIMEType "image/jpeg"
     rawSize <- getFileSize rawPath
     logInfo "Mark content as successfully completed" ["id" .= contentId content]
