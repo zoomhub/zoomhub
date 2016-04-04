@@ -8,7 +8,7 @@ module ZoomHub.Types.DeepZoomImageSpec
 import           Test.Hspec                  (Spec, describe, hspec, it,
                                               shouldBe)
 
-import           ZoomHub.Types.DeepZoomImage (DeepZoomImage, TileFormat (JPEG),
+import           ZoomHub.Types.DeepZoomImage (TileFormat (JPEG),
                                               TileOverlap (TileOverlap1),
                                               TileSize (TileSize254), fromXML,
                                               mkDeepZoomImage)
