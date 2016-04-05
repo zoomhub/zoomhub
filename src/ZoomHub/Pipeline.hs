@@ -134,7 +134,6 @@ getDZITilePaths dziPath = do
 
 toTileFormat :: Maybe ContentMIME -> TileFormat
 toTileFormat (Just (ContentMIME (MIME.Type (MIME.Image "png") _)))       = PNG
-toTileFormat (Just (ContentMIME (MIME.Type (MIME.Application "pdf") _))) = PNG
 toTileFormat _                                                           = JPEG
 
 toVIPSSuffix :: TileFormat -> String
