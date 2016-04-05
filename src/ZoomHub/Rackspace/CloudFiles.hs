@@ -11,6 +11,10 @@ module ZoomHub.Rackspace.CloudFiles
   , parseEndpoint
   , getContent
   , putContent
+  , Container
+  , toContainer
+  , ObjectName
+  , toObjectName
   ) where
 
 import qualified Codec.MIME.Type       as MIME
@@ -21,10 +25,12 @@ import           Data.Aeson            (ToJSON, object, toJSON, (.=))
 import           Data.Aeson.Lens       (key, _String)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy  as BL
+import           Data.List             (intercalate, isPrefixOf)
 import qualified Data.Text             as T
 import           Network.HTTP.Client   (HttpException (..))
-import           Network.Wreq          (defaults, getWith, header, post,
-                                        responseBody, statusCode)
+import           Network.Wreq          (Options, Status, defaults, getWith,
+                                        header, post, putWith, responseBody,
+                                        responseStatus, statusCode)
 
 -- Types
 data Credentials = Credentials
@@ -33,16 +39,30 @@ data Credentials = Credentials
   } deriving (Eq, Show)
 
 instance ToJSON Credentials where
-    toJSON (Credentials username apiKey) =
-      object ["auth" .=
-        object ["RAX-KSKEY:apiKeyCredentials" .=
-          object ["username" .= username, "apiKey" .= apiKey]
-        ]
+  toJSON (Credentials username apiKey) =
+    object ["auth" .=
+      object ["RAX-KSKEY:apiKeyCredentials" .=
+        object ["username" .= username, "apiKey" .= apiKey]
       ]
+    ]
 
 newtype Endpoint = Endpoint { unEndpoint :: String } deriving (Eq, Show)
 newtype Token = Token { unToken :: String } deriving (Eq, Show)
-newtype Metadata = Metadata { unMetadata :: BL.ByteString } deriving Eq
+newtype Metadata = Metadata { unMetadata :: BL.ByteString } deriving (Eq, Show)
+
+newtype Container = Container { unContainer :: String } deriving (Eq, Show)
+
+toContainer :: String -> Maybe Container
+toContainer s
+  | '/' `notElem` s = Just (Container s)
+  | otherwise = Nothing
+
+newtype ObjectName = ObjectName { unObjectName :: String } deriving (Eq, Show)
+
+toObjectName :: String -> Maybe ObjectName
+toObjectName s
+  | "/" `isPrefixOf` s = Nothing
+  | otherwise = Just (ObjectName s)
 
 -- API
 tokenURL :: String
@@ -73,12 +93,12 @@ getContent meta urlPath =
   case parseToken meta of
     Nothing -> return Nothing
     Just t ->
-      let opts = defaults & header "X-Auth-Token" .~ [BC.pack $ unToken t] in
+      let options = toOptions t in
       case parseEndpoint meta of
         Nothing -> return Nothing
         Just e  -> do
           eitherRes <-
-            tryJust (guard . is404) (getWith opts (unEndpoint e ++ urlPath))
+            tryJust (guard . is404) (getWith options (unEndpoint e ++ urlPath))
           case eitherRes of
             Right res -> return $ Just $ res ^. responseBody
             _         -> return Nothing
@@ -87,5 +107,27 @@ getContent meta urlPath =
       is404 (StatusCodeException s _ _) = s ^. statusCode == 404
       is404 _ = False
 
-putContent :: Metadata -> FilePath -> MIME.Type -> IO (Maybe BL.ByteString)
-putContent meta path mime = undefined
+putContent :: Metadata ->
+              FilePath ->
+              MIME.Type ->
+              Container ->
+              ObjectName ->
+              IO (Maybe Status)
+putContent meta path mime container objectName =
+  case (parseToken meta, parseEndpoint meta) of
+    (Just token, Just endpoint) -> do
+      let options = addMIME mime . toOptions $ token
+          url = intercalate "/" [unEndpoint endpoint,
+            unContainer container, unObjectName objectName]
+      body <- BL.readFile path
+      res <- putWith options url body
+      return . Just $ res ^. responseStatus
+    _ -> return Nothing
+
+-- Helper
+toOptions :: Token -> Options
+toOptions token = defaults & header "X-Auth-Token" .~ [BC.pack $ unToken token]
+
+addMIME :: MIME.Type -> Options -> Options
+addMIME mime options =
+  options & header "Content-Type" .~ [BC.pack . T.unpack . MIME.showType $ mime]
