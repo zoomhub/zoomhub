@@ -42,7 +42,7 @@ fromInternal :: ContentBaseURI ->
                 Internal.DeepZoomImage ->
                 DeepZoomImage
 fromInternal baseURI cId dzi = DeepZoomImage
-  { dziUrl = DeepZoomImageURI (dziPath `relativeTo` unContentBaseURI baseURI)
+  { dziUrl = DeepZoomImageURI (dziPathURI `relativeTo` unContentBaseURI baseURI)
   , dziWidth = Internal.dziWidth dzi
   , dziHeight = Internal.dziHeight dzi
   , dziTileSize = Internal.dziTileSize dzi
@@ -50,7 +50,9 @@ fromInternal baseURI cId dzi = DeepZoomImage
   , dziTileFormat = Internal.dziTileFormat dzi
   }
   where
-    dziPath = fromJust . parseRelativeReference $ "/dzis/" ++ unId cId ++ ".dzi"
+    -- TODO: Make configurable:
+    dziPath = "/content/" ++ unId cId ++ ".dzi"
+    dziPathURI = fromJust (parseRelativeReference dziPath)
 
 mkDeepZoomImage :: DeepZoomImageURI ->
                    Integer ->
