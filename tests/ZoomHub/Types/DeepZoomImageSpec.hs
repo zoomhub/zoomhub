@@ -13,8 +13,8 @@ import           ZoomHub.Types.DeepZoomImage (TileFormat (JPEG),
                                               TileSize (TileSize254), fromXML,
                                               mkDeepZoomImage)
 
-sampleXML :: String
-sampleXML =
+jpegXML :: String
+jpegXML =
   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
   \<Image xmlns=\"http://schemas.microsoft.com/deepzoom/2008\"\
   \  Format=\"jpeg\"\
@@ -22,8 +22,8 @@ sampleXML =
   \  TileSize=\"254\"\
   \  >\
   \  <Size \
-  \    Height=\"1368\"\
-  \    Width=\"1824\"\
+  \    Height=\"5678\"\
+  \    Width=\"1234\"\
   \  />\
   \</Image>"
 
@@ -33,8 +33,8 @@ main = hspec spec
 
 spec :: Spec
 spec =
-  describe "fromXML" $
-    it "should create `DeepZoomImage` value" $
-      fromXML sampleXML
+  describe "fromXML" $ do
+    it "should create `DeepZoomImage` value from JPEG DZI XML" $
+      fromXML jpegXML
       `shouldBe`
-      Just (mkDeepZoomImage 1824 1368 TileSize254 TileOverlap1 JPEG)
+      Just (mkDeepZoomImage 1234 5678 TileSize254 TileOverlap1 JPEG)
