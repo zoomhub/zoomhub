@@ -14,6 +14,7 @@ module ZoomHub.Rackspace.CloudFiles
   , parseContainer
   , ObjectName
   , parseObjectName
+  , unObjectName
   ) where
 
 import qualified Codec.MIME.Type       as MIME
