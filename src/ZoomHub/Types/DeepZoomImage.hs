@@ -142,7 +142,7 @@ data TileFormat = JPEG | PNG deriving Eq
 toTileFormat :: String -> Maybe TileFormat
 toTileFormat "jpg" = Just JPEG
 toTileFormat "jpeg" = Just JPEG
-toTileFormat "png" = Just JPEG
+toTileFormat "png" = Just PNG
 toTileFormat _ = Nothing
 
 instance Show TileFormat where
