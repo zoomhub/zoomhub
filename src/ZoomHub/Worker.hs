@@ -24,11 +24,12 @@ processExistingContentInterval = 3
 processExistingContent :: Config -> IO ()
 processExistingContent config = forever $ do
   maybeContent <- getNextUnprocessed (Config.dbConnection config)
-  _ <- case maybeContent of
+  case maybeContent of
     Just content -> do
-      completedContent <- process config content
-      return $ Just completedContent
-    Nothing      -> return Nothing
+      _ <- process config content
+      return ()
+    _ -> return ()
+
   logDebug "Wait for next unprocessed content"
     ["sleepDuration" .= processExistingContentInterval]
   threadDelay (toMicroseconds processExistingContentInterval)
