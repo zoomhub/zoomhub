@@ -59,7 +59,7 @@ log level message meta = do
   now <- getCurrentTime
   putStrLn . BLC.unpack . encode . object $
     [ "time" .= now
-    , "type" .= ("log" :: Text)
+    , "type" .= ("app" :: Text)
     , "level" .= show level
     , "message" .= message
     ] ++ meta
