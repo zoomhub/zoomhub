@@ -10,7 +10,7 @@ import qualified Data.ByteString.Char8   as BC
 import qualified Data.Text               as T
 import           Network.HTTP.Types      (decodePath)
 import           Servant                 (FromText, fromText)
-import           System.FilePath.Posix   (splitExtension)
+import           System.FilePath         (splitExtension)
 
 import           ZoomHub.Types.ContentId (ContentId)
 import qualified ZoomHub.Types.ContentId as ContentId

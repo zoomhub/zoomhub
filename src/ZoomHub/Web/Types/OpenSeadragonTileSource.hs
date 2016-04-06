@@ -7,7 +7,7 @@ module ZoomHub.Web.Types.OpenSeadragonTileSource
 
 import           Data.Aeson                      (ToJSON, object, toJSON, (.=))
 import qualified Data.Text                       as T
-import           System.FilePath.Posix           (dropExtension)
+import           System.FilePath                 (dropExtension)
 
 import           ZoomHub.API.Types.DeepZoomImage (DeepZoomImage, dziHeight,
                                                   dziTileFormat, dziTileFormat,

@@ -22,7 +22,7 @@ import           System.Directory                     (doesFileExist,
                                                        getCurrentDirectory)
 import           System.Environment                   (lookupEnv)
 import           System.Envy                          (decodeEnv)
-import           System.FilePath.Posix                ((</>))
+import           System.FilePath                      ((</>))
 import           System.IO.Error                      (isDoesNotExistError)
 import           Web.Hashids                          (encode, hashidsSimple)
 
