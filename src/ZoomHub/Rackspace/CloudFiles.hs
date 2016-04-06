@@ -21,7 +21,8 @@ import qualified Codec.MIME.Type       as MIME
 import           Control.Exception     (tryJust)
 import           Control.Lens          as Lens hiding ((.=))
 import           Control.Monad         (guard)
-import           Data.Aeson            (ToJSON, object, toJSON, (.=))
+import           Data.Aeson            (ToJSON, Value (String), object, toJSON,
+                                        (.=))
 import           Data.Aeson.Lens       (key, _String)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy  as BL
@@ -75,6 +76,9 @@ parseObjectName :: String -> Maybe ObjectName
 parseObjectName s
   | "/" `isPrefixOf` s = Nothing
   | otherwise = Just (ObjectName s)
+
+instance ToJSON ObjectName where
+  toJSON = String . T.pack . unObjectName
 
 -- API
 tokenURL :: String
