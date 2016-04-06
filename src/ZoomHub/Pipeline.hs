@@ -136,6 +136,10 @@ toTileFormat :: Maybe ContentMIME -> TileFormat
 toTileFormat (Just (ContentMIME (MIME.Type (MIME.Image "png") _))) = PNG
 toTileFormat _                                                     = JPEG
 
+toMIME :: TileFormat -> MIME.Type
+toMIME JPEG = MIME.Type (MIME.Image "jpeg") []
+toMIME PNG  = MIME.Type (MIME.Image "png") []
+
 toVIPSSuffix :: TileFormat -> String
 toVIPSSuffix PNG = ".png"
 toVIPSSuffix JPEG = ".jpg[Q=90]"
