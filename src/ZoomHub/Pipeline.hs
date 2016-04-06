@@ -16,7 +16,7 @@ import           Network.Wreq                             (get, responseBody,
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import           System.Directory                         (createDirectoryIfMissing,
                                                            listDirectory)
-import           System.FilePath.Posix                    (dropExtension, (<.>),
+import           System.FilePath                          (dropExtension, (<.>),
                                                            (</>))
 -- import           System.IO.Temp                           (withTempDirectory)
 import           System.Posix                             (fileSize,
