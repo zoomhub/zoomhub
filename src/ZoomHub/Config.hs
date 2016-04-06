@@ -4,9 +4,13 @@ module ZoomHub.Config
   ( Config(..)
   , ExistingContentStatus(..)
   , NewContentStatus(..)
+  , RackspaceConfig
   , defaultPort
   , toExistingContentStatus
   , toNewContentStatus
+  , raxUsername
+  , raxApiKey
+  , raxContainer
   ) where
 
 import qualified Data.ByteString.Lazy         as BL
