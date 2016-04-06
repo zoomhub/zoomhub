@@ -19,7 +19,7 @@ toMicroseconds :: Int -> Int
 toMicroseconds = (* 10^(6 :: Int))
 
 processExistingContentInterval :: Int
-processExistingContentInterval = 5
+processExistingContentInterval = 3
 
 processExistingContent :: Config -> IO ()
 processExistingContent config = forever $ do
