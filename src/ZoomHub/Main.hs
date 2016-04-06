@@ -37,6 +37,7 @@ import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
                                                        unDatabasePath)
+import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI (StaticBaseURI))
 import           ZoomHub.Worker                       (processExistingContent)
 
 -- Environment
@@ -92,8 +93,10 @@ main = do
       baseURI = case maybeBaseURI of
         Just uriString -> toBaseURI uriString
         Nothing        -> toBaseURI ("http://" ++ hostname)
-      contentBaseURI = ContentBaseURI $
-        fromJust . parseAbsoluteURI $ "http://content.zoomhub.net"
+      contentBaseURI = ContentBaseURI . fromJust .
+        parseAbsoluteURI $ "http://content.zoomhub.net"
+      staticBaseURI = StaticBaseURI . fromJust .
+        parseAbsoluteURI $ "http://static.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath maybePublicPath
   ensureDBExists dbPath

@@ -21,6 +21,7 @@ import           System.Envy                  (DefConfig, FromEnv, Option (..),
 import           ZoomHub.Types.BaseURI        (BaseURI)
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import           ZoomHub.Types.DatabasePath   (DatabasePath)
+import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI)
 
 
 defaultPort :: Integer
@@ -29,6 +30,7 @@ defaultPort = 8000
 data Config = Config
   { baseURI               :: BaseURI
   , contentBaseURI        :: ContentBaseURI
+  , staticBaseURI         :: StaticBaseURI
   , dataPath              :: FilePath
   , dbConnection          :: Connection
   , dbPath                :: DatabasePath

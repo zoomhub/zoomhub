@@ -24,9 +24,9 @@ import           ZoomHub.API.Types.Content                   (Content,
 import           ZoomHub.API.Types.DeepZoomImage             (DeepZoomImageURI (..),
                                                               mkDeepZoomImage)
 import           ZoomHub.Types.BaseURI                       (BaseURI)
-import           ZoomHub.Types.ContentBaseURI                (ContentBaseURI,
-                                                              unContentBaseURI)
 import           ZoomHub.Types.DeepZoomImage                 (TileFormat (PNG), TileOverlap (TileOverlap1), TileSize (TileSize256))
+import           ZoomHub.Types.StaticBaseURI                 (StaticBaseURI,
+                                                              unStaticBaseURI)
 import           ZoomHub.Web.Types.EmbedDimension            (EmbedDimension (..),
                                                               toCSSValue)
 import           ZoomHub.Web.Types.OpenSeadragonTileSource   (fromDeepZoomImage)
@@ -34,27 +34,27 @@ import           ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonVie
 
 
 data Embed = Embed
-  { embedBaseURI        :: BaseURI
-  , embedContentBaseURI :: ContentBaseURI
-  , embedBody           :: String
-  , embedContainerId    :: String
-  , embedContent        :: Content
-  , embedHeight         :: Maybe EmbedDimension
-  , embedWidth          :: Maybe EmbedDimension
+  { embedBaseURI       :: BaseURI
+  , embedStaticBaseURI :: StaticBaseURI
+  , embedBody          :: String
+  , embedContainerId   :: String
+  , embedContent       :: Content
+  , embedHeight        :: Maybe EmbedDimension
+  , embedWidth         :: Maybe EmbedDimension
   } deriving (Eq, Generic, Show)
 
 mkEmbed :: BaseURI ->
-           ContentBaseURI ->
+           StaticBaseURI ->
            String ->
            Content ->
            String ->
            Maybe EmbedDimension ->
            Maybe EmbedDimension ->
            Embed
-mkEmbed baseURI contentBaseURI containerId content body width height = Embed{..}
+mkEmbed baseURI staticBaseURI containerId content body width height = Embed{..}
   where
     embedBaseURI = baseURI
-    embedContentBaseURI = contentBaseURI
+    embedStaticBaseURI = staticBaseURI
     embedContainerId = containerId
     embedContent = content
     embedBody = body
@@ -122,14 +122,13 @@ instance ToJS Embed where
       queuedDZI =
         mkDeepZoomImage queuedDZIURI 8000 6000 TileSize256 TileOverlap1 PNG
       queuedDZIURI = DeepZoomImageURI $
-        queuedDZIPath `relativeTo` unContentBaseURI contentBaseURI
-      queuedDZIPath = fromJust . parseRelativeReference $
-        "/static/queued.dzi"
+        queuedDZIPath `relativeTo` unStaticBaseURI staticBaseURI
+      queuedDZIPath = fromJust (parseRelativeReference "queued.dzi")
       isReady = contentReady content
       tileSource
         | not isReady = fromDeepZoomImage queuedDZI
         | otherwise   = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
       viewerConfig =
-        mkOpenSeadragonViewerConfig contentBaseURI containerId tileSource
-      contentBaseURI = embedContentBaseURI embed
+        mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource
+      staticBaseURI = embedStaticBaseURI embed
       containerId = embedContainerId embed
