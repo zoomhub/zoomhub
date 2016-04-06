@@ -12,9 +12,9 @@ module ZoomHub.Rackspace.CloudFiles
   , getContent
   , putContent
   , Container
-  , toContainer
+  , parseContainer
   , ObjectName
-  , toObjectName
+  , parseObjectName
   ) where
 
 import qualified Codec.MIME.Type       as MIME
@@ -52,15 +52,15 @@ newtype Metadata = Metadata { unMetadata :: BL.ByteString } deriving (Eq, Show)
 
 newtype Container = Container { unContainer :: String } deriving (Eq, Show)
 
-toContainer :: String -> Maybe Container
-toContainer s
+parseContainer :: String -> Maybe Container
+parseContainer s
   | '/' `notElem` s = Just (Container s)
   | otherwise = Nothing
 
 newtype ObjectName = ObjectName { unObjectName :: String } deriving (Eq, Show)
 
-toObjectName :: String -> Maybe ObjectName
-toObjectName s
+parseObjectName :: String -> Maybe ObjectName
+parseObjectName s
   | "/" `isPrefixOf` s = Nothing
   | otherwise = Just (ObjectName s)
 
