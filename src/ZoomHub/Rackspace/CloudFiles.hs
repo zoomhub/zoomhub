@@ -31,6 +31,7 @@ import           Network.HTTP.Client   (HttpException (..))
 import           Network.Wreq          (Options, Status, defaults, getWith,
                                         header, post, putWith, responseBody,
                                         responseStatus, statusCode)
+import           System.Envy           (Var, fromVar, toVar)
 
 -- Types
 data Credentials = Credentials
@@ -58,6 +59,10 @@ newtype Token = Token { unToken :: String } deriving (Eq, Show)
 newtype Metadata = Metadata { unMetadata :: BL.ByteString } deriving (Eq, Show)
 
 newtype Container = Container { unContainer :: String } deriving (Eq, Show)
+
+instance Var Container where
+  toVar = unContainer
+  fromVar = parseContainer
 
 parseContainer :: String -> Maybe Container
 parseContainer s

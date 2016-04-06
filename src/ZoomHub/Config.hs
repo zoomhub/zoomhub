@@ -10,6 +10,7 @@ module ZoomHub.Config
   ) where
 
 import qualified Data.ByteString.Lazy         as BL
+import           Data.Maybe                   (fromJust)
 import           Database.SQLite.Simple       (Connection)
 import           GHC.Generics                 (Generic)
 import           Network.Wai                  (Middleware)
@@ -18,6 +19,7 @@ import           System.Envy                  (DefConfig, FromEnv, Option (..),
                                                dropPrefixCount, fromEnv,
                                                gFromEnvCustom)
 
+import           ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
 import           ZoomHub.Types.BaseURI        (BaseURI)
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import           ZoomHub.Types.DatabasePath   (DatabasePath)
@@ -48,14 +50,19 @@ data Config = Config
 
 -- Rackspace
 data RackspaceConfig = RackspaceConfig
-  { raxUsername :: String -- RACKSPACE_USERNAME
-  , raxApiKey   :: String -- RACKSPACE_API_KEY
+  { raxUsername  :: String    -- RACKSPACE_USERNAME
+  , raxApiKey    :: String    -- RACKSPACE_API_KEY
+  , raxContainer :: Container -- RACKSPACE_CONTAINER
   } deriving (Generic, Show)
 
 -- Default configuration will be used for fields that could not be
 -- retrieved from the environment:
 instance DefConfig RackspaceConfig where
-  defConfig = RackspaceConfig{raxUsername="zoomingservice", raxApiKey=""}
+  defConfig = RackspaceConfig
+    { raxUsername = "zoomingservice"
+    , raxApiKey = ""
+    , raxContainer = fromJust (parseContainer "cache-development")
+    }
 
 instance FromEnv RackspaceConfig where
   fromEnv = gFromEnvCustom Option
