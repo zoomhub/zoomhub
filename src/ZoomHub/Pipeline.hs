@@ -133,8 +133,8 @@ getDZITilePaths dziPath = do
     filesDir = dropExtension dziPath <> "_files"
 
 toTileFormat :: Maybe ContentMIME -> TileFormat
-toTileFormat (Just (ContentMIME (MIME.Type (MIME.Image "png") _)))       = PNG
-toTileFormat _                                                           = JPEG
+toTileFormat (Just (ContentMIME (MIME.Type (MIME.Image "png") _))) = PNG
+toTileFormat _                                                     = JPEG
 
 toVIPSSuffix :: TileFormat -> String
 toVIPSSuffix PNG = ".png"
