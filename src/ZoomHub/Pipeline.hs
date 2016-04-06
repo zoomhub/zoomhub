@@ -34,7 +34,8 @@ import           ZoomHub.Config                           (Config,
                                                            raxContainer,
                                                            raxUsername)
 import qualified ZoomHub.Config                           as Config
-import           ZoomHub.Log.Logger                       (logError, logInfo)
+import           ZoomHub.Log.Logger                       (logDebug, logError,
+                                                           logInfo)
 import           ZoomHub.Rackspace.CloudFiles             (ObjectName,
                                                            getMetadata,
                                                            mkCredentials,
@@ -128,19 +129,22 @@ downloadURL url dest = do
 
 createDZI :: FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
 createDZI src dest tileFormat = do
-  callProcess "vips"
-    [ "dzsave"
-    , "--tile-size=" <> show TileSize254
-    , "--overlap=" <> show TileOverlap1
-    , src
-    , dest
-    , "--suffix=" <> toVIPSSuffix tileFormat
-    , "--vips-progress"
-    ]
-  xml <- readFile dest
-  case fromXML xml of
-    (Just dzi) -> return dzi
-    _ -> fail "Failed to create DZI"
+    logDebug "VIPS command" [ "command" .= T.pack (show args) ]
+    callProcess "vips" args
+    xml <- readFile dest
+    case fromXML xml of
+      (Just dzi) -> return dzi
+      _ -> fail "Failed to create DZI"
+  where
+    args =
+      [ "dzsave"
+      , "--tile-size=" <> show TileSize254
+      , "--overlap=" <> show TileOverlap1
+      , src
+      , dest
+      , "--suffix=" <> toVIPSSuffix tileFormat
+      , "--vips-progress"
+      ]
 
 uploadDZI :: RackspaceConfig ->
              FilePath ->
