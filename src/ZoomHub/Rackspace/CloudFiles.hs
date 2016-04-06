@@ -2,8 +2,7 @@
 
 module ZoomHub.Rackspace.CloudFiles
   ( Credentials
-  , credUsername
-  , credAPIKey
+  , mkCredentials
   , getMetadata
   , Token
   , parseToken
@@ -37,6 +36,13 @@ data Credentials = Credentials
   { credUsername :: String
   , credAPIKey   :: String
   } deriving (Eq, Show)
+
+mkCredentials :: String -> String -> Credentials
+mkCredentials username apiKey =
+  Credentials
+    { credUsername = username
+    , credAPIKey = apiKey
+    }
 
 instance ToJSON Credentials where
   toJSON (Credentials username apiKey) =
