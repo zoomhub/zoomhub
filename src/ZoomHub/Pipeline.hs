@@ -159,7 +159,7 @@ uploadDZI raxConfig rootPath path dzi = do
     forM_ tilePaths $ \tilePath ->
       case toObjectName tilePath of
         (Just tileObjectName) -> do
-          logInfo "Upload DZI tile"
+          logDebug "Upload DZI tile"
             [ "objectName" .= tileObjectName ]
           _ <- putContent meta tilePath tileMIME container tileObjectName
           return ()
@@ -171,7 +171,7 @@ uploadDZI raxConfig rootPath path dzi = do
     -- Upload manifest
     case toObjectName path of
       (Just dziObjectName) -> do
-        logInfo "Upload DZI manifest"
+        logDebug "Upload DZI manifest"
           [ "objectName" .= dziObjectName ]
         _ <- putContent meta path manifestMIME container dziObjectName
         return ()
