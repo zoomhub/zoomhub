@@ -5,7 +5,8 @@ module ZoomHub.Types.ContentMIME
 
 import           Codec.MIME.Parse                 (parseMIMEType)
 import           Codec.MIME.Type                  (Type, showType)
-import           Data.Aeson                       (Value (String), ToJSON, toJSON)
+import           Data.Aeson                       (ToJSON, Value (String),
+                                                   toJSON)
 import qualified Data.Text                        as T
 import           Database.SQLite.Simple           (SQLData (SQLText))
 import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
