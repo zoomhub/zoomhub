@@ -116,7 +116,7 @@ putContent :: Metadata ->
 putContent meta path mime container objectName =
   case (parseToken meta, parseEndpoint meta) of
     (Just token, Just endpoint) -> do
-      let options = addMIME mime . toOptions $ token
+      let options = addContentType mime . toOptions $ token
           url = intercalate "/" [unEndpoint endpoint,
             unContainer container, unObjectName objectName]
       body <- BL.readFile path
@@ -128,6 +128,6 @@ putContent meta path mime container objectName =
 toOptions :: Token -> Options
 toOptions token = defaults & header "X-Auth-Token" .~ [BC.pack $ unToken token]
 
-addMIME :: MIME.Type -> Options -> Options
-addMIME mime options =
+addContentType :: MIME.Type -> Options -> Options
+addContentType mime options =
   options & header "Content-Type" .~ [BC.pack . T.unpack . MIME.showType $ mime]
