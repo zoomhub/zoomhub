@@ -94,7 +94,7 @@ main = do
         Just uriString -> toBaseURI uriString
         Nothing        -> toBaseURI ("http://" ++ hostname)
       contentBaseURI = ContentBaseURI . fromJust .
-        parseAbsoluteURI $ "http://content.zoomhub.net"
+        parseAbsoluteURI $ "http://cache-development.zoomhub.net"
       staticBaseURI = StaticBaseURI . fromJust .
         parseAbsoluteURI $ "http://static.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
