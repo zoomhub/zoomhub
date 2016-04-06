@@ -12,8 +12,8 @@ import qualified Data.Text                                 as T
 import           Network.URI                               (URI, parseRelativeReference,
                                                             relativeTo)
 
-import           ZoomHub.Types.ContentBaseURI              (ContentBaseURI,
-                                                            unContentBaseURI)
+import           ZoomHub.Types.StaticBaseURI               (StaticBaseURI,
+                                                            unStaticBaseURI)
 import           ZoomHub.Web.Types.OpenSeadragonTileSource (OpenSeadragonTileSource)
 
 
@@ -23,19 +23,19 @@ data OpenSeadragonViewerConfig = OpenSeadragonViewerConfig
   , oscvTileSource  :: OpenSeadragonTileSource
   } deriving (Eq, Show)
 
-mkOpenSeadragonViewerConfig :: ContentBaseURI ->
+mkOpenSeadragonViewerConfig :: StaticBaseURI ->
                                String ->
                                OpenSeadragonTileSource ->
                                OpenSeadragonViewerConfig
-mkOpenSeadragonViewerConfig contentBaseURI containerId tileSource =
+mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource =
   OpenSeadragonViewerConfig
     { osvcContainerId = containerId
     , oscvTileSource = tileSource
     , osvcPrefixURI = prefixURI
     }
   where
-    prefixURI = prefixPath `relativeTo` unContentBaseURI contentBaseURI
-    prefixPath = fromJust . parseRelativeReference $ "/openseadragon-images/"
+    prefixURI = prefixPath `relativeTo` unStaticBaseURI staticBaseURI
+    prefixPath = fromJust . parseRelativeReference $ "openseadragon-images"
 
 -- JSON
 instance ToJSON OpenSeadragonViewerConfig where

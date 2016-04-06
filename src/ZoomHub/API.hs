@@ -49,6 +49,7 @@ import qualified ZoomHub.Types.Content                as Internal
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
 import           ZoomHub.Types.ContentId              (ContentId, unId)
 import           ZoomHub.Types.ContentURI             (ContentURI)
+import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI)
 import qualified ZoomHub.Web.Errors                   as Web
 import           ZoomHub.Web.Static                   (serveDirectory)
 import           ZoomHub.Web.Types.Embed              (Embed, mkEmbed)
@@ -137,7 +138,7 @@ server config =
     :<|> restContentByURL baseURI dbConn encodeId newContentStatus
     :<|> restInvalidRequest
     -- Web: Embed
-    :<|> webEmbed baseURI contentBaseURI dbConn viewerScript
+    :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConn viewerScript
     -- Web: View
     :<|> webContentById baseURI contentBaseURI dbConn
     :<|> webContentByURL baseURI dbConn
@@ -148,6 +149,7 @@ server config =
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
+    staticBaseURI = Config.staticBaseURI config
     dbConn = Config.dbConnection config
     encodeId = Config.encodeId config
     newContentStatus = Config.newContentStatus config
@@ -259,6 +261,7 @@ restInvalidRequest maybeURL = case maybeURL of
 -- Web: Embed
 webEmbed :: BaseURI ->
             ContentBaseURI ->
+            StaticBaseURI ->
             Connection ->
             String ->
             EmbedId ->
@@ -266,7 +269,8 @@ webEmbed :: BaseURI ->
             Maybe EmbedDimension ->
             Maybe EmbedDimension ->
             Handler Embed
-webEmbed baseURI cBaseURI dbConn script embedId maybeId width height = do
+webEmbed baseURI contentBaseURI staticBaseURI dbConn viewerScript embedId
+         maybeId width height = do
   maybeContent <- liftIO $ getById dbConn contentId
   case maybeContent of
     Nothing      -> left . Web.error404 $ contentNotFoundMessage contentId
@@ -274,8 +278,9 @@ webEmbed baseURI cBaseURI dbConn script embedId maybeId width height = do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
       let containerId = fromMaybe (defaultContainerId randomId) maybeId
-          pContent = fromInternal baseURI cBaseURI content
-      return $ mkEmbed baseURI cBaseURI containerId pContent script width height
+          pContent = fromInternal baseURI contentBaseURI content
+      return $ mkEmbed baseURI staticBaseURI containerId pContent
+        viewerScript width height
   where
     contentId = unEmbedId embedId
     defaultContainerId n = "zoomhub-embed-" ++ show n
