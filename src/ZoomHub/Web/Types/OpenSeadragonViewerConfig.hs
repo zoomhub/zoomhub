@@ -11,6 +11,7 @@ import           Data.Maybe                                (fromJust)
 import qualified Data.Text                                 as T
 import           Network.URI                               (URI, parseRelativeReference,
                                                             relativeTo)
+import           System.FilePath                           (addTrailingPathSeparator)
 
 import           ZoomHub.Types.StaticBaseURI               (StaticBaseURI,
                                                             unStaticBaseURI)
@@ -42,6 +43,7 @@ instance ToJSON OpenSeadragonViewerConfig where
   toJSON o =
     object
     [ "id" .= T.pack (osvcContainerId o)
-    , "prefixUrl" .= (T.pack . show . osvcPrefixURI) o
+    , "prefixUrl" .=
+        (T.pack . addTrailingPathSeparator . show . osvcPrefixURI) o
     , "tileSources" .= toJSON (oscvTileSource o) -- NOTE: plural key
     ]
