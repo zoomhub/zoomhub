@@ -65,6 +65,7 @@ library
       aeson == 0.10.*
     , aeson-casing == 0.1.*
     , aeson-pretty
+    , async == 2.1.0
     , atomic-write
     , base >= 4.8 && < 5
     , blaze-builder
