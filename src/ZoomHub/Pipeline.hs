@@ -7,6 +7,7 @@ module ZoomHub.Pipeline
 
 import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
+import           Control.Concurrent.Async                 (forConcurrently)
 import           Control.Exception                        (SomeException, catch)
 import           Control.Lens                             ((^.))
 import           Control.Monad                            (forM_)
@@ -156,7 +157,7 @@ uploadDZI raxConfig rootPath path dzi = do
     tilePaths <- getDZITilePaths path
 
     -- Upload Tiles
-    forM_ tilePaths $ \tilePath ->
+    forConcurrently tilePaths $ \tilePath ->
       case toObjectName tilePath of
         (Just tileObjectName) -> do
           logDebug "Upload DZI tile"
