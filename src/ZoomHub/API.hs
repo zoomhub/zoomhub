@@ -43,7 +43,8 @@ import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
 import           ZoomHub.Storage.SQLite               (create, getById,
-                                                       getByURL)
+                                                       getById', getByURL,
+                                                       getByURL')
 import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content                as Internal
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
@@ -178,7 +179,7 @@ jsonpContentById :: BaseURI ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentById baseURI contentBaseURI dbConn contentId callback = do
-  maybeContent <- liftIO $ getById dbConn contentId
+  maybeContent <- liftIO $ getById' dbConn contentId
   case maybeContent of
     Nothing      -> left $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
@@ -193,7 +194,7 @@ jsonpContentByURL :: BaseURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentByURL baseURI contentBaseURI dbConn url callback = do
-  maybeContent <- liftIO $ getByURL dbConn url
+  maybeContent <- liftIO $ getByURL' dbConn url
   case maybeContent of
     Nothing      -> left . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
@@ -228,7 +229,7 @@ restContentById :: BaseURI ->
                    ContentId ->
                    Handler Content
 restContentById baseURI contentBaseURI dbConn contentId = do
-  maybeContent <- liftIO $ getById dbConn contentId
+  maybeContent <- liftIO $ getById' dbConn contentId
   case maybeContent of
     Nothing      -> left . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
@@ -244,7 +245,7 @@ restContentByURL :: BaseURI ->
                     ContentURI ->
                     Handler Content
 restContentByURL baseURI dbConn encodeId newContentStatus url = do
-  maybeContent <- liftIO $ getByURL dbConn url
+  maybeContent <- liftIO $ getByURL' dbConn url
   case maybeContent of
     Nothing      -> do
       newContent <- case newContentStatus of
@@ -271,7 +272,7 @@ webEmbed :: BaseURI ->
             Handler Embed
 webEmbed baseURI contentBaseURI staticBaseURI dbConn viewerScript embedId
          maybeId width height = do
-  maybeContent <- liftIO $ getById dbConn contentId
+  maybeContent <- liftIO $ getById' dbConn contentId
   case maybeContent of
     Nothing      -> left . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
