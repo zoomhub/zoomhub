@@ -158,7 +158,7 @@ spec = with (return $ app config) $ do
       it "should return correct data for existing content" $
         get "/v1/content/4rcn" `shouldRespondWith`
           "{\"dzi\":{\"height\":3750,\"url\":\
-            \\"http://localhost:9000/dzis/4rcn.dzi\",\"width\":5058,\
+            \\"http://localhost:9000/content/4rcn.dzi\",\"width\":5058,\
             \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
             \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
             \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
@@ -205,7 +205,7 @@ spec = with (return $ app config) $ do
           "/**/ typeof handleContent === 'function' && \
           \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
           \{\"dzi\":{\"height\":3750,\"url\":\
-          \\"http://localhost:9000/dzis/4rcn.dzi\",\"width\":5058,\
+          \\"http://localhost:9000/content/4rcn.dzi\",\"width\":5058,\
           \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
           \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
           \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
