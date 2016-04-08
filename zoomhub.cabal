@@ -104,6 +104,7 @@ library
     , temporary
     , text
     , time
+    , time-units
     , transformers
     , unix
     , unordered-containers
