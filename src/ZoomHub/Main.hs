@@ -139,7 +139,7 @@ main = do
 
       case existingContentStatus of
         ProcessExistingContent -> do
-          forM_ [1..3] $ \_ -> do
+          forM_ [1..3 :: Int] $ \_ -> do
             logInfo_ "Worker: Start processing existing content"
             forkIO (processExistingContent config)
 
