@@ -92,8 +92,8 @@ nullLogger = id
 
 config :: Config
 config = Config
-  { baseURI = BaseURI $ toURI "http://localhost:8000"
-  , contentBaseURI = ContentBaseURI $ toURI "http://localhost:9000"
+  { baseURI = BaseURI (toURI "http://localhost:8000")
+  , contentBaseURI = ContentBaseURI (toURI "http://localhost:9000")
   , dataPath = "./data"
   -- TODO: How can we avoid `unsafePerformIO`?
   , dbConnection = unsafePerformIO $ open rawDBPath
