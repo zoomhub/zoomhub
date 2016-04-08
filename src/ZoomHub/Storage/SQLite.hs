@@ -118,7 +118,7 @@ getNextUnprocessed conn =
 
 getExpiredActive :: Connection -> IO [Content]
 getExpiredActive conn = withTransaction conn $
-  (fmap . fmap) rowToContent $ queryNamed conn
+  ((<$>) . (<$>)) rowToContent $ queryNamed conn
     (selectContent <> "WHERE content.state = :activeState AND\
      \ (julianday(datetime('now')) - julianday(datetime(content.activeAt))) \
      \ * 24 * 60 > :ttlMinutes")
