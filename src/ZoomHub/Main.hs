@@ -11,6 +11,7 @@ import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
 import           Data.Maybe                           (fromJust, fromMaybe)
+import           Data.Text                            (Text)
 import           Database.SQLite.Simple               (open)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
@@ -109,6 +110,18 @@ main = do
           config = Config{..}
       logInfo_ $ "Welcome to ZoomHub.\
         \ Go to <" ++ show baseURI ++ "> and have fun!"
+      logInfo "Config"
+        [ "name" .= ("baseURI" :: Text)
+        , "value" .= baseURI
+        ]
+      logInfo "Config"
+        [ "name" .= ("staticBaseURI" :: Text)
+        , "value" .= staticBaseURI
+        ]
+      logInfo "Config"
+        [ "name" .= ("contentBaseURI" :: Text)
+        , "value" .= contentBaseURI
+        ]
       logInfo "Environment"
         [ "name" .= existingContentStatusEnvName
         , "value" .= show existingContentStatus
