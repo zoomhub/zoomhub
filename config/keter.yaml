@@ -19,7 +19,7 @@ stanzas:
       - zoomhub.net
     env:
       DATA_PATH: '/mnt/datavolume/zoomhub/data'
-      DB_PATH: '/mnt/datavolume/zoomhub/data/content.sqlite3'
+      DB_PATH: '/mnt/datavolume/zoomhub/data/zoomhub.sqlite3'
     forward-env:
       - EXISTING_CONTENT_PROCESSING_ENABLED
       - HASHIDS_SALT
