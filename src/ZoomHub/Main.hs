@@ -38,7 +38,7 @@ import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBa
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
                                                        unDatabasePath)
 import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI (StaticBaseURI))
-import           ZoomHub.Worker                       (processExistingContent)
+import           ZoomHub.Worker                       (processExistingContent, processExpiredActiveContent)
 
 -- Environment
 baseURIEnvName :: String
@@ -117,6 +117,10 @@ main = do
         [ "name" .= newContentStatusEnvName
         , "value" .= show newContentStatus
         ]
+
+      logInfo_ "Worker: Reset expired active content"
+      _ <- forkIO (processExpiredActiveContent config)
+
       case existingContentStatus of
         ProcessExistingContent -> do
           logInfo_ "Worker: Start processing existing content"

@@ -2,6 +2,7 @@
 
 module ZoomHub.Worker
   ( processExistingContent
+  , processExpiredActiveContent
   ) where
 
 import           Control.Concurrent     (threadDelay)
@@ -14,7 +15,9 @@ import           ZoomHub.Config         (Config)
 import qualified ZoomHub.Config         as Config
 import           ZoomHub.Log.Logger     (logDebug)
 import           ZoomHub.Pipeline       (process)
-import           ZoomHub.Storage.SQLite (getNextUnprocessed)
+import           ZoomHub.Storage.SQLite (getExpiredActive, getNextUnprocessed,
+                                         resetAsInitialized)
+import           ZoomHub.Types.Content  (contentId)
 
 
 processExistingContentInterval :: Second
@@ -37,3 +40,17 @@ processExistingContent config = forever $ do
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     sleepDuration = processExistingContentInterval
+
+processExpiredActiveContent :: Config -> IO ()
+processExpiredActiveContent config = forever $ do
+    cs <- getExpiredActive dbConn
+    logDebug "Reset expired active content"
+      [ "ids" .= map contentId cs ]
+    resetAsInitialized dbConn cs
+
+    logDebug "Wait for next expired active content"
+      [ "sleepDuration" .= show sleepDuration ]
+    threadDelay . fromIntegral $ toMicroseconds sleepDuration
+  where
+    dbConn = Config.dbConnection config
+    sleepDuration = processExpiredActiveContentInterval
