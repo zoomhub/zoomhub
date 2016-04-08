@@ -71,8 +71,9 @@ unsafeProcess config content = do
   createDirectoryIfMissing True tempPath
 
   withTempDirectory tempPath template $ \tmpDir -> do
-    let rawPath = tmpDir </> rawContentId
-        dziPath = rawPath <.> ".dzi"
+    let rawPathPrefix = tmpDir </> rawContentId
+        rawPath = rawPathPrefix ++ "-raw"
+        dziPath = rawPathPrefix <.> "dzi"
 
     logInfo "Create temporary working directory"
       [ "id" .= contentId content
@@ -141,7 +142,7 @@ createDZI src dest tileFormat = do
       , "--tile-size=" <> show TileSize254
       , "--overlap=" <> show TileOverlap1
       , src
-      , dest
+      , dropExtension dest -- VIPS 7.38.5 automatically adds `.dzi` extension
       , "--suffix=" <> toVIPSSuffix tileFormat
       , "--vips-progress"
       ]
