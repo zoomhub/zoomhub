@@ -5,9 +5,11 @@ module ZoomHub.Storage.SQLite
   (
   -- ** Read operations
     getById
+  , getById'
   , getByURL
-  , getNextUnprocessed
+  , getByURL'
   , getExpiredActive
+  , getNextUnprocessed
   -- ** Write operations
   , create
   , markAsActive
@@ -90,13 +92,23 @@ create conn encodeId uri = withTransaction conn $ do
       logWarning "Failed to insert ID because it already exists"
         ["id" .= nId, "hashId" .= cId]
 
+-- TODO: Generalize:
+getById' :: Connection -> ContentId -> IO (Maybe Content)
+getById' conn cId =
+  getBy' conn "content.hashId" (unId cId)
+
 getById :: Connection -> ContentId -> IO (Maybe Content)
 getById conn cId =
   getBy conn "content.hashId" (unId cId)
 
+-- TODO: Generalize:
 getByURL :: Connection -> ContentURI -> IO (Maybe Content)
 getByURL conn uri =
   getBy conn "content.url" (show uri)
+
+getByURL' :: Connection -> ContentURI -> IO (Maybe Content)
+getByURL' conn uri =
+  getBy' conn "content.url" (show uri)
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
 getNextUnprocessed conn =
@@ -240,9 +252,15 @@ markAsSuccess conn content dzi maybeMIME size = do
   return content'
 
 -- Internal
+getBy' :: Connection -> String -> String -> IO (Maybe Content)
+getBy' conn fieldName param =
+  withTransaction conn $ do
+    execute conn (incrNumViewsQueryFor fieldName) (Only param)
+    getBy conn fieldName param
+
 getBy :: Connection -> String -> String -> IO (Maybe Content)
 getBy conn fieldName param =
-  get $ query conn (queryFor fieldName) (Only param)
+  get $ query conn (selectQueryFor fieldName) (Only param)
 
 get :: IO [ContentRow] -> IO (Maybe Content)
 get queryAction = do
@@ -282,9 +300,14 @@ insertFieldNames :: [Query]
 insertFieldNames =
   filter (`Set.notMember` fieldNamesWithDefaults) fieldNames
 
-queryFor :: String -> Query
-queryFor fieldName =
+selectQueryFor :: String -> Query
+selectQueryFor fieldName =
   selectContent <> "WHERE " <> fromString fieldName <> " = ?"
+
+incrNumViewsQueryFor :: String -> Query
+incrNumViewsQueryFor fieldName =
+  "UPDATE content SET numViews = numViews + 1 WHERE " <>
+    fromString fieldName <> " = ?"
 
 selectContent :: Query
 selectContent =
