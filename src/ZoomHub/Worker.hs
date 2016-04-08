@@ -8,8 +8,7 @@ module ZoomHub.Worker
 import           Control.Concurrent     (threadDelay)
 import           Control.Monad          (forever)
 import           Data.Aeson             ((.=))
-import           Data.Time.Units        (Minute, Second,
-                                         TimeUnit, toMicroseconds)
+import           Data.Time.Units        (Minute, Second, toMicroseconds)
 
 import           ZoomHub.Config         (Config)
 import qualified ZoomHub.Config         as Config
