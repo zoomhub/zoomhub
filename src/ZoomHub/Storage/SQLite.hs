@@ -113,7 +113,7 @@ getByURL' conn uri =
 getNextUnprocessed :: Connection -> IO (Maybe Content)
 getNextUnprocessed conn =
   get $ query conn (selectContent <> "WHERE state = ? \
-    \ ORDER BY content.initializedAt ASC LIMIT 1")
+    \ ORDER BY content.numViews DESC, content.initializedAt ASC LIMIT 1")
     (Only Initialized)
 
 getExpiredActive :: Connection -> IO [Content]
