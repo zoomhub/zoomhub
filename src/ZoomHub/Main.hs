@@ -5,7 +5,7 @@ module ZoomHub.Main (main) where
 
 import           Control.Concurrent                   (forkIO)
 import           Control.Exception                    (tryJust)
-import           Control.Monad                        (forM_, guard, unless)
+import           Control.Monad                        (guard, unless)
 import           Data.Aeson                           ((.=))
 import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
@@ -139,9 +139,8 @@ main = do
 
       case existingContentStatus of
         ProcessExistingContent -> do
-          forM_ [1..3 :: Int] $ \_ -> do
-            logInfo_ "Worker: Start processing existing content"
-            forkIO (processExistingContent config)
+          logInfo_ "Worker: Start processing existing content"
+          _ <- forkIO (processExistingContent config)
 
           return ()
         _ -> return ()
