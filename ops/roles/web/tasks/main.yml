@@ -1,7 +1,7 @@
 ---
-- name: Set `EXISTING_CONTENT_PROCESSING_ENABLED`
+- name: Set `PROCESS_EXISTING_CONTENT`
   lineinfile: dest=~/.profile
-              line="export EXISTING_CONTENT_PROCESSING_ENABLED=0"
+              line="export PROCESS_EXISTING_CONTENT=0"
               state=present
 
 - name: Set `HASHIDS_SALT`
@@ -9,7 +9,7 @@
               line="export HASHIDS_SALT={{ zoomhub_hashids_salt }}"
               state=present
 
-- name: Set `NEW_CONTENT_PROCESSING_ENABLED`
+- name: Set `PROCESS_NEW_CONTENT`
   lineinfile: dest=~/.profile
-              line="export NEW_CONTENT_PROCESSING_ENABLED=0"
+              line="export PROCESS_NEW_CONTENT=0"
               state=present

@@ -45,10 +45,10 @@ baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
 
 existingContentStatusEnvName :: String
-existingContentStatusEnvName = "EXISTING_CONTENT_PROCESSING_ENABLED"
+existingContentStatusEnvName = "PROCESS_EXISTING_CONTENT"
 
 newContentStatusEnvName :: String
-newContentStatusEnvName = "NEW_CONTENT_PROCESSING_ENABLED"
+newContentStatusEnvName = "PROCESS_NEW_CONTENT"
 
 dbPathEnvName :: String
 dbPathEnvName = "DB_PATH"
