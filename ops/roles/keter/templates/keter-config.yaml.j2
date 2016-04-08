@@ -14,7 +14,7 @@ listeners:
 setuid: {{ admin_user }}
 
 env:
-  - PROCESS_EXISTING_CONTENT: 0
   - HASHIDS_SALT: {{ zoomhub_hashids_salt }}
+  - PROCESS_EXISTING_CONTENT: 0
   - PROCESS_NEW_CONTENT: 0
   - RACKSPACE_CONTAINER: {{ rackspace_cloudfiles_container }}
