@@ -36,8 +36,11 @@ toURI :: String -> URI
 toURI = fromJust . parseAbsoluteURI
 
 existingContent :: (ContentId, String)
-existingContent = (fromString "h",
-  "http://upload.wikimedia.org/wikipedia/commons/3/36/SeattleI5Skyline.jpg")
+existingContent =
+  ( fromString "h"
+  , "http://upload.wikimedia.org/wikipedia/commons/3/36/\
+      \SeattleI5Skyline.jpg#zoomhub=h"
+  )
 
 -- Matchers
 applicationJSON :: MatchHeader
