@@ -26,6 +26,7 @@ import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI (ContentBaseURI))
 import           ZoomHub.Types.ContentId      (ContentId, fromString, unId)
 import           ZoomHub.Types.DatabasePath   (DatabasePath (DatabasePath))
+import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI (StaticBaseURI))
 
 main :: IO ()
 main = hspec spec
@@ -103,6 +104,7 @@ config = Config
   , port = 8000
   , publicPath = "./public"
   , rackspace = undefined
+  , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
   , version = "test"
   }
   where
