@@ -156,7 +156,7 @@ uploadDZI raxConfig rootPath path dzi = do
     tilePaths <- getDZITilePaths path
 
     -- Upload Tiles
-    forConcurrently tilePaths $ \tilePath ->
+    _ <- forConcurrently tilePaths $ \tilePath ->
       case toObjectName tilePath of
         (Just tileObjectName) -> do
           logDebug "Upload DZI tile"
