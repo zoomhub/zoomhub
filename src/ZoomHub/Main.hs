@@ -30,10 +30,12 @@ import           Web.Hashids                          (encode, hashidsSimple)
 import           ZoomHub.API                          (app)
 import           ZoomHub.Config                       (Config (..), ExistingContentStatus (ProcessExistingContent, IgnoreExistingContent), NewContentStatus (NewContentDisallowed),
                                                        defaultPort,
+                                                       raxContainer,
                                                        toExistingContentStatus,
                                                        toNewContentStatus)
 import           ZoomHub.Log.Logger                   (logInfo, logInfo_)
 import           ZoomHub.Log.RequestLogger            (formatAsJSON)
+import           ZoomHub.Rackspace.CloudFiles         (unContainer)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
@@ -94,8 +96,6 @@ main = do
       baseURI = case maybeBaseURI of
         Just uriString -> toBaseURI uriString
         Nothing        -> toBaseURI ("http://" ++ hostname)
-      contentBaseURI = ContentBaseURI . fromJust .
-        parseAbsoluteURI $ "http://cache-development.zoomhub.net"
       staticBaseURI = StaticBaseURI . fromJust .
         parseAbsoluteURI $ "http://static.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
@@ -104,9 +104,12 @@ main = do
   dbConnection <- open (unDatabasePath dbPath)
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
+
       let encodeContext = hashidsSimple hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
+          contentBaseURI = ContentBaseURI . fromJust . parseAbsoluteURI $
+            "http://" ++ unContainer (raxContainer rackspace) ++ ".zoomhub.net"
           config = Config{..}
       logInfo_ $ "Welcome to ZoomHub.\
         \ Go to <" ++ show baseURI ++ "> and have fun!"

@@ -12,6 +12,7 @@ module ZoomHub.Rackspace.CloudFiles
   , putContent
   , Container
   , parseContainer
+  , unContainer
   , ObjectName
   , parseObjectName
   , unObjectName
