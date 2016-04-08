@@ -7,15 +7,17 @@ module ZoomHub.Storage.SQLite
     getById
   , getByURL
   , getNextUnprocessed
+  , getExpiredActive
   -- ** Write operations
   , create
   , markAsActive
   , markAsFailure
   , markAsSuccess
+  , resetAsInitialized
   ) where
 
 import           Control.Exception              (tryJust)
-import           Control.Monad                  (guard)
+import           Control.Monad                  (forM_, guard)
 import           Data.Aeson                     ((.=))
 import           Data.Monoid                    ((<>))
 import           Data.Set                       (Set)
@@ -26,7 +28,8 @@ import           Data.Time.Clock                (UTCTime, getCurrentTime)
 import           Database.SQLite.Simple         (Connection, NamedParam ((:=)),
                                                  Only (Only), Query, execute,
                                                  executeNamed, field, fromOnly,
-                                                 query, query_, withTransaction)
+                                                 query, queryNamed, query_,
+                                                 withTransaction)
 import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField (toField)
 import           Database.SQLite.Simple.ToRow   (ToRow, toRow)
@@ -100,6 +103,27 @@ getNextUnprocessed conn =
   get $ query conn (selectContent <> "WHERE state = ? \
     \ ORDER BY content.initializedAt ASC LIMIT 1")
     (Only Initialized)
+
+getExpiredActive :: Connection -> IO [Content]
+getExpiredActive conn = withTransaction conn $
+  (fmap . fmap) rowToContent $ queryNamed conn
+    (selectContent <> "WHERE content.state = :activeState AND\
+     \ (julianday(datetime('now')) - julianday(datetime(content.activeAt))) \
+     \ * 24 * 60 > :ttlMinutes")
+      [ ":activeState" := Active
+      , ":ttlMinutes" := (30 :: Integer)
+      ]
+
+resetAsInitialized :: Connection -> [Content] -> IO ()
+resetAsInitialized conn cs =
+  withTransaction conn $
+    forM_ (map (unId . contentId) cs) $ \hashId ->
+      executeNamed conn "UPDATE content \
+      \ SET state = :initializedState, activeAt = NULL, error = NULL, \
+      \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
+      [ ":initializedState" := Initialized
+      , ":hashId" := hashId
+      ]
 
 markAsActive :: Connection -> Content -> IO Content
 markAsActive conn content = do
