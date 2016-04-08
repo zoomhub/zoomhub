@@ -10,7 +10,6 @@ import qualified Codec.MIME.Type                          as MIME
 import           Control.Concurrent.Async                 (forConcurrently)
 import           Control.Exception                        (SomeException, catch)
 import           Control.Lens                             ((^.))
-import           Control.Monad                            (forM_)
 import           Data.Aeson                               ((.=))
 import           Data.List                                (stripPrefix)
 import           Data.Monoid                              ((<>))
