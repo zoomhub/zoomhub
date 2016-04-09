@@ -179,8 +179,7 @@ jsonpContentById :: BaseURI ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentById baseURI contentBaseURI dbPath contentId callback = do
-  maybeContent <-
-    liftIO $ withConnection dbPath $ \dbConn -> getById' dbConn contentId
+  maybeContent <- liftIO $ withConnection dbPath (getById' contentId)
   case maybeContent of
     Nothing      -> left $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
@@ -195,8 +194,7 @@ jsonpContentByURL :: BaseURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentByURL baseURI contentBaseURI dbPath url callback = do
-  maybeContent <-
-    liftIO $ withConnection dbPath $ \dbConn -> getByURL' dbConn url
+  maybeContent <- liftIO $ withConnection dbPath (getByURL' url)
   case maybeContent of
     Nothing      -> left . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
@@ -231,8 +229,7 @@ restContentById :: BaseURI ->
                    ContentId ->
                    Handler Content
 restContentById baseURI contentBaseURI dbPath contentId = do
-  maybeContent <-
-    liftIO $ withConnection dbPath $ \dbConn -> getById' dbConn contentId
+  maybeContent <- liftIO $ withConnection dbPath (getById' contentId)
   case maybeContent of
     Nothing      -> left . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
@@ -248,13 +245,12 @@ restContentByURL :: BaseURI ->
                     ContentURI ->
                     Handler Content
 restContentByURL baseURI dbPath encodeId newContentStatus url = do
-  maybeContent <-
-    liftIO $ withConnection dbPath $ \dbConn -> getByURL' dbConn url
+  maybeContent <- liftIO $ withConnection dbPath (getByURL' url)
   case maybeContent of
     Nothing      -> do
       newContent <- case newContentStatus of
         NewContentAllowed ->
-          liftIO $ withConnection dbPath $ \dbConn -> create dbConn encodeId url
+          liftIO $ withConnection dbPath (create encodeId url)
         _ -> noNewContentErrorAPI
       redirectToAPI baseURI (Internal.contentId newContent)
     Just content -> redirectToAPI baseURI (Internal.contentId content)
@@ -277,8 +273,7 @@ webEmbed :: BaseURI ->
             Handler Embed
 webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript embedId
          maybeId width height = do
-  maybeContent <-
-    liftIO $ withConnection dbPath $ \dbConn -> getById' dbConn contentId
+  maybeContent <- liftIO $ withConnection dbPath (getById' contentId)
   case maybeContent of
     Nothing      -> left . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
@@ -299,8 +294,7 @@ webContentById :: BaseURI ->
                   ContentId ->
                   Handler ViewContent
 webContentById baseURI contentBaseURI dbPath contentId = do
-  maybeContent <-
-    liftIO $ withConnection dbPath $ \dbConn -> getById dbConn contentId
+  maybeContent <- liftIO $ withConnection dbPath (getById contentId)
   case maybeContent of
     Nothing -> left . Web.error404 $ contentNotFoundMessage contentId
     Just c  -> do
@@ -310,8 +304,7 @@ webContentById baseURI contentBaseURI dbPath contentId = do
 -- TODO: Add support for submission, i.e. create content in the background:
 webContentByURL :: BaseURI -> DatabasePath -> ContentURI -> Handler ViewContent
 webContentByURL baseURI dbPath contentURI = do
-  maybeContent <-
-    liftIO $ withConnection dbPath $ \dbConn -> getByURL dbConn contentURI
+  maybeContent <- liftIO $ withConnection dbPath (getByURL contentURI)
   case maybeContent of
     Nothing -> noNewContentErrorWeb
     Just c  -> redirectToView baseURI (Internal.contentId c)
