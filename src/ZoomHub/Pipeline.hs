@@ -7,9 +7,7 @@ module ZoomHub.Pipeline
 
 import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
-import           Control.Concurrent.Async.Pool            (TaskGroup,
-                                                           mapConcurrently,
-                                                           withTaskGroup)
+import           Control.Concurrent.Async                 (forConcurrently)
 import           Control.Exception                        (SomeException, catch)
 import           Control.Lens                             ((^.))
 import           Data.Aeson                               ((.=))
@@ -159,18 +157,17 @@ uploadDZI raxConfig rootPath path dzi = do
     tilePaths <- getDZITilePaths path
 
     -- Upload Tiles
-    _ <- withTaskGroup numParallelUploads $ \g ->
-      forConcurrently g tilePaths $ \tilePath ->
-        case toObjectName tilePath of
-          (Just tileObjectName) -> do
-            logDebug "Upload DZI tile"
-              [ "objectName" .= tileObjectName ]
-            _ <- putContent meta tilePath tileMIME container tileObjectName
-            return ()
-          _ -> logError "Invalid DZI tile object name"
-                  [ "tilePath" .= tilePath
-                  , "rootPath" .= rootPath
-                  ]
+    _ <- forConcurrently tilePaths $ \tilePath ->
+      case toObjectName tilePath of
+        (Just tileObjectName) -> do
+          logDebug "Upload DZI tile"
+            [ "objectName" .= tileObjectName ]
+          _ <- putContent meta tilePath tileMIME container tileObjectName
+          return ()
+        _ -> logError "Invalid DZI tile object name"
+                [ "tilePath" .= tilePath
+                , "rootPath" .= rootPath
+                ]
 
     -- Upload manifest
     case toObjectName path of
@@ -189,7 +186,6 @@ uploadDZI raxConfig rootPath path dzi = do
     tileMIME = toMIME (dziTileFormat dzi)
     container = raxContainer raxConfig
     raxCreds = mkCredentials (raxUsername raxConfig) (raxApiKey raxConfig)
-    numParallelUploads = 5
 
     stripRoot :: FilePath -> Maybe FilePath
     stripRoot = stripPrefix (addTrailingPathSeparator rootPath)
@@ -220,6 +216,3 @@ toMIME PNG  = MIME.Type (MIME.Image "png") []
 toVIPSSuffix :: TileFormat -> String
 toVIPSSuffix PNG = ".png"
 toVIPSSuffix JPEG = ".jpg[Q=90]"
-
-forConcurrently :: Traversable t => TaskGroup -> t a -> (a -> IO b) -> IO (t b)
-forConcurrently group traversable f = mapConcurrently group f traversable
