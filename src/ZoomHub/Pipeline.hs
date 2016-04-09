@@ -15,6 +15,7 @@ import           Data.List                                (stripPrefix)
 import           Data.Monoid                              ((<>))
 import qualified Data.Text                                as T
 import           Data.Text.Encoding                       (decodeUtf8)
+import           Database.SQLite.Simple                   (Connection)
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
@@ -43,7 +44,8 @@ import           ZoomHub.Rackspace.CloudFiles             (ObjectName,
                                                            putContent)
 import           ZoomHub.Storage.SQLite                   (markAsActive,
                                                            markAsFailure,
-                                                           markAsSuccess)
+                                                           markAsSuccess,
+                                                           withConnection)
 import           ZoomHub.Types.Content                    (Content, contentId,
                                                            contentURL)
 import           ZoomHub.Types.ContentId                  (unId)
@@ -55,18 +57,17 @@ import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFo
 
 process :: Config -> Content -> IO Content
 process config content =
-    catch (unsafeProcess config content) $ \e -> do
+  withConnection (Config.dbPath config) $ \dbConn ->
+    catch (unsafeProcess config dbConn content) $ \e -> do
       let errorMessage = Just . T.pack . show $ (e :: SomeException)
       logInfo "Process content: failure"
         [ "id" .= contentId content
         , "error" .= errorMessage
         ]
-      markAsFailure conn content errorMessage
-  where
-    conn = Config.dbConnection config
+      markAsFailure dbConn content errorMessage
 
-unsafeProcess :: Config -> Content -> IO Content
-unsafeProcess config content = do
+unsafeProcess :: Config -> Connection -> Content -> IO Content
+unsafeProcess config dbConn content = do
   let tempPath = Config.dataPath config </> "content-raw"
   createDirectoryIfMissing True tempPath
 
@@ -82,7 +83,7 @@ unsafeProcess config content = do
 
     logInfo "Mark content as active"
       [ "id" .= contentId content ]
-    activeContent <- markAsActive conn content
+    activeContent <- markAsActive dbConn content
 
     logInfo "Download content"
       [ "id" .= contentId content
@@ -111,10 +112,9 @@ unsafeProcess config content = do
 
     logInfo "Process content: success"
       [ "id" .= contentId activeContent ]
-    markAsSuccess conn activeContent dzi maybeMIME rawSize
+    markAsSuccess dbConn activeContent dzi maybeMIME rawSize
   where
     raxConfig = Config.rackspace config
-    conn = Config.dbConnection config
     rawContentId = unId (contentId content)
     template = rawContentId ++ "-"
 

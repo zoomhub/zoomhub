@@ -20,7 +20,6 @@ import           Data.Aeson                   (ToJSON, Value (String), object,
 import qualified Data.ByteString.Lazy         as BL
 import           Data.Maybe                   (fromJust)
 import qualified Data.Text                    as T
-import           Database.SQLite.Simple       (Connection)
 import           GHC.Generics                 (Generic)
 import           Network.Wai                  (Middleware)
 import           System.Envy                  (DefConfig, FromEnv, Option (..),
@@ -43,7 +42,6 @@ data Config = Config
   , contentBaseURI        :: ContentBaseURI
   , staticBaseURI         :: StaticBaseURI
   , dataPath              :: FilePath
-  , dbConnection          :: Connection
   , dbPath                :: DatabasePath
   , encodeId              :: Integer -> String
   , error404              :: BL.ByteString
