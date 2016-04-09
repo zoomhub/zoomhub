@@ -117,7 +117,7 @@ getNextUnprocessed conn =
     (Only Initialized)
 
 getExpiredActive :: Connection -> IO [Content]
-getExpiredActive conn = withTransaction conn $
+getExpiredActive conn =
   ((<$>) . (<$>)) rowToContent $ queryNamed conn
     (selectContent <> "WHERE content.state = :activeState AND\
      \ (julianday(datetime('now')) - julianday(datetime(content.activeAt))) \
@@ -144,16 +144,15 @@ markAsActive conn content = do
         { contentState = Active
         , contentActiveAt = Just activeAt
         }
-  withTransaction conn $
-    executeNamed conn "\
-      \UPDATE content \
-      \ SET state = :state\
-      \   , activeAt = :activeAt\
-      \ WHERE hashId = :hashId"
-      [ ":state" := contentState content'
-      , ":activeAt" := contentActiveAt content'
-      , ":hashId" := contentId content'
-      ]
+  executeNamed conn "\
+    \UPDATE content \
+    \ SET state = :state\
+    \   , activeAt = :activeAt\
+    \ WHERE hashId = :hashId"
+    [ ":state" := contentState content'
+    , ":activeAt" := contentActiveAt content'
+    , ":hashId" := contentId content'
+    ]
   return content'
 
 markAsFailure :: Connection ->
@@ -168,20 +167,19 @@ markAsFailure conn content maybeError = do
         , contentCompletedAt = Just completedAt
         , contentError = maybeError
         }
-  withTransaction conn $
-    executeNamed conn "\
-      \UPDATE content\
-      \  SET state = :state\
-      \    , typeId = :typeId\
-      \    , completedAt = :completedAt\
-      \    , error = :error\
-      \  WHERE hashId = :hashId"
-      [ ":state" := contentState content'
-      , ":typeId" := contentType content'
-      , ":completedAt" := contentCompletedAt content'
-      , ":hashId" := contentId content'
-      , ":error" := contentError content'
-      ]
+  executeNamed conn "\
+    \UPDATE content\
+    \  SET state = :state\
+    \    , typeId = :typeId\
+    \    , completedAt = :completedAt\
+    \    , error = :error\
+    \  WHERE hashId = :hashId"
+    [ ":state" := contentState content'
+    , ":typeId" := contentType content'
+    , ":completedAt" := contentCompletedAt content'
+    , ":hashId" := contentId content'
+    , ":error" := contentError content'
+    ]
   return content'
 
 markAsSuccess :: Connection ->
@@ -256,10 +254,9 @@ withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
 
 -- Internal
 getBy' :: String -> String -> Connection -> IO (Maybe Content)
-getBy' fieldName param conn =
-  withTransaction conn $ do
-    execute conn (incrNumViewsQueryFor fieldName) (Only param)
-    getBy fieldName param conn
+getBy' fieldName param conn = do
+  execute conn (incrNumViewsQueryFor fieldName) (Only param)
+  getBy fieldName param conn
 
 getBy :: String -> String -> Connection -> IO (Maybe Content)
 getBy fieldName param conn =
