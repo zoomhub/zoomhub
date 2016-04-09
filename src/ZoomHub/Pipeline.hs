@@ -80,7 +80,7 @@ unsafeProcess config dbConn content = do
 
     logInfo "Create temporary working directory"
       [ "id" .= contentId content
-      , "path" .= tempPath
+      , "path" .= tmpDir
       ]
 
     logInfo "Mark content as active"
