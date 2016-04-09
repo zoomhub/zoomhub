@@ -60,17 +60,22 @@ newtype Endpoint = Endpoint { unEndpoint :: String } deriving (Eq, Show)
 newtype Token = Token { unToken :: String } deriving (Eq, Show)
 newtype Metadata = Metadata { unMetadata :: BL.ByteString } deriving (Eq, Show)
 
+-- Container
 newtype Container = Container { unContainer :: String } deriving (Eq, Show)
 
 instance Var Container where
   toVar = unContainer
   fromVar = parseContainer
 
+instance ToJSON Container where
+  toJSON = String . T.pack . unContainer
+
 parseContainer :: String -> Maybe Container
 parseContainer s
   | '/' `notElem` s = Just (Container s)
   | otherwise = Nothing
 
+-- ObjectName
 newtype ObjectName = ObjectName { unObjectName :: String } deriving (Eq, Show)
 
 parseObjectName :: String -> Maybe ObjectName
