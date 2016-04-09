@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module ZoomHub.Config
   ( Config(..)
@@ -13,8 +15,11 @@ module ZoomHub.Config
   , raxContainer
   ) where
 
+import           Data.Aeson                   (ToJSON, Value (String), object,
+                                               toJSON, (.=))
 import qualified Data.ByteString.Lazy         as BL
 import           Data.Maybe                   (fromJust)
+import qualified Data.Text                    as T
 import           Database.SQLite.Simple       (Connection)
 import           GHC.Generics                 (Generic)
 import           Network.Wai                  (Middleware)
@@ -52,6 +57,20 @@ data Config = Config
   , version               :: String
   }
 
+instance ToJSON Config where
+  toJSON Config{..} = object
+    [ "baseURI" .= baseURI
+    , "contentBaseURI" .= contentBaseURI
+    , "staticBaseURI" .= staticBaseURI
+    , "dataPath" .= dataPath
+    , "dbPath" .= dbPath
+    , "existingContentStatus" .= existingContentStatus
+    , "newContentStatus" .= newContentStatus
+    , "port" .= port
+    , "publicPath" .= publicPath
+    , "version" .= version
+    ]
+
 -- Rackspace
 data RackspaceConfig = RackspaceConfig
   { raxUsername  :: String    -- RACKSPACE_USERNAME
@@ -83,6 +102,9 @@ toExistingContentStatus "1"    = ProcessExistingContent
 toExistingContentStatus "true" = ProcessExistingContent
 toExistingContentStatus _      = IgnoreExistingContent
 
+instance ToJSON ExistingContentStatus where
+  toJSON = String . T.pack . show
+
 -- NewContentStatus
 data NewContentStatus = NewContentAllowed | NewContentDisallowed
   deriving (Eq, Show)
@@ -91,3 +113,6 @@ toNewContentStatus :: String -> NewContentStatus
 toNewContentStatus "1"    = NewContentAllowed
 toNewContentStatus "true" = NewContentAllowed
 toNewContentStatus _      = NewContentDisallowed
+
+instance ToJSON NewContentStatus where
+  toJSON = String . T.pack . show
