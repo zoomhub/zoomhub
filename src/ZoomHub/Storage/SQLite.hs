@@ -66,8 +66,8 @@ import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage, TileFormat,
 import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
-create :: Connection -> (Integer -> String) -> ContentURI -> IO Content
-create conn encodeId uri = withTransaction conn $ do
+create :: (Integer -> String) -> ContentURI -> Connection -> IO Content
+create encodeId uri conn = withTransaction conn $ do
     (rowId:_) <- query_ conn lastContentRowInsertIdQuery :: IO [Only Integer]
     let newId = toInteger (fromOnly rowId) + 1
     insertWith newId
@@ -97,22 +97,18 @@ create conn encodeId uri = withTransaction conn $ do
         ["id" .= nId, "hashId" .= cId]
 
 -- TODO: Generalize:
-getById' :: Connection -> ContentId -> IO (Maybe Content)
-getById' conn cId =
-  getBy' conn "content.hashId" (unId cId)
+getById' :: ContentId -> Connection -> IO (Maybe Content)
+getById' cId = getBy' "content.hashId" (unId cId)
 
-getById :: Connection -> ContentId -> IO (Maybe Content)
-getById conn cId =
-  getBy conn "content.hashId" (unId cId)
+getById :: ContentId -> Connection -> IO (Maybe Content)
+getById cId = getBy "content.hashId" (unId cId)
 
 -- TODO: Generalize:
-getByURL :: Connection -> ContentURI -> IO (Maybe Content)
-getByURL conn uri =
-  getBy conn "content.url" (show uri)
+getByURL :: ContentURI -> Connection -> IO (Maybe Content)
+getByURL uri = getBy "content.url" (show uri)
 
-getByURL' :: Connection -> ContentURI -> IO (Maybe Content)
-getByURL' conn uri =
-  getBy' conn "content.url" (show uri)
+getByURL' :: ContentURI -> Connection -> IO (Maybe Content)
+getByURL' uri = getBy' "content.url" (show uri)
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
 getNextUnprocessed conn =
@@ -259,14 +255,14 @@ withConnection :: DatabasePath -> (Connection -> IO a) -> IO a
 withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
 
 -- Internal
-getBy' :: Connection -> String -> String -> IO (Maybe Content)
-getBy' conn fieldName param =
+getBy' :: String -> String -> Connection -> IO (Maybe Content)
+getBy' fieldName param conn =
   withTransaction conn $ do
     execute conn (incrNumViewsQueryFor fieldName) (Only param)
-    getBy conn fieldName param
+    getBy fieldName param conn
 
-getBy :: Connection -> String -> String -> IO (Maybe Content)
-getBy conn fieldName param =
+getBy :: String -> String -> Connection -> IO (Maybe Content)
+getBy fieldName param conn =
   get $ query conn (selectQueryFor fieldName) (Only param)
 
 get :: IO [ContentRow] -> IO (Maybe Content)
