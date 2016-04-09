@@ -16,6 +16,8 @@ module ZoomHub.Storage.SQLite
   , markAsFailure
   , markAsSuccess
   , resetAsInitialized
+  -- ** Misc
+  , withConnection
   ) where
 
 import           Control.Exception              (tryJust)
@@ -32,6 +34,7 @@ import           Database.SQLite.Simple         (Connection, NamedParam ((:=)),
                                                  executeNamed, field, fromOnly,
                                                  query, queryNamed, query_,
                                                  withTransaction)
+import qualified Database.SQLite.Simple         as SQLite
 import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField (toField)
 import           Database.SQLite.Simple.ToRow   (ToRow, toRow)
@@ -54,6 +57,7 @@ import           ZoomHub.Types.ContentMIME      (ContentMIME)
 import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
 import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
 import           ZoomHub.Types.ContentURI       (ContentURI)
+import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
 import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage, TileFormat,
                                                  TileOverlap, TileSize,
                                                  dziHeight, dziTileFormat,
@@ -250,6 +254,9 @@ markAsSuccess conn content dzi maybeMIME size = do
       , ":image_tileFormat" := Just (dziTileFormat dzi)
       ]
   return content'
+
+withConnection :: DatabasePath -> (Connection -> IO a) -> IO a
+withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
 
 -- Internal
 getBy' :: Connection -> String -> String -> IO (Maybe Content)

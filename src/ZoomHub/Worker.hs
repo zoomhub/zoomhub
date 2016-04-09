@@ -15,7 +15,7 @@ import qualified ZoomHub.Config         as Config
 import           ZoomHub.Log.Logger     (logDebug)
 import           ZoomHub.Pipeline       (process)
 import           ZoomHub.Storage.SQLite (getExpiredActive, getNextUnprocessed,
-                                         resetAsInitialized)
+                                         resetAsInitialized, withConnection)
 import           ZoomHub.Types.Content  (contentId)
 
 
@@ -26,8 +26,9 @@ processExpiredActiveContentInterval :: Minute
 processExpiredActiveContentInterval = 30
 
 processExistingContent :: Config -> IO ()
-processExistingContent config = forever $ do
-    maybeContent <- getNextUnprocessed (Config.dbConnection config)
+processExistingContent config = forever $
+  withConnection (Config.dbPath config) $ \dbConn -> do
+    maybeContent <- getNextUnprocessed dbConn
     case maybeContent of
       Just content -> do
         _ <- process config content
@@ -41,7 +42,8 @@ processExistingContent config = forever $ do
     sleepDuration = processExistingContentInterval
 
 processExpiredActiveContent :: Config -> IO ()
-processExpiredActiveContent config = forever $ do
+processExpiredActiveContent config = forever $
+  withConnection (Config.dbPath config) $ \dbConn -> do
     cs <- getExpiredActive dbConn
     logDebug "Reset expired active content"
       [ "ids" .= map contentId cs ]
@@ -51,5 +53,4 @@ processExpiredActiveContent config = forever $ do
       [ "sleepDuration" .= show sleepDuration ]
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
-    dbConn = Config.dbConnection config
     sleepDuration = processExpiredActiveContentInterval
