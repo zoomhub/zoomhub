@@ -15,6 +15,6 @@ fi
 
 BASE_URI='http://localhost:8000' \
 HASHIDS_SALT='DEVELOPMENT-ONLY' \
-  stack exec zoomhub &
+  stack exec zoomhub -- +RTS -N4 -RTS &
 
 echo $! > zoomhub.pid
