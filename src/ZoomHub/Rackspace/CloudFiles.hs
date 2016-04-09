@@ -20,11 +20,12 @@ module ZoomHub.Rackspace.CloudFiles
 
 import qualified Codec.MIME.Type       as MIME
 import           Control.Exception     (tryJust)
-import           Control.Lens          as Lens hiding ((.=))
+import           Control.Lens          (each, filtered, (&), (.~), (^.), (^..),
+                                        (^?))
 import           Control.Monad         (guard)
 import           Data.Aeson            (ToJSON, Value (String), object, toJSON,
                                         (.=))
-import           Data.Aeson.Lens       (key, _String)
+import           Data.Aeson.Lens       (key, _Array, _Object, _String)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy  as BL
 import           Data.List             (intercalate, isPrefixOf)
@@ -102,13 +103,17 @@ parseToken meta =
   (Token . T.unpack) <$> maybeToken
 
 parseEndpoint :: Metadata -> Maybe Endpoint
-parseEndpoint _ =
-  -- TODO: How do I filter `access.serviceCatalog[].name == "IAD"` using
-  -- lenses from:
-  -- `{"access":{"serviceCatalog":[{"name":"IAD","endpoints":[]}]}}`
-  -- let a = (unMetadata meta) ^? key "access" . key "serviceCatalog" . _Array in
-  Just $ Endpoint "https://storage101.iad3.clouddrive.com/v1/\
-    \MossoCloudFS_0c5dc6c2-028f-4648-a59d-e770b827add7"
+parseEndpoint meta =
+    let result = unMetadata meta ^.. key "access" . key "serviceCatalog" .
+                  _Array . traverse . name "cloudFiles" . _Object . traverse .
+                  _Array . traverse . region "IAD" . key "publicURL" .
+                  _String . each in
+    case result of
+      "" -> Nothing
+      endpoint -> Just (Endpoint endpoint)
+  where
+    name n = filtered $ \o -> o ^? key "name" . _String == Just n
+    region r = filtered $ \o -> o ^? key "region" . _String == Just r
 
 getContent :: Metadata -> String -> IO (Maybe BL.ByteString)
 getContent meta urlPath =
