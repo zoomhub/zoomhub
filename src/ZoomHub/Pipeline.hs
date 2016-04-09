@@ -144,7 +144,6 @@ createDZI src dest tileFormat = do
       , src
       , dropExtension dest -- VIPS 7.38.5 automatically adds `.dzi` extension
       , "--suffix=" <> toVIPSSuffix tileFormat
-      , "--vips-progress"
       ]
 
 uploadDZI :: RackspaceConfig ->
