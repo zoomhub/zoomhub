@@ -8,11 +8,9 @@ module ZoomHub.APISpec
 import qualified Data.ByteString.Char8        as BC
 import           Data.Maybe                   (fromJust)
 import           Data.Monoid                  ((<>))
-import           Database.SQLite.Simple       (open)
 import           Network.HTTP.Types           (methodGet)
 import           Network.URI                  (URI, parseAbsoluteURI)
 import           Network.Wai                  (Middleware)
-import           System.IO.Unsafe             (unsafePerformIO)
 import           Test.Hspec                   (Spec, describe, hspec, it)
 import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
                                                get, matchHeaders, matchStatus,
@@ -95,9 +93,7 @@ config = Config
   { baseURI = BaseURI (toURI "http://localhost:8000")
   , contentBaseURI = ContentBaseURI (toURI "http://localhost:9000")
   , dataPath = "./data"
-  -- TODO: How can we avoid `unsafePerformIO`?
-  , dbConnection = unsafePerformIO $ open rawDBPath
-  , dbPath = DatabasePath rawDBPath
+  , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
   , encodeId = show
   , error404 = "404"
   , existingContentStatus = IgnoreExistingContent
@@ -110,8 +106,6 @@ config = Config
   , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
   , version = "test"
   }
-  where
-    rawDBPath = "./data/zoomhub-development.sqlite3"
 
 spec :: Spec
 spec = with (return $ app config) $ do
