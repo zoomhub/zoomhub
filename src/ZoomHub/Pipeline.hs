@@ -161,7 +161,9 @@ uploadDZI raxConfig rootPath path dzi = do
       case toObjectName tilePath of
         (Just tileObjectName) -> do
           logDebug "Upload DZI tile"
-            [ "objectName" .= tileObjectName ]
+            [ "container" .= container
+            , "objectName" .= tileObjectName
+            ]
           _ <- putContent meta tilePath tileMIME container tileObjectName
           return ()
         _ -> logError "Invalid DZI tile object name"
@@ -173,7 +175,9 @@ uploadDZI raxConfig rootPath path dzi = do
     case toObjectName path of
       (Just dziObjectName) -> do
         logDebug "Upload DZI manifest"
-          [ "objectName" .= dziObjectName ]
+          [ "container" .= container
+          , "objectName" .= dziObjectName
+          ]
         _ <- putContent meta path manifestMIME container dziObjectName
         return ()
       _ ->
