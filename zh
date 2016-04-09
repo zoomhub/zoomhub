@@ -70,7 +70,7 @@ bootstrap|ping|setup-admin-server|setup-web-server"
     esac
     ;;
 run)
-    stack build --ghc-options="-threaded" \
+    stack build --ghc-options='-threaded' \
                 --file-watch \
                 --exec ./scripts/run-development.sh
     ;;
