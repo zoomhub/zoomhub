@@ -3,7 +3,8 @@ FROM content
 WHERE id NOT IN
     (SELECT id
      FROM content
-     WHERE hashId IN ('4rcn',
+     WHERE hashId IN ('8',
+                      '4rcn',
                       '100',
                       'h',
                       '100U',
@@ -15,7 +16,8 @@ FROM flickr
 WHERE contentId NOT IN
     (SELECT id
      FROM content
-     WHERE hashId IN ('4rcn',
+     WHERE hashId IN ('8',
+                      '4rcn',
                       '100',
                       'h',
                       '100U',
@@ -27,7 +29,8 @@ FROM image
 WHERE contentId NOT IN
     (SELECT id
      FROM content
-     WHERE hashId IN ('4rcn',
+     WHERE hashId IN ('8',
+                      '4rcn',
                       '100',
                       'h',
                       '100U',
