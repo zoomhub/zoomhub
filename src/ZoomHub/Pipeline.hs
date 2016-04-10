@@ -82,7 +82,7 @@ unsafeProcess raxConfig tempPath dbConn content =
       [ "id" .= contentId content ] $ do
 
       let rawPathPrefix = tmpDir </> rawContentId
-          rawPath = rawPathPrefix ++ "-raw"
+          rawPath = rawPathPrefix ++ ".raw"
           dziPath = rawPathPrefix <.> "dzi"
 
       logInfo "Create temporary working directory"
