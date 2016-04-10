@@ -28,10 +28,11 @@ processExistingContentInterval = 3
 processExpiredActiveContentInterval :: Minute
 processExpiredActiveContentInterval = 30
 
-processExistingContent :: Config -> IO ()
-processExistingContent config = forever $
+processExistingContent :: Config -> String -> IO ()
+processExistingContent config workerId = forever $
   withConnection (Config.dbPath config) $ \dbConn -> do
-    logDebug_ "Get next unprocessed content"
+    logDebug "Get next unprocessed content"
+      [ "worker" .= workerId ]
     maybeContent <- getNextUnprocessed dbConn
     case maybeContent of
       Just content -> do
@@ -40,7 +41,9 @@ processExistingContent config = forever $
       _ -> return ()
 
     logDebug "Wait for next unprocessed content"
-      [ "sleepDuration" .= sleepDuration ]
+      [ "sleepDuration" .= sleepDuration
+      , "worker" .= workerId
+      ]
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     sleepDuration = processExistingContentInterval

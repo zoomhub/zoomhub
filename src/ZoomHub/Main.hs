@@ -168,7 +168,7 @@ main = do
               , "delay" .= delay
               ]
             threadDelay (fromIntegral $ toMicroseconds delay)
-            processExistingContent config
+            processExistingContent config (show index)
 
           return ()
         _ -> return ()
