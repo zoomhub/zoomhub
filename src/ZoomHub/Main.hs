@@ -6,7 +6,8 @@ module ZoomHub.Main (main) where
 import           Control.Concurrent                   (getNumCapabilities)
 import           Control.Concurrent.Async             (async)
 import           Control.Exception                    (tryJust)
-import           Control.Monad                        (guard, unless, when)
+import           Control.Monad                        (guard, replicateM_,
+                                                       unless, when)
 import           Data.Aeson                           ((.=))
 import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
@@ -143,8 +144,9 @@ main = do
 
       case existingContentStatus of
         ProcessExistingContent -> do
-          logInfo_ "Worker: Start processing existing content"
-          _ <- async (processExistingContent config)
+          replicateM_ numProcessingWorkers $ do
+            logInfo_ "Worker: Start processing existing content"
+            async (processExistingContent config)
 
           return ()
         _ -> return ()
