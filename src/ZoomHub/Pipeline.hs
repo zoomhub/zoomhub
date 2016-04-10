@@ -30,6 +30,7 @@ import           System.IO.Temp                           (withTempDirectory)
 import           System.Posix                             (fileSize,
                                                            getFileStatus)
 import           System.Process                           (callProcess)
+import           System.TimeIt                            (timeItT)
 
 import           ZoomHub.Config                           (Config,
                                                            RackspaceConfig,
@@ -110,12 +111,13 @@ unsafeProcess raxConfig tempPath dbConn content =
       , "dzi" .= dzi
       ]
 
+    (duration, _) <- timeItT $ uploadDZI raxConfig tmpDir dziPath dzi
     logInfo "Upload DZI"
       [ "id" .= contentId content
       , "dzi" .= dzi
       , "dziPath" .= dziPath
+      , "duration" .= duration
       ]
-    uploadDZI raxConfig tmpDir dziPath dzi
 
     logInfo "Process content: success"
       [ "id" .= contentId activeContent ]
