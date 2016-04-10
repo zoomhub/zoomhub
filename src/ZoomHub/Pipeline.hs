@@ -11,6 +11,7 @@ import           Control.Concurrent.Async                 (forConcurrently)
 import           Control.Exception                        (throwIO, tryJust)
 import           Control.Exception.Enclosed               (catchAny)
 import           Control.Lens                             ((^.))
+import           Control.Monad                            (when)
 import           Data.Aeson                               ((.=))
 import           Data.List                                (stripPrefix)
 import           Data.List.Split                          (chunksOf)
@@ -24,13 +25,14 @@ import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import           System.Directory                         (listDirectory)
+import           System.Exit                              (ExitCode (ExitSuccess))
 import           System.FilePath                          (addTrailingPathSeparator,
                                                            dropExtension, (<.>),
                                                            (</>))
 import           System.IO.Temp                           (withTempDirectory)
 import           System.Posix                             (fileSize,
                                                            getFileStatus)
-import           System.Process                           (callProcess)
+import           System.Process                           (readProcessWithExitCode)
 import           System.TimeIt                            (timeItT)
 
 import           ZoomHub.Config                           (Config,
@@ -39,8 +41,8 @@ import           ZoomHub.Config                           (Config,
                                                            raxContainer,
                                                            raxUsername)
 import qualified ZoomHub.Config                           as Config
-import           ZoomHub.Log.Logger                       (logDebug, logError,
-                                                           logInfo)
+import           ZoomHub.Log.Logger                       (logDebugT, logError,
+                                                           logInfo, logInfoT)
 import           ZoomHub.Rackspace.CloudFiles             (ObjectName,
                                                            getMetadata,
                                                            mkCredentials,
@@ -149,8 +151,15 @@ downloadURL url dest = do
 
 createDZI :: FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
 createDZI src dest tileFormat = do
-    logDebug "VIPS command" [ "command" .= T.pack (show args) ]
-    callProcess "vips" args
+    (exitCode, stdout, stderr) <- readProcessWithExitCode "vips" args ""
+    logInfo "VIPS command"
+      [ "command" .= show args
+      , "exitCode" .= show exitCode
+      , "stdout" .= stdout
+      , "stderr" .= stderr
+      ]
+    when (exitCode /= ExitSuccess) (fail $ "VIPS error: " ++ show exitCode)
+
     xml <- readFile dest
     case fromXML xml of
       (Just dzi) -> return dzi
