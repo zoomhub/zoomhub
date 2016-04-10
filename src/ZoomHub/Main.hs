@@ -3,16 +3,18 @@
 
 module ZoomHub.Main (main) where
 
-import           Control.Concurrent                   (getNumCapabilities)
+import           Control.Concurrent                   (getNumCapabilities,
+                                                       threadDelay)
 import           Control.Concurrent.Async             (async)
 import           Control.Exception                    (SomeException, tryJust)
-import           Control.Monad                        (guard, replicateM_,
-                                                       unless, when)
+import           Control.Monad                        (forM_, guard, unless,
+                                                       when)
 import           Data.Aeson                           ((.=))
 import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
 import           Data.Maybe                           (fromJust, fromMaybe)
+import           Data.Time.Units                      (Second, toMicroseconds)
 import           GHC.Conc                             (getNumProcessors)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
@@ -32,6 +34,7 @@ import           System.Environment                   (lookupEnv)
 import           System.Envy                          (decodeEnv)
 import           System.FilePath                      ((</>))
 import           System.IO.Error                      (isDoesNotExistError)
+import           System.Random                        (randomRIO)
 import           Web.Hashids                          (encode, hashidsSimple)
 
 import           ZoomHub.API                          (app)
@@ -51,6 +54,7 @@ import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePat
 import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI (StaticBaseURI))
 import           ZoomHub.Types.TempPath               (TempPath (TempPath),
                                                        unTempPath)
+import           ZoomHub.Types.Time.Instances         ()
 import           ZoomHub.Worker                       (processExistingContent, processExpiredActiveContent)
 
 -- Environment
@@ -135,7 +139,7 @@ main = do
       -- Workers
       numProcessors <- getNumProcessors
       numCapabilities <- getNumCapabilities
-      let numProcessingWorkers = max (numCapabilities - 1) 0
+      let numProcessingWorkers = max (numCapabilities - 1) 1
       logInfo "Config: Worker"
         [ "numProcessors" .= numProcessors
         , "numCapabilities" .= numCapabilities
@@ -144,13 +148,26 @@ main = do
         ]
 
       _ <- async $ do
-        logInfo_ "Worker: Start resetting expired active content"
+        let delay = (30 :: Second)
+        logInfo "Worker: Start resetting expired active content"
+          [ "delay" .= delay ]
+        threadDelay (fromIntegral $ toMicroseconds delay)
         processExpiredActiveContent config
 
       case existingContentStatus of
         ProcessExistingContent -> do
-          replicateM_ numProcessingWorkers $ async $ do
-            logInfo_ "Worker: Start processing existing content"
+          forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
+            let base = 10
+                jitterRange = (0, base `div` 2) :: (Int, Int)
+                baseDelay = index * base
+            jitter <- randomRIO jitterRange
+            let delay = (fromIntegral $ baseDelay + jitter) :: Second
+            logInfo "Worker: Start processing existing content"
+              [ "jitter" .= jitter
+              , "index" .= index
+              , "delay" .= delay
+              ]
+            threadDelay (fromIntegral $ toMicroseconds delay)
             processExistingContent config
 
           return ()
