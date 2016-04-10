@@ -32,6 +32,7 @@ import           ZoomHub.Types.BaseURI        (BaseURI)
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import           ZoomHub.Types.DatabasePath   (DatabasePath)
 import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI)
+import           ZoomHub.Types.TempPath       (TempPath)
 
 
 defaultPort :: Integer
@@ -40,7 +41,6 @@ defaultPort = 8000
 data Config = Config
   { baseURI               :: BaseURI
   , contentBaseURI        :: ContentBaseURI
-  , dataPath              :: FilePath
   , dbPath                :: DatabasePath
   , encodeId              :: Integer -> String
   , error404              :: BL.ByteString
@@ -52,6 +52,7 @@ data Config = Config
   , publicPath            :: FilePath
   , rackspace             :: RackspaceConfig
   , staticBaseURI         :: StaticBaseURI
+  , tempPath              :: TempPath
   , version               :: String
   }
 
@@ -59,13 +60,13 @@ instance ToJSON Config where
   toJSON Config{..} = object
     [ "baseURI" .= baseURI
     , "contentBaseURI" .= contentBaseURI
-    , "dataPath" .= dataPath
     , "dbPath" .= dbPath
     , "existingContentStatus" .= existingContentStatus
     , "newContentStatus" .= newContentStatus
     , "port" .= port
     , "publicPath" .= publicPath
     , "staticBaseURI" .= staticBaseURI
+    , "tempPath" .= tempPath
     , "version" .= version
     ]
 

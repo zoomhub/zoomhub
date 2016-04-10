@@ -48,6 +48,7 @@ library
     , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.StaticBaseURI
+    , ZoomHub.Types.TempPath
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Static

@@ -5,7 +5,7 @@ module ZoomHub.Main (main) where
 
 import           Control.Concurrent                   (forkIO)
 import           Control.Exception                    (tryJust)
-import           Control.Monad                        (guard, unless)
+import           Control.Monad                        (guard, unless, when)
 import           Data.Aeson                           ((.=))
 import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
@@ -17,8 +17,11 @@ import           Network.Wai.Handler.Warp             (run)
 import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
                                                        mkRequestLogger,
                                                        outputFormat)
-import           System.Directory                     (doesFileExist,
-                                                       getCurrentDirectory)
+import           System.Directory                     (createDirectoryIfMissing,
+                                                       doesDirectoryExist,
+                                                       doesFileExist,
+                                                       getCurrentDirectory,
+                                                       removeDirectoryRecursive)
 import           System.Environment                   (lookupEnv)
 import           System.Envy                          (decodeEnv)
 import           System.FilePath                      ((</>))
@@ -39,6 +42,8 @@ import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBa
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
                                                        unDatabasePath)
 import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI (StaticBaseURI))
+import           ZoomHub.Types.TempPath               (TempPath (TempPath),
+                                                       unTempPath)
 import           ZoomHub.Worker                       (processExistingContent, processExpiredActiveContent)
 
 -- Environment
@@ -57,6 +62,9 @@ dbPathEnvName = "DB_PATH"
 hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
 
+tempRootPathEnvName :: String
+tempRootPathEnvName = "TEMP_PATH"
+
 -- Main
 main :: IO ()
 main = do
@@ -68,7 +76,7 @@ main = do
   error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
   maybePort <- lookupEnv "PORT"
-  maybeDataPath <- lookupEnv "DATA_PATH"
+  maybeRootTempPath <- lookupEnv tempRootPathEnvName
   maybeDBPath <- (fmap . fmap) DatabasePath (lookupEnv dbPathEnvName)
   maybePublicPath <- lookupEnv "PUBLIC_PATH"
   maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
@@ -85,10 +93,11 @@ main = do
   let existingContentStatus =
         fromMaybe IgnoreExistingContent maybeExistingContentStatus
       newContentStatus = fromMaybe NewContentDisallowed maybeNewContentStatus
-      defaultDataPath = currentDirectory </> "data"
+      defaultTempRootPath = currentDirectory </> "data"
       defaultDBPath = DatabasePath $
         currentDirectory </> "data" </> "zoomhub-development.sqlite3"
-      dataPath = fromMaybe defaultDataPath maybeDataPath
+      tempPath =
+        TempPath $ fromMaybe defaultTempRootPath maybeRootTempPath </> "temp"
       dbPath = fromMaybe defaultDBPath maybeDBPath
       port = maybe defaultPort read maybePort
       baseURI = case maybeBaseURI of
@@ -98,7 +107,10 @@ main = do
         parseAbsoluteURI $ "http://static.zoomhub.net"
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath maybePublicPath
+
+  ensureTempPathExists tempPath
   ensureDBExists dbPath
+
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
 
@@ -144,6 +156,14 @@ main = do
       unless exists $
         error $ "Couldn’t find a database at " ++ unDatabasePath dbPath ++
           ". Please check `" ++ dbPathEnvName ++ "`."
+
+    ensureTempPathExists :: TempPath -> IO ()
+    ensureTempPathExists tempPath = do
+        exists <- doesDirectoryExist rawTempPath
+        when exists (removeDirectoryRecursive rawTempPath)
+        createDirectoryIfMissing True rawTempPath
+      where
+        rawTempPath = unTempPath tempPath
 
     readVersion :: FilePath -> IO String
     readVersion currentDirectory = do
