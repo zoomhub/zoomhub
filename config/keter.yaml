@@ -6,8 +6,6 @@ stanzas:
       - 162.242.235.90
       - api.zoom.it
       - api.zoomhub.net
-      - next.api.zoomhub.net
-      - next.zoomhub.net
       - openzoom.net
       - openzoom.org
       - staging.zoom.it
