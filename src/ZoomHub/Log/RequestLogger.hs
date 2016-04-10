@@ -17,6 +17,7 @@ import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Data.Text.Encoding                   (decodeUtf8)
 import           Data.Time                            (NominalDiffTime)
+import           Data.Time.Units                      (Millisecond)
 import           Data.Word                            (Word32)
 import           Network.HTTP.Types                   as H
 import           Network.Socket                       (PortNumber,
@@ -30,6 +31,8 @@ import           Network.Wai                          (Request, RequestBodyLengt
 import           Network.Wai.Middleware.RequestLogger (OutputFormatterWithDetails)
 import           System.Log.FastLogger                (toLogStr)
 import           Text.Printf                          (printf)
+
+import           ZoomHub.Types.Time.Instances         ()
 
 formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
@@ -62,7 +65,7 @@ requestToJSON duration req reqBody =
     [ "method" .= decodeUtf8 (requestMethod req)
     , "path" .= decodeUtf8 (rawPathInfo req)
     , "query" .= toObject (map queryItemToJSON (queryString req))
-    , "duration" .= toMilliseconds duration
+    , "duration" .= (round (toMilliseconds duration) :: Millisecond)
     , "size" .= requestBodyLengthToJSON (requestBodyLength req)
     , "body" .= decodeUtf8 (S8.concat reqBody)
     , "remoteHost" .= sockToJSON (remoteHost req)
