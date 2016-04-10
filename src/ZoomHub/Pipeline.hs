@@ -17,6 +17,7 @@ import           Data.List.Split                          (chunksOf)
 import           Data.Monoid                              ((<>))
 import qualified Data.Text                                as T
 import           Data.Text.Encoding                       (decodeUtf8)
+import           Data.Time.Units                          (Millisecond)
 import           Database.SQLite.Simple                   (Connection)
 import           Network.HTTP.Client                      (HttpException (FailedConnectionException2))
 import           Network.Wreq                             (get, responseBody,
@@ -58,6 +59,7 @@ import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFo
                                                            dziTileFormat,
                                                            fromXML)
 import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
+import           ZoomHub.Types.Time.Instances             ()
 
 process :: Config -> Content -> IO Content
 process config content =
@@ -80,48 +82,57 @@ unsafeProcess :: RackspaceConfig ->
                  IO Content
 unsafeProcess raxConfig tempPath dbConn content =
   withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
-    let rawPathPrefix = tmpDir </> rawContentId
-        rawPath = rawPathPrefix ++ "-raw"
-        dziPath = rawPathPrefix <.> "dzi"
+    (totalDuration, completedContent) <- timeItT $ do
+      let rawPathPrefix = tmpDir </> rawContentId
+          rawPath = rawPathPrefix ++ "-raw"
+          dziPath = rawPathPrefix <.> "dzi"
 
-    logInfo "Create temporary working directory"
-      [ "id" .= contentId content
-      , "path" .= tmpDir
-      ]
+      logInfo "Create temporary working directory"
+        [ "id" .= contentId content
+        , "path" .= tmpDir
+        ]
 
-    logInfo "Mark content as active"
-      [ "id" .= contentId content ]
-    activeContent <- markAsActive dbConn content
+      logInfo "Mark content as active"
+        [ "id" .= contentId content ]
+      activeContent <- markAsActive dbConn content
 
-    logInfo "Download content"
-      [ "id" .= contentId content
-      , "url" .= contentURL content
-      ]
-    maybeMIME <-
-      ((<$>) . (<$>)) ContentMIME $ downloadURL (contentURL content) rawPath
-    rawSize <- getFileSize rawPath
+      (downloadDuration, maybeMIME) <- timeItT $
+        ((<$>) . (<$>)) ContentMIME $ downloadURL (contentURL content) rawPath
+      logInfo "Download content"
+        [ "id" .= contentId content
+        , "url" .= contentURL content
+        , "duration" .= (round (downloadDuration * 1000) :: Millisecond)
+        ]
+      rawSize <- getFileSize rawPath
 
-    logInfo "Create DZI"
-      [ "id" .= contentId content ]
-    dzi <- createDZI rawPath dziPath (toTileFormat maybeMIME)
+      (dziDuration, dzi) <- timeItT $
+        createDZI rawPath dziPath (toTileFormat maybeMIME)
+      logInfo "Create DZI"
+        [ "id" .= contentId content
+        , "duration" .= (round (dziDuration * 1000) :: Millisecond)
+        ]
 
-    logInfo "Content metadata"
-      [ "mime" .= maybeMIME
-      , "size" .= rawSize
-      , "dzi" .= dzi
-      ]
+      logInfo "Content metadata"
+        [ "mime" .= maybeMIME
+        , "size" .= rawSize
+        , "dzi" .= dzi
+        ]
 
-    (duration, _) <- timeItT $ uploadDZI raxConfig tmpDir dziPath dzi
-    logInfo "Upload DZI"
-      [ "id" .= contentId content
-      , "dzi" .= dzi
-      , "dziPath" .= dziPath
-      , "duration" .= duration
-      ]
+      (uploadDuration, _) <- timeItT $ uploadDZI raxConfig tmpDir dziPath dzi
+      logInfo "Upload DZI"
+        [ "id" .= contentId content
+        , "dzi" .= dzi
+        , "dziPath" .= dziPath
+        , "duration" .= (round (uploadDuration * 1000) :: Millisecond)
+        ]
+
+      markAsSuccess dbConn activeContent dzi maybeMIME rawSize
 
     logInfo "Process content: success"
-      [ "id" .= contentId activeContent ]
-    markAsSuccess dbConn activeContent dzi maybeMIME rawSize
+      [ "id" .= contentId completedContent
+      , "duration" .= (round (totalDuration * 1000) :: Millisecond)
+      ]
+    return completedContent
   where
     rawContentId = unId (contentId content)
     template = rawContentId ++ "-"
