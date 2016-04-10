@@ -5,18 +5,21 @@ module ZoomHub.Worker
   , processExpiredActiveContent
   ) where
 
-import           Control.Concurrent     (threadDelay)
-import           Control.Monad          (forever)
-import           Data.Aeson             ((.=))
-import           Data.Time.Units        (Minute, Second, toMicroseconds)
+import           Control.Concurrent           (threadDelay)
+import           Control.Monad                (forever)
+import           Data.Aeson                   ((.=))
+import           Data.Time.Units              (Minute, Second, toMicroseconds)
 
-import           ZoomHub.Config         (Config)
-import qualified ZoomHub.Config         as Config
-import           ZoomHub.Log.Logger     (logDebug)
-import           ZoomHub.Pipeline       (process)
-import           ZoomHub.Storage.SQLite (getExpiredActive, getNextUnprocessed,
-                                         resetAsInitialized, withConnection)
-import           ZoomHub.Types.Content  (contentId)
+import           ZoomHub.Config               (Config)
+import qualified ZoomHub.Config               as Config
+import           ZoomHub.Log.Logger           (logDebug)
+import           ZoomHub.Pipeline             (process)
+import           ZoomHub.Storage.SQLite       (getExpiredActive,
+                                               getNextUnprocessed,
+                                               resetAsInitialized,
+                                               withConnection)
+import           ZoomHub.Types.Content        (contentId)
+import           ZoomHub.Types.Time.Instances ()
 
 
 processExistingContentInterval :: Second
@@ -36,7 +39,7 @@ processExistingContent config = forever $
       _ -> return ()
 
     logDebug "Wait for next unprocessed content"
-      [ "sleepDuration" .= show sleepDuration ]
+      [ "sleepDuration" .= sleepDuration ]
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     sleepDuration = processExistingContentInterval
@@ -50,7 +53,7 @@ processExpiredActiveContent config = forever $
     resetAsInitialized dbConn cs
 
     logDebug "Wait for next expired active content"
-      [ "sleepDuration" .= show sleepDuration ]
+      [ "sleepDuration" .= sleepDuration ]
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     sleepDuration = processExpiredActiveContentInterval
