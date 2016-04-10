@@ -18,23 +18,34 @@ module ZoomHub.Rackspace.CloudFiles
   , unObjectName
   ) where
 
-import qualified Codec.MIME.Type       as MIME
-import           Control.Exception     (tryJust)
-import           Control.Lens          (each, filtered, (&), (.~), (^.), (^..),
-                                        (^?))
-import           Control.Monad         (guard)
-import           Data.Aeson            (ToJSON, Value (String), object, toJSON,
-                                        (.=))
-import           Data.Aeson.Lens       (key, _Array, _Object, _String)
-import qualified Data.ByteString.Char8 as BC
-import qualified Data.ByteString.Lazy  as BL
-import           Data.List             (intercalate, isPrefixOf)
-import qualified Data.Text             as T
-import           Network.HTTP.Client   (HttpException (..))
-import           Network.Wreq          (Options, Status, defaults, getWith,
-                                        header, post, putWith, responseBody,
-                                        responseStatus, statusCode)
-import           System.Envy           (Var, fromVar, toVar)
+
+import qualified Codec.MIME.Type        as MIME
+import           Control.Exception      (tryJust)
+import           Control.Lens           (each, filtered, (&), (.~), (^.), (^..),
+                                         (^?))
+import           Control.Monad          (guard)
+import           Control.Monad.Catch    (Handler)
+import           Control.Monad.IO.Class (MonadIO)
+import           Control.Retry          (RetryPolicyM, RetryStatus, capDelay,
+                                         fullJitterBackoff, limitRetries,
+                                         logRetries, recovering)
+import           Data.Aeson             (ToJSON, Value (String), object, toJSON,
+                                         (.=))
+import           Data.Aeson.Lens        (key, _Array, _Object, _String)
+import qualified Data.ByteString.Char8  as BC
+import qualified Data.ByteString.Lazy   as BL
+import           Data.List              (intercalate, isPrefixOf)
+import           Data.Monoid            ((<>))
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import           Data.Time.Units        (Millisecond, Second, toMicroseconds)
+import           Network.HTTP.Client    (HttpException (FailedConnectionException2, StatusCodeException))
+import           Network.Wreq           (Options, Status, defaults, getWith,
+                                         header, post, putWith, responseBody,
+                                         responseStatus, statusCode)
+import           System.Envy            (Var, fromVar, toVar)
+
+import           ZoomHub.Log.Logger     (logWarning)
 
 -- Types
 data Credentials = Credentials
@@ -142,6 +153,54 @@ putContent :: Metadata ->
               ObjectName ->
               IO (Maybe Status)
 putContent meta path mime container objectName =
+    recovering backoffPolicy handlers
+      (\_ -> unsafePutContent meta path mime container objectName)
+  where
+    handlers = [httpErrorH]
+
+    httpErrorH :: RetryStatus -> Handler IO Bool
+    httpErrorH = logRetries testE logRetry
+
+    testE :: (Monad m) => HttpException -> m Bool
+    testE e = case e of
+      FailedConnectionException2 _ _ _ _ -> return True
+      _                                  -> return False
+
+    logRetry :: Bool -> String -> IO ()
+    logRetry shouldRetry errorMessage =
+        logWarning "Retrying `CloudFiles.putContent` due to error"
+          [ "error" .= errorMessage
+          , "nextAction" .= next
+          ]
+      where
+        next :: Text
+        next = if shouldRetry then "retry" else "crash"
+
+-- Helper
+toOptions :: Token -> Options
+toOptions token = defaults & header "X-Auth-Token" .~ [BC.pack $ unToken token]
+
+addContentType :: MIME.Type -> Options -> Options
+addContentType mime options =
+  options & header "Content-Type" .~ [BC.pack . T.unpack . MIME.showType $ mime]
+
+-- Retry
+backoffPolicy :: (MonadIO m) => RetryPolicyM m
+backoffPolicy =
+    capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
+  where
+    maxDelay = fromIntegral $ toMicroseconds (5 :: Second)
+    base = fromIntegral $ toMicroseconds (100 :: Millisecond)
+    maxRetries = 10
+
+
+unsafePutContent :: Metadata ->
+                    FilePath ->
+                    MIME.Type ->
+                    Container ->
+                    ObjectName ->
+                    IO (Maybe Status)
+unsafePutContent meta path mime container objectName =
   case (parseToken meta, parseEndpoint meta) of
     (Just token, Just endpoint) -> do
       let options = addContentType mime . toOptions $ token
@@ -151,11 +210,3 @@ putContent meta path mime container objectName =
       res <- putWith options url body
       return . Just $ res ^. responseStatus
     _ -> return Nothing
-
--- Helper
-toOptions :: Token -> Options
-toOptions token = defaults & header "X-Auth-Token" .~ [BC.pack $ unToken token]
-
-addContentType :: MIME.Type -> Options -> Options
-addContentType mime options =
-  options & header "Content-Type" .~ [BC.pack . T.unpack . MIME.showType $ mime]
