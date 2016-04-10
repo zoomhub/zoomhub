@@ -40,7 +40,6 @@ defaultPort = 8000
 data Config = Config
   { baseURI               :: BaseURI
   , contentBaseURI        :: ContentBaseURI
-  , staticBaseURI         :: StaticBaseURI
   , dataPath              :: FilePath
   , dbPath                :: DatabasePath
   , encodeId              :: Integer -> String
@@ -52,6 +51,7 @@ data Config = Config
   , port                  :: Integer
   , publicPath            :: FilePath
   , rackspace             :: RackspaceConfig
+  , staticBaseURI         :: StaticBaseURI
   , version               :: String
   }
 
@@ -59,13 +59,13 @@ instance ToJSON Config where
   toJSON Config{..} = object
     [ "baseURI" .= baseURI
     , "contentBaseURI" .= contentBaseURI
-    , "staticBaseURI" .= staticBaseURI
     , "dataPath" .= dataPath
     , "dbPath" .= dbPath
     , "existingContentStatus" .= existingContentStatus
     , "newContentStatus" .= newContentStatus
     , "port" .= port
     , "publicPath" .= publicPath
+    , "staticBaseURI" .= staticBaseURI
     , "version" .= version
     ]
 
