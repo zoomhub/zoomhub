@@ -9,7 +9,7 @@ import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
 import           Control.Concurrent.Async                 (forConcurrently)
 import           Control.Exception                        (SomeException, catch,
-                                                           tryJust, throwIO)
+                                                           throwIO, tryJust)
 import           Control.Lens                             ((^.))
 import           Data.Aeson                               ((.=))
 import           Data.List                                (stripPrefix)
@@ -17,12 +17,11 @@ import           Data.Monoid                              ((<>))
 import qualified Data.Text                                as T
 import           Data.Text.Encoding                       (decodeUtf8)
 import           Database.SQLite.Simple                   (Connection)
-import           Network.HTTP.Client                     (HttpException (FailedConnectionException2))
+import           Network.HTTP.Client                      (HttpException (FailedConnectionException2))
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
-import           System.Directory                         (createDirectoryIfMissing,
-                                                           listDirectory)
+import           System.Directory                         (listDirectory)
 import           System.FilePath                          (addTrailingPathSeparator,
                                                            dropExtension, (<.>),
                                                            (</>))
@@ -56,24 +55,29 @@ import           ZoomHub.Types.ContentURI                 (ContentURI)
 import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFormat (JPEG, PNG), TileOverlap (TileOverlap1), TileSize (TileSize254),
                                                            dziTileFormat,
                                                            fromXML)
+import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
 
 process :: Config -> Content -> IO Content
 process config content =
   withConnection (Config.dbPath config) $ \dbConn ->
-    unsafeProcess config dbConn content `catch` \e -> do
+    unsafeProcess raxConfig tempPath dbConn content `catch` \e -> do
       let errorMessage = Just . T.pack . show $ (e :: SomeException)
       logInfo "Process content: failure"
         [ "id" .= contentId content
         , "error" .= errorMessage
         ]
       markAsFailure dbConn content errorMessage
+  where
+    tempPath = Config.tempPath config
+    raxConfig = Config.rackspace config
 
-unsafeProcess :: Config -> Connection -> Content -> IO Content
-unsafeProcess config dbConn content = do
-  let tempPath = Config.dataPath config </> "content-raw"
-  createDirectoryIfMissing True tempPath
-
-  withTempDirectory tempPath template $ \tmpDir -> do
+unsafeProcess :: RackspaceConfig ->
+                 TempPath ->
+                 Connection ->
+                 Content ->
+                 IO Content
+unsafeProcess raxConfig tempPath dbConn content =
+  withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
     let rawPathPrefix = tmpDir </> rawContentId
         rawPath = rawPathPrefix ++ "-raw"
         dziPath = rawPathPrefix <.> "dzi"
@@ -116,7 +120,6 @@ unsafeProcess config dbConn content = do
       [ "id" .= contentId activeContent ]
     markAsSuccess dbConn activeContent dzi maybeMIME rawSize
   where
-    raxConfig = Config.rackspace config
     rawContentId = unId (contentId content)
     template = rawContentId ++ "-"
 
