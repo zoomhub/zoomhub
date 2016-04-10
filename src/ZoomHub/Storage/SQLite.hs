@@ -92,9 +92,11 @@ create encodeId uri conn = withTransaction conn $ do
     isConstraintError _ = False
 
     logWarnExistingId :: Integer -> ContentId -> IO ()
-    logWarnExistingId nId cId =
+    logWarnExistingId dbId cId =
       logWarning "Failed to insert ID because it already exists"
-        ["id" .= nId, "hashId" .= cId]
+        [ "dbId" .= dbId
+        , "id" .= cId
+        ]
 
 -- TODO: Generalize:
 getById' :: ContentId -> Connection -> IO (Maybe Content)
