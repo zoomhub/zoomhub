@@ -3,16 +3,19 @@
 module ZoomHub.Log.Logger
   ( logDebug
   , logDebug_
+  , logError
+  , logError_
+  , logException
+  , logException_
   , logInfo
   , logInfo_
   , logWarning
   , logWarning_
-  , logError
-  , logError_
   ) where
 
 import           Prelude              hiding (log)
 
+import           Control.Exception    (SomeException)
 import           Data.Aeson           (encode, object, (.=))
 import           Data.Aeson.Types     (Pair)
 import qualified Data.ByteString.Lazy as BL
@@ -53,6 +56,12 @@ logError = log Error
 
 logError_ :: String -> IO ()
 logError_ = log_ Error
+
+logException :: String -> SomeException -> [Pair] -> IO ()
+logException msg e meta = logError msg ( meta ++ [ "error" .= show e ])
+
+logException_ :: String -> SomeException -> IO ()
+logException_ msg e = logException msg e []
 
 log_ :: Level -> String -> IO ()
 log_ level message = log level message []
