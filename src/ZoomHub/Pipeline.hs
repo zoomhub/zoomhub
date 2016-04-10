@@ -8,8 +8,8 @@ module ZoomHub.Pipeline
 import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
 import           Control.Concurrent.Async                 (forConcurrently)
-import           Control.Exception                        (SomeException, catch,
-                                                           throwIO, tryJust)
+import           Control.Exception                        (throwIO, tryJust)
+import           Control.Exception.Enclosed               (catchAny)
 import           Control.Lens                             ((^.))
 import           Data.Aeson                               ((.=))
 import           Data.List                                (stripPrefix)
@@ -61,8 +61,8 @@ import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
 process :: Config -> Content -> IO Content
 process config content =
   withConnection (Config.dbPath config) $ \dbConn ->
-    unsafeProcess raxConfig tempPath dbConn content `catch` \e -> do
-      let errorMessage = Just . T.pack . show $ (e :: SomeException)
+    unsafeProcess raxConfig tempPath dbConn content `catchAny` \e -> do
+      let errorMessage = Just . T.pack $ show e
       logInfo "Process content: failure"
         [ "id" .= contentId content
         , "error" .= errorMessage
