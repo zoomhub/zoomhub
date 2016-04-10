@@ -1,7 +1,7 @@
 stanzas:
   - type: webapp
     exec: ../zoomhub
-    args: +RTS -N -RTS
+    args: '+RTS -N -RTS'
     hosts:
       - 162.242.235.90
       - api.zoom.it
