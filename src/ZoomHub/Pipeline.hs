@@ -13,6 +13,7 @@ import           Control.Exception                        (SomeException, catch,
 import           Control.Lens                             ((^.))
 import           Data.Aeson                               ((.=))
 import           Data.List                                (stripPrefix)
+import           Data.List.Split                          (chunksOf)
 import           Data.Monoid                              ((<>))
 import qualified Data.Text                                as T
 import           Data.Text.Encoding                       (decodeUtf8)
@@ -161,38 +162,40 @@ uploadDZI raxConfig rootPath path dzi = do
     tilePaths <- getDZITilePaths path
 
     -- Upload Tiles
-    _ <- forConcurrently tilePaths $ \tilePath ->
-      case toObjectName tilePath of
-        (Just tileObjectName) -> do
-          logDebug "Upload DZI tile"
-            [ "container" .= container
-            , "objectName" .= tileObjectName
-            ]
-          r <- tryJust isFailedConnectionException2 $
-            putContent meta tilePath tileMIME container tileObjectName
-          case r of
-            Left e@(FailedConnectionException2 host port secure cause) -> do
-              logError "Upload DZI tile: Failed to connect to server"
-                [ "container" .= container
-                , "objectName" .= tileObjectName
-                , "host" .= host
-                , "port" .= port
-                , "secure" .= secure
-                , "httpError" .= show e
-                , "cause" .= show cause
-                ]
-              throwIO e
-            Left e ->
-              logError "Upload DZI tile: Unknown HTTP error"
-                [ "container" .= container
-                , "objectName" .= tileObjectName
-                , "httpError" .= show e
-                ]
-            Right _ -> return ()
-        Nothing -> logError "Invalid DZI tile object name"
-              [ "tilePath" .= tilePath
-              , "rootPath" .= rootPath
+    let chunks = chunksOf numParallelUploads tilePaths
+    sequence_ $ (`map` chunks) $ \chunk ->
+      forConcurrently chunk $ \tilePath ->
+        case toObjectName tilePath of
+          (Just tileObjectName) -> do
+            logDebug "Upload DZI tile"
+              [ "container" .= container
+              , "objectName" .= tileObjectName
               ]
+            r <- tryJust isFailedConnectionException2 $
+              putContent meta tilePath tileMIME container tileObjectName
+            case r of
+              Left e@(FailedConnectionException2 host port secure cause) -> do
+                logError "Upload DZI tile: Failed to connect to server"
+                  [ "container" .= container
+                  , "objectName" .= tileObjectName
+                  , "host" .= host
+                  , "port" .= port
+                  , "secure" .= secure
+                  , "httpError" .= show e
+                  , "cause" .= show cause
+                  ]
+                throwIO e
+              Left e ->
+                logError "Upload DZI tile: Unknown HTTP error"
+                  [ "container" .= container
+                  , "objectName" .= tileObjectName
+                  , "httpError" .= show e
+                  ]
+              Right _ -> return ()
+          Nothing -> logError "Invalid DZI tile object name"
+                [ "tilePath" .= tilePath
+                , "rootPath" .= rootPath
+                ]
 
     -- Upload manifest
     case toObjectName path of
@@ -213,6 +216,7 @@ uploadDZI raxConfig rootPath path dzi = do
     tileMIME = toMIME (dziTileFormat dzi)
     container = raxContainer raxConfig
     raxCreds = mkCredentials (raxUsername raxConfig) (raxApiKey raxConfig)
+    numParallelUploads = 25
 
     stripRoot :: FilePath -> Maybe FilePath
     stripRoot = stripPrefix (addTrailingPathSeparator rootPath)
