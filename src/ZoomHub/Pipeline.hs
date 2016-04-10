@@ -178,10 +178,10 @@ uploadDZI raxConfig rootPath path dzi = do
                 logError "Upload DZI tile: Failed to connect to server"
                   [ "container" .= container
                   , "objectName" .= tileObjectName
+                  , "httpError" .= show e
                   , "host" .= host
                   , "port" .= port
                   , "secure" .= secure
-                  , "httpError" .= show e
                   , "cause" .= show cause
                   ]
                 throwIO e
