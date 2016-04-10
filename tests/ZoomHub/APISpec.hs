@@ -25,6 +25,7 @@ import           ZoomHub.Types.ContentBaseURI (ContentBaseURI (ContentBaseURI))
 import           ZoomHub.Types.ContentId      (ContentId, fromString, unId)
 import           ZoomHub.Types.DatabasePath   (DatabasePath (DatabasePath))
 import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI (StaticBaseURI))
+import           ZoomHub.Types.TempPath       (TempPath (TempPath))
 
 main :: IO ()
 main = hspec spec
@@ -92,7 +93,6 @@ config :: Config
 config = Config
   { baseURI = BaseURI (toURI "http://localhost:8000")
   , contentBaseURI = ContentBaseURI (toURI "http://localhost:9000")
-  , dataPath = "./data"
   , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
   , encodeId = show
   , error404 = "404"
@@ -104,6 +104,7 @@ config = Config
   , publicPath = "./public"
   , rackspace = undefined
   , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
+  , tempPath = TempPath "./data/temp"
   , version = "test"
   }
 
