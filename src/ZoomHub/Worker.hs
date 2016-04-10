@@ -12,7 +12,7 @@ import           Data.Time.Units              (Minute, Second, toMicroseconds)
 
 import           ZoomHub.Config               (Config)
 import qualified ZoomHub.Config               as Config
-import           ZoomHub.Log.Logger           (logDebug, logDebug_)
+import           ZoomHub.Log.Logger           (logDebug, logDebugT)
 import           ZoomHub.Pipeline             (process)
 import           ZoomHub.Storage.SQLite       (getExpiredActive,
                                                getNextUnprocessed,
@@ -49,9 +49,9 @@ processExpiredActiveContent :: Config -> IO ()
 processExpiredActiveContent config = forever $
   withConnection (Config.dbPath config) $ \dbConn -> do
     cs <- getExpiredActive dbConn
-    logDebug "Reset expired active content"
+    logDebugT "Reset expired active content"
       [ "ids" .= map contentId cs ]
-    resetAsInitialized dbConn cs
+      (resetAsInitialized dbConn cs)
 
     logDebug "Wait for next expired active content"
       [ "sleepDuration" .= sleepDuration ]
