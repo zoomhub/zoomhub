@@ -19,6 +19,7 @@ import           Control.Exception    (SomeException)
 import           Data.Aeson           (encode, object, (.=))
 import           Data.Aeson.Types     (Pair)
 import qualified Data.ByteString.Lazy as BL
+import           Data.Monoid          ((<>))
 import           Data.Text            (Text)
 import           Data.Text.Encoding   (decodeUtf8)
 import qualified Data.Text.IO         as TIO
@@ -69,12 +70,15 @@ log_ level message = log level message []
 log :: Level -> String -> [Pair] -> IO ()
 log level message meta = do
     now <- getCurrentTime
-    TIO.hPutStrLn (handle level) $ decodeUtf8 . BL.toStrict . encode . object $
-      [ "time" .= now
+    TIO.hPutStrLn (handle level) $ decodeUtf8 . BL.toStrict $
+      (line now) <> "\n"
+  where
+    line time = encode . object $
+      [ "time" .= time
       , "type" .= ("app" :: Text)
       , "level" .= show level
       , "message" .= message
       ] ++ meta
-  where
+
     handle Error = stderr
-    handle _ = stdout
+    handle _     = stdout
