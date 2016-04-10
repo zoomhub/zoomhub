@@ -5,7 +5,7 @@ module ZoomHub.Main (main) where
 
 import           Control.Concurrent                   (getNumCapabilities)
 import           Control.Concurrent.Async             (async)
-import           Control.Exception                    (tryJust)
+import           Control.Exception                    (SomeException, tryJust)
 import           Control.Monad                        (guard, replicateM_,
                                                        unless, when)
 import           Data.Aeson                           ((.=))
@@ -16,7 +16,10 @@ import           Data.Maybe                           (fromJust, fromMaybe)
 import           GHC.Conc                             (getNumProcessors)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
-import           Network.Wai.Handler.Warp             (run)
+import           Network.Wai                          (Request)
+import           Network.Wai.Handler.Warp             (defaultSettings, defaultShouldDisplayException,
+                                                       runSettings,
+                                                       setOnException, setPort)
 import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
                                                        mkRequestLogger,
                                                        outputFormat)
@@ -37,7 +40,8 @@ import           ZoomHub.Config                       (Config (..), ExistingCont
                                                        raxContainer,
                                                        toExistingContentStatus,
                                                        toNewContentStatus)
-import           ZoomHub.Log.Logger                   (logInfo, logInfo_)
+import           ZoomHub.Log.Logger                   (logException_, logInfo,
+                                                       logInfo_)
 import           ZoomHub.Log.RequestLogger            (formatAsJSON)
 import           ZoomHub.Rackspace.CloudFiles         (unContainer)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
@@ -153,8 +157,12 @@ main = do
         _ -> return ()
 
       -- Web server
-      logInfo "Start web server" ["port" .= port]
-      run (fromIntegral port) (app config)
+      logInfo "Start web server"
+        [ "port" .= port ]
+      let waiSettings =
+            setPort (fromIntegral port) $
+            setOnException exceptionHandler defaultSettings
+      runSettings waiSettings (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
       "` environment variable.\nThis secret salt enables ZoomHub to encode" ++
       " integer IDs as short, non-sequential string IDs which make it harder" ++
@@ -191,3 +199,8 @@ main = do
         Right version -> version
       where
         versionPath = currentDirectory </> "version.txt"
+
+    exceptionHandler :: Maybe Request -> SomeException -> IO ()
+    exceptionHandler _ e =
+      when (defaultShouldDisplayException e) $
+        logException_ "Web server exception" e
