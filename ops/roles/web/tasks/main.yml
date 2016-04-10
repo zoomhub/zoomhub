@@ -1,0 +1,7 @@
+---
+- name: Ensure data directory
+  file:
+    path="{{ zoomhub_data_path }}"
+    owner="{{ admin_user }}"
+    group="{{ admin_user }}"
+    state=directory

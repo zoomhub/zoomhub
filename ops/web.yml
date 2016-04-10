@@ -11,3 +11,4 @@
     - circleci
     - vips
     - splunk-forwarder
+    - web
