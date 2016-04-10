@@ -8,7 +8,6 @@ module ZoomHub.Pipeline
 import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
 import           Control.Concurrent.Async                 (forConcurrently)
-import           Control.Exception                        (throwIO, tryJust)
 import           Control.Exception.Enclosed               (catchAny)
 import           Control.Lens                             ((^.))
 import           Control.Monad                            (when)
@@ -20,7 +19,6 @@ import qualified Data.Text                                as T
 import           Data.Text.Encoding                       (decodeUtf8)
 import           Data.Time.Units                          (Millisecond)
 import           Database.SQLite.Simple                   (Connection)
-import           Network.HTTP.Client                      (HttpException (FailedConnectionException2))
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
@@ -189,44 +187,24 @@ uploadDZI raxConfig rootPath path dzi = do
       forConcurrently chunk $ \tilePath ->
         case toObjectName tilePath of
           (Just tileObjectName) -> do
-            logDebug "Upload DZI tile"
-              [ "container" .= container
-              , "objectName" .= tileObjectName
-              ]
-            r <- tryJust isFailedConnectionException2 $
-              putContent meta tilePath tileMIME container tileObjectName
-            case r of
-              Left e@(FailedConnectionException2 host port secure cause) -> do
-                logError "Upload DZI tile: Failed to connect to server"
+            _ <- logDebugT "Upload DZI tile"
                   [ "container" .= container
                   , "objectName" .= tileObjectName
-                  , "httpError" .= show e
-                  , "host" .= host
-                  , "port" .= port
-                  , "secure" .= secure
-                  , "cause" .= show cause
-                  ]
-                throwIO e
-              Left e ->
-                logError "Upload DZI tile: Unknown HTTP error"
-                  [ "container" .= container
-                  , "objectName" .= tileObjectName
-                  , "httpError" .= show e
-                  ]
-              Right _ -> return ()
+                  ] $ putContent meta tilePath tileMIME container tileObjectName
+            return ()
+
           Nothing -> logError "Invalid DZI tile object name"
-                [ "tilePath" .= tilePath
-                , "rootPath" .= rootPath
-                ]
+                        [ "tilePath" .= tilePath
+                        , "rootPath" .= rootPath
+                        ]
 
     -- Upload manifest
     case toObjectName path of
       (Just dziObjectName) -> do
-        logDebug "Upload DZI manifest"
-          [ "container" .= container
-          , "objectName" .= dziObjectName
-          ]
-        _ <- putContent meta path manifestMIME container dziObjectName
+        _ <- logDebugT "Upload DZI manifest"
+              [ "container" .= container
+              , "objectName" .= dziObjectName
+              ] $ putContent meta path manifestMIME container dziObjectName
         return ()
       _ ->
         logError "Invalid DZI manifest object name"
@@ -242,10 +220,6 @@ uploadDZI raxConfig rootPath path dzi = do
 
     stripRoot :: FilePath -> Maybe FilePath
     stripRoot = stripPrefix (addTrailingPathSeparator rootPath)
-
-    isFailedConnectionException2 :: HttpException -> Maybe HttpException
-    isFailedConnectionException2 e@(FailedConnectionException2 _ _ _ _) = Just e
-    isFailedConnectionException2 _ = Nothing
 
     -- TODO: Make `content` prefix configurable:
     objectNamePrefix = "content"
