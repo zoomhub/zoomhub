@@ -43,7 +43,8 @@ import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
 import           ZoomHub.Storage.SQLite               (create, getById,
                                                        getById', getByURL,
-                                                       getByURL', withConnection)
+                                                       getByURL',
+                                                       withConnection)
 import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content                as Internal
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
