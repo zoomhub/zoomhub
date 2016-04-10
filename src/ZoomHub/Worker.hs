@@ -12,7 +12,7 @@ import           Data.Time.Units              (Minute, Second, toMicroseconds)
 
 import           ZoomHub.Config               (Config)
 import qualified ZoomHub.Config               as Config
-import           ZoomHub.Log.Logger           (logDebug)
+import           ZoomHub.Log.Logger           (logDebug, logDebug_)
 import           ZoomHub.Pipeline             (process)
 import           ZoomHub.Storage.SQLite       (getExpiredActive,
                                                getNextUnprocessed,
@@ -31,6 +31,7 @@ processExpiredActiveContentInterval = 30
 processExistingContent :: Config -> IO ()
 processExistingContent config = forever $
   withConnection (Config.dbPath config) $ \dbConn -> do
+    logDebug_ "Get next unprocessed content"
     maybeContent <- getNextUnprocessed dbConn
     case maybeContent of
       Just content -> do
