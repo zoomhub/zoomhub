@@ -70,8 +70,7 @@ log_ level message = log level message []
 log :: Level -> String -> [Pair] -> IO ()
 log level message meta = do
     now <- getCurrentTime
-    TIO.hPutStrLn (handle level) $ decodeUtf8 . BL.toStrict $
-      (line now) <> "\n"
+    TIO.hPutStrLn (handle level) $ decodeUtf8 . BL.toStrict $ (line now) <> "\n"
   where
     line time = encode . object $
       [ "time" .= time
