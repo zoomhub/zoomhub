@@ -77,7 +77,6 @@ library
     , containers
     , cryptonite == 0.10.*
     , data-default
-    , direct-sqlite
     , directory == 1.2.5.1
     , either
     , enclosed-exceptions
