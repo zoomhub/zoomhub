@@ -79,6 +79,7 @@ library
     , direct-sqlite
     , directory == 1.2.5.1
     , either
+    , enclosed-exceptions
     , envy
     , fast-logger
     , filepath
