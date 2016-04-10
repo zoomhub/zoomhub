@@ -125,14 +125,14 @@ main = do
           config = Config{..}
       logInfo_ $ "Welcome to ZoomHub.\
         \ Go to <" ++ show baseURI ++ "> and have fun!"
-      logInfo "Config"
-        [ "value" .= config ]
+      logInfo "Config: App"
+        [ "config" .= config ]
 
       -- Workers
       numProcessors <- getNumProcessors
       numCapabilities <- getNumCapabilities
       let numProcessingWorkers = max (numCapabilities - 1) 0
-      logInfo "Worker Config"
+      logInfo "Config: Worker"
         [ "numProcessors" .= numProcessors
         , "numCapabilities" .= numCapabilities
         , "numProcessingWorkers" .= numProcessingWorkers
