@@ -3,7 +3,7 @@
 
 module ZoomHub.Main (main) where
 
-import           Control.Concurrent                   (forkIO)
+import           Control.Concurrent                   (getNumCapabilities)
 import           Control.Exception                    (tryJust)
 import           Control.Monad                        (guard, unless, when)
 import           Data.Aeson                           ((.=))
@@ -11,6 +11,7 @@ import qualified Data.ByteString.Char8                as BC
 import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
 import           Data.Maybe                           (fromJust, fromMaybe)
+import           GHC.Conc                             (getNumProcessors)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
 import           Network.Wai.Handler.Warp             (run)
@@ -125,7 +126,18 @@ main = do
       logInfo "Config"
         [ "value" .= config ]
 
-      logInfo_ "Worker: Reset expired active content"
+      -- Workers
+      numProcessors <- getNumProcessors
+      numCapabilities <- getNumCapabilities
+      let numProcessingWorkers = max (numCapabilities - 1) 0
+      logInfo "Worker Config"
+        [ "numProcessors" .= numProcessors
+        , "numCapabilities" .= numCapabilities
+        , "numProcessingWorkers" .= numProcessingWorkers
+        , "numProcessExpiredActiveWorkers" .= (1 :: Integer)
+        ]
+
+      logInfo_ "Worker: Start resetting expired active content"
       _ <- forkIO (processExpiredActiveContent config)
 
       case existingContentStatus of
