@@ -139,14 +139,15 @@ main = do
         , "numProcessExpiredActiveWorkers" .= (1 :: Integer)
         ]
 
-      logInfo_ "Worker: Start resetting expired active content"
-      _ <- async (processExpiredActiveContent config)
+      _ <- async $ do
+        logInfo_ "Worker: Start resetting expired active content"
+        processExpiredActiveContent config
 
       case existingContentStatus of
         ProcessExistingContent -> do
-          replicateM_ numProcessingWorkers $ do
+          replicateM_ numProcessingWorkers $ async $ do
             logInfo_ "Worker: Start processing existing content"
-            async (processExistingContent config)
+            processExistingContent config
 
           return ()
         _ -> return ()
