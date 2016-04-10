@@ -4,6 +4,7 @@
 module ZoomHub.Main (main) where
 
 import           Control.Concurrent                   (getNumCapabilities)
+import           Control.Concurrent.Async             (async)
 import           Control.Exception                    (tryJust)
 import           Control.Monad                        (guard, unless, when)
 import           Data.Aeson                           ((.=))
@@ -138,15 +139,17 @@ main = do
         ]
 
       logInfo_ "Worker: Start resetting expired active content"
-      _ <- forkIO (processExpiredActiveContent config)
+      _ <- async (processExpiredActiveContent config)
 
       case existingContentStatus of
         ProcessExistingContent -> do
           logInfo_ "Worker: Start processing existing content"
-          _ <- forkIO (processExistingContent config)
+          _ <- async (processExistingContent config)
 
           return ()
         _ -> return ()
+
+      -- Web server
       logInfo "Start web server" ["port" .= port]
       run (fromIntegral port) (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
