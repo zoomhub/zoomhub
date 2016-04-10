@@ -50,17 +50,17 @@ import           ZoomHub.Worker                       (processExistingContent, p
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
 
-existingContentStatusEnvName :: String
-existingContentStatusEnvName = "PROCESS_EXISTING_CONTENT"
-
-newContentStatusEnvName :: String
-newContentStatusEnvName = "PROCESS_NEW_CONTENT"
-
 dbPathEnvName :: String
 dbPathEnvName = "DB_PATH"
 
+existingContentStatusEnvName :: String
+existingContentStatusEnvName = "PROCESS_EXISTING_CONTENT"
+
 hashidsSaltEnvName :: String
 hashidsSaltEnvName = "HASHIDS_SALT"
+
+newContentStatusEnvName :: String
+newContentStatusEnvName = "PROCESS_NEW_CONTENT"
 
 tempRootPathEnvName :: String
 tempRootPathEnvName = "TEMP_PATH"
