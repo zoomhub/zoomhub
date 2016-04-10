@@ -134,6 +134,7 @@ getContent meta urlPath =
       is404 (StatusCodeException s _ _) = s ^. statusCode == 404
       is404 _ = False
 
+-- TODO: Add support for using a `wreq` session for improved performance:
 putContent :: Metadata ->
               FilePath ->
               MIME.Type ->
