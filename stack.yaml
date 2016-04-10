@@ -16,6 +16,7 @@ extra-deps:
 - envy-1.1.0.0
 - hashids-1.0.2.2
 - mime-0.4.0.2
+- retry-0.7.1
 - servant-lucid-0.4.4.5
 
 # Override default flag values for local packages and extra-deps

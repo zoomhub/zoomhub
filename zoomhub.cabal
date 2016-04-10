@@ -82,6 +82,7 @@ library
     , either
     , enclosed-exceptions
     , envy
+    , exceptions
     , fast-logger
     , filepath
     , hashids
@@ -97,6 +98,7 @@ library
     , network-uri
     , process
     , random
+    , retry == 0.7.1
     , safe
     , servant == 0.4.4.6
     , servant-lucid == 0.4.4.5
