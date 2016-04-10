@@ -1,5 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module ZoomHub.Storage.SQLite
   (
@@ -23,6 +24,12 @@ module ZoomHub.Storage.SQLite
 import           Control.Concurrent.Async       (async)
 import           Control.Exception              (tryJust)
 import           Control.Monad                  (forM_, guard)
+import           Control.Monad.Catch            (Handler)
+import           Control.Monad.IO.Class         (MonadIO)
+import           Control.Retry                  (RetryPolicyM, RetryStatus,
+                                                 capDelay, fullJitterBackoff,
+                                                 limitRetries, logRetries,
+                                                 recovering)
 import           Data.Aeson                     ((.=))
 import           Data.Monoid                    ((<>))
 import           Data.Set                       (Set)
@@ -30,17 +37,18 @@ import qualified Data.Set                       as Set
 import           Data.String                    (IsString (fromString))
 import           Data.Text                      (Text)
 import           Data.Time.Clock                (UTCTime, getCurrentTime)
-import           Database.SQLite.Simple         (Connection, NamedParam ((:=)),
-                                                 Only (Only), Query, execute,
-                                                 executeNamed, field, fromOnly,
-                                                 query, queryNamed, query_,
-                                                 withTransaction)
+import           Data.Time.Units                (Second, toMicroseconds)
+import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
+                                                 NamedParam ((:=)), Only (Only),
+                                                 Query,
+                                                 SQLError (SQLError, sqlError),
+                                                 execute, executeNamed, field,
+                                                 fromOnly, query, queryNamed,
+                                                 query_, withTransaction)
 import qualified Database.SQLite.Simple         as SQLite
 import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField (toField)
 import           Database.SQLite.Simple.ToRow   (ToRow, toRow)
-import           Database.SQLite3               (Error (ErrorConstraint),
-                                                 SQLError (..))
 
 import           ZoomHub.Log.Logger             (logWarning)
 import           ZoomHub.Types.Content          (Content (Content),
@@ -64,6 +72,7 @@ import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage, TileFormat,
                                                  dziHeight, dziTileFormat,
                                                  dziTileOverlap, dziTileSize,
                                                  dziWidth, mkDeepZoomImage)
+import           ZoomHub.Types.Time.Instances   ()
 import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
@@ -133,7 +142,7 @@ resetAsInitialized :: Connection -> [Content] -> IO ()
 resetAsInitialized conn cs =
   withTransaction conn $
     forM_ (map (unId . contentId) cs) $ \hashId ->
-      executeNamed conn "UPDATE content \
+      retryExecuteNamed conn "UPDATE content \
       \ SET state = :initializedState, activeAt = NULL, error = NULL, \
       \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
       [ ":initializedState" := Initialized
@@ -147,7 +156,7 @@ markAsActive conn content = do
         { contentState = Active
         , contentActiveAt = Just activeAt
         }
-  executeNamed conn "\
+  retryExecuteNamed conn "\
     \UPDATE content \
     \ SET state = :state\
     \   , activeAt = :activeAt\
@@ -170,7 +179,7 @@ markAsFailure conn content maybeError = do
         , contentCompletedAt = Just completedAt
         , contentError = maybeError
         }
-  executeNamed conn "\
+  retryExecuteNamed conn "\
     \UPDATE content\
     \  SET state = :state\
     \    , typeId = :typeId\
@@ -204,7 +213,7 @@ markAsSuccess conn content dzi maybeMIME size = do
         , contentDZI = Just dzi
         }
   withTransaction conn $ do
-    executeNamed conn "\
+    retryExecuteNamed conn "\
       \ UPDATE content \
       \   SET state = :state\
       \     , typeId = :typeId\
@@ -223,7 +232,7 @@ markAsSuccess conn content dzi maybeMIME size = do
       , ":progress" := contentProgress content'
       , ":error" := contentError content'
       ]
-    executeNamed conn "\
+    retryExecuteNamed conn "\
       \ INSERT OR REPLACE INTO image\
       \    ( contentId\
       \    , initializedAt\
@@ -372,7 +381,7 @@ instance FromRow ContentRow where
     field     -- dziTileFormat
 
 instance ToRow ContentRow where
-  toRow (ContentRow{..}) =
+  toRow ContentRow{..} =
     [ toField crId
     , toField crHashId
     , toField crType
@@ -443,3 +452,39 @@ contentToRow id_ c = ContentRow
     , crDZITileFormat = dziTileFormat  <$> dzi
     }
   where dzi = contentDZI c
+
+
+-- Retry
+backoffPolicy :: (MonadIO m) => RetryPolicyM m
+backoffPolicy =
+    capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
+  where
+    maxDelay = fromIntegral $ toMicroseconds (60 :: Second)
+    base = fromIntegral $ toMicroseconds (2 :: Second)
+    maxRetries = 10
+
+retryExecuteNamed :: Connection -> Query -> [NamedParam] -> IO ()
+retryExecuteNamed conn q params =
+    recovering backoffPolicy handlers (\_ -> executeNamed conn q params)
+  where
+    handlers = [sqlErrorH]
+
+    sqlErrorH :: RetryStatus -> Handler IO Bool
+    sqlErrorH = logRetries testE logRetry
+
+    testE :: (Monad m) => SQLError -> m Bool
+    testE e = case sqlError e of
+      ErrorBusy      -> return True
+      ErrorCan'tOpen -> return True
+      ErrorLocked    -> return True
+      _              -> return False
+
+    logRetry :: Bool -> String -> IO ()
+    logRetry shouldRetry errorMessage =
+        logWarning "Retrying operation due to error"
+          [ "error" .= errorMessage
+          , "nextAction" .= next
+          ]
+      where
+        next :: Text
+        next = if shouldRetry then "retry" else "crash"
