@@ -108,6 +108,7 @@ library
     , temporary
     , text
     , time
+    , timeit
     , time-units
     , transformers
     , unix
