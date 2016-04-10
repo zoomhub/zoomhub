@@ -20,6 +20,7 @@ module ZoomHub.Storage.SQLite
   , withConnection
   ) where
 
+import           Control.Concurrent.Async       (async)
 import           Control.Exception              (tryJust)
 import           Control.Monad                  (forM_, guard)
 import           Data.Aeson                     ((.=))
@@ -257,7 +258,7 @@ withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
 -- Internal
 getBy' :: String -> String -> Connection -> IO (Maybe Content)
 getBy' fieldName param conn = do
-  execute conn (incrNumViewsQueryFor fieldName) (Only param)
+  _ <- async (execute conn (incrNumViewsQueryFor fieldName) (Only param))
   getBy fieldName param conn
 
 getBy :: String -> String -> Connection -> IO (Maybe Content)
