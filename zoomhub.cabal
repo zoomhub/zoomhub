@@ -151,6 +151,7 @@ test-suite tests
     ZoomHub.APISpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
+    ZoomHub.Types.DeepZoomImageSpec
   build-depends:
       aeson
     , base
