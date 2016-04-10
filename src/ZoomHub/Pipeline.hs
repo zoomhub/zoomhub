@@ -17,7 +17,6 @@ import           Data.List.Split                          (chunksOf)
 import           Data.Monoid                              ((<>))
 import qualified Data.Text                                as T
 import           Data.Text.Encoding                       (decodeUtf8)
-import           Data.Time.Units                          (Millisecond)
 import           Database.SQLite.Simple                   (Connection)
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
@@ -31,7 +30,6 @@ import           System.IO.Temp                           (withTempDirectory)
 import           System.Posix                             (fileSize,
                                                            getFileStatus)
 import           System.Process                           (readProcessWithExitCode)
-import           System.TimeIt                            (timeItT)
 
 import           ZoomHub.Config                           (Config,
                                                            RackspaceConfig,
@@ -59,18 +57,16 @@ import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFo
                                                            dziTileFormat,
                                                            fromXML)
 import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
-import           ZoomHub.Types.Time.Instances             ()
 
 process :: Config -> Content -> IO Content
 process config content =
   withConnection (Config.dbPath config) $ \dbConn ->
     unsafeProcess raxConfig tempPath dbConn content `catchAny` \e -> do
       let errorMessage = Just . T.pack $ show e
-      logInfo "Process content: failure"
+      logInfoT "Process content: failure"
         [ "id" .= contentId content
         , "error" .= errorMessage
-        ]
-      markAsFailure dbConn content errorMessage
+        ] $ markAsFailure dbConn content errorMessage
   where
     tempPath = Config.tempPath config
     raxConfig = Config.rackspace config
@@ -81,8 +77,10 @@ unsafeProcess :: RackspaceConfig ->
                  Content ->
                  IO Content
 unsafeProcess raxConfig tempPath dbConn content =
-  withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
-    (totalDuration, completedContent) <- timeItT $ do
+  withTempDirectory (unTempPath tempPath) template $ \tmpDir ->
+    logInfoT "Process content: success"
+      [ "id" .= contentId content ] $ do
+
       let rawPathPrefix = tmpDir </> rawContentId
           rawPath = rawPathPrefix ++ "-raw"
           dziPath = rawPathPrefix <.> "dzi"
@@ -92,25 +90,20 @@ unsafeProcess raxConfig tempPath dbConn content =
         , "path" .= tmpDir
         ]
 
-      logInfo "Mark content as active"
-        [ "id" .= contentId content ]
-      activeContent <- markAsActive dbConn content
+      activeContent <- logInfoT "Mark content as active"
+        [ "id" .= contentId content ] $ markAsActive dbConn content
 
-      (downloadDuration, maybeMIME) <- timeItT $
-        ((<$>) . (<$>)) ContentMIME $ downloadURL (contentURL content) rawPath
-      logInfo "Download content"
+      maybeMIME <- logInfoT "Download content"
         [ "id" .= contentId content
         , "url" .= contentURL content
-        , "duration" .= (round (downloadDuration * 1000) :: Millisecond)
-        ]
+        ] $ ((<$>) . (<$>)) ContentMIME $
+            downloadURL (contentURL content) rawPath
+
       rawSize <- getFileSize rawPath
 
-      (dziDuration, dzi) <- timeItT $
+      dzi <- logInfoT "Create DZI"
+        [ "id" .= contentId content] $
         createDZI rawPath dziPath (toTileFormat maybeMIME)
-      logInfo "Create DZI"
-        [ "id" .= contentId content
-        , "duration" .= (round (dziDuration * 1000) :: Millisecond)
-        ]
 
       logInfo "Content metadata"
         [ "mime" .= maybeMIME
@@ -118,21 +111,13 @@ unsafeProcess raxConfig tempPath dbConn content =
         , "dzi" .= dzi
         ]
 
-      (uploadDuration, _) <- timeItT $ uploadDZI raxConfig tmpDir dziPath dzi
-      logInfo "Upload DZI"
+      logInfoT "Upload DZI"
         [ "id" .= contentId content
         , "dzi" .= dzi
         , "dziPath" .= dziPath
-        , "duration" .= (round (uploadDuration * 1000) :: Millisecond)
-        ]
+        ] $ uploadDZI raxConfig tmpDir dziPath dzi
 
       markAsSuccess dbConn activeContent dzi maybeMIME rawSize
-
-    logInfo "Process content: success"
-      [ "id" .= contentId completedContent
-      , "duration" .= (round (totalDuration * 1000) :: Millisecond)
-      ]
-    return completedContent
   where
     rawContentId = unId (contentId content)
     template = rawContentId ++ "-"

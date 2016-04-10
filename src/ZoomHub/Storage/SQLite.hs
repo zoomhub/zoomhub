@@ -453,7 +453,6 @@ contentToRow id_ c = ContentRow
     }
   where dzi = contentDZI c
 
-
 -- Retry
 backoffPolicy :: (MonadIO m) => RetryPolicyM m
 backoffPolicy =
