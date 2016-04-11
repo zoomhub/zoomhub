@@ -15,10 +15,8 @@ stanzas:
       - www.zoomhub.net
       - zoom.it
       - zoomhub.net
-    env:
-      DB_PATH: '/mnt/datavolume/zoomhub/data/zoomhub.sqlite3'
-      TEMP_PATH: '/mnt/datavolume/zoomhub/data'
     forward-env:
+      - DB_PATH
       - HASHIDS_SALT
       - PROCESS_EXISTING_CONTENT
       - PROCESS_NEW_CONTENT
@@ -26,3 +24,4 @@ stanzas:
       - RACKSPACE_CONTAINER
       - RACKSPACE_CONTAINER_PATH
       - RACKSPACE_USERNAME
+      - TEMP_PATH
