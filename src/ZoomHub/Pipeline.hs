@@ -169,7 +169,7 @@ uploadDZI raxConfig rootPath path dzi = do
     meta <- getMetadata raxCreds
     tilePaths <- getDZITilePaths path
 
-    -- Upload Tiles
+    -- Upload tiles
     let chunks = chunksOf numParallelUploads tilePaths
     sequence_ $ (`map` chunks) $ \chunk ->
       forConcurrently chunk $ \tilePath ->
