@@ -178,10 +178,11 @@ main = do
             setPort (fromIntegral port) $
             setOnException exceptionHandler defaultSettings
       runSettings waiSettings (app config)
-    (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++
-      "` environment variable.\nThis secret salt enables ZoomHub to encode" ++
-      " integer IDs as short, non-sequential string IDs which make it harder" ++
-      " to guess valid content IDs."
+    (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++ "`\
+      \ environment variable.\n\
+      \This secret salt enables ZoomHub to encode integer IDs as short,\
+      \ non-sequential string IDs which make it harder to guess valid\
+      \ content IDs."
     (_, Left message) -> error $ "Failed to read Rackspace config: " ++ message
   where
     toBaseURI :: String -> BaseURI
