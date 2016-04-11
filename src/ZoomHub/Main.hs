@@ -156,7 +156,7 @@ main = do
 
       _ <- async $ do
         let delay = (30 :: Second)
-        logInfo "Worker: Start resetting expired active content"
+        logInfo "Worker: Schedule resetting expired active content"
           [ "delay" .= delay ]
         threadDelay (fromIntegral $ toMicroseconds delay)
         processExpiredActiveContent config
