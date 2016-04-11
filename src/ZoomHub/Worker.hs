@@ -5,21 +5,20 @@ module ZoomHub.Worker
   , processExpiredActiveContent
   ) where
 
-import           Control.Concurrent           (threadDelay)
-import           Control.Monad                (forever)
-import           Data.Aeson                   ((.=))
-import           Data.Time.Units              (Minute, Second, toMicroseconds)
+import           Control.Concurrent        (threadDelay)
+import           Control.Monad             (forever)
+import           Data.Aeson                ((.=))
+import           Data.Time.Units           (Minute, Second, toMicroseconds)
+import           Data.Time.Units.Instances ()
 
-import           ZoomHub.Config               (Config)
-import qualified ZoomHub.Config               as Config
-import           ZoomHub.Log.Logger           (logDebug, logDebugT)
-import           ZoomHub.Pipeline             (process)
-import           ZoomHub.Storage.SQLite       (getExpiredActive,
-                                               getNextUnprocessed,
-                                               resetAsInitialized,
-                                               withConnection)
-import           ZoomHub.Types.Content        (contentId)
-import           ZoomHub.Types.Time.Instances ()
+import           ZoomHub.Config            (Config)
+import qualified ZoomHub.Config            as Config
+import           ZoomHub.Log.Logger        (logDebug, logDebugT)
+import           ZoomHub.Pipeline          (process)
+import           ZoomHub.Storage.SQLite    (getExpiredActive,
+                                            getNextUnprocessed,
+                                            resetAsInitialized, withConnection)
+import           ZoomHub.Types.Content     (contentId)
 
 
 processExistingContentInterval :: Second

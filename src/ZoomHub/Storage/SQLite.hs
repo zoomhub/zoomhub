@@ -37,6 +37,7 @@ import           Data.String                    (IsString (fromString))
 import           Data.Text                      (Text)
 import           Data.Time.Clock                (UTCTime, getCurrentTime)
 import           Data.Time.Units                (Second, toMicroseconds)
+import           Data.Time.Units.Instances      ()
 import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
                                                  NamedParam ((:=)), Only (Only),
                                                  Query,
@@ -71,7 +72,6 @@ import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage, TileFormat,
                                                  dziHeight, dziTileFormat,
                                                  dziTileOverlap, dziTileSize,
                                                  dziWidth, mkDeepZoomImage)
-import           ZoomHub.Types.Time.Instances   ()
 import           ZoomHub.Utils                  (intercalate)
 
 -- Public API

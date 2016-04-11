@@ -15,22 +15,21 @@ module ZoomHub.Log.Logger
   , logWarning_
   ) where
 
-import           Prelude                      hiding (log)
+import           Prelude                   hiding (log)
 
-import           Control.Exception            (SomeException)
-import           Data.Aeson                   (encode, object, (.=))
-import           Data.Aeson.Types             (Pair)
-import qualified Data.ByteString.Lazy         as BL
-import           Data.Monoid                  ((<>))
-import           Data.Text                    (Text)
-import           Data.Text.Encoding           (decodeUtf8)
-import qualified Data.Text.IO                 as TIO
-import           Data.Time.Clock              (getCurrentTime)
-import           Data.Time.Units              (Millisecond)
-import           System.IO                    (stderr, stdout)
-import           System.TimeIt                (timeItT)
-
-import           ZoomHub.Types.Time.Instances ()
+import           Control.Exception         (SomeException)
+import           Data.Aeson                (encode, object, (.=))
+import           Data.Aeson.Types          (Pair)
+import qualified Data.ByteString.Lazy      as BL
+import           Data.Monoid               ((<>))
+import           Data.Text                 (Text)
+import           Data.Text.Encoding        (decodeUtf8)
+import qualified Data.Text.IO              as TIO
+import           Data.Time.Clock           (getCurrentTime)
+import           Data.Time.Units           (Millisecond)
+import           Data.Time.Units.Instances ()
+import           System.IO                 (stderr, stdout)
+import           System.TimeIt             (timeItT)
 
 data Level = Debug | Info | Warning | Error deriving Eq
 

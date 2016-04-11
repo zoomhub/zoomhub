@@ -18,6 +18,7 @@ import qualified Data.Text                            as T
 import           Data.Text.Encoding                   (decodeUtf8)
 import           Data.Time                            (NominalDiffTime)
 import           Data.Time.Units                      (Millisecond)
+import           Data.Time.Units.Instances            ()
 import           Data.Word                            (Word32)
 import           Network.HTTP.Types                   as H
 import           Network.Socket                       (PortNumber,
@@ -31,8 +32,6 @@ import           Network.Wai                          (Request, RequestBodyLengt
 import           Network.Wai.Middleware.RequestLogger (OutputFormatterWithDetails)
 import           System.Log.FastLogger                (toLogStr)
 import           Text.Printf                          (printf)
-
-import           ZoomHub.Types.Time.Instances         ()
 
 formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
