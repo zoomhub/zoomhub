@@ -141,7 +141,9 @@ createDZI src dest tileFormat = do
       , "stdout" .= stdout
       , "stderr" .= stderr
       ]
-    when (exitCode /= ExitSuccess) (fail $ "VIPS error: " ++ show exitCode)
+    when (exitCode /= ExitSuccess) $
+      fail $ "VIPS error: Exit code: " ++ show exitCode ++
+             ". stderr: " ++ stderr ++ ". stdout: " ++ stdout
 
     xml <- readFile dest
     case fromXML xml of
