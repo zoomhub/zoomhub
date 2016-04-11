@@ -7,5 +7,5 @@
 rsync -avz \
   -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
   --progress \
-  root@v1.zoomhub.net:/mnt/datavolume/zoomhub/data/content-by-id/ \
-  ~/zoomhub-backup/content-by-id/
+  admin@zoomhub.net:/mnt/datavolume/zoomhub/data/zoomhub.sqlite3 \
+  ~/zoomhub-backup/zoomhub-production-$(date -u +"%Y-%m-%dT%H-%M-%SZ").sqlite3

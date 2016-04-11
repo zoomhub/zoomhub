@@ -19,7 +19,8 @@ source-repository head
 
 library
   exposed-modules:
-      ZoomHub.API
+      Network.URI.Instances
+    , ZoomHub.API
     , ZoomHub.API.ContentTypes.JavaScript
     , ZoomHub.API.Errors
     , ZoomHub.API.JSONP.Errors
@@ -29,7 +30,8 @@ library
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
-    , ZoomHub.Logger
+    , ZoomHub.Log.Logger
+    , ZoomHub.Log.RequestLogger
     , ZoomHub.Main
     , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
@@ -40,10 +42,15 @@ library
     , ZoomHub.Types.Content
     , ZoomHub.Types.ContentBaseURI
     , ZoomHub.Types.ContentId
+    , ZoomHub.Types.ContentMIME
     , ZoomHub.Types.ContentState
+    , ZoomHub.Types.ContentType
     , ZoomHub.Types.ContentURI
     , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
+    , ZoomHub.Types.StaticBaseURI
+    , ZoomHub.Types.TempPath
+    , ZoomHub.Types.Time.Instances
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Static
@@ -53,6 +60,7 @@ library
     , ZoomHub.Web.Types.OpenSeadragonTileSource
     , ZoomHub.Web.Types.OpenSeadragonViewerConfig
     , ZoomHub.Web.Types.ViewContent
+    , ZoomHub.Worker
   default-language: Haskell2010
   ghc-options:      -Wall
   hs-source-dirs:   src
@@ -60,17 +68,21 @@ library
       aeson == 0.10.*
     , aeson-casing == 0.1.*
     , aeson-pretty
+    , async == 2.1.0
     , atomic-write
     , base >= 4.8 && < 5
     , blaze-builder
     , bytestring
     , case-insensitive
+    , cassava
     , containers
     , cryptonite == 0.10.*
     , data-default
-    , directory
+    , directory == 1.2.5.1
     , either
+    , enclosed-exceptions
     , envy
+    , exceptions
     , fast-logger
     , filepath
     , hashids
@@ -81,20 +93,25 @@ library
     , lens == 4.13.*
     , lens-aeson == 1.*
     , lucid
+    , mime
     , network
     , network-uri
     , process
     , random
+    , retry == 0.7.1
     , safe
     , servant == 0.4.4.6
     , servant-lucid == 0.4.4.5
     , servant-server == 0.4.4.6
+    , split
     , sqlite-simple
     , stm
     , string-conversions
     , temporary
     , text
     , time
+    , timeit
+    , time-units
     , transformers
     , unix
     , unordered-containers
@@ -105,6 +122,7 @@ library
     , wai-extra
     , warp
     , wreq == 0.4.*
+    , xml
 
 executable zoomhub
   default-language: Haskell2010
@@ -113,6 +131,17 @@ executable zoomhub
   build-depends:
       base
     , zoomhub
+
+executable normalize-db
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  main-is:          scripts/normalize-db.hs
+  build-depends:
+      base
+    , mime
+    , sqlite-simple
+    , text
+    , time
 
 test-suite tests
   default-language: Haskell2010
@@ -124,6 +153,7 @@ test-suite tests
     ZoomHub.APISpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
+    ZoomHub.Types.DeepZoomImageSpec
   build-depends:
       aeson
     , base

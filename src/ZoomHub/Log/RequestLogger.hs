@@ -1,7 +1,7 @@
 -- Adapted from: https://git.io/v27pJ
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Logger (formatAsJSON) where
+module ZoomHub.Log.RequestLogger (formatAsJSON) where
 
 import qualified Blaze.ByteString.Builder             as BB
 import           Data.Aeson                           (ToJSON, Value (String),
@@ -17,6 +17,7 @@ import           Data.Text                            (Text)
 import qualified Data.Text                            as T
 import           Data.Text.Encoding                   (decodeUtf8)
 import           Data.Time                            (NominalDiffTime)
+import           Data.Time.Units                      (Millisecond)
 import           Data.Word                            (Word32)
 import           Network.HTTP.Types                   as H
 import           Network.Socket                       (PortNumber,
@@ -31,21 +32,24 @@ import           Network.Wai.Middleware.RequestLogger (OutputFormatterWithDetail
 import           System.Log.FastLogger                (toLogStr)
 import           Text.Printf                          (printf)
 
+import           ZoomHub.Types.Time.Instances         ()
+
 formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
   toLogStr (encode $
     object
-      [ "req"  .= requestToJSON duration req reqBody
+      [ "type" .= ("access" :: Text)
+      , "req" .= requestToJSON duration req reqBody
       , "res" .=
       object
         [ "status" .= statusCode status
-        , "size"   .= responseSize
-        , "body"   .=
+        , "size" .= responseSize
+        , "body" .=
           if statusCode status >= 400
             then Just . decodeUtf8 . BB.toByteString $ response
             else Nothing
         ]
-      , "time"     .= decodeUtf8 date
+      , "time" .= decodeUtf8 date
       ]) <> "\n"
 
 word32ToHostAddress :: Word32 -> Text
@@ -61,7 +65,7 @@ requestToJSON duration req reqBody =
     [ "method" .= decodeUtf8 (requestMethod req)
     , "path" .= decodeUtf8 (rawPathInfo req)
     , "query" .= toObject (map queryItemToJSON (queryString req))
-    , "duration" .= toMilliseconds duration
+    , "duration" .= (round (toMilliseconds duration) :: Millisecond)
     , "size" .= requestBodyLengthToJSON (requestBodyLength req)
     , "body" .= decodeUtf8 (S8.concat reqBody)
     , "remoteHost" .= sockToJSON (remoteHost req)

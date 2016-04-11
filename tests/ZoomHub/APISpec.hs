@@ -6,13 +6,10 @@ module ZoomHub.APISpec
   ) where
 
 import qualified Data.ByteString.Char8        as BC
-import           Data.Maybe                   (fromJust)
 import           Data.Monoid                  ((<>))
-import           Database.SQLite.Simple       (open)
 import           Network.HTTP.Types           (methodGet)
-import           Network.URI                  (URI, parseAbsoluteURI)
+import           Network.URI                  (URI, parseURIReference)
 import           Network.Wai                  (Middleware)
-import           System.IO.Unsafe             (unsafePerformIO)
 import           Test.Hspec                   (Spec, describe, hspec, it)
 import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
                                                get, matchHeaders, matchStatus,
@@ -20,23 +17,31 @@ import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
                                                shouldRespondWith, with, (<:>))
 
 import           ZoomHub.API                  (app)
-import           ZoomHub.Config               (Config (..))
+import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
 import qualified ZoomHub.Config               as Config
 import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
-import           ZoomHub.Types.ContentBaseURI (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import           ZoomHub.Types.ContentId      (ContentId, fromString, unId)
 import           ZoomHub.Types.DatabasePath   (DatabasePath (DatabasePath))
+import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI (StaticBaseURI))
+import           ZoomHub.Types.TempPath       (TempPath (TempPath))
 
 main :: IO ()
 main = hspec spec
 
 -- Helpers
 toURI :: String -> URI
-toURI = fromJust . parseAbsoluteURI
+toURI s =
+  case parseURIReference s of
+    Just uri -> uri
+    _ -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " ++ s
 
 existingContent :: (ContentId, String)
-existingContent = (fromString "h",
-  "http://upload.wikimedia.org/wikipedia/commons/3/36/SeattleI5Skyline.jpg")
+existingContent =
+  ( fromString "h"
+  , "http://upload.wikimedia.org/wikipedia/commons/3/36/\
+      \SeattleI5Skyline.jpg#zoomhub=h"
+  )
 
 -- Matchers
 applicationJSON :: MatchHeader
@@ -88,24 +93,25 @@ nullLogger = id
 
 config :: Config
 config = Config
-  { acceptNewContent = False
-  , baseURI = BaseURI $ toURI "http://localhost:8000"
-  , contentBaseURI = ContentBaseURI $ toURI "http://localhost:9000"
-  , dataPath = "./data"
-  , dbPath = DatabasePath rawDBPath
-  -- TODO: How can we avoid `unsafePerformIO`?
-  , dbConnection = unsafePerformIO $ open rawDBPath
+  { baseURI = BaseURI (toURI "http://localhost:8000")
+  , contentBaseURI =
+      case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
+        Just uri -> uri
+        _ -> error $ "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
+  , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
   , encodeId = show
   , error404 = "404"
+  , existingContentStatus = IgnoreExistingContent
   , logger = nullLogger
+  , newContentStatus = NewContentDisallowed
   , openseadragonScript = "osd"
   , port = 8000
   , publicPath = "./public"
   , rackspace = undefined
+  , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
+  , tempPath = TempPath "./data/temp"
   , version = "test"
   }
-  where
-    rawDBPath = "./data/content-development.sqlite3"
 
 spec :: Spec
 spec = with (return $ app config) $ do
@@ -152,7 +158,7 @@ spec = with (return $ app config) $ do
       it "should return correct data for existing content" $
         get "/v1/content/4rcn" `shouldRespondWith`
           "{\"dzi\":{\"height\":3750,\"url\":\
-            \\"http://localhost:9000/dzis/4rcn.dzi\",\"width\":5058,\
+            \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
             \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
             \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
             \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
@@ -199,7 +205,7 @@ spec = with (return $ app config) $ do
           "/**/ typeof handleContent === 'function' && \
           \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
           \{\"dzi\":{\"height\":3750,\"url\":\
-          \\"http://localhost:9000/dzis/4rcn.dzi\",\"width\":5058,\
+          \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
           \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
           \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
           \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \

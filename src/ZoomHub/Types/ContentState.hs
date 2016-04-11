@@ -33,4 +33,4 @@ instance FromField ContentState where
   fromField (Field (SQLText "active") _) = Ok Active
   fromField (Field (SQLText "completed:success") _) = Ok CompletedSuccess
   fromField (Field (SQLText "completed:failure") _) = Ok CompletedFailure
-  fromField f = returnError ConversionFailed f "Invalid `ContentState`"
+  fromField f = returnError ConversionFailed f "invalid content state"

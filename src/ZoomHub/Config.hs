@@ -1,74 +1,129 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module ZoomHub.Config
-  ( Config(Config)
+  ( Config(..)
+  , ExistingContentStatus(..)
+  , NewContentStatus(..)
   , RackspaceConfig
-  , acceptNewContent
-  , baseURI
-  , contentBaseURI
-  , dataPath
-  , dbPath
-  , dbConnection
   , defaultPort
-  , encodeId
-  , error404
-  , logger
-  , openseadragonScript
-  , port
-  , publicPath
-  , rackspace
   , raxApiKey
+  , raxContainer
+  , raxContainerPath
   , raxUsername
-  , version
+  , toExistingContentStatus
+  , toNewContentStatus
   ) where
 
+import           Data.Aeson                   (ToJSON, Value (String), object,
+                                               toJSON, (.=))
 import qualified Data.ByteString.Lazy         as BL
-import           Database.SQLite.Simple       (Connection)
+import qualified Data.Text                    as T
 import           GHC.Generics                 (Generic)
+import           Network.URI                  (URI, parseRelativeReference)
+import           Network.URI.Instances        ()
 import           Network.Wai                  (Middleware)
 import           System.Envy                  (DefConfig, FromEnv, Option (..),
                                                customPrefix, defConfig,
                                                dropPrefixCount, fromEnv,
                                                gFromEnvCustom)
 
+import           ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
 import           ZoomHub.Types.BaseURI        (BaseURI)
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import           ZoomHub.Types.DatabasePath   (DatabasePath)
+import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI)
+import           ZoomHub.Types.TempPath       (TempPath)
 
 
 defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { acceptNewContent    :: Bool
-  , baseURI             :: BaseURI
-  , contentBaseURI      :: ContentBaseURI
-  , dataPath            :: FilePath
-  , dbPath              :: DatabasePath
-  , dbConnection        :: Connection
-  , encodeId            :: Integer -> String
-  , error404            :: BL.ByteString
-  , logger              :: Middleware
-  , openseadragonScript :: String
-  , port                :: Integer
-  , publicPath          :: FilePath
-  , rackspace           :: RackspaceConfig
-  , version             :: String
+  { baseURI               :: BaseURI
+  , contentBaseURI        :: ContentBaseURI
+  , dbPath                :: DatabasePath
+  , encodeId              :: Integer -> String
+  , error404              :: BL.ByteString
+  , existingContentStatus :: ExistingContentStatus
+  , logger                :: Middleware
+  , newContentStatus      :: NewContentStatus
+  , openseadragonScript   :: String
+  , port                  :: Integer
+  , publicPath            :: FilePath
+  , rackspace             :: RackspaceConfig
+  , staticBaseURI         :: StaticBaseURI
+  , tempPath              :: TempPath
+  , version               :: String
   }
 
--- Config: Rackspace
+instance ToJSON Config where
+  toJSON Config{..} = object
+    [ "baseURI" .= baseURI
+    , "contentBaseURI" .= contentBaseURI
+    , "dbPath" .= dbPath
+    , "existingContentStatus" .= existingContentStatus
+    , "newContentStatus" .= newContentStatus
+    , "port" .= port
+    , "publicPath" .= publicPath
+    , "staticBaseURI" .= staticBaseURI
+    , "tempPath" .= tempPath
+    , "version" .= version
+    ]
+
+-- Rackspace
 data RackspaceConfig = RackspaceConfig
-  { raxUsername :: String -- RACKSPACE_USERNAME
-  , raxApiKey   :: String -- RACKSPACE_API_KEY
+  { raxUsername      :: String    -- RACKSPACE_USERNAME
+  , raxApiKey        :: String    -- RACKSPACE_API_KEY
+  , raxContainer     :: Container -- RACKSPACE_CONTAINER
+  , raxContainerPath :: URI       -- RACKSPACE_CONTAINER_PATH
   } deriving (Generic, Show)
 
 -- Default configuration will be used for fields that could not be
 -- retrieved from the environment:
 instance DefConfig RackspaceConfig where
-  defConfig = RackspaceConfig{raxUsername="zoomingservice", raxApiKey=""}
+  defConfig = RackspaceConfig
+    { raxUsername = "zoomingservice"
+    , raxApiKey = ""
+    , raxContainer =
+        case parseContainer "content" of
+          Just container -> container
+          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
+                       " Failed to parse `raxContainer`."
+    , raxContainerPath =
+        case parseRelativeReference "dzis" of
+          Just containerPath -> containerPath
+          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
+                       " Failed to parse `raxContainerPath`."
+    }
 
 instance FromEnv RackspaceConfig where
   fromEnv = gFromEnvCustom Option
     { dropPrefixCount=3
     , customPrefix="RACKSPACE"
     }
+
+-- ExistingContentStatus
+data ExistingContentStatus = ProcessExistingContent | IgnoreExistingContent
+  deriving (Eq, Show)
+
+toExistingContentStatus :: String -> ExistingContentStatus
+toExistingContentStatus "1"    = ProcessExistingContent
+toExistingContentStatus "true" = ProcessExistingContent
+toExistingContentStatus _      = IgnoreExistingContent
+
+instance ToJSON ExistingContentStatus where
+  toJSON = String . T.pack . show
+
+-- NewContentStatus
+data NewContentStatus = NewContentAllowed | NewContentDisallowed
+  deriving (Eq, Show)
+
+toNewContentStatus :: String -> NewContentStatus
+toNewContentStatus "1"    = NewContentAllowed
+toNewContentStatus "true" = NewContentAllowed
+toNewContentStatus _      = NewContentDisallowed
+
+instance ToJSON NewContentStatus where
+  toJSON = String . T.pack . show
