@@ -17,16 +17,16 @@ module ZoomHub.API.Types.DeepZoomImage
 import           Data.Aeson                   (ToJSON, Value (String),
                                                genericToJSON, toJSON)
 import           Data.Aeson.Casing            (aesonPrefix, camelCase)
-import           Data.Maybe                   (fromJust)
 import qualified Data.Text                    as T
 import           GHC.Generics                 (Generic)
 import           Network.URI                  (URI, parseRelativeReference,
                                                relativeTo)
+import           System.FilePath              ((<.>), (</>))
 
-import           ZoomHub.Types.ContentBaseURI (ContentBaseURI, unContentBaseURI)
+import           ZoomHub.Types.ContentBaseURI (ContentBaseURI, contentBaseHost,
+                                               contentBasePath)
 import           ZoomHub.Types.ContentId      (ContentId, unId)
 import qualified ZoomHub.Types.DeepZoomImage  as Internal
-
 
 data DeepZoomImage = DeepZoomImage
   { dziUrl         :: DeepZoomImageURI
@@ -42,17 +42,22 @@ fromInternal :: ContentBaseURI ->
                 Internal.DeepZoomImage ->
                 DeepZoomImage
 fromInternal baseURI cId dzi = DeepZoomImage
-  { dziUrl = DeepZoomImageURI (dziPathURI `relativeTo` unContentBaseURI baseURI)
-  , dziWidth = Internal.dziWidth dzi
-  , dziHeight = Internal.dziHeight dzi
-  , dziTileSize = Internal.dziTileSize dzi
+  { dziUrl         = DeepZoomImageURI url
+  , dziWidth       = Internal.dziWidth dzi
+  , dziHeight      = Internal.dziHeight dzi
+  , dziTileSize    = Internal.dziTileSize dzi
   , dziTileOverlap = Internal.dziTileOverlap dzi
-  , dziTileFormat = Internal.dziTileFormat dzi
+  , dziTileFormat  = Internal.dziTileFormat dzi
   }
   where
-    -- TODO: Make configurable:
-    dziPath = "/content/" ++ unId cId ++ ".dzi"
-    dziPathURI = fromJust (parseRelativeReference dziPath)
+    name = unId cId <.> "dzi"
+    path =
+      case parseRelativeReference $ show (contentBasePath baseURI) </> name of
+        Just p  -> p
+        Nothing ->
+          error $ "ZoomHub.API.Types.DeepZoomImage.fromInternal:\
+                  \ Failed to parse DZI path."
+    url = path `relativeTo` contentBaseHost baseURI
 
 mkDeepZoomImage :: DeepZoomImageURI ->
                    Integer ->

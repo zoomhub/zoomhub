@@ -39,6 +39,7 @@ import           ZoomHub.API                          (app)
 import           ZoomHub.Config                       (Config (..), ExistingContentStatus (ProcessExistingContent, IgnoreExistingContent), NewContentStatus (NewContentDisallowed),
                                                        defaultPort,
                                                        raxContainer,
+                                                       raxContainerPath,
                                                        toExistingContentStatus,
                                                        toNewContentStatus)
 import           ZoomHub.Log.Logger                   (logException_, logInfo,
@@ -46,7 +47,7 @@ import           ZoomHub.Log.Logger                   (logException_, logInfo,
 import           ZoomHub.Log.RequestLogger            (formatAsJSON)
 import           ZoomHub.Rackspace.CloudFiles         (unContainer)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
-import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.Types.ContentBaseURI         (mkContentBaseURI)
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
                                                        unDatabasePath)
 import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI (StaticBaseURI))
@@ -126,8 +127,16 @@ main = do
       let encodeContext = hashidsSimple hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
-          contentBaseURI = ContentBaseURI . fromJust . parseAbsoluteURI $
+          maybeContentBaseHost = parseAbsoluteURI $
             "http://" ++ unContainer (raxContainer rackspace) ++ ".zoomhub.net"
+          contentBasePath = raxContainerPath rackspace
+          maybeContentBaseURI = maybeContentBaseHost >>=
+            \baseHost -> mkContentBaseURI baseHost contentBasePath
+          contentBaseURI =
+            case maybeContentBaseURI of
+              Just uri -> uri
+              _ -> error $ "ZoomHub.Main: Failed to parse `contentBaseURI`."
+
           config = Config{..}
       logInfo_ $ "Welcome to ZoomHub.\
         \ Go to <" ++ show baseURI ++ "> and have fun!"
