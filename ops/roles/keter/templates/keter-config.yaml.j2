@@ -14,6 +14,7 @@ listeners:
 setuid: {{ admin_user }}
 
 env:
+  DB_PATH: "{{ zoomhub_db_path }}"
   HASHIDS_SALT: "{{ zoomhub_hashids_salt }}"
   PROCESS_EXISTING_CONTENT: "0"
   PROCESS_NEW_CONTENT: "0"
@@ -21,3 +22,4 @@ env:
   RACKSPACE_CONTAINER: "{{ rackspace_cloudfiles_container }}"
   RACKSPACE_CONTAINER_PATH: "{{ rackspace_cloudfiles_container_path }}"
   RACKSPACE_USERNAME: "{{ rackspace_username }}"
+  TEMP_PATH: "{{ zoomhub_data_path }}"
