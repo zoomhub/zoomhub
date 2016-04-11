@@ -19,7 +19,8 @@ source-repository head
 
 library
   exposed-modules:
-      Network.URI.Instances
+      Data.Time.Units.Instances
+    , Network.URI.Instances
     , ZoomHub.API
     , ZoomHub.API.ContentTypes.JavaScript
     , ZoomHub.API.Errors
@@ -50,7 +51,6 @@ library
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.StaticBaseURI
     , ZoomHub.Types.TempPath
-    , ZoomHub.Types.Time.Instances
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Static

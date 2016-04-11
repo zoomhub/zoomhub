@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ZoomHub.Types.Time.Instances where
+module Data.Time.Units.Instances where
 
 import           Data.Aeson      (ToJSON, object, toJSON, (.=))
 import           Data.Text       (Text)
