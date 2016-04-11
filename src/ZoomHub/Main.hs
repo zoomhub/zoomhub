@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy                 as BL
 import           Data.Default                         (def)
 import           Data.Maybe                           (fromJust, fromMaybe)
 import           Data.Time.Units                      (Second, toMicroseconds)
+import           Data.Time.Units.Instances            ()
 import           GHC.Conc                             (getNumProcessors)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
@@ -53,7 +54,6 @@ import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePat
 import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI (StaticBaseURI))
 import           ZoomHub.Types.TempPath               (TempPath (TempPath),
                                                        unTempPath)
-import           ZoomHub.Types.Time.Instances         ()
 import           ZoomHub.Worker                       (processExistingContent, processExpiredActiveContent)
 
 -- Environment
@@ -209,7 +209,7 @@ main = do
           ". Please check `" ++ dbPathEnvName ++ "`."
 
     ensureTempPathExists :: TempPath -> IO ()
-    ensureTempPathExists tempPath = do
+    ensureTempPathExists tempPath =
         createDirectoryIfMissing True rawTempPath
       where
         rawTempPath = unTempPath tempPath
