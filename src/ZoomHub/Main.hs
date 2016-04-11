@@ -146,7 +146,7 @@ main = do
       -- Workers
       numProcessors <- getNumProcessors
       numCapabilities <- getNumCapabilities
-      let numProcessingWorkers = numCapabilities
+      let numProcessingWorkers = numCapabilities * 2
       logInfo "Config: Worker"
         [ "numProcessors" .= numProcessors
         , "numCapabilities" .= numCapabilities
