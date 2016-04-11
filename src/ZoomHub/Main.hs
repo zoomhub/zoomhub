@@ -26,10 +26,8 @@ import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutpu
                                                        mkRequestLogger,
                                                        outputFormat)
 import           System.Directory                     (createDirectoryIfMissing,
-                                                       doesDirectoryExist,
                                                        doesFileExist,
-                                                       getCurrentDirectory,
-                                                       removeDirectoryRecursive)
+                                                       getCurrentDirectory)
 import           System.Environment                   (lookupEnv)
 import           System.Envy                          (decodeEnv)
 import           System.FilePath                      ((</>))
@@ -202,8 +200,6 @@ main = do
 
     ensureTempPathExists :: TempPath -> IO ()
     ensureTempPathExists tempPath = do
-        exists <- doesDirectoryExist rawTempPath
-        when exists (removeDirectoryRecursive rawTempPath)
         createDirectoryIfMissing True rawTempPath
       where
         rawTempPath = unTempPath tempPath
