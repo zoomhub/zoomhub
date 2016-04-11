@@ -23,3 +23,19 @@ cabal.sandbox.config
 
 # Exported design files
 /design/*.png
+
+# Databases
+*.sqlite3
+
+# Logs
+*.log
+
+# Images
+*.jpg
+*.png
+*.svg
+*.tif
+
+# DZI
+*.dzi
+*_files/
