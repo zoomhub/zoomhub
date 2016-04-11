@@ -1,6 +1,7 @@
 dependencies:
   cache_directories:
     - "~/.stack"
+    - ".stack-work"
   pre:
     # Downgrade GCC due to `direct-sqlite` compilation error:
     # See: http://stackoverflow.com/a/34811594/125305
@@ -14,7 +15,7 @@ dependencies:
     - sudo apt-get update && sudo apt-get install stack -y
   override:
     - stack setup
-    - stack build --ghc-options="-Wall -Werror"
+    - stack build --ghc-options="-Wall -Werror -O3"
   post:
     - ./ops/keter-bundle.sh
     - cp zoomhub.keter $CIRCLE_ARTIFACTS

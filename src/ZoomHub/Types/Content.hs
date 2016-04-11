@@ -1,36 +1,46 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ZoomHub.Types.Content
-  ( Content(Content)
-  , contentId
-  , contentUrl
-  , contentState
-  , contentInitializedAt
-  , contentActiveAt
-  , contentCompletedAt
-  , contentMime
-  , contentSize
-  , contentProgress
-  , contentDzi
+  ( Content(..)
+  , mkContent
   ) where
 
+import           Data.Text                   (Text)
 import           Data.Time.Clock             (UTCTime)
 
 import           ZoomHub.Types.ContentId     (ContentId)
-import           ZoomHub.Types.ContentState  (ContentState)
+import           ZoomHub.Types.ContentMIME   (ContentMIME)
+import           ZoomHub.Types.ContentState  (ContentState (Initialized))
+import           ZoomHub.Types.ContentType   (ContentType)
 import           ZoomHub.Types.ContentURI    (ContentURI)
 import           ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
 -- Content
 data Content = Content
   { contentId            :: ContentId
-  , contentUrl           :: ContentURI
+  , contentURL           :: ContentURI
+  , contentType          :: ContentType
   , contentState         :: ContentState
-  , contentInitializedAt :: Maybe UTCTime
+  , contentInitializedAt :: UTCTime
   , contentActiveAt      :: Maybe UTCTime
   , contentCompletedAt   :: Maybe UTCTime
-  , contentMime          :: Maybe String -- TODO: Use proper MIME type
+  , contentMIME          :: Maybe ContentMIME
   , contentSize          :: Maybe Integer
   , contentProgress      :: Float
-  , contentDzi           :: Maybe DeepZoomImage
+  , contentError         :: Maybe Text
+  , contentDZI           :: Maybe DeepZoomImage
   } deriving (Eq, Show)
+
+mkContent :: ContentType -> ContentId -> ContentURI -> UTCTime -> Content
+mkContent type_ cId uri initializedAt = Content
+  { contentId = cId
+  , contentURL = uri
+  , contentType = type_
+  , contentState = Initialized
+  , contentInitializedAt = initializedAt
+  , contentActiveAt = Nothing
+  , contentCompletedAt = Nothing
+  , contentMIME = Nothing
+  , contentSize = Nothing
+  , contentProgress = 0.0
+  , contentError = Nothing
+  , contentDZI = Nothing
+  }

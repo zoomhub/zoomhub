@@ -49,7 +49,7 @@ data Content = Content
 fromInternal :: BaseURI -> ContentBaseURI -> Internal.Content -> Content
 fromInternal baseURI contentBaseURI c = Content
   { contentId = cId
-  , contentUrl = Internal.contentUrl c
+  , contentUrl = Internal.contentURL c
   , contentReady = Internal.contentState c == CompletedSuccess
   , contentFailed = Internal.contentState c == CompletedFailure
   , contentProgress = Internal.contentProgress c
@@ -63,7 +63,7 @@ fromInternal baseURI contentBaseURI c = Content
     sharePathURI = fromJust . parseRelativeReference $ unId cId
     scriptSource = show shareURI ++ ".js?width=auto&height=400px"
     embedHTML = "<script src=\"" ++ scriptSource ++ "\"></script>"
-    dzi = DZ.fromInternal contentBaseURI cId <$> Internal.contentDzi c
+    dzi = DZ.fromInternal contentBaseURI cId <$> Internal.contentDZI c
 
 -- JSON
 instance ToJSON Content where

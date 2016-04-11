@@ -1,2 +1,2 @@
 [web]
-staging.zoomhub.net
+staging.zoomhub.net rackspace_cloudfiles_container=cache-staging rackspace_cloudfiles_container_path=content

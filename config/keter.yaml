@@ -5,8 +5,6 @@ stanzas:
       - 162.242.235.90
       - api.zoom.it
       - api.zoomhub.net
-      - next.api.zoomhub.net
-      - next.zoomhub.net
       - openzoom.net
       - openzoom.org
       - staging.zoom.it
@@ -17,7 +15,13 @@ stanzas:
       - www.zoomhub.net
       - zoom.it
       - zoomhub.net
-    env:
-      DATA_PATH: '/mnt/datavolume/zoomhub/data'
-      DB_PATH: '/mnt/datavolume/zoomhub/data/content.sqlite3'
-      HASHIDS_SALT: 'CHANGE-ME-IN-PRODUCTION'
+    forward-env:
+      - DB_PATH
+      - HASHIDS_SALT
+      - PROCESS_EXISTING_CONTENT
+      - PROCESS_NEW_CONTENT
+      - RACKSPACE_API_KEY
+      - RACKSPACE_CONTAINER
+      - RACKSPACE_CONTAINER_PATH
+      - RACKSPACE_USERNAME
+      - TEMP_PATH
