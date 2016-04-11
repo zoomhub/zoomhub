@@ -17,6 +17,7 @@ rackspace_api_key: "{{ vault_rackspace_api_key }}"
 rackspace_cloudfiles_region: 'IAD'
 rackspace_cloudfiles_admin_container: 'admin'
 rackspace_cloudfiles_container: 'cache-development'
+rackspace_cloudfiles_container_path: 'content'
 
 # Splunk
 splunk_indexer_host: admin.zoomhub.net

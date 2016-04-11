@@ -6,10 +6,9 @@ module ZoomHub.APISpec
   ) where
 
 import qualified Data.ByteString.Char8        as BC
-import           Data.Maybe                   (fromJust)
 import           Data.Monoid                  ((<>))
 import           Network.HTTP.Types           (methodGet)
-import           Network.URI                  (URI, parseAbsoluteURI)
+import           Network.URI                  (URI, parseURIReference)
 import           Network.Wai                  (Middleware)
 import           Test.Hspec                   (Spec, describe, hspec, it)
 import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
@@ -21,7 +20,7 @@ import           ZoomHub.API                  (app)
 import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
 import qualified ZoomHub.Config               as Config
 import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
-import           ZoomHub.Types.ContentBaseURI (ContentBaseURI (ContentBaseURI))
+import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import           ZoomHub.Types.ContentId      (ContentId, fromString, unId)
 import           ZoomHub.Types.DatabasePath   (DatabasePath (DatabasePath))
 import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI (StaticBaseURI))
@@ -32,7 +31,10 @@ main = hspec spec
 
 -- Helpers
 toURI :: String -> URI
-toURI = fromJust . parseAbsoluteURI
+toURI s =
+  case parseURIReference s of
+    Just uri -> uri
+    _ -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " ++ s
 
 existingContent :: (ContentId, String)
 existingContent =
@@ -92,7 +94,10 @@ nullLogger = id
 config :: Config
 config = Config
   { baseURI = BaseURI (toURI "http://localhost:8000")
-  , contentBaseURI = ContentBaseURI (toURI "http://localhost:9000")
+  , contentBaseURI =
+      case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
+        Just uri -> uri
+        _ -> error $ "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
   , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
   , encodeId = show
   , error404 = "404"
@@ -153,7 +158,7 @@ spec = with (return $ app config) $ do
       it "should return correct data for existing content" $
         get "/v1/content/4rcn" `shouldRespondWith`
           "{\"dzi\":{\"height\":3750,\"url\":\
-            \\"http://localhost:9000/content/4rcn.dzi\",\"width\":5058,\
+            \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
             \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
             \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
             \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
@@ -200,7 +205,7 @@ spec = with (return $ app config) $ do
           "/**/ typeof handleContent === 'function' && \
           \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
           \{\"dzi\":{\"height\":3750,\"url\":\
-          \\"http://localhost:9000/content/4rcn.dzi\",\"width\":5058,\
+          \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
           \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
           \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
           \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \

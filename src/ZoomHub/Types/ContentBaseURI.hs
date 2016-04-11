@@ -1,16 +1,29 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+
 module ZoomHub.Types.ContentBaseURI
-  ( ContentBaseURI(ContentBaseURI)
-  , unContentBaseURI
+  ( ContentBaseURI
+  , contentBaseHost
+  , contentBasePath
+  , mkContentBaseURI
   ) where
 
-import           Data.Aeson  (ToJSON, Value (String), toJSON)
-import qualified Data.Text   as T
-import           Network.URI (URI)
+import           Data.Aeson  (ToJSON, object, toJSON, (.=))
+import           Network.URI (URI, uriIsAbsolute, uriIsRelative)
 
-newtype ContentBaseURI = ContentBaseURI { unContentBaseURI :: URI } deriving Eq
-
-instance Show ContentBaseURI where
-  show = show . unContentBaseURI
+data ContentBaseURI = ContentBaseURI
+  { contentBaseHost :: URI
+  , contentBasePath :: URI
+  } deriving Eq
 
 instance ToJSON ContentBaseURI where
-  toJSON = String . T.pack . show
+  toJSON ContentBaseURI{..} = object
+    [ "host" .= show contentBaseHost
+    , "path" .= show contentBasePath
+    ]
+
+mkContentBaseURI :: URI -> URI -> Maybe ContentBaseURI
+mkContentBaseURI base path =
+  case (uriIsAbsolute base, uriIsRelative path) of
+    (True, True) -> Just (ContentBaseURI base path)
+    _            -> Nothing

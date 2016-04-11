@@ -1,2 +1,2 @@
 [web]
-zoomhub.net rackspace_cloudfiles_container=cache
+zoomhub.net rackspace_cloudfiles_container=content rackspace_cloudfiles_container_path=dzis

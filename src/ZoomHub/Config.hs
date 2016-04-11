@@ -8,19 +8,21 @@ module ZoomHub.Config
   , NewContentStatus(..)
   , RackspaceConfig
   , defaultPort
-  , toExistingContentStatus
-  , toNewContentStatus
-  , raxUsername
   , raxApiKey
   , raxContainer
+  , raxContainerPath
+  , raxUsername
+  , toExistingContentStatus
+  , toNewContentStatus
   ) where
 
 import           Data.Aeson                   (ToJSON, Value (String), object,
                                                toJSON, (.=))
 import qualified Data.ByteString.Lazy         as BL
-import           Data.Maybe                   (fromJust)
 import qualified Data.Text                    as T
 import           GHC.Generics                 (Generic)
+import           Network.URI                  (URI, parseRelativeReference)
+import           Network.URI.Instances        ()
 import           Network.Wai                  (Middleware)
 import           System.Envy                  (DefConfig, FromEnv, Option (..),
                                                customPrefix, defConfig,
@@ -72,9 +74,10 @@ instance ToJSON Config where
 
 -- Rackspace
 data RackspaceConfig = RackspaceConfig
-  { raxUsername  :: String    -- RACKSPACE_USERNAME
-  , raxApiKey    :: String    -- RACKSPACE_API_KEY
-  , raxContainer :: Container -- RACKSPACE_CONTAINER
+  { raxUsername      :: String    -- RACKSPACE_USERNAME
+  , raxApiKey        :: String    -- RACKSPACE_API_KEY
+  , raxContainer     :: Container -- RACKSPACE_CONTAINER
+  , raxContainerPath :: URI       -- RACKSPACE_CONTAINER_PATH
   } deriving (Generic, Show)
 
 -- Default configuration will be used for fields that could not be
@@ -83,7 +86,16 @@ instance DefConfig RackspaceConfig where
   defConfig = RackspaceConfig
     { raxUsername = "zoomingservice"
     , raxApiKey = ""
-    , raxContainer = fromJust (parseContainer "cache-development")
+    , raxContainer =
+        case parseContainer "content" of
+          Just container -> container
+          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
+                       " Failed to parse `raxContainer`."
+    , raxContainerPath =
+        case parseRelativeReference "dzis" of
+          Just containerPath -> containerPath
+          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
+                       " Failed to parse `raxContainerPath`."
     }
 
 instance FromEnv RackspaceConfig where

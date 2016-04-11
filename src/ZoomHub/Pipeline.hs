@@ -35,6 +35,7 @@ import           ZoomHub.Config                           (Config,
                                                            RackspaceConfig,
                                                            raxApiKey,
                                                            raxContainer,
+                                                           raxContainerPath,
                                                            raxUsername)
 import qualified ZoomHub.Config                           as Config
 import           ZoomHub.Log.Logger                       (logDebugT, logError,
@@ -202,18 +203,16 @@ uploadDZI raxConfig rootPath path dzi = do
     manifestMIME = MIME.Type (MIME.Application "xml") []
     tileMIME = toMIME (dziTileFormat dzi)
     container = raxContainer raxConfig
+    containerPath = raxContainerPath raxConfig
     raxCreds = mkCredentials (raxUsername raxConfig) (raxApiKey raxConfig)
     numParallelUploads = 25
 
     stripRoot :: FilePath -> Maybe FilePath
     stripRoot = stripPrefix (addTrailingPathSeparator rootPath)
 
-    -- TODO: Make `content` prefix configurable:
-    objectNamePrefix = "content"
-
     toObjectName :: FilePath -> Maybe ObjectName
-    toObjectName p = stripRoot p >>= Just . (objectNamePrefix </>)
-      >>= parseObjectName
+    toObjectName p =
+      stripRoot p >>= Just . (show containerPath </>) >>= parseObjectName
 
 getDZITilePaths :: FilePath -> IO [FilePath]
 getDZITilePaths dziPath = do
