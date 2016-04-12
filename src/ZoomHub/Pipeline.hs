@@ -76,7 +76,7 @@ process workerId raxConfig tempPath content =
     dzi <- logInfoT "Create DZI"
       [ "id" .= contentId content
       , "worker" .= workerId
-      ] $ createDZI rawPath dziPath (toTileFormat maybeMIME)
+      ] $ createDZI workerId rawPath dziPath (toTileFormat maybeMIME)
 
     logInfo "Content metadata"
       [ "mime" .= maybeMIME
@@ -90,7 +90,7 @@ process workerId raxConfig tempPath content =
       , "dzi" .= dzi
       , "dziPath" .= dziPath
       , "worker" .= workerId
-      ] $ uploadDZI raxConfig tmpDir dziPath dzi
+      ] $ uploadDZI workerId raxConfig tmpDir dziPath dzi
 
     return content
       { contentMIME = maybeMIME
@@ -111,14 +111,15 @@ downloadURL url dest = do
   atomicWriteFile dest body
   return $ parseMIMEType . decodeUtf8 $ res ^. responseHeader "content-type"
 
-createDZI :: FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
-createDZI src dest tileFormat = do
+createDZI :: String -> FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
+createDZI workerId src dest tileFormat = do
     (exitCode, stdout, stderr) <- readProcessWithExitCode "vips" args ""
     logInfo "VIPS command"
       [ "command" .= show args
       , "exitCode" .= show exitCode
       , "stdout" .= stdout
       , "stderr" .= stderr
+      , "worker" .= workerId
       ]
     when (exitCode /= ExitSuccess) $
       fail $ "VIPS error: Exit code: " ++ show exitCode ++
@@ -138,12 +139,13 @@ createDZI src dest tileFormat = do
       , "--suffix=" <> toVIPSSuffix tileFormat
       ]
 
-uploadDZI :: RackspaceConfig ->
+uploadDZI :: String ->
+             RackspaceConfig ->
              FilePath ->
              FilePath ->
              DeepZoomImage ->
              IO ()
-uploadDZI raxConfig rootPath path dzi = do
+uploadDZI workerId raxConfig rootPath path dzi = do
     meta <- getMetadata raxCreds
     tilePaths <- getDZITilePaths path
 
@@ -156,12 +158,14 @@ uploadDZI raxConfig rootPath path dzi = do
             _ <- logDebugT "Upload DZI tile"
                   [ "container" .= container
                   , "objectName" .= tileObjectName
+                  , "worker" .= workerId
                   ] $ putContent meta tilePath tileMIME container tileObjectName
             return ()
 
           Nothing -> logError "Invalid DZI tile object name"
                         [ "tilePath" .= tilePath
                         , "rootPath" .= rootPath
+                        , "worker" .= workerId
                         ]
 
     -- Upload manifest
@@ -170,12 +174,14 @@ uploadDZI raxConfig rootPath path dzi = do
         _ <- logDebugT "Upload DZI manifest"
               [ "container" .= container
               , "objectName" .= dziObjectName
+              , "worker" .= workerId
               ] $ putContent meta path manifestMIME container dziObjectName
         return ()
       _ ->
         logError "Invalid DZI manifest object name"
           [ "path" .= path
           , "rootPath" .= rootPath
+          , "worker" .= workerId
           ]
   where
     manifestMIME = MIME.Type (MIME.Application "xml") []
