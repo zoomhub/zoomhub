@@ -15,7 +15,6 @@ import           Data.List                                (stripPrefix)
 import           Data.List.Split                          (chunksOf)
 import           Data.Monoid                              ((<>))
 import           Data.Text.Encoding                       (decodeUtf8)
-import           Database.SQLite.Simple                   (Connection)
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
