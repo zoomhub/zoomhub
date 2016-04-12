@@ -151,12 +151,12 @@ resetAsInitialized :: Connection -> [Content] -> IO ()
 resetAsInitialized conn cs =
   withTransaction conn $
     forM_ (map (unId . contentId) cs) $ \hashId ->
-      retryExecuteNamed conn "UPDATE content \
-      \ SET state = :initializedState, activeAt = NULL, error = NULL, \
-      \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
-      [ ":initializedState" := Initialized
-      , ":hashId" := hashId
-      ]
+      withRetries $ executeNamed conn "UPDATE content \
+        \ SET state = :initializedState, activeAt = NULL, error = NULL, \
+        \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
+        [ ":initializedState" := Initialized
+        , ":hashId" := hashId
+        ]
 
 markAsActive :: Connection -> Content -> IO Content
 markAsActive conn content = do
@@ -165,7 +165,7 @@ markAsActive conn content = do
         { contentState = Active
         , contentActiveAt = Just activeAt
         }
-  retryExecuteNamed conn "\
+  withRetries $ executeNamed conn "\
     \UPDATE content \
     \ SET state = :state\
     \   , activeAt = :activeAt\
@@ -188,7 +188,7 @@ markAsFailure conn content maybeError = do
         , contentCompletedAt = Just completedAt
         , contentError = maybeError
         }
-  retryExecuteNamed conn "\
+  withRetries $ executeNamed conn "\
     \UPDATE content\
     \  SET state = :state\
     \    , typeId = :typeId\
@@ -220,7 +220,7 @@ markAsSuccess conn content =
             , contentError = Nothing
             }
       withTransaction conn $ do
-        retryExecuteNamed conn "\
+        withRetries $ executeNamed conn "\
           \ UPDATE content \
           \   SET state = :state\
           \     , typeId = :typeId\
@@ -239,7 +239,7 @@ markAsSuccess conn content =
           , ":progress" := contentProgress content'
           , ":error" := contentError content'
           ]
-        retryExecuteNamed conn "\
+        withRetries $ executeNamed conn "\
           \ INSERT OR REPLACE INTO image\
           \    ( contentId\
           \    , initializedAt\
@@ -469,9 +469,8 @@ backoffPolicy =
     base = fromIntegral $ toMicroseconds (1 :: Second)
     maxRetries = 10
 
-retryExecuteNamed :: Connection -> Query -> [NamedParam] -> IO ()
-retryExecuteNamed conn q params =
-    recovering backoffPolicy handlers (\_ -> executeNamed conn q params)
+withRetries :: IO a -> IO a
+withRetries action = recovering backoffPolicy handlers (\_ -> action)
   where
     handlers = [sqlErrorH]
 
