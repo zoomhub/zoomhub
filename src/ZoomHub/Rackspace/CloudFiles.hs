@@ -38,7 +38,7 @@ import           Data.List              (intercalate, isPrefixOf)
 import           Data.Monoid            ((<>))
 import           Data.Text              (Text)
 import qualified Data.Text              as T
-import           Data.Time.Units        (Millisecond, Second, toMicroseconds)
+import           Data.Time.Units        (Second, toMicroseconds)
 import           Network.HTTP.Client    (HttpException (FailedConnectionException2, StatusCodeException))
 import           Network.Wreq           (Options, Status, defaults, getWith,
                                          header, post, putWith, responseBody,
@@ -189,8 +189,8 @@ backoffPolicy :: (MonadIO m) => RetryPolicyM m
 backoffPolicy =
     capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
   where
-    maxDelay = fromIntegral $ toMicroseconds (5 :: Second)
-    base = fromIntegral $ toMicroseconds (100 :: Millisecond)
+    maxDelay = fromIntegral $ toMicroseconds (30 :: Second)
+    base = fromIntegral $ toMicroseconds (1 :: Second)
     maxRetries = 10
 
 
