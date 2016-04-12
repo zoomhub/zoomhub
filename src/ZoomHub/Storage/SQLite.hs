@@ -10,10 +10,9 @@ module ZoomHub.Storage.SQLite
   , getByURL
   , getByURL'
   , getExpiredActive
-  , getNextUnprocessed
   -- ** Write operations
   , create
-  , markAsActive
+  , dequeueNextUnprocessed
   , markAsFailure
   , markAsSuccess
   , resetAsInitialized
@@ -67,7 +66,7 @@ import           ZoomHub.Types.ContentState     (ContentState (Initialized, Acti
 import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
 import           ZoomHub.Types.ContentURI       (ContentURI)
 import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
-import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage, TileFormat,
+import           ZoomHub.Types.DeepZoomImage    (TileFormat,
                                                  TileOverlap, TileSize,
                                                  dziHeight, dziTileFormat,
                                                  dziTileOverlap, dziTileSize,
@@ -137,6 +136,15 @@ getExpiredActive conn =
       , ":ttlMinutes" := (30 :: Integer)
       ]
 
+-- Writes
+dequeueNextUnprocessed :: Connection -> IO (Maybe Content)
+dequeueNextUnprocessed conn =
+  withTransaction conn $ do
+    maybeNext <- getNextUnprocessed conn
+    case maybeNext of
+      Just next -> Just <$> markAsActive conn next
+      Nothing -> return Nothing
+
 resetAsInitialized :: Connection -> [Content] -> IO ()
 resetAsInitialized conn cs =
   withTransaction conn $
@@ -193,72 +201,70 @@ markAsFailure conn content maybeError = do
     ]
   return content'
 
-markAsSuccess :: Connection ->
-                 Content ->
-                 DeepZoomImage ->
-                 Maybe ContentMIME ->
-                 Integer ->
-                 IO Content
-markAsSuccess conn content dzi maybeMIME size = do
-  completedAt <- getCurrentTime
-  let content' = content
-        { contentState = CompletedSuccess
-        , contentType = Image -- TODO: Parametrize
-        , contentCompletedAt = Just completedAt
-        , contentMIME = maybeMIME
-        , contentSize = Just size
-        , contentProgress = 1.0
-        , contentError = Nothing
-        , contentDZI = Just dzi
-        }
-  withTransaction conn $ do
-    retryExecuteNamed conn "\
-      \ UPDATE content \
-      \   SET state = :state\
-      \     , typeId = :typeId\
-      \     , completedAt = :completedAt\
-      \     , mime = :mime\
-      \     , size = :size\
-      \     , progress = :progress\
-      \     , error = :error\
-      \   WHERE hashId = :hashId"
-      [ ":hashId" := contentId content'
-      , ":typeId" := contentType content'
-      , ":state" := contentState content'
-      , ":completedAt" := contentCompletedAt content'
-      , ":mime" := contentMIME content'
-      , ":size" := contentSize content'
-      , ":progress" := contentProgress content'
-      , ":error" := contentError content'
-      ]
-    retryExecuteNamed conn "\
-      \ INSERT OR REPLACE INTO image\
-      \    ( contentId\
-      \    , initializedAt\
-      \    , width\
-      \    , height\
-      \    , tileSize\
-      \    , tileOverlap\
-      \    , tileFormat\
-      \    )\
-      \ VALUES\
-      \   ( (SELECT id FROM content WHERE hashId = :hashId)\
-      \   , (SELECT initializedAt FROM image WHERE contentId =\
-      \       (SELECT id FROM content WHERE hashId = :hashId))\
-      \   , :image_width\
-      \   , :image_height\
-      \   , :image_tileSize\
-      \   , :image_tileOverlap\
-      \   , :image_tileFormat\
-      \   )"
-      [ ":hashId" := contentId content'
-      , ":image_width" := Just (dziWidth dzi)
-      , ":image_height" := Just (dziHeight dzi)
-      , ":image_tileSize" := Just (dziTileSize dzi)
-      , ":image_tileOverlap" := Just (dziTileOverlap dzi)
-      , ":image_tileFormat" := Just (dziTileFormat dzi)
-      ]
-  return content'
+markAsSuccess :: Connection -> Content -> IO Content
+markAsSuccess conn content = do
+  case contentDZI content of
+    Nothing -> do
+      let rawId = unId (contentId content)
+      fail $ "ZoomHub.Storage.SQLite.markAsSuccess:\
+        \ Expected completed content '" ++ rawId ++ "' to have DZI."
+    Just dzi -> do
+      completedAt <- getCurrentTime
+      let content' = content
+            { contentState = CompletedSuccess
+            , contentType = Image -- TODO: Parametrize
+            , contentCompletedAt = Just completedAt
+            , contentProgress = 1.0
+            , contentError = Nothing
+            }
+      withTransaction conn $ do
+        retryExecuteNamed conn "\
+          \ UPDATE content \
+          \   SET state = :state\
+          \     , typeId = :typeId\
+          \     , completedAt = :completedAt\
+          \     , mime = :mime\
+          \     , size = :size\
+          \     , progress = :progress\
+          \     , error = :error\
+          \   WHERE hashId = :hashId"
+          [ ":hashId" := contentId content'
+          , ":typeId" := contentType content'
+          , ":state" := contentState content'
+          , ":completedAt" := contentCompletedAt content'
+          , ":mime" := contentMIME content'
+          , ":size" := contentSize content'
+          , ":progress" := contentProgress content'
+          , ":error" := contentError content'
+          ]
+        retryExecuteNamed conn "\
+          \ INSERT OR REPLACE INTO image\
+          \    ( contentId\
+          \    , initializedAt\
+          \    , width\
+          \    , height\
+          \    , tileSize\
+          \    , tileOverlap\
+          \    , tileFormat\
+          \    )\
+          \ VALUES\
+          \   ( (SELECT id FROM content WHERE hashId = :hashId)\
+          \   , (SELECT initializedAt FROM image WHERE contentId =\
+          \       (SELECT id FROM content WHERE hashId = :hashId))\
+          \   , :image_width\
+          \   , :image_height\
+          \   , :image_tileSize\
+          \   , :image_tileOverlap\
+          \   , :image_tileFormat\
+          \   )"
+          [ ":hashId" := contentId content'
+          , ":image_width" := Just (dziWidth dzi)
+          , ":image_height" := Just (dziHeight dzi)
+          , ":image_tileSize" := Just (dziTileSize dzi)
+          , ":image_tileOverlap" := Just (dziTileOverlap dzi)
+          , ":image_tileFormat" := Just (dziTileFormat dzi)
+          ]
+      return content'
 
 withConnection :: DatabasePath -> (Connection -> IO a) -> IO a
 withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
