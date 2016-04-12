@@ -22,20 +22,22 @@ module ZoomHub.Storage.SQLite
 
 import           Control.Exception              (tryJust)
 import           Control.Monad                  (forM_, guard)
-import           Control.Monad.Catch            (Handler)
+import           Control.Monad.Catch            (Handler (Handler))
 import           Control.Monad.IO.Class         (MonadIO)
 import           Control.Retry                  (RetryPolicyM, RetryStatus,
                                                  capDelay, fullJitterBackoff,
-                                                 limitRetries, logRetries,
-                                                 recovering)
-import           Data.Aeson                     ((.=))
+                                                 limitRetries, recovering,
+                                                 rsCumulativeDelay,
+                                                 rsIterNumber, rsPreviousDelay)
+import           Data.Aeson                     (object, (.=))
+import           Data.Bool                      (bool)
 import           Data.Monoid                    ((<>))
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
 import           Data.String                    (IsString (fromString))
 import           Data.Text                      (Text)
 import           Data.Time.Clock                (UTCTime, getCurrentTime)
-import           Data.Time.Units                (Second, toMicroseconds)
+import           Data.Time.Units                (Minute, Second, toMicroseconds)
 import           Data.Time.Units.Instances      ()
 import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
                                                  NamedParam ((:=)), Only (Only),
@@ -66,11 +68,11 @@ import           ZoomHub.Types.ContentState     (ContentState (Initialized, Acti
 import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
 import           ZoomHub.Types.ContentURI       (ContentURI)
 import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
-import           ZoomHub.Types.DeepZoomImage    (TileFormat,
-                                                 TileOverlap, TileSize,
-                                                 dziHeight, dziTileFormat,
-                                                 dziTileOverlap, dziTileSize,
-                                                 dziWidth, mkDeepZoomImage)
+import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
+                                                 TileSize, dziHeight,
+                                                 dziTileFormat, dziTileOverlap,
+                                                 dziTileSize, dziWidth,
+                                                 mkDeepZoomImage)
 import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
@@ -202,7 +204,7 @@ markAsFailure conn content maybeError = do
   return content'
 
 markAsSuccess :: Connection -> Content -> IO Content
-markAsSuccess conn content = do
+markAsSuccess conn content =
   case contentDZI content of
     Nothing -> do
       let rawId = unId (contentId content)
@@ -463,8 +465,8 @@ backoffPolicy :: (MonadIO m) => RetryPolicyM m
 backoffPolicy =
     capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
   where
-    maxDelay = fromIntegral $ toMicroseconds (60 :: Second)
-    base = fromIntegral $ toMicroseconds (2 :: Second)
+    maxDelay = fromIntegral $ toMicroseconds (2 :: Minute)
+    base = fromIntegral $ toMicroseconds (1 :: Second)
     maxRetries = 10
 
 retryExecuteNamed :: Connection -> Query -> [NamedParam] -> IO ()
@@ -474,7 +476,7 @@ retryExecuteNamed conn q params =
     handlers = [sqlErrorH]
 
     sqlErrorH :: RetryStatus -> Handler IO Bool
-    sqlErrorH = logRetries testE logRetry
+    sqlErrorH = logRetries testE
 
     testE :: (Monad m) => SQLError -> m Bool
     testE e = case sqlError e of
@@ -483,12 +485,15 @@ retryExecuteNamed conn q params =
       ErrorLocked    -> return True
       _              -> return False
 
-    logRetry :: Bool -> String -> IO ()
-    logRetry shouldRetry errorMessage =
-        logWarning "Retrying operation due to error"
-          [ "error" .= errorMessage
-          , "nextAction" .= next
-          ]
-      where
-        next :: Text
-        next = if shouldRetry then "retry" else "crash"
+    logRetries test status = Handler $ \e -> do
+      shouldRetry <- test e
+      logWarning "Encountered error while performing `executeNamed`"
+        [ "error" .= show e
+        , "retry" .= object
+            [ "iteration" .= rsIterNumber status
+            , "cumulativeDelay" .= rsCumulativeDelay status
+            , "previousDelay" .= rsPreviousDelay status
+            , "nextAction" .= (bool "crash" "retry" shouldRetry :: Text)
+            ]
+        ]
+      return shouldRetry
