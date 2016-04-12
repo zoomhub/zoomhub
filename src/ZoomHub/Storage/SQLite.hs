@@ -219,8 +219,8 @@ markAsSuccess conn content =
             , contentProgress = 1.0
             , contentError = Nothing
             }
-      withTransaction conn $ do
-        withRetries $ executeNamed conn "\
+      withRetries $ withTransaction conn $ do
+        executeNamed conn "\
           \ UPDATE content \
           \   SET state = :state\
           \     , typeId = :typeId\
@@ -239,7 +239,7 @@ markAsSuccess conn content =
           , ":progress" := contentProgress content'
           , ":error" := contentError content'
           ]
-        withRetries $ executeNamed conn "\
+        executeNamed conn "\
           \ INSERT OR REPLACE INTO image\
           \    ( contentId\
           \    , initializedAt\
