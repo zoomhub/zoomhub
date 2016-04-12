@@ -37,7 +37,7 @@ import qualified Data.Set                       as Set
 import           Data.String                    (IsString (fromString))
 import           Data.Text                      (Text)
 import           Data.Time.Clock                (UTCTime, getCurrentTime)
-import           Data.Time.Units                (Minute, Second, toMicroseconds)
+import           Data.Time.Units                (Minute, Second, toMicroseconds, fromMicroseconds)
 import           Data.Time.Units.Instances      ()
 import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
                                                  NamedParam ((:=)), Only (Only),
@@ -485,14 +485,19 @@ withRetries action = recovering backoffPolicy handlers (\_ -> action)
       _              -> return False
 
     logRetries test status = Handler $ \e -> do
-      shouldRetry <- test e
-      logWarning "Encountered error while performing `executeNamed`"
-        [ "error" .= show e
-        , "retry" .= object
-            [ "iteration" .= rsIterNumber status
-            , "cumulativeDelay" .= rsCumulativeDelay status
-            , "previousDelay" .= rsPreviousDelay status
-            , "nextAction" .= (bool "crash" "retry" shouldRetry :: Text)
-            ]
-        ]
-      return shouldRetry
+        shouldRetry <- test e
+        logWarning "Encountered error during SQLite operation"
+          [ "error" .= show e
+          , "retry" .= object
+              [ "iteration" .= rsIterNumber status
+              , "cumulativeDelay" .=
+                  toSeconds (Just . rsCumulativeDelay $ status)
+              , "previousDelay" .= toSeconds (rsPreviousDelay status)
+              , "nextAction" .= (bool "crash" "retry" shouldRetry :: Text)
+              ]
+          ]
+        return shouldRetry
+      where
+        toSeconds :: Maybe Int -> Maybe Second
+        toSeconds maybeMicroseconds =
+          maybeMicroseconds >>= Just . fromMicroseconds . fromIntegral
