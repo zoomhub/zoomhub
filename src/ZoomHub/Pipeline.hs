@@ -51,8 +51,8 @@ import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFo
 import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
 
 
-process :: RackspaceConfig -> TempPath -> Content -> IO Content
-process raxConfig tempPath content =
+process :: String -> RackspaceConfig -> TempPath -> Content -> IO Content
+process workerId raxConfig tempPath content =
   withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
     let rawPathPrefix = tmpDir </> rawContentId
         rawPath = rawPathPrefix ++ ".raw"
@@ -61,30 +61,35 @@ process raxConfig tempPath content =
     logInfo "Create temporary working directory"
       [ "id" .= contentId content
       , "path" .= tmpDir
+      , "worker" .= workerId
       ]
 
     maybeMIME <- logInfoT "Download content"
       [ "id" .= contentId content
       , "url" .= contentURL content
+      , "worker" .= workerId
       ] $ ((<$>) . (<$>)) ContentMIME $
           downloadURL (contentURL content) rawPath
 
     rawSize <- getFileSize rawPath
 
     dzi <- logInfoT "Create DZI"
-      [ "id" .= contentId content ] $
-      createDZI rawPath dziPath (toTileFormat maybeMIME)
+      [ "id" .= contentId content
+      , "worker" .= workerId
+      ] $ createDZI rawPath dziPath (toTileFormat maybeMIME)
 
     logInfo "Content metadata"
       [ "mime" .= maybeMIME
       , "size" .= rawSize
       , "dzi" .= dzi
+      , "worker" .= workerId
       ]
 
     logInfoT "Upload DZI"
       [ "id" .= contentId content
       , "dzi" .= dzi
       , "dziPath" .= dziPath
+      , "worker" .= workerId
       ] $ uploadDZI raxConfig tmpDir dziPath dzi
 
     return content
