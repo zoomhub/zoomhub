@@ -12,8 +12,9 @@ import           Data.Monoid               ((<>))
 import qualified Data.Text                 as T
 import           Lucid                     (ToHtml, body_, charset_, content_,
                                             doctypehtml_, head_, href_, link_,
-                                            meta_, name_, rel_, script_, src_,
-                                            style_, title_, toHtml, toHtmlRaw)
+                                            meta_, name_, rel_, script_, sizes_,
+                                            src_, style_, title_, toHtml,
+                                            toHtmlRaw)
 import           Network.URI               (parseRelativeReference, relativeTo)
 
 import           ZoomHub.API.Types.Content (Content, contentId)
@@ -64,10 +65,36 @@ instance ToHtml ViewContent where
   toHtml vc =
       doctypehtml_ $
         do head_ (do title_ (toHtml $ cId <> titleSeparator <> title)
-                     meta_ [charset_ "utf-8"]
-                     meta_ [name_ "viewport",
-                            content_ "width=device-width, initial-scale=1"]
-                     link_ [rel_ "shortcut icon", href_ "favicon.ico"]
+                     meta_ [ charset_ "utf-8" ]
+                     meta_ [ name_ "viewport"
+                           , content_ "width=device-width, initial-scale=1"
+                           ]
+                     link_ [ rel_ "shortcut icon"
+                           , href_ "favicon.ico"]
+
+                     link_ [ rel_ "apple-touch-icon"
+                           , href_ "/apple-touch-icon.png"]
+                     link_ [ rel_ "apple-touch-icon-precomposed"
+                           , href_ "/apple-touch-icon-precomposed.png"]
+                     link_ [ rel_ "apple-touch-icon"
+                           , sizes_ "57x57"
+                           , href_ "/apple-touch-icon-57x57.png"]
+                     link_ [ rel_ "apple-touch-icon"
+                           , sizes_ "76x76"
+                           , href_ "/apple-touch-icon-76x76.png"]
+                     link_ [ rel_ "apple-touch-icon"
+                           , sizes_ "120x120"
+                           , href_ "/apple-touch-icon-120x120.png"]
+                     link_ [ rel_ "apple-touch-icon"
+                           , sizes_ "152x152"
+                           , href_ "/apple-touch-icon-152x152.png"]
+                     link_ [ rel_ "apple-touch-icon"
+                           , sizes_ "167x167"
+                           , href_ "/apple-touch-icon-167x167.png"]
+                     link_ [ rel_ "apple-touch-icon"
+                           , sizes_ "180x180"
+                           , href_ "/apple-touch-icon-180x180.png"]
+
                      style_ styles
                      script_ analyticsScript
                      )
