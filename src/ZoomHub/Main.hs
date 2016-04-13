@@ -29,11 +29,12 @@ import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutpu
 import           System.Directory                     (createDirectoryIfMissing,
                                                        doesFileExist,
                                                        getCurrentDirectory)
-import           System.Environment                   (lookupEnv)
+import           System.Environment                   (getEnvironment)
 import           System.Envy                          (decodeEnv)
 import           System.FilePath                      ((</>))
 import           System.IO.Error                      (isDoesNotExistError)
 import           System.Random                        (randomRIO)
+import           Text.Read                            (readMaybe)
 import           Web.Hashids                          (encode, hashidsSimple)
 
 import           ZoomHub.API                          (app)
@@ -56,7 +57,7 @@ import           ZoomHub.Types.TempPath               (TempPath (TempPath),
                                                        unTempPath)
 import           ZoomHub.Worker                       (processExistingContent, processExpiredActiveContent)
 
--- Environment
+-- Environment variables
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
 
@@ -72,6 +73,15 @@ hashidsSaltEnvName = "HASHIDS_SALT"
 newContentStatusEnvName :: String
 newContentStatusEnvName = "PROCESS_NEW_CONTENT"
 
+numProcessingWorkersEnvName :: String
+numProcessingWorkersEnvName = "PROCESSING_WORKERS"
+
+portEnvName :: String
+portEnvName = "PORT"
+
+publicPathEnvName :: String
+publicPathEnvName = "PUBLIC_PATH"
+
 tempRootPathEnvName :: String
 tempRootPathEnvName = "TEMP_PATH"
 
@@ -80,43 +90,55 @@ main :: IO ()
 main = do
   -- TODO: Migrate configuration to `configurator`:
   -- https://hackage.haskell.org/package/configurator
+  env <- getEnvironment
+  maybeRaxConfig <- decodeEnv
+  hostname <- getHostName
   currentDirectory <- getCurrentDirectory
   openseadragonScript <- readFile $ currentDirectory </>
     "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
   error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
-  maybePort <- lookupEnv "PORT"
-  maybeRootTempPath <- lookupEnv tempRootPathEnvName
-  maybeDBPath <- (fmap . fmap) DatabasePath (lookupEnv dbPathEnvName)
-  maybePublicPath <- lookupEnv "PUBLIC_PATH"
-  maybeHashidsSalt <- (fmap . fmap) BC.pack (lookupEnv hashidsSaltEnvName)
-  maybeRaxConfig <- decodeEnv
-  hostname <- getHostName
-  maybeBaseURI <- lookupEnv baseURIEnvName
-  maybeExistingContentStatus <- (fmap . fmap) toExistingContentStatus
-    (lookupEnv existingContentStatusEnvName)
-  maybeNewContentStatus <- (fmap . fmap) toNewContentStatus
-    (lookupEnv newContentStatusEnvName)
-  logger <- mkRequestLogger def {
-    outputFormat = CustomOutputFormatWithDetails formatAsJSON
-  }
-  let existingContentStatus =
+  logger <- mkRequestLogger def
+              { outputFormat = CustomOutputFormatWithDetails formatAsJSON }
+
+  let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
+
+      maybeHashidsSalt = BC.pack <$> lookup hashidsSaltEnvName env
+
+      maybeExistingContentStatus = toExistingContentStatus <$>
+        lookup existingContentStatusEnvName env
+      existingContentStatus =
         fromMaybe IgnoreExistingContent maybeExistingContentStatus
-      newContentStatus = fromMaybe NewContentDisallowed maybeNewContentStatus
-      defaultTempRootPath = currentDirectory </> "data"
+
+      maybeNewContentStatus = toNewContentStatus <$>
+        lookup newContentStatusEnvName env
+      newContentStatus =
+        fromMaybe NewContentDisallowed maybeNewContentStatus
+
+      defaultNumProcessingWorkers = 0 :: Integer
+      maybeNumProcessingWorkers =
+        lookup numProcessingWorkersEnvName env >>= readMaybe
+      numProcessingWorkers =
+        fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
+
       defaultDBPath = DatabasePath $
         currentDirectory </> "data" </> "zoomhub-development.sqlite3"
-      tempPath =
-        TempPath $ fromMaybe defaultTempRootPath maybeRootTempPath </> "temp"
-      dbPath = fromMaybe defaultDBPath maybeDBPath
-      port = maybe defaultPort read maybePort
-      baseURI = case maybeBaseURI of
+      dbPath = fromMaybe defaultDBPath
+        (DatabasePath <$> lookup dbPathEnvName env)
+
+      defaultPublicPath = currentDirectory </> "public"
+      publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
+
+      defaultTempRootPath = currentDirectory </> "data"
+      tempPath = TempPath $ fromMaybe defaultTempRootPath
+        (lookup tempRootPathEnvName env) </> "temp"
+
+      baseURI = case lookup baseURIEnvName env of
         Just uriString -> toBaseURI uriString
         Nothing        -> toBaseURI ("http://" ++ hostname)
+
       staticBaseURI = StaticBaseURI . fromJust .
         parseAbsoluteURI $ "http://static.zoomhub.net"
-      defaultPublicPath = currentDirectory </> "public"
-      publicPath = fromMaybe defaultPublicPath maybePublicPath
 
   ensureTempPathExists tempPath
   ensureDBExists dbPath
@@ -146,7 +168,6 @@ main = do
       -- Workers
       numProcessors <- getNumProcessors
       numCapabilities <- getNumCapabilities
-      let numProcessingWorkers = numCapabilities
       logInfo "Config: Worker"
         [ "numProcessors" .= numProcessors
         , "numCapabilities" .= numCapabilities
@@ -165,7 +186,7 @@ main = do
         ProcessExistingContent -> do
           forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
             let base = 20
-                jitterRange = (0, base `div` 2) :: (Int, Int)
+                jitterRange = (0, base `div` 2) :: (Integer, Integer)
                 baseDelay = index * base
             jitter <- randomRIO jitterRange
             let delay = (fromIntegral $ baseDelay + jitter) :: Second
