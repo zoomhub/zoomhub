@@ -149,13 +149,13 @@ dequeueNextUnprocessed conn =
 
 resetAsInitialized :: Connection -> [Content] -> IO ()
 resetAsInitialized conn cs =
-  withTransaction conn $
-    forM_ (map (unId . contentId) cs) $ \hashId ->
-      withRetries $ executeNamed conn "UPDATE content \
+  withRetries $ withTransaction conn $
+    forM_ cs $ \content ->
+      executeNamed conn "UPDATE content \
         \ SET state = :initializedState, activeAt = NULL, error = NULL, \
         \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
         [ ":initializedState" := Initialized
-        , ":hashId" := hashId
+        , ":hashId" := (unId . contentId) content
         ]
 
 markAsActive :: Connection -> Content -> IO Content
