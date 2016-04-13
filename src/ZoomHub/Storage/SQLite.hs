@@ -162,9 +162,9 @@ markAsActive :: Connection -> Content -> IO Content
 markAsActive conn content = do
   activeAt <- getCurrentTime
   let content' = content
-        { contentState = Active
-        , contentActiveAt = Just activeAt
-        }
+                  { contentState = Active
+                  , contentActiveAt = Just activeAt
+                  }
   withRetries $ executeNamed conn "\
     \UPDATE content \
     \ SET state = :state\
