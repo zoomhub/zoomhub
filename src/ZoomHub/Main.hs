@@ -164,7 +164,7 @@ main = do
       case existingContentStatus of
         ProcessExistingContent -> do
           forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
-            let base = 10
+            let base = 20
                 jitterRange = (0, base `div` 2) :: (Int, Int)
                 baseDelay = index * base
             jitter <- randomRIO jitterRange
