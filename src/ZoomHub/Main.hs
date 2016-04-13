@@ -170,7 +170,7 @@ main = do
             jitter <- randomRIO jitterRange
             let delay = (fromIntegral $ baseDelay + jitter) :: Second
             logInfo "Worker: Start processing existing content"
-              [ "jitter" .= jitter
+              [ "jitter" .= (fromIntegral jitter :: Second)
               , "index" .= index
               , "delay" .= delay
               ]
