@@ -207,7 +207,7 @@ main = do
         [ "port" .= port ]
       let waiSettings =
             setPort (fromIntegral port) $
-            setOnException exceptionHandler defaultSettings
+            setOnException serverExceptionHandler defaultSettings
       runSettings waiSettings (app config)
     (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++ "`\
       \ environment variable.\n\
@@ -245,7 +245,7 @@ main = do
       where
         versionPath = currentDirectory </> "version.txt"
 
-    exceptionHandler :: Maybe Request -> SomeException -> IO ()
-    exceptionHandler _ e =
+    serverExceptionHandler :: Maybe Request -> SomeException -> IO ()
+    serverExceptionHandler _ e =
       when (defaultShouldDisplayException e) $
         logException_ "Web server exception" e
