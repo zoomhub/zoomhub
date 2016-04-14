@@ -5,6 +5,7 @@ module Network.HTTP.Client.Instances where
 
 import           Data.Aeson                (ToJSON, Value (String), object,
                                             toJSON, (.=))
+import qualified Data.ByteString           as BL
 import           Data.CaseInsensitive      (original)
 import qualified Data.HashMap.Strict       as HM
 import           Data.Text                 (Text)
@@ -27,11 +28,11 @@ toObject :: ToJSON a => [(Text, a)] -> Value
 toObject = toJSON . HM.fromList
 
 headersToJSON :: ResponseHeaders -> Value
-headersToJSON = toObject . map hToJ
+headersToJSON = toObject . map headerToJSON'
   where
     headerToJSON' ("Cookie", _) = ("Cookie" :: Text, "<redacted>" :: Text)
     headerToJSON' ("X-Response-Body-Start", v) =
-      ("X-Response-Body-Start" :: Text, decodeUtf8 $ take 256 v)
+      ("X-Response-Body-Start" :: Text, decodeUtf8 (BL.take 256 v))
     headerToJSON' hd = headerToJSON hd
 
     headerToJSON :: Header -> (Text, Text)

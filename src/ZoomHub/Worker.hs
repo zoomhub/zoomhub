@@ -1,29 +1,39 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module ZoomHub.Worker
   ( processExistingContent
   , processExpiredActiveContent
   ) where
 
-import           Control.Concurrent         (threadDelay)
-import           Control.Exception.Enclosed (catchAny)
-import           Control.Monad              (forever)
-import           Data.Aeson                 ((.=))
-import qualified Data.Text                  as T
-import           Data.Time.Units            (Minute, Second, fromMicroseconds,
-                                             toMicroseconds)
-import           Data.Time.Units.Instances  ()
-import           System.Random              (randomRIO)
+import           Control.Concurrent            (threadDelay)
+import           Control.Exception             (SomeException, fromException)
+import           Control.Exception.Enclosed    (catchAny)
+import           Control.Monad                 (forever)
+import           Data.Aeson                    (Value (String), encode, toJSON,
+                                                (.=))
+import qualified Data.ByteString.Lazy          as BL
+import           Data.Text                     (Text)
+import qualified Data.Text                     as T
+import           Data.Text.Encoding            (decodeUtf8)
+import           Data.Time.Units               (Minute, Second,
+                                                fromMicroseconds,
+                                                toMicroseconds)
+import           Data.Time.Units.Instances     ()
+import           Network.HTTP.Client           (HttpException)
+import           Network.HTTP.Client.Instances ()
+import           System.Random                 (randomRIO)
 
-import           ZoomHub.Config             (Config)
-import qualified ZoomHub.Config             as Config
-import           ZoomHub.Log.Logger         (logException, logInfo, logInfoT)
-import           ZoomHub.Pipeline           (process)
-import           ZoomHub.Storage.SQLite     (dequeueNextUnprocessed,
-                                             getExpiredActive, markAsFailure,
-                                             markAsSuccess, resetAsInitialized,
-                                             withConnection)
-import           ZoomHub.Types.Content      (contentId)
+import           ZoomHub.Config                (Config)
+import qualified ZoomHub.Config                as Config
+import           ZoomHub.Log.Logger            (logException, logInfo, logInfoT)
+import           ZoomHub.Pipeline              (process)
+import           ZoomHub.Storage.SQLite        (dequeueNextUnprocessed,
+                                                getExpiredActive, markAsFailure,
+                                                markAsSuccess,
+                                                resetAsInitialized,
+                                                withConnection)
+import           ZoomHub.Types.Content         (contentId)
 
 -- Constants
 processExistingContentInterval :: Minute
@@ -37,7 +47,7 @@ processExistingContent :: Config -> String -> IO ()
 processExistingContent config workerId = forever $ do
     logInfo "worker:start" [ "worker" .= workerId ]
 
-    go `catchAny` \ex -> do
+    go `catchAny` \ex ->
       -- TODO: Mark as `completed:failure` or `initialized`:
       logException "worker:error" ex extraLogMeta
 
@@ -57,19 +67,20 @@ processExistingContent config workerId = forever $ do
           dequeueNextUnprocessed dbConn
 
       case maybeContent of
-        Just content ->
+        Just content -> do
+          let processOp = process workerId raxConfig tempPath content >>=
+                          markAsSuccess dbConn
+              jsonToText = Just . decodeUtf8 . BL.toStrict . encode . toJSONError
+              errorOp e = markAsFailure dbConn content (jsonToText e)
+              handler e = logT "Process content: failure"
+                            [ "id" .= contentId content
+                            , "error" .= toJSONError e
+                            , "worker" .= workerId
+                            ] $ (errorOp e)
           logT "Process content: success"
-            [ "id" .= contentId content ] $ do
-              processed <-
-                process workerId raxConfig tempPath content `catchAny` \e -> do
-                  let errorMessage = Just . T.pack $ show e
-                  logT "Process content: failure"
-                    [ "id" .= contentId content
-                    , "error" .= errorMessage
-                    ] $ markAsFailure dbConn content errorMessage
-
-              _ <- markAsSuccess dbConn processed
-              return ()
+            [ "id" .= contentId content
+            , "worker" .= workerId
+            ] $ (processOp `catchAny` handler) >> return ()
         Nothing -> return ()
 
     dbPath = Config.dbPath config
@@ -81,7 +92,7 @@ processExistingContent config workerId = forever $ do
     logT msg meta = logInfoT msg (meta ++ extraLogMeta)
     extraLogMeta =
       [ "worker" .= workerId
-      , "topic" .= ("worker:process:existing" :: T.Text)
+      , "topic" .= ("worker:process:existing" :: Text)
       ]
 
 processExpiredActiveContent :: Config -> IO ()
@@ -97,3 +108,9 @@ processExpiredActiveContent config = forever $
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     sleepDuration = processExpiredActiveContentInterval
+
+toJSONError :: SomeException -> Value
+toJSONError e =
+  case fromException e of
+    Just (h :: HttpException) -> toJSON h
+    _ -> String . T.pack . show $ e
