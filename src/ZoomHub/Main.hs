@@ -160,6 +160,7 @@ main = do
               _ -> error $ "ZoomHub.Main: Failed to parse `contentBaseURI`."
 
           config = Config{..}
+
       logInfo_ $ "Welcome to ZoomHub.\
         \ Go to <" ++ show baseURI ++ "> and have fun!"
       logInfo "Config: App"
