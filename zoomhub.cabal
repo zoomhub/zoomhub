@@ -20,6 +20,7 @@ source-repository head
 library
   exposed-modules:
       Data.Time.Units.Instances
+    , Network.HTTP.Client.Instances
     , Network.URI.Instances
     , ZoomHub.API
     , ZoomHub.API.ContentTypes.JavaScript
