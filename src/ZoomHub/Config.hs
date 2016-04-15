@@ -87,12 +87,12 @@ instance DefConfig RackspaceConfig where
     { raxUsername = "zoomingservice"
     , raxApiKey = ""
     , raxContainer =
-        case parseContainer "content" of
+        case parseContainer "cache-development" of
           Just container -> container
           _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
                        " Failed to parse `raxContainer`."
     , raxContainerPath =
-        case parseRelativeReference "dzis" of
+        case parseRelativeReference "content" of
           Just containerPath -> containerPath
           _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
                        " Failed to parse `raxContainerPath`."
