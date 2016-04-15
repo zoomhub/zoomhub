@@ -33,7 +33,8 @@ import           ZoomHub.Storage.SQLite        (dequeueNextUnprocessed,
                                                 markAsSuccess,
                                                 resetAsInitialized,
                                                 withConnection)
-import           ZoomHub.Types.Content         (contentId)
+import           ZoomHub.Types.Content         (contentId, contentURL)
+import           ZoomHub.Types.ContentId       (unId)
 
 -- Constants
 processExistingContentInterval :: Minute
@@ -74,11 +75,17 @@ processExistingContent config workerId = forever $ do
               errorOp e = markAsFailure dbConn content (jsonToText e)
               handler e = logT "Process content: failure"
                             [ "id" .= contentId content
+                            , "url" .= contentURL content
+                            , "apiURL" .= apiURL content
+                            , "wwwURL" .= wwwURL content
                             , "error" .= toJSONError e
                             , "worker" .= workerId
                             ] $ (errorOp e)
           logT "Process content: success"
             [ "id" .= contentId content
+            , "url" .= contentURL content
+            , "apiURL" .= apiURL content
+            , "wwwURL" .= wwwURL content
             , "worker" .= workerId
             ] $ (processOp `catchAny` handler) >> return ()
         Nothing -> return ()
@@ -88,6 +95,9 @@ processExistingContent config workerId = forever $ do
     tempPath = Config.tempPath config
 
     sleepBase = processExistingContentInterval
+
+    wwwURL c = "http://zoomhub.net/" ++ unId (contentId c)
+    apiURL c = "http://zoomhub.net/v1/content/" ++ unId (contentId c)
 
     logT msg meta = logInfoT msg (meta ++ extraLogMeta)
     extraLogMeta =
