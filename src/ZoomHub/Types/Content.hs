@@ -25,6 +25,7 @@ data Content = Content
   , contentMIME          :: Maybe ContentMIME
   , contentSize          :: Maybe Integer
   , contentProgress      :: Float
+  , contentNumViews      :: Integer
   , contentError         :: Maybe Text
   , contentDZI           :: Maybe DeepZoomImage
   } deriving (Eq, Show)
@@ -41,6 +42,7 @@ mkContent type_ cId uri initializedAt = Content
   , contentMIME = Nothing
   , contentSize = Nothing
   , contentProgress = 0.0
+  , contentNumViews = 0
   , contentError = Nothing
   , contentDZI = Nothing
   }
