@@ -3,20 +3,39 @@
 
 # npm
 /node_modules
+/node/node_modules
 npm-debug.log
+
+# Haskell
+cabal.sandbox.config
+.cabal-sandbox
+.stack-work
+/dist/
 
 # Sublime Text
 *.sublime-workspace
 
-# Private
-/deployment/hosts
-/deployment/vars.yml
-/deployment/hosts.staging
-/deployment/credentials/userpassword
+# Ops
+/ops/vars.yml
 
-# Static files
-/public/dzi
-/pipeline/fetcher
+# PID
+/zoomhub.pid
 
-# Database (sample data)
-/data/
+# Exported design files
+/design/*.png
+
+# Databases
+*.sqlite3
+
+# Logs
+*.log
+
+# Images
+*.jpg
+*.png
+*.svg
+*.tif
+
+# DZI
+*.dzi
+*_files/

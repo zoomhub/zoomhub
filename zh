@@ -1,59 +1,83 @@
 #!/bin/bash
 
-# HACK: Support specifying a different hosts file for non-production envs,
-# e.g. `./zh setup deployment/hosts.staging`.
-# TODO: Move this logic into specific commands, or use an arg parser?
-hosts=$2
-if [ -z $2 ]; then
-  hosts=deployment/hosts
+hosts="ops/$3"
+if [ -z "$3" ]; then
+  hosts='ops/staging'
 fi
+
+# Helpers
+separator () {
+    echo '------------------------------------------------------------------------------'
+}
+
+print_hosts () {
+    separator
+    echo "Hosts:   $(basename $hosts)"
+    separator
+}
 
 # Commands
 case "$1" in
-install)
-    npm install
+init)
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew/bda8d64e0e9011aab1612868eac2f709e631c503/Library/Formula/haskell-stack.rb
+    stack setup
+    ;;
+lint)
+    git diff-files --quiet
+    HAS_GIT_UNSTAGED_CHANGES=$?
+    if [[ "$HAS_GIT_UNSTAGED_CHANGES" != "0" ]] ; then
+        echo 'Commit all changes to Git before running `./zh lint`'
+        exit 1
+    fi
+    git ls-files | grep '.hs$' | xargs stylish-haskell --inplace
+    ;;
+ops)
+    case "$2" in
+    bootstrap)
+        separator
+        echo 'WARNING: Running ./zh ops bootstrap more than once will fail'
+        echo '         as `root` user will no longer have password access to '
+        echo '         the server.'
+        separator
+        echo "Hosts:   $(basename $hosts)"
+        separator
+        echo 'Enter `root` SSH password:'
+        ansible-playbook --inventory-file "$hosts" \
+            ops/user.yml --user root --ask-pass \
+            --extra-vars "sudoers=y username=admin"
+        ;;
+    ping)
+        print_hosts
+        ansible --inventory-file "$hosts" all -m ping
+        ;;
+    setup-admin-server)
+        ansible-playbook -v --inventory-file ops/admin \
+            --ask-sudo --ask-vault-pass \
+            ops/admin.yml
+        ;;
+    setup-web-server)
+        print_hosts
+
+        echo 'Enter `admin` user password:'
+        ansible-playbook -v --inventory-file "$hosts" \
+            --ask-sudo --ask-vault-pass \
+            ops/web.yml
+        ;;
+    *)
+        echo "Unknown command: $0 $@. Try $0 $1 \
+bootstrap|ping|setup-admin-server|setup-web-server"
+        exit 1
+    esac
     ;;
 run)
-    npm start
+    stack build --ghc-options='' \
+                --file-watch \
+                --exec ./scripts/run-development.sh
     ;;
-ping)
-    ansible --user zoomhub --inventory-file ${hosts} all -m ping
-    ;;
-bootstrap)
-    # Pre-req: sshpass
-    if ! [ $(which sshpass) ]; then
-        echo "Installing sshpass..."
-        # Via: http://www.hashbangcode.com/blog/installing-sshpass-osx-mavericks
-        curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz \
-            && tar xvzf sshpass-1.05.tar.gz
-        rm sshpass-1.05.tar.gz
-        cd sshpass-1.05
-        ./configure
-        make
-        echo "Running sudo command; enter your sudo password when prompted."
-        sudo make install
-        cd - > /dev/null
-        rm -rf sshpass-1.05
-    fi
-
-    # Pre-req: passlib
-    if ! [ $(pip freeze | grep passlib) ]; then
-        echo "Installing passlib..."
-        # Via: https://pythonhosted.org/passlib/install.html
-        echo 'If the next step doesn’t work, re-run this command with `sudo`.'
-        pip install passlib
-    fi
-
-    echo "Bootstrapping server; enter server’s root password when prompted."
-    ansible-playbook --inventory-file ${hosts} deployment/bootstrap.yml --ask-pass
-    ;;
-setup)
-    ansible-playbook --inventory-file ${hosts} deployment/setup.yml --ask-vault-pass
-    ;;
-deploy)
-    ansible-playbook --inventory-file ${hosts} deployment/deploy.yml --ask-vault-pass
+test)
+    stack test
     ;;
 *)
-    echo "Unknown command: $1. Try: bootstrap|ping|setup|deploy"
+    echo "Unknown command: $0 $@. Try: $0 init|lint|ops|run|test"
     ;;
 esac

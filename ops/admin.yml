@@ -1,0 +1,11 @@
+---
+- name: Set up admin server
+  hosts: admin
+  sudo: yes
+  vars_files:
+    - [ 'vars.yml', 'vars.default.yml' ]
+    - secrets.vault.yml
+  roles:
+    - common
+    - admin
+    - splunk

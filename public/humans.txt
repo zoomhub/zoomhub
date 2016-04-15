@@ -1,0 +1,43 @@
+/* TEAM */
+
+Developer: Aseem Kishore
+Contact:   aseem.kishore@gmail.com
+Twitter:   @aseemk
+GitHub:    @aseemk
+
+Developer: Daniel Gasienica
+Contact:   daniel@gasienica.ch
+Twitter:   @gasi
+GitHub:    @gasi
+
+Developer: Ian Gilman
+Contact:   ian@iangilman.com
+Twitter:   @iangilman
+GitHub:    @iangilman
+
+Developer: Ken Perkins
+Contact:   ken.perkins@rackspace.com
+Twitter:   @kenperkins
+GitHub:    @kenperkins
+
+Developer: Melinda Minch
+Contact:   melinda@melindaminch.com
+Twitter:   @nein09
+GitHub:    @nein09
+
+
+/* THANKS */
+
+- Bill Crow and David Vos for keeping Zoom.it alive at Microsoft through the
+  years, and helping us transition it when its time came. They moved mountains
+  to get us both the data and the domain.
+
+- Rackspace for hosting and running this service free of charge.
+  Rackspace ♥︎ open-source, and open-source ♥︎ Rackspace.
+
+- OpenSeadragon for providing the zooming viewer.
+
+- VIPS for providing blazing-fast DZI generation.
+
+For a complete and up-to-date list of acknowledgements, please go to:
+https://github.com/zoomhub/zoomhub#credits

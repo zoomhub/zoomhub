@@ -1,0 +1,14 @@
+---
+- name: Set up web server
+  hosts: web
+  sudo: yes
+  vars_files:
+    - [ 'vars.yml', 'vars.default.yml' ]
+    - secrets.vault.yml
+  roles:
+    - common
+    - keter
+    - circleci
+    - vips
+    - splunk-forwarder
+    - web

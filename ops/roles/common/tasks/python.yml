@@ -1,0 +1,13 @@
+---
+- name: Install Python & `pip`
+  apt: pkg={{ item }} state=present
+  with_items:
+    - build-essential
+    - python-dev
+    - python-pip
+
+- name: Upgrade `pip`
+  command: pip install --upgrade pip
+
+- name: Upgrade `virtualenv`
+  command: pip install --upgrade virtualenv

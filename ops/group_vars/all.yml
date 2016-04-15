@@ -1,0 +1,32 @@
+---
+# Machine configuration
+locale: 'en_US.UTF-8'
+language: 'en_US:en'
+timezone: 'America/Los_Angeles'
+ntp_server: 'pool.ntp.org'
+admin_user: admin
+
+# ZoomHub App Configuration
+zoomhub_data_path: "/mnt/datavolume/zoomhub/data"
+zoomhub_db_path: "/mnt/datavolume/zoomhub/data/zoomhub.sqlite3"
+zoomhub_hashids_salt: "{{ vault_zoomhub_hashids_salt }}"
+
+# Rackspace
+rackspace_username: "{{ vault_rackspace_username }}"
+rackspace_api_key: "{{ vault_rackspace_api_key }}"
+rackspace_cloudfiles_region: 'IAD'
+rackspace_cloudfiles_admin_container: 'admin'
+rackspace_cloudfiles_container: 'cache-development'
+rackspace_cloudfiles_container_path: 'content'
+
+# Splunk
+splunk_indexer_host: admin.zoomhub.net
+splunk_indexer_port: 8000
+splunk_indexer_management_port: 8089
+splunk_indexer_receiving_port: 9997
+
+splunk_username: "{{ vault_splunk_username }}"
+splunk_password: "{{ vault_splunk_password }}"
+
+splunk_forwarder_username: "{{ vault_splunk_forwarder_username }}"
+splunk_forwarder_password: "{{ vault_splunk_forwarder_password }}"

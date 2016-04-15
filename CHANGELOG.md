@@ -1,5 +1,68 @@
 # ZoomHub
 
+## 2.0.0 – April 14, 2016
+
+-   Add infrastructure for background processing of existing content.
+-   Add `PROCESSING_WORKERS` environment variable for controlling the number
+    of workers (green threads) that process existing content.
+-   Track `numViews` using a sampling rate /ht [@aseemk].
+-   Order keys of log lines so `time` comes first which helps Splunk
+    process them.
+-   Pretty print certain `HttpException`, most notably `StatusCodeException`
+    which previously generated very long log lines due to artificial
+    `X-Response-Body-Start` header that included entire error response body.
+-   Simplify parsing configuration from environment variables.
+-   Make error handling in `Worker` more robust.
+-   Track `worker` metadata in logs.
+
+## 0.1.0 – April 10, 2016
+
+-   Import original Zoom.it data—`ContentInfo`, `ImageInfo`,
+    and `FlickrPhotoInfo`—into new `zoomhub.sqlite3` database.
+-   Fix incorrect MIME types in original data set.
+-   Start tracking number of views for a given content using `numViews` column.
+-   Use new database connection for each request in an unsuccessful attempt to
+    mitigate multi-threading issues with SQLite 3.
+    See: <https://github.com/IreneKnapp/direct-sqlite/issues/61>
+-   Add background worker for processing existing, unprocessed content. Picks
+    most popular content based on `numViews` data.
+-   Introduce `ContentType` data type.
+-   Support existing `zoomit://thumbnail/?url=` URLs as `ContentURI`.
+-   Add `PROCESS_EXISTING_CONTENT` and `PROCESS_NEW_CONTENT`
+    environment variables.
+-   Log `Config` at startup.
+-   Introduce `RACKSPACE_CONTAINER` and `RACKSPACE_CONTAINER_PATH` environment
+    variables to run existing content (container: `content`, path: `dzis`) and
+    new one (container: `cache`, path: `content`; backwards compatibility with
+    Zoom.it).
+-   Improve logging throughout the app using `Logger` and `logT` which lets
+    you log duration of operations using `timeItT`.
+-   Add `type: "access"` field to request log lines to distinguish from
+    `type: "app"` application logs.
+-   Adopt type-safe time units using `time-units` library.
+-   Switch `duration` request log field into type-safe milliseconds.
+-   Add global Warp web server exception handler using
+    `message: "Web server exception"`.
+-   Introduce `TEMP_PATH` to replace `DATA_PATH`. The application writes
+    temporary data into `$TEMP_PATH/temp`.
+-   Switch static content hosting to `static.zoomhub.net`.
+-   Improve VIPS error reporting using `readProcessWithExitCode`.
+-   Implement DZI XML parsing using `Text.XML.Light` and add tests.
+-   Implement DZI tile and manifest upload to CloudFiles using `putContent`.
+-   Add retry logic to database writes and CloudFiles uploads
+    using `retry` library.
+-   Make `contentMIME` type-safe.
+-   Make `initializedAt` non-null.
+-   Optimize output binary using GHC `-O3` flag.
+-   Add basic support for multithreading, e.g. `getNumCapabilities`, etc., but
+    disable it until SQLite3 multi-threading issues have been resolved or we
+    adopt a different database.
+
+## 0.0.5 – February 14, 2016
+
+-   Initial port to Haskell.
+-   Add basic continuous deployment using [CircleCI].
+
 ## 0.0.4 - October 1, 2014
 
 -   Upgrade `coffee-script` to 1.8.0.
@@ -43,7 +106,9 @@
 -   Add [LICENSE].
 
 
+[@aseemk]: https://github.com/aseemk
 [Ansible]: http://www.ansibleworks.com/
+[CircleCI]: https://circleci.com
 [deepzoomtools]: https://github.com/openzoom/node-deepzoomtools
 [LICENSE]: LICENSE
 [npm-express-streamline]: https://www.npmjs.org/package/express-streamline

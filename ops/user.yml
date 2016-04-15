@@ -1,0 +1,26 @@
+---
+- name: Add or update the existing user on Ubuntu servers
+  hosts: all
+  sudo: yes
+  roles:
+    - user
+
+  vars_prompt:
+    - name: "username"
+      prompt: "New username"
+      private: no
+
+    - name: "password"
+      prompt: "New password"
+      encrypt: "sha512_crypt"
+      confirm: yes
+
+    - name: "id_rsa_path"
+      prompt: "SSH public key path"
+      default: "~/.ssh/id_rsa.pub"
+      private: no
+
+    - name: "sudoers"
+      prompt: "Add user to `sudoers` group (yes/no)"
+      default: "no"
+      private: no

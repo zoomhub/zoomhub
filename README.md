@@ -1,23 +1,24 @@
 # ZoomHub
 
-[![Build Status](https://travis-ci.org/zoomhub/zoomhub.svg?branch=master)](https://travis-ci.org/zoomhub/zoomhub)
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/zoomhub/zoomhub?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://circleci.com/gh/gasi/zoomhub.svg?style=shield&circle-token=4e2b7e7de6ab3177d1e744d04dbacccb8c6cd68b)](https://circleci.com/gh/gasi/zoomhub)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/zoomhub/zoomhub?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-An open-source cloud service for viewing arbitrarily hi-res zoomable images.
+An open-source cloud service for viewing arbitrarily high-resolution zoomable
+images.
 
 Inspired by, and has taken over, the similar former Microsoft service
-**[Zoom.it](http://zoom.it/)**.
-This is a full from-scratch rewrite, brought to you by the same developers who
-built the original Zoom.it.
+**[zoom.it]**.
+This is a full, from-scratch rewrite, brought to you by the same developers who
+built the original **[zoom.it]**.
 
 
 ## Usage
 
-This service is running live at **[zoom.it](http://zoom.it/)**.
-We aren't accepting any new content for now, but all old Zoom.it content
+This service is running live at **[zoom.it]**.
+We aren’t accepting any new content for now, but all old **[zoom.it]** content
 should continue to work.
 
-This service also includes a REST API, available at **`api.zoom.it`**
+This service also includes a REST API, available at **[api.zoom.it][api.zoom.it]**
 (e.g. [`/v1/content/4rcn`](http://api.zoom.it/v1/content/4rcn)).
 For details and API documentation, see **[API.md](./API.md)**.
 
@@ -38,14 +39,14 @@ or email us at [zoomhub@googlegroups.com](mailto:zoomhub@googlegroups.com).
 
 Feel free to file bugs, request features, and ask questions on
 [GitHub Issues](https://github.com/zoomhub/zoomhub/issues).
-That's also where we're tracking TODOs and remaining work.
+That’s also where we’re tracking TODOs and remaining work.
 
 
 ## Credits
 
 Special thanks to:
 
-- **Bill Crow** and **David Vos** for keeping Zoom.it alive at Microsoft
+- **Bill Crow** and **David Vos** for keeping [zoom.it] alive at Microsoft
   through the years, and helping us transition it when its time came.
   They moved mountains to get us both the data and the domain.
 
@@ -58,13 +59,20 @@ Special thanks to:
 - **[VIPS](http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS)** for
   providing blazing-fast DZI generation.
 
-- All of our **[contributors](https://github.com/zoomhub/zoomhub/graphs/contributors)**
-  for their time and energy.
+- All of our
+  **[contributors](https://github.com/zoomhub/zoomhub/graphs/contributors)** for
+  their time and energy.
   This project is entirely a labor of love, and all of us have our own day jobs.
   Maintaining any open-source project is work, but running a live, production
   service on top of that is something even more.
 
+- [Marcin Mierzejewski](https://github.com/zenzire) for the Ansible Ubuntu
+  setup scripts: https://github.com/zenzire/ansible-bootstrap-ubuntu
 
 ## License
 
 This code is open-source under the [MIT license](./LICENSE).
+
+
+[zoom.it]: http://zoom.it/
+[api.zoom.it]: http://api.zoom.it/
