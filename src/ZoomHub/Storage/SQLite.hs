@@ -20,8 +20,9 @@ module ZoomHub.Storage.SQLite
   , withConnection
   ) where
 
+import           Control.Concurrent.Async       (async)
 import           Control.Exception              (tryJust)
-import           Control.Monad                  (forM_, guard)
+import           Control.Monad                  (forM_, guard, when)
 import           Control.Monad.Catch            (Handler (Handler))
 import           Control.Monad.IO.Class         (MonadIO)
 import           Control.Retry                  (RetryPolicyM, RetryStatus,
@@ -37,7 +38,9 @@ import qualified Data.Set                       as Set
 import           Data.String                    (IsString (fromString))
 import           Data.Text                      (Text)
 import           Data.Time.Clock                (UTCTime, getCurrentTime)
-import           Data.Time.Units                (Minute, Second, toMicroseconds, fromMicroseconds)
+import           Data.Time.Units                (Minute, Second,
+                                                 fromMicroseconds,
+                                                 toMicroseconds)
 import           Data.Time.Units.Instances      ()
 import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
                                                  NamedParam ((:=)), Only (Only),
@@ -50,6 +53,7 @@ import qualified Database.SQLite.Simple         as SQLite
 import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField (toField)
 import           Database.SQLite.Simple.ToRow   (ToRow, toRow)
+import           System.Random                  (randomRIO)
 
 import           ZoomHub.Log.Logger             (logWarning)
 import           ZoomHub.Types.Content          (Content (Content),
@@ -57,10 +61,10 @@ import           ZoomHub.Types.Content          (Content (Content),
                                                  contentCompletedAt, contentDZI,
                                                  contentError, contentId,
                                                  contentInitializedAt,
-                                                 contentMIME, contentProgress,
-                                                 contentSize, contentState,
-                                                 contentType, contentURL,
-                                                 mkContent)
+                                                 contentMIME, contentNumViews,
+                                                 contentProgress, contentSize,
+                                                 contentState, contentType,
+                                                 contentURL, mkContent)
 import           ZoomHub.Types.ContentId        (ContentId, unId)
 import qualified ZoomHub.Types.ContentId        as ContentId
 import           ZoomHub.Types.ContentMIME      (ContentMIME)
@@ -109,7 +113,7 @@ create encodeId uri conn = withTransaction conn $ do
         ]
 
 -- TODO: Generalize:
-getById' :: ContentId -> Connection -> IO (Maybe Content)
+getById' :: ContentId -> DatabasePath -> Connection -> IO (Maybe Content)
 getById' cId = getBy' "content.hashId" (unId cId)
 
 getById :: ContentId -> Connection -> IO (Maybe Content)
@@ -119,7 +123,7 @@ getById cId = getBy "content.hashId" (unId cId)
 getByURL :: ContentURI -> Connection -> IO (Maybe Content)
 getByURL uri = getBy "content.url" (show uri)
 
-getByURL' :: ContentURI -> Connection -> IO (Maybe Content)
+getByURL' :: ContentURI -> DatabasePath -> Connection -> IO (Maybe Content)
 getByURL' uri = getBy' "content.url" (show uri)
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
@@ -272,10 +276,32 @@ withConnection :: DatabasePath -> (Connection -> IO a) -> IO a
 withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
 
 -- Internal
-getBy' :: String -> String -> Connection -> IO (Maybe Content)
-getBy' fieldName param conn = do
-  execute conn (incrNumViewsQueryFor fieldName) (Only param)
-  getBy fieldName param conn
+getBy' :: String -> String -> DatabasePath -> Connection -> IO (Maybe Content)
+getBy' fieldName param dbPath conn = do
+    maybeContent <- getBy fieldName param conn
+    case maybeContent of
+      Just content -> do
+        -- Sample how often we count views to reduce database load:
+        -- http://stackoverflow.com/a/4762559/125305
+        let numViews = contentNumViews content
+        let numViewsSampleRate = sampleRate numViews
+        numViewsSample <- randomRIO (1, numViewsSampleRate)
+        when (numViewsSample == 1) $ do
+          _ <- async $ withConnection dbPath $ \dbConn ->
+            executeNamed dbConn (incrNumViewsQueryFor fieldName)
+              [ ":param" := param
+              , ":numViewsSampleRate" := numViewsSampleRate
+              ]
+          return ()
+      Nothing -> return ()
+    return maybeContent
+  where
+    sampleRate :: Integer -> Integer
+    sampleRate numViews
+      | numViews < 50   = 1
+      | numViews < 500  = 10
+      | numViews < 5000 = 20
+      | otherwise       = 50
 
 getBy :: String -> String -> Connection -> IO (Maybe Content)
 getBy fieldName param conn =
@@ -326,8 +352,8 @@ selectQueryFor fieldName =
 
 incrNumViewsQueryFor :: String -> Query
 incrNumViewsQueryFor fieldName =
-  "UPDATE content SET numViews = numViews + 1 WHERE " <>
-    fromString fieldName <> " = ?"
+  "UPDATE content SET numViews = numViews + :numViewsSampleRate WHERE " <>
+    fromString fieldName <> " = :param"
 
 selectContent :: Query
 selectContent =

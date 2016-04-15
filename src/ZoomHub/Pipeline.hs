@@ -40,8 +40,11 @@ import           ZoomHub.Rackspace.CloudFiles             (ObjectName,
                                                            mkCredentials,
                                                            parseObjectName,
                                                            putContent)
-import           ZoomHub.Types.Content                    (Content, contentId,
-                                                           contentURL, contentSize, contentMIME, contentDZI)
+import           ZoomHub.Types.Content                    (Content, contentDZI,
+                                                           contentId,
+                                                           contentMIME,
+                                                           contentSize,
+                                                           contentURL)
 import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
 import           ZoomHub.Types.ContentURI                 (ContentURI)
