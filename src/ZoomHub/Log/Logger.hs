@@ -13,16 +13,22 @@ module ZoomHub.Log.Logger
   , logInfo_
   , logWarning
   , logWarning_
+  -- Encoding
+  , encodeLogLine
   ) where
 
 import           Prelude                   hiding (log)
 
 import           Control.Exception         (SomeException)
-import           Data.Aeson                (encode, object, (.=))
+import           Data.Aeson                (Value, object, (.=))
+import           Data.Aeson.Encode.Pretty  (Config (Config), confCompare,
+                                            confIndent, encodePretty', keyOrder)
 import           Data.Aeson.Types          (Pair)
 import qualified Data.ByteString.Lazy      as BL
 import           Data.Monoid               ((<>))
+import           Data.Ord                  (comparing)
 import           Data.Text                 (Text)
+import qualified Data.Text                 as T
 import           Data.Text.Encoding        (decodeUtf8)
 import qualified Data.Text.IO              as TIO
 import           Data.Time.Clock           (getCurrentTime)
@@ -88,9 +94,9 @@ logT level msg meta action = do
 log :: Level -> String -> [Pair] -> IO ()
 log level message meta = do
     now <- getCurrentTime
-    TIO.hPutStrLn (handle level) $ decodeUtf8 . BL.toStrict $ (line now) <> "\n"
+    TIO.hPutStrLn (handle level) $ line now <> "\n"
   where
-    line time = encode . object $
+    line time = encodeLogLine . object $
       [ "time" .= time
       , "type" .= ("app" :: Text)
       , "level" .= show level
@@ -99,3 +105,30 @@ log level message meta = do
 
     handle Error = stderr
     handle _     = stdout
+
+encodeLogLine :: Value -> Text
+encodeLogLine = removeNewlines . decodeUtf8 . BL.toStrict . prettyEncode
+  where
+    removeNewlines = (T.intercalate "") . T.lines
+    prettyEncode = encodePretty' prettyEncodeConfig
+
+-- JSON
+prettyEncodeConfig :: Config
+prettyEncodeConfig = Config
+  { confIndent = 0
+  , confCompare = keyCompare
+  }
+
+keyCompare :: Text -> Text -> Ordering
+keyCompare = keyOrder keyOrdering `mappend` comparing T.length
+
+keyOrdering :: [Text]
+keyOrdering =
+  [ "time"
+  , "type"
+  , "level"
+  , "message"
+  , "req"
+  , "res"
+  , "worker"
+  ]
