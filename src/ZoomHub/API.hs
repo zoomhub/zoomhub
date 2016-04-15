@@ -178,7 +178,7 @@ jsonpContentById :: BaseURI ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentById baseURI contentBaseURI dbPath contentId callback = do
-  maybeContent <- liftIO $ withConnection dbPath (getById' contentId)
+  maybeContent <- liftIO $ withConnection dbPath (getById' contentId dbPath)
   case maybeContent of
     Nothing      -> left $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
@@ -193,7 +193,7 @@ jsonpContentByURL :: BaseURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentByURL baseURI contentBaseURI dbPath url callback = do
-  maybeContent <- liftIO $ withConnection dbPath (getByURL' url)
+  maybeContent <- liftIO $ withConnection dbPath (getByURL' url dbPath)
   case maybeContent of
     Nothing      -> left . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
@@ -228,7 +228,7 @@ restContentById :: BaseURI ->
                    ContentId ->
                    Handler Content
 restContentById baseURI contentBaseURI dbPath contentId = do
-  maybeContent <- liftIO $ withConnection dbPath (getById' contentId)
+  maybeContent <- liftIO $ withConnection dbPath (getById' contentId  dbPath)
   case maybeContent of
     Nothing      -> left . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
@@ -244,7 +244,7 @@ restContentByURL :: BaseURI ->
                     ContentURI ->
                     Handler Content
 restContentByURL baseURI dbPath encodeId newContentStatus url = do
-  maybeContent <- liftIO $ withConnection dbPath (getByURL' url)
+  maybeContent <- liftIO $ withConnection dbPath (getByURL' url dbPath)
   case maybeContent of
     Nothing      -> do
       newContent <- case newContentStatus of
@@ -272,7 +272,7 @@ webEmbed :: BaseURI ->
             Handler Embed
 webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript embedId
          maybeId width height = do
-  maybeContent <- liftIO $ withConnection dbPath (getById' contentId)
+  maybeContent <- liftIO $ withConnection dbPath (getById' contentId  dbPath)
   case maybeContent of
     Nothing      -> left . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
