@@ -15,6 +15,10 @@ import           Network.HTTP.Client       (HttpException (StatusCodeException))
 import           Network.HTTP.Types        (Header, ResponseHeaders)
 import           Network.HTTP.Types.Status (statusCode)
 
+-- Number of bytes we store for responses with exceptions:
+maxBodyBytes :: Int
+maxBodyBytes = 256
+
 instance ToJSON HttpException where
   toJSON (StatusCodeException status headers _) = object
     [ "type" .= ("StatusCodeException" :: Text)
@@ -32,7 +36,7 @@ headersToJSON = toObject . map headerToJSON'
   where
     headerToJSON' ("Cookie", _) = ("Cookie" :: Text, "<redacted>" :: Text)
     headerToJSON' ("X-Response-Body-Start", v) =
-      ("X-Response-Body-Start" :: Text, decodeUtf8 (BL.take 256 v))
+      ("X-Response-Body-Start" :: Text, decodeUtf8 (BL.take maxBodyBytes v))
     headerToJSON' hd = headerToJSON hd
 
     headerToJSON :: Header -> (Text, Text)
