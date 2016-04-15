@@ -5,8 +5,7 @@ module ZoomHub.Log.RequestLogger (formatAsJSON) where
 
 import qualified Blaze.ByteString.Builder             as BB
 import           Data.Aeson                           (ToJSON, Value (String),
-                                                       encode, object, toJSON,
-                                                       (.=))
+                                                       object, toJSON, (.=))
 import qualified Data.ByteString.Char8                as S8
 import           Data.CaseInsensitive                 (original)
 import qualified Data.HashMap.Strict                  as HM
@@ -33,9 +32,11 @@ import           Network.Wai.Middleware.RequestLogger (OutputFormatterWithDetail
 import           System.Log.FastLogger                (toLogStr)
 import           Text.Printf                          (printf)
 
+import           ZoomHub.Log.Logger                   (encodeLogLine)
+
 formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
-  toLogStr (encode $
+  toLogStr (encodeLogLine $
     object
       [ "type" .= ("access" :: Text)
       , "req" .= requestToJSON duration req reqBody
