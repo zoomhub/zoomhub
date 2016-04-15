@@ -1,5 +1,5 @@
 name:                zoomhub
-version:             0.1.0.0
+version:             2.0.0.0
 synopsis:            Share and view high-resolution images effortlessly.
 description:         Please see README.md
 homepage:            http://github.com/zoomhub/zoomhub#readme
@@ -20,6 +20,7 @@ source-repository head
 library
   exposed-modules:
       Data.Time.Units.Instances
+    , Network.HTTP.Client.Instances
     , Network.URI.Instances
     , ZoomHub.API
     , ZoomHub.API.ContentTypes.JavaScript
@@ -131,17 +132,6 @@ executable zoomhub
   build-depends:
       base
     , zoomhub
-
-executable normalize-db
-  default-language: Haskell2010
-  ghc-options:      -Wall
-  main-is:          scripts/normalize-db.hs
-  build-depends:
-      base
-    , mime
-    , sqlite-simple
-    , text
-    , time
 
 test-suite tests
   default-language: Haskell2010

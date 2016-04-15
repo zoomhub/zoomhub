@@ -8,16 +8,13 @@ module ZoomHub.Pipeline
 import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
 import           Control.Concurrent.Async                 (forConcurrently)
-import           Control.Exception.Enclosed               (catchAny)
 import           Control.Lens                             ((^.))
 import           Control.Monad                            (when)
 import           Data.Aeson                               ((.=))
 import           Data.List                                (stripPrefix)
 import           Data.List.Split                          (chunksOf)
 import           Data.Monoid                              ((<>))
-import qualified Data.Text                                as T
 import           Data.Text.Encoding                       (decodeUtf8)
-import           Database.SQLite.Simple                   (Connection)
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
@@ -31,13 +28,11 @@ import           System.Posix                             (fileSize,
                                                            getFileStatus)
 import           System.Process                           (readProcessWithExitCode)
 
-import           ZoomHub.Config                           (Config,
-                                                           RackspaceConfig,
+import           ZoomHub.Config                           (RackspaceConfig,
                                                            raxApiKey,
                                                            raxContainer,
                                                            raxContainerPath,
                                                            raxUsername)
-import qualified ZoomHub.Config                           as Config
 import           ZoomHub.Log.Logger                       (logDebugT, logError,
                                                            logInfo, logInfoT)
 import           ZoomHub.Rackspace.CloudFiles             (ObjectName,
@@ -45,11 +40,10 @@ import           ZoomHub.Rackspace.CloudFiles             (ObjectName,
                                                            mkCredentials,
                                                            parseObjectName,
                                                            putContent)
-import           ZoomHub.Storage.SQLite                   (markAsActive,
-                                                           markAsFailure,
-                                                           markAsSuccess,
-                                                           withConnection)
-import           ZoomHub.Types.Content                    (Content, contentId,
+import           ZoomHub.Types.Content                    (Content, contentDZI,
+                                                           contentId,
+                                                           contentMIME,
+                                                           contentSize,
                                                            contentURL)
 import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
@@ -59,66 +53,53 @@ import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFo
                                                            fromXML)
 import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
 
-process :: Config -> Content -> IO Content
-process config content =
-  withConnection (Config.dbPath config) $ \dbConn ->
-    unsafeProcess raxConfig tempPath dbConn content `catchAny` \e -> do
-      let errorMessage = Just . T.pack $ show e
-      logInfoT "Process content: failure"
-        [ "id" .= contentId content
-        , "error" .= errorMessage
-        ] $ markAsFailure dbConn content errorMessage
-  where
-    tempPath = Config.tempPath config
-    raxConfig = Config.rackspace config
 
-unsafeProcess :: RackspaceConfig ->
-                 TempPath ->
-                 Connection ->
-                 Content ->
-                 IO Content
-unsafeProcess raxConfig tempPath dbConn content =
-  withTempDirectory (unTempPath tempPath) template $ \tmpDir ->
-    logInfoT "Process content: success"
-      [ "id" .= contentId content ] $ do
+process :: String -> RackspaceConfig -> TempPath -> Content -> IO Content
+process workerId raxConfig tempPath content =
+  withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
+    let rawPathPrefix = tmpDir </> rawContentId
+        rawPath = rawPathPrefix ++ ".raw"
+        dziPath = rawPathPrefix <.> "dzi"
 
-      let rawPathPrefix = tmpDir </> rawContentId
-          rawPath = rawPathPrefix ++ ".raw"
-          dziPath = rawPathPrefix <.> "dzi"
+    logInfo "Create temporary working directory"
+      [ "id" .= contentId content
+      , "path" .= tmpDir
+      , "worker" .= workerId
+      ]
 
-      logInfo "Create temporary working directory"
-        [ "id" .= contentId content
-        , "path" .= tmpDir
-        ]
+    maybeMIME <- logInfoT "Download content"
+      [ "id" .= contentId content
+      , "url" .= contentURL content
+      , "worker" .= workerId
+      ] $ ((<$>) . (<$>)) ContentMIME $
+          downloadURL (contentURL content) rawPath
 
-      activeContent <- logInfoT "Mark content as active"
-        [ "id" .= contentId content ] $ markAsActive dbConn content
+    rawSize <- getFileSize rawPath
 
-      maybeMIME <- logInfoT "Download content"
-        [ "id" .= contentId content
-        , "url" .= contentURL content
-        ] $ ((<$>) . (<$>)) ContentMIME $
-            downloadURL (contentURL content) rawPath
+    dzi <- logInfoT "Create DZI"
+      [ "id" .= contentId content
+      , "worker" .= workerId
+      ] $ createDZI workerId rawPath dziPath (toTileFormat maybeMIME)
 
-      rawSize <- getFileSize rawPath
+    logInfo "Content metadata"
+      [ "mime" .= maybeMIME
+      , "size" .= rawSize
+      , "dzi" .= dzi
+      , "worker" .= workerId
+      ]
 
-      dzi <- logInfoT "Create DZI"
-        [ "id" .= contentId content] $
-        createDZI rawPath dziPath (toTileFormat maybeMIME)
+    logInfoT "Upload DZI"
+      [ "id" .= contentId content
+      , "dzi" .= dzi
+      , "dziPath" .= dziPath
+      , "worker" .= workerId
+      ] $ uploadDZI workerId raxConfig tmpDir dziPath dzi
 
-      logInfo "Content metadata"
-        [ "mime" .= maybeMIME
-        , "size" .= rawSize
-        , "dzi" .= dzi
-        ]
-
-      logInfoT "Upload DZI"
-        [ "id" .= contentId content
-        , "dzi" .= dzi
-        , "dziPath" .= dziPath
-        ] $ uploadDZI raxConfig tmpDir dziPath dzi
-
-      markAsSuccess dbConn activeContent dzi maybeMIME rawSize
+    return content
+      { contentMIME = maybeMIME
+      , contentSize = Just rawSize
+      , contentDZI = Just dzi
+      }
   where
     rawContentId = unId (contentId content)
     template = rawContentId ++ "-"
@@ -133,14 +114,15 @@ downloadURL url dest = do
   atomicWriteFile dest body
   return $ parseMIMEType . decodeUtf8 $ res ^. responseHeader "content-type"
 
-createDZI :: FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
-createDZI src dest tileFormat = do
+createDZI :: String -> FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
+createDZI workerId src dest tileFormat = do
     (exitCode, stdout, stderr) <- readProcessWithExitCode "vips" args ""
     logInfo "VIPS command"
       [ "command" .= show args
       , "exitCode" .= show exitCode
       , "stdout" .= stdout
       , "stderr" .= stderr
+      , "worker" .= workerId
       ]
     when (exitCode /= ExitSuccess) $
       fail $ "VIPS error: Exit code: " ++ show exitCode ++
@@ -160,12 +142,13 @@ createDZI src dest tileFormat = do
       , "--suffix=" <> toVIPSSuffix tileFormat
       ]
 
-uploadDZI :: RackspaceConfig ->
+uploadDZI :: String ->
+             RackspaceConfig ->
              FilePath ->
              FilePath ->
              DeepZoomImage ->
              IO ()
-uploadDZI raxConfig rootPath path dzi = do
+uploadDZI workerId raxConfig rootPath path dzi = do
     meta <- getMetadata raxCreds
     tilePaths <- getDZITilePaths path
 
@@ -178,12 +161,14 @@ uploadDZI raxConfig rootPath path dzi = do
             _ <- logDebugT "Upload DZI tile"
                   [ "container" .= container
                   , "objectName" .= tileObjectName
+                  , "worker" .= workerId
                   ] $ putContent meta tilePath tileMIME container tileObjectName
             return ()
 
           Nothing -> logError "Invalid DZI tile object name"
                         [ "tilePath" .= tilePath
                         , "rootPath" .= rootPath
+                        , "worker" .= workerId
                         ]
 
     -- Upload manifest
@@ -192,12 +177,14 @@ uploadDZI raxConfig rootPath path dzi = do
         _ <- logDebugT "Upload DZI manifest"
               [ "container" .= container
               , "objectName" .= dziObjectName
+              , "worker" .= workerId
               ] $ putContent meta path manifestMIME container dziObjectName
         return ()
       _ ->
         logError "Invalid DZI manifest object name"
           [ "path" .= path
           , "rootPath" .= rootPath
+          , "worker" .= workerId
           ]
   where
     manifestMIME = MIME.Type (MIME.Application "xml") []

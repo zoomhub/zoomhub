@@ -10,10 +10,9 @@ module ZoomHub.Storage.SQLite
   , getByURL
   , getByURL'
   , getExpiredActive
-  , getNextUnprocessed
   -- ** Write operations
   , create
-  , markAsActive
+  , dequeueNextUnprocessed
   , markAsFailure
   , markAsSuccess
   , resetAsInitialized
@@ -21,22 +20,27 @@ module ZoomHub.Storage.SQLite
   , withConnection
   ) where
 
+import           Control.Concurrent.Async       (async)
 import           Control.Exception              (tryJust)
-import           Control.Monad                  (forM_, guard)
-import           Control.Monad.Catch            (Handler)
+import           Control.Monad                  (forM_, guard, when)
+import           Control.Monad.Catch            (Handler (Handler))
 import           Control.Monad.IO.Class         (MonadIO)
 import           Control.Retry                  (RetryPolicyM, RetryStatus,
                                                  capDelay, fullJitterBackoff,
-                                                 limitRetries, logRetries,
-                                                 recovering)
-import           Data.Aeson                     ((.=))
+                                                 limitRetries, recovering,
+                                                 rsCumulativeDelay,
+                                                 rsIterNumber, rsPreviousDelay)
+import           Data.Aeson                     (object, (.=))
+import           Data.Bool                      (bool)
 import           Data.Monoid                    ((<>))
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
 import           Data.String                    (IsString (fromString))
 import           Data.Text                      (Text)
 import           Data.Time.Clock                (UTCTime, getCurrentTime)
-import           Data.Time.Units                (Second, toMicroseconds)
+import           Data.Time.Units                (Minute, Second,
+                                                 fromMicroseconds,
+                                                 toMicroseconds)
 import           Data.Time.Units.Instances      ()
 import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
                                                  NamedParam ((:=)), Only (Only),
@@ -49,6 +53,7 @@ import qualified Database.SQLite.Simple         as SQLite
 import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
 import           Database.SQLite.Simple.ToField (toField)
 import           Database.SQLite.Simple.ToRow   (ToRow, toRow)
+import           System.Random                  (randomRIO)
 
 import           ZoomHub.Log.Logger             (logWarning)
 import           ZoomHub.Types.Content          (Content (Content),
@@ -56,10 +61,10 @@ import           ZoomHub.Types.Content          (Content (Content),
                                                  contentCompletedAt, contentDZI,
                                                  contentError, contentId,
                                                  contentInitializedAt,
-                                                 contentMIME, contentProgress,
-                                                 contentSize, contentState,
-                                                 contentType, contentURL,
-                                                 mkContent)
+                                                 contentMIME, contentNumViews,
+                                                 contentProgress, contentSize,
+                                                 contentState, contentType,
+                                                 contentURL, mkContent)
 import           ZoomHub.Types.ContentId        (ContentId, unId)
 import qualified ZoomHub.Types.ContentId        as ContentId
 import           ZoomHub.Types.ContentMIME      (ContentMIME)
@@ -67,11 +72,11 @@ import           ZoomHub.Types.ContentState     (ContentState (Initialized, Acti
 import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
 import           ZoomHub.Types.ContentURI       (ContentURI)
 import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
-import           ZoomHub.Types.DeepZoomImage    (DeepZoomImage, TileFormat,
-                                                 TileOverlap, TileSize,
-                                                 dziHeight, dziTileFormat,
-                                                 dziTileOverlap, dziTileSize,
-                                                 dziWidth, mkDeepZoomImage)
+import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
+                                                 TileSize, dziHeight,
+                                                 dziTileFormat, dziTileOverlap,
+                                                 dziTileSize, dziWidth,
+                                                 mkDeepZoomImage)
 import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
@@ -108,7 +113,7 @@ create encodeId uri conn = withTransaction conn $ do
         ]
 
 -- TODO: Generalize:
-getById' :: ContentId -> Connection -> IO (Maybe Content)
+getById' :: ContentId -> DatabasePath -> Connection -> IO (Maybe Content)
 getById' cId = getBy' "content.hashId" (unId cId)
 
 getById :: ContentId -> Connection -> IO (Maybe Content)
@@ -118,7 +123,7 @@ getById cId = getBy "content.hashId" (unId cId)
 getByURL :: ContentURI -> Connection -> IO (Maybe Content)
 getByURL uri = getBy "content.url" (show uri)
 
-getByURL' :: ContentURI -> Connection -> IO (Maybe Content)
+getByURL' :: ContentURI -> DatabasePath -> Connection -> IO (Maybe Content)
 getByURL' uri = getBy' "content.url" (show uri)
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
@@ -137,25 +142,34 @@ getExpiredActive conn =
       , ":ttlMinutes" := (30 :: Integer)
       ]
 
+-- Writes
+dequeueNextUnprocessed :: Connection -> IO (Maybe Content)
+dequeueNextUnprocessed conn =
+  withTransaction conn $ do
+    maybeNext <- getNextUnprocessed conn
+    case maybeNext of
+      Just next -> Just <$> markAsActive conn next
+      Nothing -> return Nothing
+
 resetAsInitialized :: Connection -> [Content] -> IO ()
 resetAsInitialized conn cs =
-  withTransaction conn $
-    forM_ (map (unId . contentId) cs) $ \hashId ->
-      retryExecuteNamed conn "UPDATE content \
-      \ SET state = :initializedState, activeAt = NULL, error = NULL, \
-      \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
-      [ ":initializedState" := Initialized
-      , ":hashId" := hashId
-      ]
+  withRetries $ withTransaction conn $
+    forM_ cs $ \content ->
+      executeNamed conn "UPDATE content \
+        \ SET state = :initializedState, activeAt = NULL, error = NULL, \
+        \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
+        [ ":initializedState" := Initialized
+        , ":hashId" := (unId . contentId) content
+        ]
 
 markAsActive :: Connection -> Content -> IO Content
 markAsActive conn content = do
   activeAt <- getCurrentTime
   let content' = content
-        { contentState = Active
-        , contentActiveAt = Just activeAt
-        }
-  retryExecuteNamed conn "\
+                  { contentState = Active
+                  , contentActiveAt = Just activeAt
+                  }
+  withRetries $ executeNamed conn "\
     \UPDATE content \
     \ SET state = :state\
     \   , activeAt = :activeAt\
@@ -178,7 +192,7 @@ markAsFailure conn content maybeError = do
         , contentCompletedAt = Just completedAt
         , contentError = maybeError
         }
-  retryExecuteNamed conn "\
+  withRetries $ executeNamed conn "\
     \UPDATE content\
     \  SET state = :state\
     \    , typeId = :typeId\
@@ -193,81 +207,101 @@ markAsFailure conn content maybeError = do
     ]
   return content'
 
-markAsSuccess :: Connection ->
-                 Content ->
-                 DeepZoomImage ->
-                 Maybe ContentMIME ->
-                 Integer ->
-                 IO Content
-markAsSuccess conn content dzi maybeMIME size = do
-  completedAt <- getCurrentTime
-  let content' = content
-        { contentState = CompletedSuccess
-        , contentType = Image -- TODO: Parametrize
-        , contentCompletedAt = Just completedAt
-        , contentMIME = maybeMIME
-        , contentSize = Just size
-        , contentProgress = 1.0
-        , contentError = Nothing
-        , contentDZI = Just dzi
-        }
-  withTransaction conn $ do
-    retryExecuteNamed conn "\
-      \ UPDATE content \
-      \   SET state = :state\
-      \     , typeId = :typeId\
-      \     , completedAt = :completedAt\
-      \     , mime = :mime\
-      \     , size = :size\
-      \     , progress = :progress\
-      \     , error = :error\
-      \   WHERE hashId = :hashId"
-      [ ":hashId" := contentId content'
-      , ":typeId" := contentType content'
-      , ":state" := contentState content'
-      , ":completedAt" := contentCompletedAt content'
-      , ":mime" := contentMIME content'
-      , ":size" := contentSize content'
-      , ":progress" := contentProgress content'
-      , ":error" := contentError content'
-      ]
-    retryExecuteNamed conn "\
-      \ INSERT OR REPLACE INTO image\
-      \    ( contentId\
-      \    , initializedAt\
-      \    , width\
-      \    , height\
-      \    , tileSize\
-      \    , tileOverlap\
-      \    , tileFormat\
-      \    )\
-      \ VALUES\
-      \   ( (SELECT id FROM content WHERE hashId = :hashId)\
-      \   , (SELECT initializedAt FROM image WHERE contentId =\
-      \       (SELECT id FROM content WHERE hashId = :hashId))\
-      \   , :image_width\
-      \   , :image_height\
-      \   , :image_tileSize\
-      \   , :image_tileOverlap\
-      \   , :image_tileFormat\
-      \   )"
-      [ ":hashId" := contentId content'
-      , ":image_width" := Just (dziWidth dzi)
-      , ":image_height" := Just (dziHeight dzi)
-      , ":image_tileSize" := Just (dziTileSize dzi)
-      , ":image_tileOverlap" := Just (dziTileOverlap dzi)
-      , ":image_tileFormat" := Just (dziTileFormat dzi)
-      ]
-  return content'
+markAsSuccess :: Connection -> Content -> IO Content
+markAsSuccess conn content =
+  case contentDZI content of
+    Nothing -> do
+      let rawId = unId (contentId content)
+      fail $ "ZoomHub.Storage.SQLite.markAsSuccess:\
+        \ Expected completed content '" ++ rawId ++ "' to have DZI."
+    Just dzi -> do
+      completedAt <- getCurrentTime
+      let content' = content
+            { contentState = CompletedSuccess
+            , contentType = Image -- TODO: Parametrize
+            , contentCompletedAt = Just completedAt
+            , contentProgress = 1.0
+            , contentError = Nothing
+            }
+      withRetries $ withTransaction conn $ do
+        executeNamed conn "\
+          \ UPDATE content \
+          \   SET state = :state\
+          \     , typeId = :typeId\
+          \     , completedAt = :completedAt\
+          \     , mime = :mime\
+          \     , size = :size\
+          \     , progress = :progress\
+          \     , error = :error\
+          \   WHERE hashId = :hashId"
+          [ ":hashId" := contentId content'
+          , ":typeId" := contentType content'
+          , ":state" := contentState content'
+          , ":completedAt" := contentCompletedAt content'
+          , ":mime" := contentMIME content'
+          , ":size" := contentSize content'
+          , ":progress" := contentProgress content'
+          , ":error" := contentError content'
+          ]
+        executeNamed conn "\
+          \ INSERT OR REPLACE INTO image\
+          \    ( contentId\
+          \    , initializedAt\
+          \    , width\
+          \    , height\
+          \    , tileSize\
+          \    , tileOverlap\
+          \    , tileFormat\
+          \    )\
+          \ VALUES\
+          \   ( (SELECT id FROM content WHERE hashId = :hashId)\
+          \   , (SELECT initializedAt FROM image WHERE contentId =\
+          \       (SELECT id FROM content WHERE hashId = :hashId))\
+          \   , :image_width\
+          \   , :image_height\
+          \   , :image_tileSize\
+          \   , :image_tileOverlap\
+          \   , :image_tileFormat\
+          \   )"
+          [ ":hashId" := contentId content'
+          , ":image_width" := Just (dziWidth dzi)
+          , ":image_height" := Just (dziHeight dzi)
+          , ":image_tileSize" := Just (dziTileSize dzi)
+          , ":image_tileOverlap" := Just (dziTileOverlap dzi)
+          , ":image_tileFormat" := Just (dziTileFormat dzi)
+          ]
+      return content'
 
 withConnection :: DatabasePath -> (Connection -> IO a) -> IO a
 withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
 
 -- Internal
-getBy' :: String -> String -> Connection -> IO (Maybe Content)
-getBy' fieldName param conn = do
-  execute conn (incrNumViewsQueryFor fieldName) (Only param)
-  getBy fieldName param conn
+getBy' :: String -> String -> DatabasePath -> Connection -> IO (Maybe Content)
+getBy' fieldName param dbPath conn = do
+    maybeContent <- getBy fieldName param conn
+    case maybeContent of
+      Just content -> do
+        -- Sample how often we count views to reduce database load:
+        -- http://stackoverflow.com/a/4762559/125305
+        let numViews = contentNumViews content
+        let numViewsSampleRate = sampleRate numViews
+        numViewsSample <- randomRIO (1, numViewsSampleRate)
+        when (numViewsSample == 1) $ do
+          _ <- async $ withConnection dbPath $ \dbConn ->
+            executeNamed dbConn (incrNumViewsQueryFor fieldName)
+              [ ":param" := param
+              , ":numViewsSampleRate" := numViewsSampleRate
+              ]
+          return ()
+      Nothing -> return ()
+    return maybeContent
+  where
+    sampleRate :: Integer -> Integer
+    sampleRate numViews
+      | numViews < 50   = 1
+      | numViews < 500  = 10
+      | numViews < 5000 = 20
+      | otherwise       = 50
 
 getBy :: String -> String -> Connection -> IO (Maybe Content)
 getBy fieldName param conn =
@@ -295,6 +329,7 @@ fieldNames =
   , "content.mime"
   , "content.size"
   , "content.progress"
+  , "content.numViews"
   , "content.error"
   , "image.width AS image_width"
   , "image.height AS image_height"
@@ -317,8 +352,8 @@ selectQueryFor fieldName =
 
 incrNumViewsQueryFor :: String -> Query
 incrNumViewsQueryFor fieldName =
-  "UPDATE content SET numViews = numViews + 1 WHERE " <>
-    fromString fieldName <> " = ?"
+  "UPDATE content SET numViews = numViews + :numViewsSampleRate WHERE " <>
+    fromString fieldName <> " = :param"
 
 selectContent :: Query
 selectContent =
@@ -351,6 +386,7 @@ data ContentRow = ContentRow
   , crMIME           :: Maybe ContentMIME
   , crSize           :: Maybe Integer
   , crProgress       :: Float
+  , crNumViews       :: Integer
   , crError          :: Maybe Text
   , crDZIWidth       :: Maybe Integer
   , crDZIHeight      :: Maybe Integer
@@ -372,6 +408,7 @@ instance FromRow ContentRow where
     field <*> -- mime
     field <*> -- size
     field <*> -- progress
+    field <*> -- numViews
     field <*> -- error
     field <*> -- dziWidth
     field <*> -- dziHeight
@@ -392,6 +429,7 @@ instance ToRow ContentRow where
     , toField crMIME
     , toField crSize
     , toField crProgress
+    , toField crNumViews
     , toField crError
     , toField crDZIWidth
     , toField crDZIHeight
@@ -412,6 +450,7 @@ rowToContent cr = Content
     , contentMIME = crMIME cr
     , contentSize = crSize cr
     , contentProgress = crProgress cr
+    , contentNumViews = crNumViews cr
     , contentError = crError cr
     , contentDZI = maybeDZI
     }
@@ -443,6 +482,7 @@ contentToRow id_ c = ContentRow
     , crMIME = contentMIME c
     , crSize = contentSize c
     , crProgress = contentProgress c
+    , crNumViews = contentNumViews c
     , crError = contentError c
     , crDZIWidth = dziWidth <$> dzi
     , crDZIHeight = dziHeight <$> dzi
@@ -457,18 +497,17 @@ backoffPolicy :: (MonadIO m) => RetryPolicyM m
 backoffPolicy =
     capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
   where
-    maxDelay = fromIntegral $ toMicroseconds (60 :: Second)
-    base = fromIntegral $ toMicroseconds (2 :: Second)
+    maxDelay = fromIntegral $ toMicroseconds (2 :: Minute)
+    base = fromIntegral $ toMicroseconds (1 :: Second)
     maxRetries = 10
 
-retryExecuteNamed :: Connection -> Query -> [NamedParam] -> IO ()
-retryExecuteNamed conn q params =
-    recovering backoffPolicy handlers (\_ -> executeNamed conn q params)
+withRetries :: IO a -> IO a
+withRetries action = recovering backoffPolicy handlers (\_ -> action)
   where
     handlers = [sqlErrorH]
 
     sqlErrorH :: RetryStatus -> Handler IO Bool
-    sqlErrorH = logRetries testE logRetry
+    sqlErrorH = logRetries testE
 
     testE :: (Monad m) => SQLError -> m Bool
     testE e = case sqlError e of
@@ -477,12 +516,20 @@ retryExecuteNamed conn q params =
       ErrorLocked    -> return True
       _              -> return False
 
-    logRetry :: Bool -> String -> IO ()
-    logRetry shouldRetry errorMessage =
-        logWarning "Retrying operation due to error"
-          [ "error" .= errorMessage
-          , "nextAction" .= next
+    logRetries test status = Handler $ \e -> do
+        shouldRetry <- test e
+        logWarning "Encountered error during SQLite operation"
+          [ "error" .= show e
+          , "retry" .= object
+              [ "iteration" .= rsIterNumber status
+              , "cumulativeDelay" .=
+                  toSeconds (Just . rsCumulativeDelay $ status)
+              , "previousDelay" .= toSeconds (rsPreviousDelay status)
+              , "nextAction" .= (bool "crash" "retry" shouldRetry :: Text)
+              ]
           ]
+        return shouldRetry
       where
-        next :: Text
-        next = if shouldRetry then "retry" else "crash"
+        toSeconds :: Maybe Int -> Maybe Second
+        toSeconds maybeMicroseconds =
+          maybeMicroseconds >>= Just . fromMicroseconds . fromIntegral

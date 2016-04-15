@@ -70,7 +70,8 @@ bootstrap|ping|setup-admin-server|setup-web-server"
     esac
     ;;
 run)
-    stack build --file-watch \
+    stack build --ghc-options='' \
+                --file-watch \
                 --exec ./scripts/run-development.sh
     ;;
 test)

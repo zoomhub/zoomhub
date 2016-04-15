@@ -1,5 +1,20 @@
 # ZoomHub
 
+## 2.0.0 – April 14, 2016
+
+-   Add infrastructure for background processing of existing content.
+-   Add `PROCESSING_WORKERS` environment variable for controlling the number
+    of workers (green threads) that process existing content.
+-   Track `numViews` using a sampling rate /ht [@aseemk].
+-   Order keys of log lines so `time` comes first which helps Splunk
+    process them.
+-   Pretty print certain `HttpException`, most notably `StatusCodeException`
+    which previously generated very long log lines due to artificial
+    `X-Response-Body-Start` header that included entire error response body.
+-   Simplify parsing configuration from environment variables.
+-   Make error handling in `Worker` more robust.
+-   Track `worker` metadata in logs.
+
 ## 0.1.0 – April 10, 2016
 
 -   Import original Zoom.it data—`ContentInfo`, `ImageInfo`,
@@ -91,7 +106,9 @@
 -   Add [LICENSE].
 
 
+[@aseemk]: https://github.com/aseemk
 [Ansible]: http://www.ansibleworks.com/
+[CircleCI]: https://circleci.com
 [deepzoomtools]: https://github.com/openzoom/node-deepzoomtools
 [LICENSE]: LICENSE
 [npm-express-streamline]: https://www.npmjs.org/package/express-streamline
@@ -99,7 +116,6 @@
 [Rackspace]: http://www.rackspace.com/
 [Redis]: http://redis.io/
 [VIPS]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS
-[CircleCI]: https://circleci.com
 
 [ZH-18]: https://github.com/zoomhub/zoomhub/issues/18
 [ZH-22]: https://github.com/zoomhub/zoomhub/issues/22
