@@ -11,7 +11,7 @@ import qualified Data.HashMap.Strict       as HM
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import           Data.Text.Encoding        (decodeUtf8)
-import           Network.HTTP.Client       (HttpException (StatusCodeException))
+import           Network.HTTP.Client       (HttpException (StatusCodeException, InternalIOException, FailedConnectionException, FailedConnectionException2, NoResponseDataReceived, ResponseTimeout))
 import           Network.HTTP.Types        (Header, ResponseHeaders)
 import           Network.HTTP.Types.Status (statusCode)
 
@@ -20,6 +20,26 @@ maxBodyBytes :: Int
 maxBodyBytes = 256
 
 instance ToJSON HttpException where
+  toJSON (FailedConnectionException host port) = object
+    [ "type" .= ("FailedConnectionException" :: Text)
+    , "host" .= host
+    , "port" .= port
+    ]
+  toJSON (FailedConnectionException2 host port secure cause) = object
+    [ "type" .= ("FailedConnectionException2" :: Text)
+    , "host" .= host
+    , "port" .= port
+    , "secure" .= secure
+    , "cause" .= T.pack (show cause)
+    ]
+  toJSON (InternalIOException cause) = object
+    [ "type" .= ("InternalIOException" :: Text)
+    , "cause" .= T.pack (show cause)
+    ]
+  toJSON NoResponseDataReceived = object
+    [ "type" .= ("NoResponseDataReceived" :: Text) ]
+  toJSON ResponseTimeout = object
+    [ "type" .= ("ResponseTimeout" :: Text) ]
   toJSON (StatusCodeException status headers _) = object
     [ "type" .= ("StatusCodeException" :: Text)
     , "status" .= statusCode status
