@@ -303,6 +303,7 @@ fieldNames =
   , "content.mime"
   , "content.size"
   , "content.progress"
+  , "content.numViews"
   , "content.error"
   , "image.width AS image_width"
   , "image.height AS image_height"
@@ -359,6 +360,7 @@ data ContentRow = ContentRow
   , crMIME           :: Maybe ContentMIME
   , crSize           :: Maybe Integer
   , crProgress       :: Float
+  , crNumViews       :: Integer
   , crError          :: Maybe Text
   , crDZIWidth       :: Maybe Integer
   , crDZIHeight      :: Maybe Integer
@@ -380,6 +382,7 @@ instance FromRow ContentRow where
     field <*> -- mime
     field <*> -- size
     field <*> -- progress
+    field <*> -- numViews
     field <*> -- error
     field <*> -- dziWidth
     field <*> -- dziHeight
@@ -400,6 +403,7 @@ instance ToRow ContentRow where
     , toField crMIME
     , toField crSize
     , toField crProgress
+    , toField crNumViews
     , toField crError
     , toField crDZIWidth
     , toField crDZIHeight
@@ -420,6 +424,7 @@ rowToContent cr = Content
     , contentMIME = crMIME cr
     , contentSize = crSize cr
     , contentProgress = crProgress cr
+    , contentNumViews = crNumViews cr
     , contentError = crError cr
     , contentDZI = maybeDZI
     }
@@ -451,6 +456,7 @@ contentToRow id_ c = ContentRow
     , crMIME = contentMIME c
     , crSize = contentSize c
     , crProgress = contentProgress c
+    , crNumViews = contentNumViews c
     , crError = contentError c
     , crDZIWidth = dziWidth <$> dzi
     , crDZIHeight = dziHeight <$> dzi
