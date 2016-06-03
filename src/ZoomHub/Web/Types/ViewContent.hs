@@ -9,6 +9,7 @@ module ZoomHub.Web.Types.ViewContent
 
 import           Data.Maybe                (fromJust)
 import           Data.Monoid               ((<>))
+import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import           Lucid                     (ToHtml, body_, charset_, content_,
                                             doctypehtml_, head_, href_, link_,
@@ -30,11 +31,11 @@ mkViewContent :: BaseURI -> Content -> ViewContent
 mkViewContent vcBaseURI vcContent = ViewContent{..}
 
 -- HTML
-concatPretty :: [T.Text] -> T.Text
+concatPretty :: [Text] -> Text
 concatPretty = T.intercalate "\n"
 
 -- TODO: Improve how we represent inline styles.
-styles :: T.Text
+styles :: Text
 styles = concatPretty
   [ "html, body {"
   , "  background-color: black;"
@@ -48,7 +49,7 @@ styles = concatPretty
 
 -- TODO: Improve how we represent analytics code.
 -- TODO: Pass through `UA-XXXXXXXX-X` Google Analytics ID.
-analyticsScript :: T.Text
+analyticsScript :: Text
 analyticsScript = concatPretty [
     "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){",
     "(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),",
@@ -110,7 +111,7 @@ instance ToHtml ViewContent where
         "/" ++ cId ++ ".js?id=container&width=auto&height=100" ++ escapedPercent
       escapedPercent = "%25"
 
-      emptyBody :: T.Text
+      emptyBody :: Text
       emptyBody = ""
 
   toHtmlRaw = toHtml
