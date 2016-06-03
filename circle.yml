@@ -38,4 +38,4 @@ deployment:
 
 notify:
   webhooks:
-    - url: https://webhooks.gitter.im/e/84a0591a52491268102f
+    - url: https://webhooks.gitter.im/e/a19b5d5a13ef5d90d340
