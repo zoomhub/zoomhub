@@ -1,6 +1,6 @@
 # ZoomHub
 
-[![Build Status](https://circleci.com/gh/gasi/zoomhub.svg?style=shield&circle-token=4e2b7e7de6ab3177d1e744d04dbacccb8c6cd68b)](https://circleci.com/gh/gasi/zoomhub)
+[![CircleCI](https://circleci.com/gh/zoomhub/zoomhub.svg?style=svg)](https://circleci.com/gh/zoomhub/zoomhub)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/zoomhub/zoomhub?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 An open-source cloud service for viewing arbitrarily high-resolution zoomable
