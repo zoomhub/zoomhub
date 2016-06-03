@@ -11,14 +11,14 @@ import           Data.Maybe                (fromJust)
 import           Data.Monoid               ((<>))
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
-import           Lucid                     (ToHtml, body_, charset_, content_,
-                                            doctypehtml_, head_, href_, link_,
-                                            meta_, name_, rel_, script_, sizes_,
-                                            src_, style_, title_, toHtml,
-                                            toHtmlRaw)
+import           Lucid                     (ToHtml, a_, body_, charset_, class_,
+                                            content_, div_, doctypehtml_, head_,
+                                            href_, link_, meta_, name_, rel_,
+                                            script_, sizes_, src_, style_,
+                                            title_, toHtml, toHtmlRaw)
 import           Network.URI               (parseRelativeReference, relativeTo)
 
-import           ZoomHub.API.Types.Content (Content, contentId)
+import           ZoomHub.API.Types.Content (Content, contentId, contentUrl)
 import           ZoomHub.Types.BaseURI     (BaseURI, unBaseURI)
 import           ZoomHub.Types.ContentId   (unId)
 
@@ -41,9 +41,29 @@ styles = concatPretty
   , "  background-color: black;"
   , "  color: white;"
   , "  font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;"
+  , "  font-size: 12px;"
   , "  height: 100%;"
   , "  margin: 0;"
   , "  padding: 0;"
+  , "}"
+  , ".meta {"
+  , "  align-items: center;"
+  , "  bottom: 0;"
+  , "  color: white;"
+  , "  display: flex;"
+  , "  justify-content: center;"
+  , "  left: 0;"
+  , "  padding: 1em 3em;"
+  , "  position: fixed;"
+  , "  right: 0;"
+  , "}"
+  , ".meta a,"
+  , ".meta a:visited {"
+  , "  font-family: monospace;"
+  , "  color: #666;"
+  , "}"
+  , ".meta a:hover {"
+  , "  color: #ddd;"
   , "}"
   ]
 
@@ -99,7 +119,11 @@ instance ToHtml ViewContent where
                      style_ styles
                      script_ analyticsScript
                      )
-           body_ $ script_ [src_ (T.pack $ show scriptURI)] emptyBody
+           body_ $ do
+            script_ [src_ (T.pack $ show scriptURI)] emptyScriptBody
+            div_ [ class_ "meta" ] $
+              a_ [ href_ (T.pack rawContentURL) ] (toHtml rawContentURL)
+
     where
       title = "ZoomHub · Share and view high-resolution images effortlessly"
       titleSeparator = " — "
@@ -110,8 +134,9 @@ instance ToHtml ViewContent where
       scriptPath = fromJust . parseRelativeReference $
         "/" ++ cId ++ ".js?id=container&width=auto&height=100" ++ escapedPercent
       escapedPercent = "%25"
+      rawContentURL = show . contentUrl $ content
 
-      emptyBody :: Text
-      emptyBody = ""
+      emptyScriptBody :: Text
+      emptyScriptBody = ""
 
   toHtmlRaw = toHtml
