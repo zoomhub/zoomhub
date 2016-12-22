@@ -4,6 +4,7 @@
 # Make a resumable local backup of our content using `rsync`:
 #
 
+mkdir -p ~/zoomhub-backup
 rsync -avz \
   -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
   --progress \
