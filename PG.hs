@@ -3,19 +3,22 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module PG where
 
 import           Prelude hiding (sum)
 
-import           Opaleye (Column, Nullable, matchNullable, isNull,
+import Data.Int (Int64)
+import           Opaleye (Column, Nullable, limit, matchNullable, isNull,
                          Table(Table), required, queryTable,
                          Query, QueryArr, restrict, (.==), (.<=), (.&&), (.<),
                          (.===),
                          (.++), ifThenElse, pgString, aggregate, groupBy,
                          count, avg, sum, leftJoin, runQuery,
                          showSqlForPostgres, Unpackspec,
-                         PGInt4, PGInt8, PGText, PGDate, PGFloat8, PGBool, PGTimestamptz)
+                         PGInt4, PGInt8, PGText, PGDate, PGFloat8, PGBool,
+                         PGTimestamptz)
 
 import           Data.Profunctor.Product (p7)
 import           Data.Profunctor.Product.Default (Default)
@@ -26,6 +29,7 @@ import           Data.Text       (Text)
 
 import           Control.Arrow (returnA, (<<<))
 
+import qualified Database.PostgreSQL.Simple as PGS
 
 printSql :: Default Unpackspec a a => Query a -> IO ()
 printSql = putStrLn . showSqlForPostgres
@@ -48,7 +52,22 @@ imageQuery :: Query (Column PGInt8, Column PGTimestamptz, Column PGInt8,
                      Column PGInt8, Column PGInt4, Column PGInt4, Column PGText)
 imageQuery = queryTable imageTable
 
-idWidthHeight :: Query (Column PGInt8, Column PGInt8, Column PGInt8)
+idWidthHeight :: Query (Column PGInt8, Column PGTimestamptz, Column PGInt8,
+                        Column PGInt8, Column PGText)
 idWidthHeight = proc () -> do
-  (id_, _, width, height, _, _, _) <- imageQuery -< ()
-  returnA -< (id_, width, height)
+  (id_, createdAt, width, height, _, _, tileFormat) <- imageQuery -< ()
+  returnA -< (id_, createdAt, width, height, tileFormat)
+
+
+runImageQuery :: PGS.Connection ->
+                 IO [(Int64, UTCTime, Int64, Int64, Text)]
+runImageQuery conn = runQuery conn (limit 10 $ idWidthHeight)
+
+dbConnectInfo :: PGS.ConnectInfo
+dbConnectInfo = PGS.defaultConnectInfo { PGS.connectDatabase = "zoomhub-production" }
+
+main :: IO ()
+main = do
+  conn <- PGS.connect dbConnectInfo
+  res <- runImageQuery conn
+  print $ res
