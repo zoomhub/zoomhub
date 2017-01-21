@@ -1,67 +1,75 @@
-{-# LANGUAGE Arrows #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE Arrows                #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 module PG where
 
-import           Prelude hiding (sum)
+import           Data.Int                        (Int64)
+import           Opaleye                         (Column, PGInt4, PGInt8,
+                                                  PGText, PGTimestamptz, Query,
+                                                  Table (Table), Unpackspec,
+                                                  limit, queryTable, required,
+                                                  runQuery, showSqlForPostgres)
 
-import Data.Int (Int64)
-import           Opaleye (Column, Nullable, limit, matchNullable, isNull,
-                         Table(Table), required, queryTable,
-                         Query, QueryArr, restrict, (.==), (.<=), (.&&), (.<),
-                         (.===),
-                         (.++), ifThenElse, pgString, aggregate, groupBy,
-                         count, avg, sum, leftJoin, runQuery,
-                         showSqlForPostgres, Unpackspec,
-                         PGInt4, PGInt8, PGText, PGDate, PGFloat8, PGBool,
-                         PGTimestamptz)
-
-import           Data.Profunctor.Product (p7)
 import           Data.Profunctor.Product.Default (Default)
-import           Data.Profunctor.Product.TH (makeAdaptorAndInstance)
-import           Data.Time.Calendar (Day)
-import           Data.Time.Clock    (UTCTime)
-import           Data.Text       (Text)
+import           Data.Profunctor.Product.TH      (makeAdaptorAndInstance)
+import           Data.Text                       (Text)
+import           Data.Time.Clock                 (UTCTime)
 
-import           Control.Arrow (returnA, (<<<))
-
-import qualified Database.PostgreSQL.Simple as PGS
+import qualified Database.PostgreSQL.Simple      as PGS
 
 printSql :: Default Unpackspec a a => Query a -> IO ()
 printSql = putStrLn . showSqlForPostgres
 
-imageTable :: Table (Column PGInt8, Column PGTimestamptz, Column PGInt8,
-                     Column PGInt8, Column PGInt4, Column PGInt4, Column PGText)
-                    (Column PGInt8, Column PGTimestamptz, Column PGInt8,
-                     Column PGInt8, Column PGInt4, Column PGInt4, Column PGText)
-imageTable = Table "image" (p7 ( required "contentid"
-                               , required "initializedat"
-                               , required "width"
-                               , required "height"
-                               , required "tilesize"
-                               , required "tileoverlap"
-                               , required "tileformat"
-                               )
-                           )
+data Image' a b c d e f g = Image
+  { imageContentId     :: a
+  , imageInitializedAt :: b
+  , imageWidth         :: c
+  , imageHeight        :: d
+  , imageTileSize      :: e
+  , imageTileOverlap   :: f
+  , imageTileFormat    :: g
+  } deriving (Show)
+type Image = Image'
+  Int64
+  UTCTime
+  Int64
+  Int64
+  Int
+  Int
+  Text
+type ImageColumn = Image'
+  (Column PGInt8)
+  (Column PGTimestamptz)
+  (Column PGInt8)
+  (Column PGInt8)
+  (Column PGInt4)
+  (Column PGInt4)
+  (Column PGText)
 
-imageQuery :: Query (Column PGInt8, Column PGTimestamptz, Column PGInt8,
-                     Column PGInt8, Column PGInt4, Column PGInt4, Column PGText)
+$(makeAdaptorAndInstance "pImage" ''Image')
+
+imageTable :: Table ImageColumn ImageColumn
+imageTable = Table "image"
+                   (pImage Image
+                     { imageContentId = required "contentid"
+                     , imageInitializedAt = required "initializedat"
+                     , imageWidth = required "width"
+                     , imageHeight = required "height"
+                     , imageTileSize = required "tilesize"
+                     , imageTileOverlap = required "tileoverlap"
+                     , imageTileFormat = required "tileformat"
+                     }
+                   )
+
+imageQuery :: Query ImageColumn
 imageQuery = queryTable imageTable
 
-idWidthHeight :: Query (Column PGInt8, Column PGTimestamptz, Column PGInt8,
-                        Column PGInt8, Column PGText)
-idWidthHeight = proc () -> do
-  (id_, createdAt, width, height, _, _, tileFormat) <- imageQuery -< ()
-  returnA -< (id_, createdAt, width, height, tileFormat)
-
-
-runImageQuery :: PGS.Connection ->
-                 IO [(Int64, UTCTime, Int64, Int64, Text)]
-runImageQuery conn = runQuery conn (limit 10 $ idWidthHeight)
+runImageQuery :: PGS.Connection -> Query ImageColumn -> IO [Image]
+runImageQuery = runQuery
 
 dbConnectInfo :: PGS.ConnectInfo
 dbConnectInfo = PGS.defaultConnectInfo { PGS.connectDatabase = "zoomhub-production" }
@@ -69,5 +77,5 @@ dbConnectInfo = PGS.defaultConnectInfo { PGS.connectDatabase = "zoomhub-producti
 main :: IO ()
 main = do
   conn <- PGS.connect dbConnectInfo
-  res <- runImageQuery conn
+  res <- runImageQuery conn (limit 10 imageQuery)
   print $ res
