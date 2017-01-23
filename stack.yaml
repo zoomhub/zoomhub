@@ -10,6 +10,7 @@ packages:
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
 - mime-0.4.0.2
+- opaleye-0.6.7001.0
 - time-units-1.0.0
 - ./vendor/servant/servant-server
 

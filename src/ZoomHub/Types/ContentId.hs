@@ -3,9 +3,13 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 module ZoomHub.Types.ContentId
   ( ContentId
+  , ContentId'(ContentId)
+  , ContentIdColumn
+  , pContentId
   , fromInteger
   , fromString
   , isValid
@@ -15,37 +19,38 @@ module ZoomHub.Types.ContentId
 
 import           Prelude                              hiding (fromInteger)
 
-import           Data.Aeson                       (FromJSON, ToJSON,
-                                                   genericParseJSON,
-                                                   genericToJSON, parseJSON,
-                                                   toJSON)
-import           Data.Aeson.Casing                (aesonPrefix, camelCase)
-import           Data.List                        (intersperse)
-import           Data.Set                         (Set)
-import qualified Data.Set                         as Set
-import qualified Data.Text                        as T
+import           Data.Aeson                           (FromJSON, ToJSON,
+                                                       genericParseJSON,
+                                                       genericToJSON, parseJSON,
+                                                       toJSON)
+import           Data.Aeson.Casing                    (aesonPrefix, camelCase)
+import           Data.List                            (intersperse)
+import           Data.Profunctor.Product.TH           (makeAdaptorAndInstance)
+import           Data.Set                             (Set)
+import qualified Data.Set                             as Set
+import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as PGS
-import           Database.SQLite.Simple           (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
-import           GHC.Generics                     (Generic)
-import           Servant                          (FromHttpApiData,
-                                                   parseUrlPiece)
-import           Opaleye                              (PGText,
+import           Database.SQLite.Simple               (SQLData (SQLText))
+import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
+                                                       fromField, returnError)
+import           Database.SQLite.Simple.Internal      (Field (Field))
+import           Database.SQLite.Simple.Ok            (Ok (Ok))
+import           Database.SQLite.Simple.ToField       (ToField, toField)
+import           GHC.Generics                         (Generic)
+import           Opaleye                              (Column, PGText,
                                                        QueryRunnerColumnDefault,
                                                        fieldQueryRunnerColumn,
                                                        queryRunnerColumnDefault)
-import           Servant                              (FromText, fromText)
+import           Servant                              (FromHttpApiData,
+                                                       parseUrlPiece)
 
 
 
 -- TODO: Use record syntax, i.e. `ContentId { unId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
-newtype ContentId = ContentId String
+newtype ContentId' a = ContentId a
   deriving (Eq, Generic, Show)
+type ContentId = ContentId' String
 
 unId :: ContentId -> String
 unId (ContentId cId) = cId
@@ -96,12 +101,15 @@ instance FromField ContentId where
   fromField f = returnError ConversionFailed f "Invalid content ID"
 
 -- PostgreSQL
+type ContentIdColumn = ContentId' (Column PGText)
+$(makeAdaptorAndInstance "pContentId" ''ContentId')
+
 instance PGS.FromField ContentId where
   fromField f mdata = PGS.fromField f mdata >>= parseContentId
     where
-      parseContentId t = case fromText t of
-        Just r  -> return r
-        Nothing -> PGS.returnError PGS.ConversionFailed f "invalid content ID"
+      parseContentId t = case parseUrlPiece t of
+        Right r -> return r
+        Left _  -> PGS.returnError PGS.ConversionFailed f "Invalid content ID"
 
 instance QueryRunnerColumnDefault PGText ContentId where
   queryRunnerColumnDefault = fieldQueryRunnerColumn

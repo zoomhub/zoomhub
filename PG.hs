@@ -12,7 +12,7 @@ import           Opaleye                         (Column, PGInt4, PGInt8,
                                                   PGText, PGTimestamptz, Query,
                                                   Table (Table), Unpackspec,
                                                   limit, queryTable, required,
-                                                  runQuery, showSqlForPostgres)
+                                                  runQuery, showSql)
 
 import           Data.Profunctor.Product.Default (Default)
 import           Data.Profunctor.Product.TH      (makeAdaptorAndInstance)
@@ -22,7 +22,9 @@ import           Data.Time.Clock                 (UTCTime)
 import qualified Database.PostgreSQL.Simple      as PGS
 
 printSql :: Default Unpackspec a a => Query a -> IO ()
-printSql = putStrLn . showSqlForPostgres
+printSql q = case showSql q of
+  Just t  -> putStrLn t
+  Nothing -> return ()
 
 data Image' a b c d e f g = Image
   { imageContentId     :: a
