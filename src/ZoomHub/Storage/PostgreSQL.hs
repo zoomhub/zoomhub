@@ -58,7 +58,8 @@ import           ZoomHub.Types.ContentId         (ContentId,
                                                   unId)
 -- import qualified ZoomHub.Types.ContentId        as ContentId
 -- import           ZoomHub.Types.ContentMIME      (ContentMIME)
--- import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
+import           ZoomHub.Types.ContentState      (ContentState,
+                                                  ContentStateColumn)
 import           ZoomHub.Types.ContentType       (ContentType,
                                                   ContentTypeColumn)
 import           ZoomHub.Types.ContentURI        (ContentURI,
@@ -161,7 +162,7 @@ type Content = Content'
   ContentId       -- hashId
   ContentType     -- typeId
   ContentURI      -- url
-  Text            -- state
+  ContentState    -- state
   (Maybe UTCTime) -- initializedAt
   (Maybe UTCTime) -- activeAt
   (Maybe UTCTime) -- completedAt
@@ -182,7 +183,7 @@ type ContentColumnWrite = Content'
   ContentIdColumn                   -- hashId
   ContentTypeColumn                 -- typeId
   ContentURIColumn                  -- url
-  (Column PGText)                   -- state
+  ContentStateColumn                -- state
   (Column (Nullable PGTimestamptz)) -- initializedAt
   (Column (Nullable PGTimestamptz)) -- activeAt
   (Column (Nullable PGTimestamptz)) -- completedAt
@@ -203,7 +204,7 @@ type ContentColumnRead = Content'
   ContentIdColumn                   -- hashId
   ContentTypeColumn                 -- typeId
   ContentURIColumn                  -- url
-  (Column PGText)                   -- state
+  ContentStateColumn                -- state
   (Column (Nullable PGTimestamptz)) -- initializedAt
   (Column (Nullable PGTimestamptz)) -- activeAt
   (Column (Nullable PGTimestamptz)) -- completedAt
@@ -226,9 +227,9 @@ contentTable = Table "content"
   (pContent Content
     { contentId = optional "id"
     , contentHashId = pContentId (ContentId (required "hashid"))
-    , contentTypeId = required "typeid"
+    , contentTypeId = required "typeid" -- TODO: Make type-safe using `newtype`
     , contentURL = pContentURI (ContentURI (required "url"))
-    , contentState = required "state"
+    , contentState = required "state"   -- TODO: Make type-safe using `newtype`
     , contentInitializedAt = required "initializedat"
     , contentActiveAt = required "activeat"
     , contentCompletedAt = required "completedat"
