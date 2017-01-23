@@ -256,7 +256,8 @@ runContentQuery :: PGS.Connection -> Query ContentColumnRead -> IO [Content]
 runContentQuery = runQuery
 
 dbConnectInfo :: PGS.ConnectInfo
-dbConnectInfo = PGS.defaultConnectInfo { PGS.connectDatabase = "zoomhub-production" }
+dbConnectInfo = PGS.defaultConnectInfo
+  { PGS.connectDatabase = "zoomhub-production" }
 
 main :: IO ()
 main = do
