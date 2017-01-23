@@ -168,7 +168,29 @@ type Content = Content'
   Int64           -- numAbuseReports
   Int64           -- numViews
   Int             -- version
-type ContentColumn = Content'
+
+type ContentColumnWrite = Content'
+  (Maybe (Column PGInt8))           -- id
+  (Column PGText)                   -- hashId
+  (Column PGInt4)                   -- typeId
+  (Column PGText)                   -- url
+  (Column PGText)                   -- state
+  (Column (Nullable PGTimestamptz)) -- initializedAt
+  (Column (Nullable PGTimestamptz)) -- activeAt
+  (Column (Nullable PGTimestamptz)) -- completedAt
+  (Column (Nullable PGText))        -- title
+  (Column (Nullable PGText))        -- attributionText
+  (Column (Nullable PGText))        -- attributionLink
+  (Column (Nullable PGText))        -- mime
+  (Column (Nullable PGInt8))        -- size
+  (Column (Nullable PGText))        -- error
+  (Maybe (Column PGFloat8))         -- progress
+  (Maybe (Column PGInt4))           -- abuseLevelId
+  (Maybe (Column PGInt8))           -- numAbuseReports
+  (Maybe (Column PGInt8))           -- numViews
+  (Maybe (Column PGInt4))           -- version
+
+type ContentColumnRead = Content'
   (Column PGInt8)                   -- id
   (Column PGText)                   -- hashId
   (Column PGInt4)                   -- typeId
@@ -191,10 +213,10 @@ type ContentColumn = Content'
 
 $(makeAdaptorAndInstance "pContent" ''Content')
 
-contentTable :: Table ContentColumn ContentColumn
+contentTable :: Table ContentColumnWrite ContentColumnRead
 contentTable = Table "content"
                    (pContent Content
-                      { contentId = required "id"
+                      { contentId = optional "id"
                       , contentHashId = required "hashid"
                       , contentTypeId = required "typeid"
                       , contentURL = required "url"
@@ -208,18 +230,18 @@ contentTable = Table "content"
                       , contentMIME = required "mime"
                       , contentSize = required "size"
                       , contentError = required "error"
-                      , contentProgress = required "progress"
-                      , contentAbuseLevelId = required "abuselevelid"
-                      , contentNumAbuseReports = required "numabusereports"
-                      , contentNumViews = required "numviews"
-                      , contentVersion = required "version"
+                      , contentProgress = optional "progress"
+                      , contentAbuseLevelId = optional "abuselevelid"
+                      , contentNumAbuseReports = optional "numabusereports"
+                      , contentNumViews = optional "numviews"
+                      , contentVersion = optional "version"
                       }
                    )
 
-contentQuery :: Query ContentColumn
+contentQuery :: Query ContentColumnRead
 contentQuery = queryTable contentTable
 
-runContentQuery :: PGS.Connection -> Query ContentColumn -> IO [Content]
+runContentQuery :: PGS.Connection -> Query ContentColumnRead -> IO [Content]
 runContentQuery = runQuery
 
 dbConnectInfo :: PGS.ConnectInfo
@@ -227,7 +249,7 @@ dbConnectInfo = PGS.defaultConnectInfo { PGS.connectDatabase = "zoomhub-producti
 
 main :: IO ()
 main = do
-  printSql contentQuery
+  -- printSql contentQuery
   conn <- PGS.connect dbConnectInfo
-  res <- runContentQuery conn (limit 10 contentQuery)
+  res <- runContentQuery conn (limit 1 contentQuery)
   print $ res
