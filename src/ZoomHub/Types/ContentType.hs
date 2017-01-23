@@ -8,14 +8,14 @@ module ZoomHub.Types.ContentType
   , ContentTypeColumn
   ) where
 
+import           Data.Profunctor.Product.Default      (Default, def)
+import qualified Database.PostgreSQL.Simple.FromField as PGS
 import           Database.SQLite.Simple               (SQLData (SQLInteger))
 import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
                                                        fromField, returnError)
 import           Database.SQLite.Simple.Internal      (Field (Field))
 import           Database.SQLite.Simple.Ok            (Ok (Ok))
 import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           Data.Profunctor.Product.Default      (Default, def)
-import qualified Database.PostgreSQL.Simple.FromField as PGS
 import           Opaleye                              (Column,
                                                        Constant (Constant),
                                                        PGInt4,

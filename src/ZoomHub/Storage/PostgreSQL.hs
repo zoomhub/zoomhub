@@ -61,7 +61,9 @@ import           ZoomHub.Types.ContentId         (ContentId,
 -- import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
 import           ZoomHub.Types.ContentType       (ContentType,
                                                   ContentTypeColumn)
-import           ZoomHub.Types.ContentURI        (ContentURI)
+import           ZoomHub.Types.ContentURI        (ContentURI,
+                                                  ContentURI' (ContentURI),
+                                                  ContentURIColumn, pContentURI)
 -- import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
 -- import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
 --                                                  TileSize, dziHeight,
@@ -158,7 +160,7 @@ type Content = Content'
   Int64           -- id
   ContentId       -- hashId
   ContentType     -- typeId
-  Text            -- url
+  ContentURI      -- url
   Text            -- state
   (Maybe UTCTime) -- initializedAt
   (Maybe UTCTime) -- activeAt
@@ -179,7 +181,7 @@ type ContentColumnWrite = Content'
   (Maybe (Column PGInt8))           -- id
   ContentIdColumn                   -- hashId
   ContentTypeColumn                 -- typeId
-  (Column PGText)                   -- url
+  ContentURIColumn                  -- url
   (Column PGText)                   -- state
   (Column (Nullable PGTimestamptz)) -- initializedAt
   (Column (Nullable PGTimestamptz)) -- activeAt
@@ -200,7 +202,7 @@ type ContentColumnRead = Content'
   (Column PGInt8)                   -- id
   ContentIdColumn                   -- hashId
   ContentTypeColumn                 -- typeId
-  (Column PGText)                   -- url
+  ContentURIColumn                  -- url
   (Column PGText)                   -- state
   (Column (Nullable PGTimestamptz)) -- initializedAt
   (Column (Nullable PGTimestamptz)) -- activeAt
@@ -225,7 +227,7 @@ contentTable = Table "content"
     { contentId = optional "id"
     , contentHashId = pContentId (ContentId (required "hashid"))
     , contentTypeId = required "typeid"
-    , contentURL = required "url"
+    , contentURL = pContentURI (ContentURI (required "url"))
     , contentState = required "state"
     , contentInitializedAt = required "initializedat"
     , contentActiveAt = required "activeat"
