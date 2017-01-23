@@ -57,7 +57,9 @@ import           ZoomHub.Types.ContentId         (ContentId,
                                                   ContentIdColumn, pContentId,
                                                   unId)
 -- import qualified ZoomHub.Types.ContentId        as ContentId
--- import           ZoomHub.Types.ContentMIME      (ContentMIME)
+import           ZoomHub.Types.ContentMIME       (ContentMIME,
+                                                  ContentMIME' (ContentMIME),
+                                                  pContentMIME)
 import           ZoomHub.Types.ContentState      (ContentState,
                                                   ContentStateColumn)
 import           ZoomHub.Types.ContentType       (ContentType,
@@ -158,25 +160,25 @@ data Content'
   } deriving (Show)
 
 type Content = Content'
-  Int64           -- id
-  ContentId       -- hashId
-  ContentType     -- typeId
-  ContentURI      -- url
-  ContentState    -- state
-  (Maybe UTCTime) -- initializedAt
-  (Maybe UTCTime) -- activeAt
-  (Maybe UTCTime) -- completedAt
-  (Maybe Text)    -- title
-  (Maybe Text)    -- attributionText
-  (Maybe Text)    -- attributionLink
-  (Maybe Text)    -- mime
-  (Maybe Int64)   -- size
-  (Maybe Text)    -- error
-  Double          -- progress
-  Int             -- abuseLevelId
-  Int64           -- numAbuseReports
-  Int64           -- numViews
-  Int             -- version
+  Int64               -- id
+  ContentId           -- hashId
+  ContentType         -- typeId
+  ContentURI          -- url
+  ContentState        -- state
+  (Maybe UTCTime)     -- initializedAt
+  (Maybe UTCTime)     -- activeAt
+  (Maybe UTCTime)     -- completedAt
+  (Maybe Text)        -- title
+  (Maybe Text)        -- attributionText
+  (Maybe Text)        -- attributionLink
+  (Maybe ContentMIME) -- mime
+  (Maybe Int64)       -- size
+  (Maybe Text)        -- error
+  Double              -- progress
+  Int                 -- abuseLevelId
+  Int64               -- numAbuseReports
+  Int64               -- numViews
+  Int                 -- version
 
 type ContentColumnWrite = Content'
   (Maybe (Column PGInt8))           -- id

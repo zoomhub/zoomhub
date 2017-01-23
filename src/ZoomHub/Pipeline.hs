@@ -5,44 +5,53 @@ module ZoomHub.Pipeline
   )
   where
 
-import Codec.MIME.Parse (parseMIMEType)
-import qualified Codec.MIME.Type as MIME
-import Control.Concurrent.Async (forConcurrently)
-import Control.Lens ((^.))
-import Control.Monad (when)
-import Data.Aeson ((.=))
-import Data.List (stripPrefix)
-import Data.List.Split (chunksOf)
-import Data.Monoid ((<>))
-import Network.Wreq (get, responseBody, responseHeader)
-import System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
-import System.Directory (listDirectory)
-import System.Exit (ExitCode(ExitSuccess))
-import System.FilePath (addTrailingPathSeparator, dropExtension, (<.>), (</>))
-import System.IO.Temp (withTempDirectory)
-import System.Posix (fileSize, getFileStatus)
-import System.Process (readProcessWithExitCode)
+import           Codec.MIME.Parse                         (parseMIMEType)
+import qualified Codec.MIME.Type                          as MIME
+import           Control.Concurrent.Async                 (forConcurrently)
+import           Control.Lens                             ((^.))
+import           Control.Monad                            (when)
+import           Data.Aeson                               ((.=))
+import           Data.List                                (stripPrefix)
+import           Data.List.Split                          (chunksOf)
+import           Data.Monoid                              ((<>))
+import           Network.Wreq                             (get, responseBody,
+                                                           responseHeader)
+import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
+import           System.Directory                         (listDirectory)
+import           System.Exit                              (ExitCode (ExitSuccess))
+import           System.FilePath                          (addTrailingPathSeparator,
+                                                           dropExtension, (<.>),
+                                                           (</>))
+import           System.IO.Temp                           (withTempDirectory)
+import           System.Posix                             (fileSize,
+                                                           getFileStatus)
+import           System.Process                           (readProcessWithExitCode)
 
-import ZoomHub.Config
-  (RackspaceConfig, raxApiKey, raxContainer, raxContainerPath, raxUsername)
-import ZoomHub.Log.Logger (logDebugT, logError, logInfo, logInfoT)
-import ZoomHub.Rackspace.CloudFiles
-  (ObjectName, getMetadata, mkCredentials, parseObjectName, putContent)
-import ZoomHub.Types.Content
-  (Content, contentDZI, contentId, contentMIME, contentSize, contentURL)
-import ZoomHub.Types.ContentId (unId)
-import ZoomHub.Types.ContentMIME (ContentMIME(ContentMIME))
-import ZoomHub.Types.ContentURI (ContentURI)
-import ZoomHub.Types.DeepZoomImage
-  ( DeepZoomImage
-  , TileFormat(JPEG, PNG)
-  , TileOverlap(TileOverlap1)
-  , TileSize(TileSize254)
-  , dziTileFormat
-  , fromXML
-  )
-import ZoomHub.Types.TempPath (TempPath, unTempPath)
-import ZoomHub.Utils (lenientDecodeUtf8)
+import           ZoomHub.Config                           (RackspaceConfig,
+                                                           raxApiKey,
+                                                           raxContainer,
+                                                           raxContainerPath,
+                                                           raxUsername)
+import           ZoomHub.Log.Logger                       (logDebugT, logError,
+                                                           logInfo, logInfoT)
+import           ZoomHub.Rackspace.CloudFiles             (ObjectName,
+                                                           getMetadata,
+                                                           mkCredentials,
+                                                           parseObjectName,
+                                                           putContent)
+import           ZoomHub.Types.Content                    (Content, contentDZI,
+                                                           contentId,
+                                                           contentMIME,
+                                                           contentSize,
+                                                           contentURL)
+import           ZoomHub.Types.ContentId                  (unId)
+import           ZoomHub.Types.ContentMIME                (ContentMIME, ContentMIME' (ContentMIME))
+import           ZoomHub.Types.ContentURI                 (ContentURI)
+import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFormat (JPEG, PNG), TileOverlap (TileOverlap1), TileSize (TileSize254),
+                                                           dziTileFormat,
+                                                           fromXML)
+import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
+import           ZoomHub.Utils                            (lenientDecodeUtf8)
 
 
 process :: String -> RackspaceConfig -> TempPath -> Content -> IO Content
