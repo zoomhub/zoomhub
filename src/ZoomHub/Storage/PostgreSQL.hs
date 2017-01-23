@@ -221,28 +221,28 @@ $(makeAdaptorAndInstance "pContent" ''Content')
 
 contentTable :: Table ContentColumnWrite ContentColumnRead
 contentTable = Table "content"
-                   (pContent Content
-                      { contentId = optional "id"
-                      , contentHashId = pContentId (ContentId (required "hashid"))
-                      , contentTypeId = required "typeid"
-                      , contentURL = required "url"
-                      , contentState = required "state"
-                      , contentInitializedAt = required "initializedat"
-                      , contentActiveAt = required "activeat"
-                      , contentCompletedAt = required "completedat"
-                      , contentTitle = required "title"
-                      , contentAttributionText = required "attributiontext"
-                      , contentAttributionLink = required "attributionlink"
-                      , contentMIME = required "mime"
-                      , contentSize = required "size"
-                      , contentError = required "error"
-                      , contentProgress = optional "progress"
-                      , contentAbuseLevelId = optional "abuselevelid"
-                      , contentNumAbuseReports = optional "numabusereports"
-                      , contentNumViews = optional "numviews"
-                      , contentVersion = optional "version"
-                      }
-                   )
+  (pContent Content
+    { contentId = optional "id"
+    , contentHashId = pContentId (ContentId (required "hashid"))
+    , contentTypeId = required "typeid"
+    , contentURL = required "url"
+    , contentState = required "state"
+    , contentInitializedAt = required "initializedat"
+    , contentActiveAt = required "activeat"
+    , contentCompletedAt = required "completedat"
+    , contentTitle = required "title"
+    , contentAttributionText = required "attributiontext"
+    , contentAttributionLink = required "attributionlink"
+    , contentMIME = required "mime"
+    , contentSize = required "size"
+    , contentError = required "error"
+    , contentProgress = optional "progress"
+    , contentAbuseLevelId = optional "abuselevelid"
+    , contentNumAbuseReports = optional "numabusereports"
+    , contentNumViews = optional "numviews"
+    , contentVersion = optional "version"
+    }
+  )
 
 contentQuery :: Query ContentColumnRead
 contentQuery = queryTable contentTable
