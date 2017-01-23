@@ -59,7 +59,8 @@ import           ZoomHub.Types.ContentId         (ContentId,
 -- import qualified ZoomHub.Types.ContentId        as ContentId
 -- import           ZoomHub.Types.ContentMIME      (ContentMIME)
 -- import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
--- import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
+import           ZoomHub.Types.ContentType       (ContentType,
+                                                  ContentTypeColumn)
 import           ZoomHub.Types.ContentURI        (ContentURI)
 -- import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
 -- import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
@@ -156,7 +157,7 @@ data Content'
 type Content = Content'
   Int64           -- id
   ContentId       -- hashId
-  Int             -- typeId
+  ContentType     -- typeId
   Text            -- url
   Text            -- state
   (Maybe UTCTime) -- initializedAt
@@ -177,7 +178,7 @@ type Content = Content'
 type ContentColumnWrite = Content'
   (Maybe (Column PGInt8))           -- id
   ContentIdColumn                   -- hashId
-  (Column PGInt4)                   -- typeId
+  ContentTypeColumn                 -- typeId
   (Column PGText)                   -- url
   (Column PGText)                   -- state
   (Column (Nullable PGTimestamptz)) -- initializedAt
@@ -198,7 +199,7 @@ type ContentColumnWrite = Content'
 type ContentColumnRead = Content'
   (Column PGInt8)                   -- id
   ContentIdColumn                   -- hashId
-  (Column PGInt4)                   -- typeId
+  ContentTypeColumn                 -- typeId
   (Column PGText)                   -- url
   (Column PGText)                   -- state
   (Column (Nullable PGTimestamptz)) -- initializedAt
