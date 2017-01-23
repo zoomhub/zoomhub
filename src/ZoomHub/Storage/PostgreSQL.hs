@@ -150,7 +150,7 @@ data Content'
 
 type Content = Content'
   Int64           -- id
-  Text            -- hashId
+  ContentId       -- hashId
   Int             -- typeId
   Text            -- url
   Text            -- state
