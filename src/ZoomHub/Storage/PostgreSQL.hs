@@ -38,9 +38,10 @@ import           Opaleye                         (Column, Nullable, PGFloat8,
                                                   PGInt4, PGInt8, PGText,
                                                   PGTimestamptz, Query,
                                                   Table (Table), Unpackspec,
-                                                  limit, optional, queryTable,
-                                                  required, runQuery,
-                                                  showSql)
+                                                  limit, optional, pgString,
+                                                  queryTable, required,
+                                                  restrict, runQuery,
+                                                  showSql, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
 -- import           ZoomHub.Types.Content          (Content (Content),
@@ -57,6 +58,7 @@ import           ZoomHub.Types.ContentId         (ContentId,
                                                   ContentIdColumn, pContentId,
                                                   unId)
 -- import qualified ZoomHub.Types.ContentId        as ContentId
+import           Control.Arrow                   (returnA)
 import           ZoomHub.Types.ContentMIME       (ContentMIME,
                                                   ContentMIME' (ContentMIME),
                                                   pContentMIME)
@@ -78,8 +80,8 @@ import           ZoomHub.Types.ContentURI        (ContentURI,
 create :: (Integer -> String) -> ContentURI -> PGS.Connection -> IO Content
 create encodeId uri conn = undefined
 
-getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
-getById cId = undefined
+-- getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
+-- getById cId conn = runContentQuery conn (byId cId)
 
 getByURL :: ContentURI -> PGS.Connection -> IO (Maybe Content)
 getByURL uri = undefined
@@ -252,8 +254,21 @@ contentTable = Table "content"
 contentQuery :: Query ContentColumnRead
 contentQuery = queryTable contentTable
 
+byId :: ContentIdColumn -> Query ContentColumnRead
+byId cId = proc () -> do
+  row <- contentQuery -< ()
+  restrict -< (contentHashId row) .=== cId
+  returnA -< row
+
 runContentQuery :: PGS.Connection -> Query ContentColumnRead -> IO [Content]
 runContentQuery = runQuery
+
+getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
+getById (ContentId cId) conn = do
+  rows <- runContentQuery conn (byId (ContentId (pgString cId)))
+  case rows of
+    [r] -> return (Just r)
+    _   -> return Nothing
 
 dbConnectInfo :: PGS.ConnectInfo
 dbConnectInfo = PGS.defaultConnectInfo
@@ -262,6 +277,8 @@ dbConnectInfo = PGS.defaultConnectInfo
 main :: IO ()
 main = do
   -- printSql contentQuery
+  let cId = ContentId "8"
   conn <- PGS.connect dbConnectInfo
-  res <- runContentQuery conn (limit 1 contentQuery)
+  -- res <- runContentQuery conn (limit 1 contentQuery)
+  res <- getById cId conn
   print $ res
