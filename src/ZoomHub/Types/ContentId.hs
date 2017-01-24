@@ -7,13 +7,14 @@
 
 module ZoomHub.Types.ContentId
   ( ContentId
-  , ContentId'(ContentId)
+  , ContentId'
   , ContentIdColumn
+  , mkContentId
   , pContentId
   , fromInteger
   , fromString
   , isValid
-  , unId
+  , unContentId
   , validChars
   ) where
 
@@ -45,15 +46,17 @@ import           Servant                              (FromHttpApiData,
                                                        parseUrlPiece)
 
 
-
--- TODO: Use record syntax, i.e. `ContentId { unId :: String }` without
+-- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
 newtype ContentId' a = ContentId a
   deriving (Eq, Generic, Show)
 type ContentId = ContentId' String
 
-unId :: ContentId -> String
-unId (ContentId cId) = cId
+unContentId :: ContentId -> String
+unContentId (ContentId cId) = cId
+
+mkContentId :: a -> ContentId' a
+mkContentId = ContentId
 
 fromInteger :: (Integer -> String) -> Integer -> ContentId
 fromInteger encode intId = fromString $ encode intId
@@ -91,7 +94,7 @@ instance FromJSON ContentId where
 
 -- SQLite
 instance ToField ContentId where
-  toField = SQLText . T.pack . unId
+  toField = SQLText . T.pack . unContentId
 
 instance FromField ContentId where
   fromField f@(Field (SQLText t) _) =

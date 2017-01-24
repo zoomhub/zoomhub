@@ -53,10 +53,9 @@ import           Opaleye                         (Column, Nullable, PGFloat8,
 --                                                  contentProgress, contentSize,
 --                                                  contentState, contentType,
 --                                                  contentURL, mkContent)
-import           ZoomHub.Types.ContentId         (ContentId,
-                                                  ContentId' (ContentId),
-                                                  ContentIdColumn, pContentId,
-                                                  unId)
+import           ZoomHub.Types.ContentId         (ContentId, ContentId',
+                                                  ContentIdColumn, mkContentId,
+                                                  pContentId, unContentId)
 -- import qualified ZoomHub.Types.ContentId        as ContentId
 import           Control.Arrow                   (returnA)
 import           ZoomHub.Types.ContentMIME       (ContentMIME,
@@ -230,7 +229,7 @@ contentTable :: Table ContentColumnWrite ContentColumnRead
 contentTable = Table "content"
   (pContent Content
     { contentId = optional "id"
-    , contentHashId = pContentId (ContentId (required "hashid"))
+    , contentHashId = pContentId (mkContentId (required "hashid"))
     , contentTypeId = required "typeid" -- TODO: Make type-safe using `newtype`
     , contentURL = pContentURI (ContentURI (required "url"))
     , contentState = required "state"   -- TODO: Make type-safe using `newtype`
@@ -254,21 +253,28 @@ contentTable = Table "content"
 contentQuery :: Query ContentColumnRead
 contentQuery = queryTable contentTable
 
-byId :: ContentIdColumn -> Query ContentColumnRead
-byId cId = proc () -> do
-  row <- contentQuery -< ()
-  restrict -< (contentHashId row) .=== cId
-  returnA -< row
+restrictContentId :: ContentId -> QueryArr ContentIdColumn ()
+restrictContentId cId = proc hashId -> do
+    restrict -< hashId .=== pgContentId
+  where
+    pgContentId :: ContentIdColumn
+    pgContentId = mkContentId (pgString $ unContentId cId)
 
 runContentQuery :: PGS.Connection -> Query ContentColumnRead -> IO [Content]
 runContentQuery = runQuery
 
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
-getById (ContentId cId) conn = do
-  rows <- runContentQuery conn (byId (ContentId (pgString cId)))
-  case rows of
-    [r] -> return (Just r)
-    _   -> return Nothing
+getById cId conn = do
+    rows <- runContentQuery conn query --(byId (ContentId (pgString cId)))
+    case rows of
+      [r] -> return (Just r)
+      _   -> return Nothing
+  where
+    query :: Query ContentColumnRead
+    query = proc () -> do
+      row <- contentQuery -< ()
+      restrictContentId cId -< contentHashId row
+      returnA -< row
 
 dbConnectInfo :: PGS.ConnectInfo
 dbConnectInfo = PGS.defaultConnectInfo
@@ -277,7 +283,7 @@ dbConnectInfo = PGS.defaultConnectInfo
 main :: IO ()
 main = do
   -- printSql contentQuery
-  let cId = ContentId "8"
+  let cId = mkContentId "8"
   conn <- PGS.connect dbConnectInfo
   -- res <- runContentQuery conn (limit 1 contentQuery)
   res <- getById cId conn
