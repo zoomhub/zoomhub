@@ -261,10 +261,24 @@ restrictContentId cId = proc hashId -> do
 runContentQuery :: PGS.Connection -> Query ContentColumnRead -> IO [Content]
 runContentQuery = runQuery
 
+dbConnectInfo :: PGS.ConnectInfo
+dbConnectInfo = PGS.defaultConnectInfo
+  { PGS.connectDatabase = "zoomhub-production" }
+
+main :: IO ()
+main = do
+  let cId = mkContentId "8"
+  conn <- PGS.connect dbConnectInfo
+  -- res <- runContentQuery conn (limit 1 contentQuery)
+  res <- getById cId conn
+  print $ res
+
+
+-- Public API
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
 getById cId conn = do
-    rows <- runContentQuery conn query --(byId (ContentId (pgString cId)))
-    case rows of
+    rs <- runContentQuery conn query
+    case rs of
       [r] -> return (Just r)
       _   -> return Nothing
   where
@@ -273,16 +287,3 @@ getById cId conn = do
       row <- contentQuery -< ()
       restrictContentId cId -< contentHashId row
       returnA -< row
-
-dbConnectInfo :: PGS.ConnectInfo
-dbConnectInfo = PGS.defaultConnectInfo
-  { PGS.connectDatabase = "zoomhub-production" }
-
-main :: IO ()
-main = do
-  -- printSQL contentQuery
-  let cId = mkContentId "8"
-  conn <- PGS.connect dbConnectInfo
-  -- res <- runContentQuery conn (limit 1 contentQuery)
-  res <- getById cId conn
-  print $ res
