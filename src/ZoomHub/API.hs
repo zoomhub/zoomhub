@@ -310,7 +310,8 @@ webInvalidURLParam _ = throwError . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
 contentNotFoundMessage :: ContentId -> String
-contentNotFoundMessage contentId = noContentWithIdMessage (unContentId contentId)
+contentNotFoundMessage contentId =
+  noContentWithIdMessage (unContentId contentId)
 
 noContentWithIdMessage :: String -> String
 noContentWithIdMessage contentId = "No content with ID: " ++ contentId
