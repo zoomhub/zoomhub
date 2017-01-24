@@ -12,15 +12,15 @@ module ZoomHub.Storage.PostgreSQL
   -- ** Read operations
     getById
   -- , getById'
-  , getByURL
+  -- , getByURL
   -- , getByURL'
-  , getExpiredActive
+  -- , getExpiredActive
   -- ** Write operations
-  , create
-  , dequeueNextUnprocessed
-  , markAsFailure
-  , markAsSuccess
-  , resetAsInitialized
+  -- , create
+  -- , dequeueNextUnprocessed
+  -- , markAsFailure
+  -- , markAsSuccess
+  -- , resetAsInitialized
   -- ** Misc
   -- , withConnection
   , main
