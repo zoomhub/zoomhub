@@ -42,7 +42,7 @@ import           Opaleye                         (Column, Nullable, PGFloat8,
                                                   showSql, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
--- import           ZoomHub.Types.Content          (Content (Content),
+import           ZoomHub.Types.Content           (Content (Content))
 --                                                  contentActiveAt,
 --                                                  contentCompletedAt, contentDZI,
 --                                                  contentError, contentId,
@@ -116,7 +116,7 @@ printSql q = case showSql q of
   Just t  -> putStrLn t
   Nothing -> return ()
 
-data Content'
+data ContentRow'
   tId
   tHashId
   tTypeId
@@ -136,29 +136,29 @@ data Content'
   tNumAbuseReports
   tNumViews
   tVersion
-  = Content
-  { contentId              :: tId
-  , contentHashId          :: tHashId
-  , contentTypeId          :: tTypeId
-  , contentURL             :: tURL
-  , contentState           :: tState
-  , contentInitializedAt   :: tInitializedAt
-  , contentActiveAt        :: tActiveAt
-  , contentCompletedAt     :: tCompletedAt
-  , contentTitle           :: tTitle
-  , contentAttributionText :: tAttributionText
-  , contentAttributionLink :: tAttributionLink
-  , contentMIME            :: tMIME
-  , contentSize            :: tSize
-  , contentError           :: tError
-  , contentProgress        :: tProgress
-  , contentAbuseLevelId    :: tAbuseLevelId
-  , contentNumAbuseReports :: tNumAbuseReports
-  , contentNumViews        :: tNumViews
-  , contentVersion         :: tVersion
+  = ContentRow
+  { crId              :: tId
+  , crHashId          :: tHashId
+  , crTypeId          :: tTypeId
+  , crURL             :: tURL
+  , crState           :: tState
+  , crInitializedAt   :: tInitializedAt
+  , crActiveAt        :: tActiveAt
+  , crCompletedAt     :: tCompletedAt
+  , crTitle           :: tTitle
+  , crAttributionText :: tAttributionText
+  , crAttributionLink :: tAttributionLink
+  , crMIME            :: tMIME
+  , crSize            :: tSize
+  , crError           :: tError
+  , crProgress        :: tProgress
+  , crAbuseLevelId    :: tAbuseLevelId
+  , crNumAbuseReports :: tNumAbuseReports
+  , crNumViews        :: tNumViews
+  , crVersion         :: tVersion
   } deriving (Show)
 
-type Content = Content'
+type ContentRow = ContentRow'
   Int64               -- id
   ContentId           -- hashId
   ContentType         -- typeId
@@ -179,7 +179,7 @@ type Content = Content'
   Int64               -- numViews
   Int                 -- version
 
-type ContentColumnWrite = Content'
+type ContentRowWrite = ContentRow'
   (Maybe (Column PGInt8))           -- id
   ContentIdColumn                   -- hashId
   ContentTypeColumn                 -- typeId
@@ -200,7 +200,7 @@ type ContentColumnWrite = Content'
   (Maybe (Column PGInt8))           -- numViews
   (Maybe (Column PGInt4))           -- version
 
-type ContentColumnRead = Content'
+type ContentRowRead = ContentRow'
   (Column PGInt8)                   -- id
   ContentIdColumn                   -- hashId
   ContentTypeColumn                 -- typeId
@@ -221,34 +221,34 @@ type ContentColumnRead = Content'
   (Column PGInt8)                   -- numViews
   (Column PGInt4)                   -- version
 
-$(makeAdaptorAndInstance "pContent" ''Content')
+$(makeAdaptorAndInstance "pContent" ''ContentRow')
 
-contentTable :: Table ContentColumnWrite ContentColumnRead
+contentTable :: Table ContentRowWrite ContentRowRead
 contentTable = Table "content"
-  (pContent Content
-    { contentId = optional "id"
-    , contentHashId = pContentId (mkContentId (required "hashid"))
-    , contentTypeId = required "typeid" -- TODO: Make type-safe using `newtype`
-    , contentURL = pContentURI (ContentURI (required "url"))
-    , contentState = required "state"   -- TODO: Make type-safe using `newtype`
-    , contentInitializedAt = required "initializedat"
-    , contentActiveAt = required "activeat"
-    , contentCompletedAt = required "completedat"
-    , contentTitle = required "title"
-    , contentAttributionText = required "attributiontext"
-    , contentAttributionLink = required "attributionlink"
-    , contentMIME = required "mime"
-    , contentSize = required "size"
-    , contentError = required "error"
-    , contentProgress = optional "progress"
-    , contentAbuseLevelId = optional "abuselevelid"
-    , contentNumAbuseReports = optional "numabusereports"
-    , contentNumViews = optional "numviews"
-    , contentVersion = optional "version"
+  (pContent ContentRow
+    { crId = optional "id"
+    , crHashId = pContentId (mkContentId (required "hashid"))
+    , crTypeId = required "typeid" -- TODO: Make type-safe using `newtype`
+    , crURL = pContentURI (ContentURI (required "url"))
+    , crState = required "state"   -- TODO: Make type-safe using `newtype`
+    , crInitializedAt = required "initializedat"
+    , crActiveAt = required "activeat"
+    , crCompletedAt = required "completedat"
+    , crTitle = required "title"
+    , crAttributionText = required "attributiontext"
+    , crAttributionLink = required "attributionlink"
+    , crMIME = required "mime"
+    , crSize = required "size"
+    , crError = required "error"
+    , crProgress = optional "progress"
+    , crAbuseLevelId = optional "abuselevelid"
+    , crNumAbuseReports = optional "numabusereports"
+    , crNumViews = optional "numviews"
+    , crVersion = optional "version"
     }
   )
 
-contentQuery :: Query ContentColumnRead
+contentQuery :: Query ContentRowRead
 contentQuery = queryTable contentTable
 
 restrictContentId :: ContentId -> QueryArr ContentIdColumn ()
@@ -258,7 +258,7 @@ restrictContentId cId = proc hashId -> do
     pgContentId :: ContentIdColumn
     pgContentId = mkContentId (pgString $ unContentId cId)
 
-runContentQuery :: PGS.Connection -> Query ContentColumnRead -> IO [Content]
+runContentQuery :: PGS.Connection -> Query ContentRowRead -> IO [ContentRow]
 runContentQuery = runQuery
 
 dbConnectInfo :: PGS.ConnectInfo
@@ -275,15 +275,15 @@ main = do
 
 
 -- Public API
-getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
+getById :: ContentId -> PGS.Connection -> IO (Maybe ContentRow)
 getById cId conn = do
     rs <- runContentQuery conn query
     case rs of
       [r] -> return (Just r)
       _   -> return Nothing
   where
-    query :: Query ContentColumnRead
+    query :: Query ContentRowRead
     query = proc () -> do
       row <- contentQuery -< ()
-      restrictContentId cId -< contentHashId row
+      restrictContentId cId -< crHashId row
       returnA -< row
