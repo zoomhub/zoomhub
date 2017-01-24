@@ -280,7 +280,7 @@ dbConnectInfo = PGS.defaultConnectInfo
 
 main :: IO ()
 main = do
-  -- printSql contentQuery
+  -- printSQL contentQuery
   let cId = mkContentId "8"
   conn <- PGS.connect dbConnectInfo
   -- res <- runContentQuery conn (limit 1 contentQuery)
