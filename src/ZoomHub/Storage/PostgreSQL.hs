@@ -42,15 +42,16 @@ import           Opaleye                         (Column, Nullable, PGFloat8,
                                                   showSql, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
-import           ZoomHub.Types.Content           (Content (Content))
---                                                  contentActiveAt,
---                                                  contentCompletedAt, contentDZI,
---                                                  contentError, contentId,
---                                                  contentInitializedAt,
---                                                  contentMIME, contentNumViews,
---                                                  contentProgress, contentSize,
---                                                  contentState, contentType,
---                                                  contentURL, mkContent)
+import           ZoomHub.Types.Content           (Content (Content),
+                                                  contentActiveAt,
+                                                  contentCompletedAt,
+                                                  contentDZI, contentError,
+                                                  contentId,
+                                                  contentInitializedAt,
+                                                  contentMIME, contentNumViews,
+                                                  contentProgress, contentSize,
+                                                  contentState, contentType,
+                                                  contentURL, mkContent)
 import           ZoomHub.Types.ContentId         (ContentId, ContentId',
                                                   ContentIdColumn, mkContentId,
                                                   pContentId, unContentId)
@@ -261,6 +262,7 @@ restrictContentId cId = proc hashId -> do
 runContentQuery :: PGS.Connection -> Query ContentRowRead -> IO [ContentRow]
 runContentQuery = runQuery
 
+-- Main
 dbConnectInfo :: PGS.ConnectInfo
 dbConnectInfo = PGS.defaultConnectInfo
   { PGS.connectDatabase = "zoomhub-production" }
@@ -273,13 +275,12 @@ main = do
   res <- getById cId conn
   print $ res
 
-
 -- Public API
-getById :: ContentId -> PGS.Connection -> IO (Maybe ContentRow)
+getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
 getById cId conn = do
     rs <- runContentQuery conn query
     case rs of
-      [r] -> return (Just r)
+      [r] -> return . Just . rowToContent $ r
       _   -> return Nothing
   where
     query :: Query ContentRowRead
@@ -287,3 +288,20 @@ getById cId conn = do
       row <- contentQuery -< ()
       restrictContentId cId -< crHashId row
       returnA -< row
+
+rowToContent :: ContentRow -> Content
+rowToContent cr = Content
+    { contentId = crHashId cr
+    , contentType = crTypeId cr
+    , contentURL = crURL cr
+    , contentState = crState cr
+    , contentInitializedAt = crInitializedAt cr
+    , contentActiveAt = crActiveAt cr
+    , contentCompletedAt = crCompletedAt cr
+    , contentMIME = crMIME cr
+    , contentSize = fromIntegral <$> (crSize cr)
+    , contentProgress = crProgress cr
+    , contentNumViews = fromIntegral (crNumViews cr)
+    , contentError = crError cr
+    , contentDZI = Nothing -- maybeDZI
+    }
