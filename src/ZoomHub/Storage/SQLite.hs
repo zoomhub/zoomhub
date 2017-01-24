@@ -385,7 +385,7 @@ data ContentRow = ContentRow
   , crCompletedAt    :: Maybe UTCTime
   , crMIME           :: Maybe ContentMIME
   , crSize           :: Maybe Integer
-  , crProgress       :: Float
+  , crProgress       :: Double
   , crNumViews       :: Integer
   , crError          :: Maybe Text
   , crDZIWidth       :: Maybe Integer

@@ -24,7 +24,7 @@ data Content = Content
   , contentCompletedAt   :: Maybe UTCTime
   , contentMIME          :: Maybe ContentMIME
   , contentSize          :: Maybe Integer
-  , contentProgress      :: Float
+  , contentProgress      :: Double
   , contentNumViews      :: Integer
   , contentError         :: Maybe Text
   , contentDZI           :: Maybe DeepZoomImage
