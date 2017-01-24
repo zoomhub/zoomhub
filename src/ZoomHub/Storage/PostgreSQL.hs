@@ -164,7 +164,7 @@ type ContentRow = ContentRow'
   ContentType         -- typeId
   ContentURI          -- url
   ContentState        -- state
-  (Maybe UTCTime)     -- initializedAt
+  UTCTime             -- initializedAt
   (Maybe UTCTime)     -- activeAt
   (Maybe UTCTime)     -- completedAt
   (Maybe Text)        -- title
@@ -185,7 +185,7 @@ type ContentRowWrite = ContentRow'
   ContentTypeColumn                 -- typeId
   ContentURIColumn                  -- url
   ContentStateColumn                -- state
-  (Column (Nullable PGTimestamptz)) -- initializedAt
+  (Column PGTimestamptz)            -- initializedAt
   (Column (Nullable PGTimestamptz)) -- activeAt
   (Column (Nullable PGTimestamptz)) -- completedAt
   (Column (Nullable PGText))        -- title
@@ -206,7 +206,7 @@ type ContentRowRead = ContentRow'
   ContentTypeColumn                 -- typeId
   ContentURIColumn                  -- url
   ContentStateColumn                -- state
-  (Column (Nullable PGTimestamptz)) -- initializedAt
+  (Column PGTimestamptz)            -- initializedAt
   (Column (Nullable PGTimestamptz)) -- activeAt
   (Column (Nullable PGTimestamptz)) -- completedAt
   (Column (Nullable PGText))        -- title
