@@ -22,10 +22,10 @@ import GHC.Generics (Generic)
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import System.FilePath ((<.>), (</>))
 
-import ZoomHub.Types.ContentBaseURI
-  (ContentBaseURI, contentBaseHost, contentBasePath)
-import ZoomHub.Types.ContentId (ContentId, unId)
-import qualified ZoomHub.Types.DeepZoomImage as Internal
+import           ZoomHub.Types.ContentBaseURI (ContentBaseURI, contentBaseHost,
+                                               contentBasePath)
+import           ZoomHub.Types.ContentId      (ContentId, unContentId)
+import qualified ZoomHub.Types.DeepZoomImage  as Internal
 
 data DeepZoomImage = DeepZoomImage
   { dziUrl         :: DeepZoomImageURI
@@ -49,7 +49,7 @@ fromInternal baseURI cId dzi = DeepZoomImage
   , dziTileFormat  = Internal.dziTileFormat dzi
   }
   where
-    name = unId cId <.> "dzi"
+    name = unContentId cId <.> "dzi"
     path = fromMaybe
             (error "ZoomHub.API.Types.DeepZoomImage.fromInternal: Failed to parse DZI path.")
             (parseRelativeReference $ show (contentBasePath baseURI) </> name)

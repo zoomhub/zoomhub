@@ -6,35 +6,35 @@ module ZoomHub.Worker
   , processExpiredActiveContent
   ) where
 
-import Control.Concurrent (threadDelay)
-import Control.Exception (SomeException, fromException)
-import Control.Exception.Enclosed (catchAny)
-import Control.Monad (forever, void)
-import Data.Aeson (Value(String), encode, toJSON, (.=))
-import qualified Data.ByteString.Lazy as BL
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Time.Units (Minute, Second, fromMicroseconds, toMicroseconds)
-import Data.Time.Units.Instances ()
-import Network.HTTP.Client (HttpException)
-import Network.HTTP.Client.Instances ()
-import System.Random (randomRIO)
+import           Control.Concurrent            (threadDelay)
+import           Control.Exception             (SomeException, fromException)
+import           Control.Exception.Enclosed    (catchAny)
+import           Control.Monad                 (forever, void)
+import           Data.Aeson                    (Value (String), encode, toJSON,
+                                                (.=))
+import qualified Data.ByteString.Lazy          as BL
+import           Data.Text                     (Text)
+import qualified Data.Text                     as T
+import           Data.Time.Units               (Minute, Second,
+                                                fromMicroseconds,
+                                                toMicroseconds)
+import           Data.Time.Units.Instances     ()
+import           Network.HTTP.Client           (HttpException)
+import           Network.HTTP.Client.Instances ()
+import           System.Random                 (randomRIO)
 
-import ZoomHub.Config (Config)
-import qualified ZoomHub.Config as Config
-import ZoomHub.Log.Logger (logException, logInfo, logInfoT)
-import ZoomHub.Pipeline (process)
-import ZoomHub.Storage.SQLite
-  ( dequeueNextUnprocessed
-  , getExpiredActive
-  , markAsFailure
-  , markAsSuccess
-  , resetAsInitialized
-  , withConnection
-  )
-import ZoomHub.Types.Content (contentId, contentURL)
-import ZoomHub.Types.ContentId (unId)
-import ZoomHub.Utils (lenientDecodeUtf8)
+import           ZoomHub.Config                (Config)
+import qualified ZoomHub.Config                as Config
+import           ZoomHub.Log.Logger            (logException, logInfo, logInfoT)
+import           ZoomHub.Pipeline              (process)
+import           ZoomHub.Storage.SQLite        (dequeueNextUnprocessed,
+                                                getExpiredActive, markAsFailure,
+                                                markAsSuccess,
+                                                resetAsInitialized,
+                                                withConnection)
+import           ZoomHub.Types.Content         (contentId, contentURL)
+import           ZoomHub.Types.ContentId       (unContentId)
+import           ZoomHub.Utils                 (lenientDecodeUtf8)
 
 -- Constants
 processExistingContentInterval :: Minute
@@ -97,8 +97,8 @@ processExistingContent config workerId = forever $ do
 
     sleepBase = processExistingContentInterval
 
-    wwwURL c = "http://zoomhub.net/" ++ unId (contentId c)
-    apiURL c = "http://zoomhub.net/v1/content/" ++ unId (contentId c)
+    wwwURL c = "http://zoomhub.net/" ++ unContentId (contentId c)
+    apiURL c = "http://zoomhub.net/v1/content/" ++ unContentId (contentId c)
 
     logT msg meta = logInfoT msg (meta ++ extraLogMeta)
     extraLogMeta =

@@ -5,39 +5,27 @@ module ZoomHub.APISpec
   , spec
   ) where
 
-import qualified Data.ByteString.Char8 as BC
-import Data.Monoid ((<>))
-import Network.HTTP.Types (methodGet)
-import Network.URI (URI, parseURIReference)
-import Network.Wai (Middleware)
-import Test.Hspec (Spec, describe, hspec, it)
-import Test.Hspec.Wai
-  ( MatchHeader
-  , ResponseMatcher
-  , get
-  , matchHeaders
-  , matchStatus
-  , post
-  , put
-  , request
-  , shouldRespondWith
-  , with
-  , (<:>)
-  )
+import qualified Data.ByteString.Char8        as BC
+import           Data.Monoid                  ((<>))
+import           Network.HTTP.Types           (methodGet)
+import           Network.URI                  (URI, parseURIReference)
+import           Network.Wai                  (Middleware)
+import           Test.Hspec                   (Spec, describe, hspec, it)
+import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
+                                               get, matchHeaders, matchStatus,
+                                               post, put, request,
+                                               shouldRespondWith, with, (<:>))
 
-import ZoomHub.API (app)
-import ZoomHub.Config
-  ( Config(..)
-  , ExistingContentStatus(IgnoreExistingContent)
-  , NewContentStatus(NewContentDisallowed)
-  )
-import qualified ZoomHub.Config as Config
-import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
-import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import ZoomHub.Types.ContentId (ContentId, fromString, unId)
-import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath))
-import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
-import ZoomHub.Types.TempPath (TempPath(TempPath))
+import           ZoomHub.API                  (app)
+import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
+import qualified ZoomHub.Config               as Config
+import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
+import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
+import           ZoomHub.Types.ContentId      (ContentId, fromString,
+                                               unContentId)
+import           ZoomHub.Types.DatabasePath   (DatabasePath (DatabasePath))
+import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI (StaticBaseURI))
+import           ZoomHub.Types.TempPath       (TempPath (TempPath))
 
 main :: IO ()
 main = hspec spec
@@ -97,7 +85,7 @@ restRedirect cId =
     }
   where
     baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unId cId
+    expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unContentId cId
 
 viewRedirect :: ContentId -> ResponseMatcher
 viewRedirect cId =
@@ -107,7 +95,7 @@ viewRedirect cId =
     }
   where
     baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix <> "/" <> unId cId
+    expectedLocation = baseURIPrefix <> "/" <> unContentId cId
 
 -- Config
 nullLogger :: Middleware

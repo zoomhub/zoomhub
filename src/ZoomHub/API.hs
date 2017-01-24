@@ -6,66 +6,60 @@ module ZoomHub.API
   ( app
   ) where
 
-import Control.Monad.Except (throwError)
-import Control.Monad.IO.Class (liftIO)
+import           Control.Monad.Except                 (throwError)
+import           Control.Monad.IO.Class               (liftIO)
 
-import qualified Data.ByteString.Char8 as BC
-import Data.Maybe (fromJust, fromMaybe)
-import Data.Proxy (Proxy(Proxy))
-import Network.URI (URI, parseRelativeReference, relativeTo)
-import Network.Wai (Application)
-import Network.Wai.Middleware.Cors (simpleCors)
-import Servant
-  ( (:<|>)(..)
-  , (:>)
-  , Capture
-  , Get
-  , Handler
-  , JSON
-  , QueryParam
-  , Raw
-  , ServantErr
-  , Server
-  , err301
-  , errHeaders
-  , serve
-  )
-import Servant.HTML.Lucid (HTML)
-import System.Random (randomRIO)
+import qualified Data.ByteString.Char8                as BC
+import           Data.Maybe                           (fromJust, fromMaybe)
+import           Data.Proxy                           (Proxy (Proxy))
+import           Network.URI                          (URI,
+                                                       parseRelativeReference,
+                                                       relativeTo)
+import           Network.Wai                          (Application)
+import           Network.Wai.Middleware.Cors          (simpleCors)
+import           Servant                              ((:<|>) (..), (:>),
+                                                       Capture, Get, Handler,
+                                                       JSON, QueryParam, Raw,
+                                                       ServantErr, Server,
+                                                       err301, errHeaders,
+                                                       serve)
+import           Servant.HTML.Lucid                   (HTML)
+import           System.Random                        (randomRIO)
 
-import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
-import qualified ZoomHub.API.Errors as API
-import qualified ZoomHub.API.JSONP.Errors as JSONP
-import ZoomHub.API.Types.Callback (Callback)
-import ZoomHub.API.Types.Content (Content, fromInternal)
-import ZoomHub.API.Types.JSONP (JSONP, mkJSONP)
-import ZoomHub.API.Types.NonRESTfulResponse
-  ( NonRESTfulResponse
-  , mkNonRESTful200
-  , mkNonRESTful301
-  , mkNonRESTful400
-  , mkNonRESTful404
-  , mkNonRESTful503
-  )
-import ZoomHub.Config (Config, NewContentStatus(NewContentAllowed))
-import qualified ZoomHub.Config as Config
-import ZoomHub.Servant.RawCapture (RawCapture)
-import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
-import ZoomHub.Storage.SQLite
-  (create, getById, getById', getByURL, getByURL', withConnection)
-import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
-import qualified ZoomHub.Types.Content as Internal
-import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
-import ZoomHub.Types.ContentId (ContentId, unId)
-import ZoomHub.Types.ContentURI (ContentURI)
-import ZoomHub.Types.DatabasePath (DatabasePath)
-import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
-import qualified ZoomHub.Web.Errors as Web
-import ZoomHub.Web.Static (serveDirectory)
-import ZoomHub.Web.Types.Embed (Embed, mkEmbed)
-import ZoomHub.Web.Types.EmbedDimension (EmbedDimension)
-import ZoomHub.Web.Types.EmbedId (EmbedId, unEmbedId)
-import ZoomHub.Web.Types.ViewContent (ViewContent, mkViewContent)
+import           ZoomHub.API.ContentTypes.JavaScript  (JavaScript)
+import qualified ZoomHub.API.Errors                   as API
+import qualified ZoomHub.API.JSONP.Errors             as JSONP
+import           ZoomHub.API.Types.Callback           (Callback)
+import           ZoomHub.API.Types.Content            (Content, fromInternal)
+import           ZoomHub.API.Types.JSONP              (JSONP, mkJSONP)
+import           ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse,
+                                                       mkNonRESTful200,
+                                                       mkNonRESTful301,
+                                                       mkNonRESTful400,
+                                                       mkNonRESTful404,
+                                                       mkNonRESTful503)
+import           ZoomHub.Config                       (Config, NewContentStatus (NewContentAllowed))
+import qualified ZoomHub.Config                       as Config
+import           ZoomHub.Servant.RawCapture           (RawCapture)
+import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
+import           ZoomHub.Storage.SQLite               (create, getById,
+                                                       getById', getByURL,
+                                                       getByURL',
+                                                       withConnection)
+import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
+import qualified ZoomHub.Types.Content                as Internal
+import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
+import           ZoomHub.Types.ContentId              (ContentId, unContentId)
+import           ZoomHub.Types.ContentURI             (ContentURI)
+import           ZoomHub.Types.DatabasePath           (DatabasePath)
+import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI)
+import qualified ZoomHub.Web.Errors                   as Web
+import           ZoomHub.Web.Static                   (serveDirectory)
+import           ZoomHub.Web.Types.Embed              (Embed, mkEmbed)
+import           ZoomHub.Web.Types.EmbedDimension     (EmbedDimension)
+import           ZoomHub.Web.Types.EmbedId            (EmbedId, unEmbedId)
+import           ZoomHub.Web.Types.ViewContent        (ViewContent,
+                                                       mkViewContent)
 
 -- API
 type API =
@@ -316,7 +310,7 @@ webInvalidURLParam _ = throwError . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
 contentNotFoundMessage :: ContentId -> String
-contentNotFoundMessage contentId = noContentWithIdMessage (unId contentId)
+contentNotFoundMessage contentId = noContentWithIdMessage (unContentId contentId)
 
 noContentWithIdMessage :: String -> String
 noContentWithIdMessage contentId = "No content with ID: " ++ contentId
@@ -363,7 +357,7 @@ webRedirectURI = redirectURI "/"
 
 redirectURI :: String -> BaseURI -> ContentId -> URI
 redirectURI pathPrefix baseURI contentId =
-  (fromJust . parseRelativeReference $ pathPrefix ++ unId contentId)
+  (fromJust . parseRelativeReference $ pathPrefix ++ unContentId contentId)
     `relativeTo` unBaseURI baseURI
 
 -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test

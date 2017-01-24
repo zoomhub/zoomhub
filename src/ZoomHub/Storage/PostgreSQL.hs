@@ -30,17 +30,15 @@ import           Data.Int                        (Int64)
 import           Data.Profunctor.Product.Default (Default)
 import           Data.Profunctor.Product.TH      (makeAdaptorAndInstance)
 import           Data.Text                       (Text)
-import           Data.Text                       (Text)
-import           Data.Time.Clock                 (UTCTime)
 import           Data.Time.Clock                 (UTCTime)
 import qualified Database.PostgreSQL.Simple      as PGS
 import           Opaleye                         (Column, Nullable, PGFloat8,
                                                   PGInt4, PGInt8, PGText,
                                                   PGTimestamptz, Query,
-                                                  Table (Table), Unpackspec,
-                                                  limit, optional, pgString,
-                                                  queryTable, required,
-                                                  restrict, runQuery,
+                                                  QueryArr, Table (Table),
+                                                  Unpackspec, optional,
+                                                  pgString, queryTable,
+                                                  required, restrict, runQuery,
                                                   showSql, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
