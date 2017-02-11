@@ -249,6 +249,59 @@ contentTable = Table "content"
     }
   )
 
+-- Image
+data ImageRow'
+  tContentId
+  tInitializedAt
+  tWidth
+  tHeight
+  tTileSize
+  tTileOverlap
+  tTileFormat
+  = ImageRow
+  { imageContentId     :: tContentId
+  , imageInitializedAt :: tInitializedAt
+  , imageWidth         :: tWidth
+  , imageHeight        :: tHeight
+  , imageTileSize      :: tTileSize
+  , imageTileOverlap   :: tTileOverlap
+  , imageTileFormat    :: tTileFormat
+  } deriving (Show)
+
+type ImageRow = ImageRow'
+  Int64   -- contentId
+  UTCTime -- initializedAt
+  Int64   -- width       -- TODO: Introduce type
+  Int64   -- height      -- TODO: Introduce type
+  Int64   -- tileSize    -- TODO: Introduce type
+  Int64   -- tileOverlap -- TODO: Introduce type
+  Text    -- tileFormat  -- TODO: Introduce type
+
+type ImageRowReadWrite = ImageRow'
+  (Column PGInt8)        -- contentId
+  (Column PGTimestamptz) -- initializedAt
+  (Column PGInt8)        -- width       -- TODO: Introduce type
+  (Column PGInt8)        -- height      -- TODO: Introduce type
+  (Column PGInt8)        -- tileSize    -- TODO: Introduce type
+  (Column PGInt8)        -- tileOverlap -- TODO: Introduce type
+  (Column PGText)        -- tileFormat  -- TODO: Introduce type
+
+$(makeAdaptorAndInstance "pImage" ''ImageRow')
+
+imageTable :: Table ImageRowReadWrite ImageRowReadWrite
+imageTable = Table "image"
+  (pImage ImageRow
+    { imageContentId = required "contentid"
+    , imageInitializedAt = required "initializedat"
+    , imageWidth = required "width"
+    , imageHeight = required "height"
+    , imageTileSize = required "tilesize"
+    , imageTileOverlap = required "tileoverlap"
+    , imageTileFormat = required "tileformat"
+    }
+  )
+
+-- Query: Content
 contentQuery :: Query ContentRowRead
 contentQuery = queryTable contentTable
 
@@ -261,6 +314,13 @@ restrictContentId cId = proc hashId -> do
 
 runContentQuery :: PGS.Connection -> Query ContentRowRead -> IO [ContentRow]
 runContentQuery = runQuery
+
+-- Query: Image
+imageQuery :: Query ImageRowReadWrite
+imageQuery = queryTable imageTable
+
+runImageQuery :: PGS.Connection -> Query ImageRowReadWrite -> IO [ImageRow]
+runImageQuery = runQuery
 
 -- Main
 dbConnectInfo :: PGS.ConnectInfo
