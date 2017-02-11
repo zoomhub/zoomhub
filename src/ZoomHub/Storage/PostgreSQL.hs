@@ -39,7 +39,7 @@ import           Opaleye                         (Column, Nullable, PGFloat8,
                                                   Unpackspec, optional,
                                                   pgString, queryTable,
                                                   required, restrict, runQuery,
-                                                  showSql, (.===))
+                                                  showSql, (.===), limit)
 
 -- import           ZoomHub.Log.Logger             (logWarning)
 import           ZoomHub.Types.Content           (Content (Content),
@@ -325,14 +325,15 @@ runImageQuery = runQuery
 -- Main
 dbConnectInfo :: PGS.ConnectInfo
 dbConnectInfo = PGS.defaultConnectInfo
-  { PGS.connectDatabase = "zoomhub-production" }
+  { PGS.connectDatabase = "zoomhub-production"
+  }
 
 main :: IO ()
 main = do
   let cId = mkContentId "8"
   conn <- PGS.connect dbConnectInfo
-  -- res <- runContentQuery conn (limit 1 contentQuery)
-  res <- getById cId conn
+  res <- runImageQuery conn (limit 1 imageQuery)
+  -- res <- getById cId conn
   print $ res
 
 -- Public API
