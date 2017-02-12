@@ -26,53 +26,65 @@ module ZoomHub.Storage.PostgreSQL
   , main
   ) where
 
-import           Data.Int                        (Int64)
-import           Data.Profunctor.Product.Default (Default)
-import           Data.Profunctor.Product.TH      (makeAdaptorAndInstance)
-import           Data.Text                       (Text)
-import           Data.Time.Clock                 (UTCTime)
-import qualified Database.PostgreSQL.Simple      as PGS
-import           Opaleye                         (Column, Nullable, PGFloat8,
-                                                  PGInt4, PGInt8, PGText,
-                                                  PGTimestamptz, Query,
-                                                  QueryArr, Table (Table),
-                                                  Unpackspec, limit, optional,
-                                                  pgString, queryTable,
-                                                  required, restrict, runQuery,
-                                                  showSql, (.===))
+import           Data.Int                                (Int64)
+import           Data.Profunctor.Product.Default         (Default)
+import           Data.Profunctor.Product.TH              (makeAdaptorAndInstance)
+import           Data.Text                               (Text)
+import           Data.Time.Clock                         (UTCTime)
+import qualified Database.PostgreSQL.Simple              as PGS
+import           Opaleye                                 (Column, Nullable,
+                                                          PGBool, PGFloat8,
+                                                          PGInt4, PGInt8,
+                                                          PGText, PGTimestamptz,
+                                                          Query, QueryArr,
+                                                          Table (Table),
+                                                          Unpackspec, leftJoin,
+                                                          limit, optional,
+                                                          pgString, queryTable,
+                                                          required, restrict,
+                                                          runQuery,
+                                                          showSql,
+                                                          (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
-import           ZoomHub.Types.Content           (Content (Content),
-                                                  contentActiveAt,
-                                                  contentCompletedAt,
-                                                  contentDZI, contentError,
-                                                  contentId,
-                                                  contentInitializedAt,
-                                                  contentMIME, contentNumViews,
-                                                  contentProgress, contentSize,
-                                                  contentState, contentType,
-                                                  contentURL, mkContent)
-import           ZoomHub.Types.ContentId         (ContentId, ContentId',
-                                                  ContentIdColumn, mkContentId,
-                                                  pContentId, unContentId)
+import           ZoomHub.Types.Content                   (Content (Content),
+                                                          contentActiveAt,
+                                                          contentCompletedAt,
+                                                          contentDZI,
+                                                          contentError,
+                                                          contentId,
+                                                          contentInitializedAt,
+                                                          contentMIME,
+                                                          contentNumViews,
+                                                          contentProgress,
+                                                          contentSize,
+                                                          contentState,
+                                                          contentType,
+                                                          contentURL, mkContent)
+import           ZoomHub.Types.ContentId                 (ContentId, ContentId',
+                                                          ContentIdColumn,
+                                                          mkContentId,
+                                                          pContentId,
+                                                          unContentId)
 -- import qualified ZoomHub.Types.ContentId        as ContentId
-import           Control.Arrow                   (returnA)
-import           ZoomHub.Types.ContentMIME       (ContentMIME,
-                                                  ContentMIME' (ContentMIME),
-                                                  pContentMIME)
-import           ZoomHub.Types.ContentState      (ContentState,
-                                                  ContentStateColumn)
-import           ZoomHub.Types.ContentType       (ContentType,
-                                                  ContentTypeColumn)
-import           ZoomHub.Types.ContentURI        (ContentURI,
-                                                  ContentURI' (ContentURI),
-                                                  ContentURIColumn, pContentURI)
+import           Control.Arrow                           (returnA)
+import           ZoomHub.Types.ContentMIME               (ContentMIME, ContentMIME' (ContentMIME),
+                                                          pContentMIME)
+import           ZoomHub.Types.ContentState              (ContentState,
+                                                          ContentStateColumn)
+import           ZoomHub.Types.ContentType               (ContentType,
+                                                          ContentTypeColumn)
+import           ZoomHub.Types.ContentURI                (ContentURI, ContentURI' (ContentURI),
+                                                          ContentURIColumn,
+                                                          pContentURI)
 -- import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
-import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
-                                                 TileSize, dziHeight,
-                                                 dziTileFormat, dziTileOverlap,
-                                                 dziTileSize, dziWidth,
-                                                 mkDeepZoomImage)
+import           ZoomHub.Types.DeepZoomImage             (TileFormat,
+                                                          TileOverlap, TileSize,
+                                                          dziHeight,
+                                                          dziTileFormat,
+                                                          dziTileOverlap,
+                                                          dziTileSize, dziWidth,
+                                                          mkDeepZoomImage)
 import qualified ZoomHub.Types.DeepZoomImage.TileFormat  as TileFormat
 import qualified ZoomHub.Types.DeepZoomImage.TileOverlap as TileOverlap
 import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
@@ -280,6 +292,15 @@ type ImageRow = ImageRow'
   Int64   -- tileOverlap -- TODO: Introduce type
   Text    -- tileFormat  -- TODO: Introduce type
 
+type NullableImageRow = ImageRow'
+  (Maybe Int64)   -- contentId
+  (Maybe UTCTime) -- initializedAt
+  (Maybe Int64)   -- width       -- TODO: Introduce type
+  (Maybe Int64)   -- height      -- TODO: Introduce type
+  (Maybe Int64)   -- tileSize    -- TODO: Introduce type
+  (Maybe Int64)   -- tileOverlap -- TODO: Introduce type
+  (Maybe Text)    -- tileFormat  -- TODO: Introduce type
+
 type ImageRowReadWrite = ImageRow'
   (Column PGInt8)        -- contentId
   (Column PGTimestamptz) -- initializedAt
@@ -288,6 +309,15 @@ type ImageRowReadWrite = ImageRow'
   (Column PGInt8)        -- tileSize    -- TODO: Introduce type
   (Column PGInt8)        -- tileOverlap -- TODO: Introduce type
   (Column PGText)        -- tileFormat  -- TODO: Introduce type
+
+type NullableImageRowReadWrite = ImageRow'
+  (Column (Nullable PGInt8))        -- contentId
+  (Column (Nullable PGTimestamptz)) -- initializedAt
+  (Column (Nullable PGInt8))        -- width       -- TODO: Introduce type
+  (Column (Nullable PGInt8))        -- height      -- TODO: Introduce type
+  (Column (Nullable PGInt8))        -- tileSize    -- TODO: Introduce type
+  (Column (Nullable PGInt8))        -- tileOverlap -- TODO: Introduce type
+  (Column (Nullable PGText))        -- tileFormat  -- TODO: Introduce type
 
 $(makeAdaptorAndInstance "pImage" ''ImageRow')
 
@@ -325,50 +355,38 @@ imageQuery = queryTable imageTable
 runImageQuery :: PGS.Connection -> Query ImageRowReadWrite -> IO [ImageRow]
 runImageQuery = runQuery
 
--- Query: Combined
-contentImageQuery :: Query (ContentRowRead, ImageRowReadWrite)
-contentImageQuery = proc () -> do
-  contentRow <- contentQuery -< ()
-  imageRow <- imageQuery -< ()
-  restrict -< crId contentRow .=== imageContentId imageRow
-  returnA -< (contentRow, imageRow)
+-- -- Query: Combined
+-- contentImageQuery :: Query (ContentRowRead, ImageRowReadWrite)
+-- contentImageQuery = proc () -> do
+--   contentRow <- contentQuery -< ()
+--   imageRow <- imageQuery -< ()
+--   restrict -< crId contentRow .=== imageContentId imageRow
+--   returnA -< (contentRow, imageRow)
 
 runContentImageQuery :: PGS.Connection ->
-                        Query (ContentRowRead, ImageRowReadWrite) ->
-                        IO [(ContentRow, ImageRow)]
+                        Query (ContentRowRead, NullableImageRowReadWrite) ->
+                        IO [(ContentRow, NullableImageRow)]
 runContentImageQuery = runQuery
-
--- Main
-dbConnectInfo :: PGS.ConnectInfo
-dbConnectInfo = PGS.defaultConnectInfo
-  { PGS.connectDatabase = "zoomhub-production"
-  }
-
-main :: IO ()
-main = do
-  let cId = mkContentId "8"
-  conn <- PGS.connect dbConnectInfo
-  -- res <- runImageQuery conn (limit 20 imageQuery)
-  -- res <- runContentImageQuery conn (limit 1 contentImageQuery)
-  res <- getById cId conn
-  print $ res
 
 -- Public API
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
 getById cId conn = do
     rs <- runContentImageQuery conn query
     case rs of
-      [(c, i)] -> return . Just $ (rowToContent c i)
+      [(cr, nir)] -> return . Just $ (rowToContent cr nir)
       _   -> return Nothing
   where
-    query :: Query (ContentRowRead, ImageRowReadWrite)
+    query :: Query (ContentRowRead, NullableImageRowReadWrite)
     query = proc () -> do
-      (cr, ir) <- contentImageQuery -< ()
+      (cr, ir) <- leftJoin contentQuery imageQuery eqContentId -< ()
       restrictContentId cId -< crHashId cr
       returnA -< (cr, ir)
 
-rowToContent :: ContentRow -> ImageRow -> Content
-rowToContent cr ir = Content
+    eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
+    eqContentId (cr, ir) = crId cr .=== imageContentId ir
+
+rowToContent :: ContentRow -> NullableImageRow -> Content
+rowToContent cr nir = Content
     { contentId = crHashId cr
     , contentType = crTypeId cr
     , contentURL = crURL cr
@@ -384,17 +402,32 @@ rowToContent cr ir = Content
     , contentDZI = mDZI
     }
   where
-    mDZIWidth = fromIntegral $ imageWidth ir
-    mDZIHeight = fromIntegral $ imageHeight ir
-    mDZITileSize = TileSize.fromInteger . fromIntegral . imageTileSize $ ir
+    mDZIWidth = fromIntegral <$> imageWidth nir
+    mDZIHeight = fromIntegral <$> imageHeight nir
+    mDZITileSize = TileSize.fromInteger . fromIntegral <$> imageTileSize nir
     mDZITileOverlap =
-      TileOverlap.fromInteger . fromIntegral . imageTileOverlap $ ir
-    mDZITileFormat = TileFormat.fromText $ imageTileFormat ir
+      TileOverlap.fromInteger . fromIntegral <$> imageTileOverlap nir
+    mDZITileFormat = TileFormat.fromText <$> imageTileFormat nir
     mDZI =
       case (mDZIWidth, mDZIHeight,
             mDZITileSize, mDZITileOverlap, mDZITileFormat) of
-      (dziWidth, dziHeight,
-       Just dziTileSize, Just dziTileOverlap, Just dziTileFormat) ->
+      (Just dziWidth, Just dziHeight,
+       Just (Just dziTileSize), Just (Just dziTileOverlap), Just (Just dziTileFormat)) ->
         Just $ mkDeepZoomImage dziWidth dziHeight dziTileSize
           dziTileOverlap dziTileFormat
       _ -> Nothing
+
+-- Main
+dbConnectInfo :: PGS.ConnectInfo
+dbConnectInfo = PGS.defaultConnectInfo
+  { PGS.connectDatabase = "zoomhub-production"
+  }
+
+main :: IO ()
+main = do
+  let cId = mkContentId "n"
+  conn <- PGS.connect dbConnectInfo
+  -- res <- runImageQuery conn (limit 20 imageQuery)
+  -- res <- runContentImageQuery conn (limit 1 contentImageQuery)
+  res <- getById cId conn
+  print $ res
