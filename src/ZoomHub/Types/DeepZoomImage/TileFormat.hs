@@ -3,6 +3,7 @@
 module ZoomHub.Types.DeepZoomImage.TileFormat
   ( TileFormat(..)
   , fromString
+  , fromText
   ) where
 
 import           Data.Aeson                       (ToJSON, Value (String),
@@ -22,6 +23,12 @@ fromString "jpg" = Just JPEG
 fromString "jpeg" = Just JPEG
 fromString "png" = Just PNG
 fromString _ = Nothing
+
+fromText :: T.Text -> Maybe TileFormat
+fromText "jpg" = Just JPEG
+fromText "jpeg" = Just JPEG
+fromText "png" = Just PNG
+fromText _ = Nothing
 
 instance Show TileFormat where
   show JPEG = "jpg"
