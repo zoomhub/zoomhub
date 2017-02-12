@@ -36,10 +36,10 @@ import           Opaleye                         (Column, Nullable, PGFloat8,
                                                   PGInt4, PGInt8, PGText,
                                                   PGTimestamptz, Query,
                                                   QueryArr, Table (Table),
-                                                  Unpackspec, optional,
+                                                  Unpackspec, limit, optional,
                                                   pgString, queryTable,
                                                   required, restrict, runQuery,
-                                                  showSql, (.===), limit)
+                                                  showSql, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
 import           ZoomHub.Types.Content           (Content (Content),
