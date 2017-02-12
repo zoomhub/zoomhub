@@ -109,14 +109,14 @@ data TileOverlap = TileOverlap0 | TileOverlap1
   deriving (Bounded, Enum, Eq)
 
 toTileOverlap :: String -> Maybe TileOverlap
-toTileOverlap "0" = Just TileOverlap0
 toTileOverlap "1" = Just TileOverlap1
+toTileOverlap "0" = Just TileOverlap0
 toTileOverlap _ = Nothing
 
 -- Tile overlap: Show
 instance Show TileOverlap where
-  show TileOverlap0 = "0"
   show TileOverlap1 = "1"
+  show TileOverlap0 = "0"
 
 -- Tile overlap: JSON
 instance ToJSON TileOverlap where
