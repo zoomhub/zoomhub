@@ -404,15 +404,15 @@ rowToContent cr nir = Content
   where
     mDZIWidth = fromIntegral <$> imageWidth nir
     mDZIHeight = fromIntegral <$> imageHeight nir
-    mDZITileSize = TileSize.fromInteger . fromIntegral <$> imageTileSize nir
+    mDZITileSize = fromIntegral <$> imageTileSize nir >>= TileSize.fromInteger
     mDZITileOverlap =
-      TileOverlap.fromInteger . fromIntegral <$> imageTileOverlap nir
-    mDZITileFormat = TileFormat.fromText <$> imageTileFormat nir
+      fromIntegral <$> imageTileOverlap nir >>= TileOverlap.fromInteger
+    mDZITileFormat = imageTileFormat nir >>= TileFormat.fromText
     mDZI =
       case (mDZIWidth, mDZIHeight,
             mDZITileSize, mDZITileOverlap, mDZITileFormat) of
       (Just dziWidth, Just dziHeight,
-       Just (Just dziTileSize), Just (Just dziTileOverlap), Just (Just dziTileFormat)) ->
+       Just dziTileSize, Just dziTileOverlap, Just dziTileFormat) ->
         Just $ mkDeepZoomImage dziWidth dziHeight dziTileSize
           dziTileOverlap dziTileFormat
       _ -> Nothing
