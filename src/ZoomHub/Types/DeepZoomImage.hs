@@ -53,16 +53,16 @@ mkDeepZoomImage dziWidth dziHeight dziTileSize dziTileOverlap dziTileFormat =
 
 fromXML :: String -> Maybe DeepZoomImage
 fromXML xml =
-      parseXMLDoc xml >>=
-      findElement (tag "Image") >>=
-      \image -> attr "TileSize" image >>= TileSize.fromString >>=
-      \tileSize -> attr "Overlap" image >>= TileOverlap.fromString >>=
-      \tileOverlap -> attr "Format" image >>= TileFormat.fromString >>=
-      \tileFormat -> findElement (tag "Size") image >>=
-      \size -> attr "Width" size >>= readMaybe >>=
-      \width -> attr "Height" size >>= readMaybe >>=
-      \height ->
-        Just $ mkDeepZoomImage width height tileSize tileOverlap tileFormat
+  parseXMLDoc xml >>=
+  findElement (tag "Image") >>=
+  \image -> attr "TileSize" image >>= TileSize.fromString >>=
+  \tileSize -> attr "Overlap" image >>= TileOverlap.fromString >>=
+  \tileOverlap -> attr "Format" image >>= TileFormat.fromString >>=
+  \tileFormat -> findElement (tag "Size") image >>=
+  \size -> attr "Width" size >>= readMaybe >>=
+  \width -> attr "Height" size >>= readMaybe >>=
+  \height ->
+    Just $ mkDeepZoomImage width height tileSize tileOverlap tileFormat
   where
     tag name = QName name (Just namespace) Nothing
     attr name = findAttr (QName name Nothing Nothing)

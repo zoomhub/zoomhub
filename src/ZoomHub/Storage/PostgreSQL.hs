@@ -68,11 +68,14 @@ import           ZoomHub.Types.ContentURI        (ContentURI,
                                                   ContentURI' (ContentURI),
                                                   ContentURIColumn, pContentURI)
 -- import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
--- import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
---                                                  TileSize, dziHeight,
---                                                  dziTileFormat, dziTileOverlap,
---                                                  dziTileSize, dziWidth,
---                                                  mkDeepZoomImage)
+import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
+                                                 TileSize, dziHeight,
+                                                 dziTileFormat, dziTileOverlap,
+                                                 dziTileSize, dziWidth,
+                                                 mkDeepZoomImage)
+import qualified ZoomHub.Types.DeepZoomImage.TileFormat  as TileFormat
+import qualified ZoomHub.Types.DeepZoomImage.TileOverlap as TileOverlap
+import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
 
 -- Public API
 create :: (Integer -> String) -> ContentURI -> PGS.Connection -> IO Content
@@ -322,6 +325,19 @@ imageQuery = queryTable imageTable
 runImageQuery :: PGS.Connection -> Query ImageRowReadWrite -> IO [ImageRow]
 runImageQuery = runQuery
 
+-- Query: Combined
+contentImageQuery :: Query (ContentRowRead, ImageRowReadWrite)
+contentImageQuery = proc () -> do
+  contentRow <- contentQuery -< ()
+  imageRow <- imageQuery -< ()
+  restrict -< crId contentRow .=== imageContentId imageRow
+  returnA -< (contentRow, imageRow)
+
+runContentImageQuery :: PGS.Connection ->
+                        Query (ContentRowRead, ImageRowReadWrite) ->
+                        IO [(ContentRow, ImageRow)]
+runContentImageQuery = runQuery
+
 -- Main
 dbConnectInfo :: PGS.ConnectInfo
 dbConnectInfo = PGS.defaultConnectInfo
@@ -332,26 +348,27 @@ main :: IO ()
 main = do
   let cId = mkContentId "8"
   conn <- PGS.connect dbConnectInfo
-  res <- runImageQuery conn (limit 1 imageQuery)
-  -- res <- getById cId conn
+  -- res <- runImageQuery conn (limit 20 imageQuery)
+  -- res <- runContentImageQuery conn (limit 1 contentImageQuery)
+  res <- getById cId conn
   print $ res
 
 -- Public API
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
 getById cId conn = do
-    rs <- runContentQuery conn query
+    rs <- runContentImageQuery conn query
     case rs of
-      [r] -> return . Just . rowToContent $ r
+      [(c, i)] -> return . Just $ (rowToContent c i)
       _   -> return Nothing
   where
-    query :: Query ContentRowRead
+    query :: Query (ContentRowRead, ImageRowReadWrite)
     query = proc () -> do
-      row <- contentQuery -< ()
-      restrictContentId cId -< crHashId row
-      returnA -< row
+      (cr, ir) <- contentImageQuery -< ()
+      restrictContentId cId -< crHashId cr
+      returnA -< (cr, ir)
 
-rowToContent :: ContentRow -> Content
-rowToContent cr = Content
+rowToContent :: ContentRow -> ImageRow -> Content
+rowToContent cr ir = Content
     { contentId = crHashId cr
     , contentType = crTypeId cr
     , contentURL = crURL cr
@@ -364,5 +381,20 @@ rowToContent cr = Content
     , contentProgress = crProgress cr
     , contentNumViews = fromIntegral (crNumViews cr)
     , contentError = crError cr
-    , contentDZI = Nothing -- maybeDZI
+    , contentDZI = mDZI
     }
+  where
+    mDZIWidth = fromIntegral $ imageWidth ir
+    mDZIHeight = fromIntegral $ imageHeight ir
+    mDZITileSize = TileSize.fromInteger . fromIntegral . imageTileSize $ ir
+    mDZITileOverlap =
+      TileOverlap.fromInteger . fromIntegral . imageTileOverlap $ ir
+    mDZITileFormat = TileFormat.fromText $ imageTileFormat ir
+    mDZI =
+      case (mDZIWidth, mDZIHeight,
+            mDZITileSize, mDZITileOverlap, mDZITileFormat) of
+      (dziWidth, dziHeight,
+       Just dziTileSize, Just dziTileOverlap, Just dziTileFormat) ->
+        Just $ mkDeepZoomImage dziWidth dziHeight dziTileSize
+          dziTileOverlap dziTileFormat
+      _ -> Nothing
