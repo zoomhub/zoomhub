@@ -17,20 +17,25 @@ module ZoomHub.Types.DeepZoomImage
   ) where
 
 
-import Data.Aeson (ToJSON, Value(Number, String), genericToJSON, toJSON)
-import Data.Aeson.Casing (aesonPrefix, camelCase)
-import qualified Data.Text as T
-import Database.SQLite.Simple (SQLData(SQLInteger, SQLText))
-import Database.SQLite.Simple.FromField
-  (FromField, ResultError(ConversionFailed), fromField, returnError)
-import Database.SQLite.Simple.Internal (Field(Field))
-import Database.SQLite.Simple.Ok (Ok(Ok))
-import Database.SQLite.Simple.ToField (ToField, toField)
-import GHC.Generics (Generic)
-import Text.Read (readMaybe)
-import Text.XML.Light (QName(QName))
-import Text.XML.Light.Input (parseXMLDoc)
-import Text.XML.Light.Proc (findAttr, findElement)
+import           Data.Aeson                           (ToJSON,
+                                                       Value (Number, String),
+                                                       genericToJSON, toJSON)
+import           Data.Aeson.Casing                    (aesonPrefix, camelCase)
+import qualified Data.Text                            as T
+import           Database.SQLite.Simple               (SQLData (SQLText, SQLInteger))
+import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
+                                                       fromField, returnError)
+import           Database.SQLite.Simple.Internal      (Field (Field))
+import           Database.SQLite.Simple.Ok            (Ok (Ok))
+import           Database.SQLite.Simple.ToField       (ToField, toField)
+import           GHC.Generics                         (Generic)
+import           Text.Read                            (readMaybe)
+import           Text.XML.Light                       (QName (QName))
+import           Text.XML.Light.Input                 (parseXMLDoc)
+import           Text.XML.Light.Proc                  (findAttr, findElement)
+
+import           ZoomHub.Types.DeepZoomImage.TileSize (TileSize (..))
+import qualified ZoomHub.Types.DeepZoomImage.TileSize as TS
 
 data DeepZoomImage = DeepZoomImage
   { dziWidth       :: Integer
@@ -53,7 +58,7 @@ fromXML :: String -> Maybe DeepZoomImage
 fromXML xml =
       parseXMLDoc xml >>=
       findElement (tag "Image") >>=
-      \image -> attr "TileSize" image >>= toTileSize >>=
+      \image -> attr "TileSize" image >>= TS.fromString >>=
       \tileSize -> attr "Overlap" image >>= toTileOverlap >>=
       \tileOverlap -> attr "Format" image >>= toTileFormat >>=
       \tileFormat -> findElement (tag "Size") image >>=
@@ -69,40 +74,6 @@ fromXML xml =
 -- JSON
 instance ToJSON DeepZoomImage where
    toJSON = genericToJSON $ aesonPrefix camelCase
-
--- Tile size
-data TileSize = TileSize254 | TileSize256 | TileSize1024
-  deriving (Bounded, Enum, Eq)
-
-toTileSize :: String -> Maybe TileSize
-toTileSize "254" = Just TileSize254
-toTileSize "256" = Just TileSize256
-toTileSize "1024" = Just TileSize1024
-toTileSize _ = Nothing
-
-instance Show TileSize where
-  show TileSize254 = "254"
-  show TileSize256 = "256"
-  show TileSize1024 = "1024"
-
--- Tile size: JSON
-instance ToJSON TileSize where
-  toJSON TileSize254 = Number 254
-  toJSON TileSize256 = Number 256
-  toJSON TileSize1024 = Number 1024
-
--- Tile size: SQLite
-instance ToField TileSize where
-  toField TileSize254 = SQLInteger 254
-  toField TileSize256 = SQLInteger 256
-  toField TileSize1024 = SQLInteger 1024
-
-instance FromField TileSize where
-  fromField (Field (SQLInteger 254) _) = Ok TileSize254
-  fromField (Field (SQLInteger 256) _) = Ok TileSize256
-  fromField (Field (SQLInteger 1024) _) = Ok TileSize1024
-  fromField f =
-    returnError ConversionFailed f "invalid Deep Zoom image tile size"
 
 -- Tile overlap
 data TileOverlap = TileOverlap0 | TileOverlap1
