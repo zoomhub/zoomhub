@@ -9,11 +9,12 @@ module ZoomHub.Types.ContentId
   ( ContentId
   , ContentId'
   , ContentIdColumn
-  , mkContentId
-  , pContentId
   , fromInteger
   , fromString
   , isValid
+  , mkContentId
+  , pContentId
+  , toColumn
   , unContentId
   , validChars
   ) where
@@ -41,6 +42,7 @@ import           GHC.Generics                         (Generic)
 import           Opaleye                              (Column, PGText,
                                                        QueryRunnerColumnDefault,
                                                        fieldQueryRunnerColumn,
+                                                       pgString,
                                                        queryRunnerColumnDefault)
 import           Servant                              (FromHttpApiData,
                                                        parseUrlPiece)
@@ -106,6 +108,9 @@ instance FromField ContentId where
 -- PostgreSQL
 type ContentIdColumn = ContentId' (Column PGText)
 $(makeAdaptorAndInstance "pContentId" ''ContentId')
+
+toColumn :: ContentId -> ContentIdColumn
+toColumn (ContentId s) = ContentId (pgString s)
 
 instance PGS.FromField ContentId where
   fromField f mdata = PGS.fromField f mdata >>= parseContentId

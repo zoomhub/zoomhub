@@ -51,6 +51,9 @@ library
     , ZoomHub.Types.ContentURI
     , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
+    , ZoomHub.Types.DeepZoomImage.TileFormat
+    , ZoomHub.Types.DeepZoomImage.TileOverlap
+    , ZoomHub.Types.DeepZoomImage.TileSize
     , ZoomHub.Types.StaticBaseURI
     , ZoomHub.Types.TempPath
     , ZoomHub.Utils

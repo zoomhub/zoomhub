@@ -40,13 +40,12 @@ import           Opaleye                                 (Column, Nullable,
                                                           Table (Table),
                                                           Unpackspec, leftJoin,
                                                           limit, optional,
-                                                          pgString, queryTable,
-                                                          required, restrict,
-                                                          runQuery,
-                                                          showSql,
-                                                          (.===))
+                                                          queryTable, required,
+                                                          restrict, runQuery,
+                                                          showSql, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
+import           Control.Arrow                           (returnA)
 import           ZoomHub.Types.Content                   (Content (Content),
                                                           contentActiveAt,
                                                           contentCompletedAt,
@@ -64,10 +63,8 @@ import           ZoomHub.Types.Content                   (Content (Content),
 import           ZoomHub.Types.ContentId                 (ContentId, ContentId',
                                                           ContentIdColumn,
                                                           mkContentId,
-                                                          pContentId,
-                                                          unContentId)
--- import qualified ZoomHub.Types.ContentId        as ContentId
-import           Control.Arrow                           (returnA)
+                                                          pContentId)
+import qualified ZoomHub.Types.ContentId                 as ContentId
 import           ZoomHub.Types.ContentMIME               (ContentMIME, ContentMIME' (ContentMIME),
                                                           pContentMIME)
 import           ZoomHub.Types.ContentState              (ContentState,
@@ -77,6 +74,7 @@ import           ZoomHub.Types.ContentType               (ContentType,
 import           ZoomHub.Types.ContentURI                (ContentURI, ContentURI' (ContentURI),
                                                           ContentURIColumn,
                                                           pContentURI)
+import qualified ZoomHub.Types.ContentURI                as ContentURI
 -- import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
 import           ZoomHub.Types.DeepZoomImage             (TileFormat,
                                                           TileOverlap, TileSize,
@@ -92,12 +90,6 @@ import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
 -- Public API
 create :: (Integer -> String) -> ContentURI -> PGS.Connection -> IO Content
 create encodeId uri conn = undefined
-
--- getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
--- getById cId conn = runContentQuery conn (byId cId)
-
-getByURL :: ContentURI -> PGS.Connection -> IO (Maybe Content)
-getByURL uri = undefined
 
 getNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
 getNextUnprocessed conn = undefined
@@ -339,11 +331,12 @@ contentQuery :: Query ContentRowRead
 contentQuery = queryTable contentTable
 
 restrictContentId :: ContentId -> QueryArr ContentIdColumn ()
-restrictContentId cId = proc hashId -> do
-    restrict -< hashId .=== pgContentId
-  where
-    pgContentId :: ContentIdColumn
-    pgContentId = mkContentId (pgString $ unContentId cId)
+restrictContentId hashId = proc hashIdColumn -> do
+    restrict -< hashIdColumn .=== ContentId.toColumn hashId
+
+restrictContentURL :: ContentURI -> QueryArr ContentURIColumn ()
+restrictContentURL url = proc uriColumn -> do
+    restrict -< uriColumn .=== ContentURI.toColumn url
 
 runContentQuery :: PGS.Connection -> Query ContentRowRead -> IO [ContentRow]
 runContentQuery = runQuery
@@ -355,14 +348,6 @@ imageQuery = queryTable imageTable
 runImageQuery :: PGS.Connection -> Query ImageRowReadWrite -> IO [ImageRow]
 runImageQuery = runQuery
 
--- -- Query: Combined
--- contentImageQuery :: Query (ContentRowRead, ImageRowReadWrite)
--- contentImageQuery = proc () -> do
---   contentRow <- contentQuery -< ()
---   imageRow <- imageQuery -< ()
---   restrict -< crId contentRow .=== imageContentId imageRow
---   returnA -< (contentRow, imageRow)
-
 runContentImageQuery :: PGS.Connection ->
                         Query (ContentRowRead, NullableImageRowReadWrite) ->
                         IO [(ContentRow, NullableImageRow)]
@@ -370,20 +355,38 @@ runContentImageQuery = runQuery
 
 -- Public API
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
-getById cId conn = do
+getById hashId conn = do
     rs <- runContentImageQuery conn query
     case rs of
-      [(cr, nir)] -> return . Just $ (rowToContent cr nir)
-      _   -> return Nothing
+      [(cr, nir)] -> return . Just $ rowToContent cr nir
+      _ -> return Nothing
   where
     query :: Query (ContentRowRead, NullableImageRowReadWrite)
     query = proc () -> do
-      (cr, ir) <- leftJoin contentQuery imageQuery eqContentId -< ()
-      restrictContentId cId -< crHashId cr
-      returnA -< (cr, ir)
+      (cr, nir) <- leftJoin contentQuery imageQuery eqContentId -< ()
+      restrictContentId hashId -< crHashId cr
+      returnA -< (cr, nir)
 
     eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
     eqContentId (cr, ir) = crId cr .=== imageContentId ir
+
+getByURL :: ContentURI -> PGS.Connection -> IO (Maybe Content)
+getByURL url conn = do
+    rs <- runContentImageQuery conn query
+    case rs of
+      [(cr, nir)] -> return . Just $ rowToContent cr nir
+      _ -> return Nothing
+  where
+    query :: Query (ContentRowRead, NullableImageRowReadWrite)
+    query = proc () -> do
+      (cr, nir) <- leftJoin contentQuery imageQuery eqContentId -< ()
+      restrictContentURL url -< crURL cr
+      returnA -< (cr, nir)
+
+    eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
+    eqContentId (cr, ir) = crId cr .=== imageContentId ir
+
+-- Helpers
 
 rowToContent :: ContentRow -> NullableImageRow -> Content
 rowToContent cr nir = Content
@@ -425,9 +428,11 @@ dbConnectInfo = PGS.defaultConnectInfo
 
 main :: IO ()
 main = do
-  let cId = mkContentId "n"
+  let hashId = mkContentId "n"
+  let uri = ContentURI "http://www.myconfinedspace.com/wp-content/uploads/2008/03/pedo-bear-seal-of-approval.png"
   conn <- PGS.connect dbConnectInfo
   -- res <- runImageQuery conn (limit 20 imageQuery)
   -- res <- runContentImageQuery conn (limit 1 contentImageQuery)
-  res <- getById cId conn
+  -- res <- getById hashId conn
+  res <- getByURL uri conn
   print $ res
