@@ -81,6 +81,10 @@ validCharsSet = Set.fromList validChars
 isValid :: String -> Bool
 isValid = all (`Set.member` validCharsSet)
 
+-- Functor
+instance Functor ContentId' where
+  fmap f (ContentId a) = ContentId (f a)
+
 -- Text
 instance FromHttpApiData ContentId where
   parseUrlPiece t
@@ -110,7 +114,7 @@ type ContentIdColumn = ContentId' (Column PGText)
 $(makeAdaptorAndInstance "pContentId" ''ContentId')
 
 toColumn :: ContentId -> ContentIdColumn
-toColumn (ContentId s) = ContentId (pgString s)
+toColumn = fmap pgString
 
 instance PGS.FromField ContentId where
   fromField f mdata = PGS.fromField f mdata >>= parseContentId
