@@ -12,7 +12,7 @@ module ZoomHub.Storage.PostgreSQL
   -- ** Read operations
     getById
   -- , getById'
-  -- , getByURL
+  , getByURL
   -- , getByURL'
   -- , getExpiredActive
   -- ** Write operations
@@ -112,9 +112,6 @@ markAsFailure conn content maybeError = undefined
 
 markAsSuccess :: PGS.Connection -> Content -> IO Content
 markAsSuccess conn content = undefined
-
-getBy :: String -> String -> PGS.Connection -> IO (Maybe Content)
-getBy fieldName param conn = undefined
 
 -- get :: IO [ContentRow] -> IO (Maybe Content)
 -- get queryAction = undefined
@@ -355,23 +352,21 @@ runContentImageQuery = runQuery
 
 -- Public API
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
-getById hashId conn = do
-    rs <- runContentImageQuery conn query
-    case rs of
-      [(cr, nir)] -> return . Just $ rowToContent cr nir
-      _ -> return Nothing
+getById hashId = getBy predicate
   where
-    query :: Query (ContentRowRead, NullableImageRowReadWrite)
-    query = proc () -> do
-      (cr, nir) <- leftJoin contentQuery imageQuery eqContentId -< ()
+    predicate = proc (cr, _) -> do
       restrictContentId hashId -< crHashId cr
-      returnA -< (cr, nir)
-
-    eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
-    eqContentId (cr, ir) = crId cr .=== imageContentId ir
 
 getByURL :: ContentURI -> PGS.Connection -> IO (Maybe Content)
-getByURL url conn = do
+getByURL url = getBy predicate
+  where
+    predicate = proc (cr, _) -> do
+      restrictContentURL url -< crURL cr
+
+getBy :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
+         PGS.Connection ->
+         IO (Maybe Content)
+getBy predicate conn = do
     rs <- runContentImageQuery conn query
     case rs of
       [(cr, nir)] -> return . Just $ rowToContent cr nir
@@ -380,14 +375,13 @@ getByURL url conn = do
     query :: Query (ContentRowRead, NullableImageRowReadWrite)
     query = proc () -> do
       (cr, nir) <- leftJoin contentQuery imageQuery eqContentId -< ()
-      restrictContentURL url -< crURL cr
+      predicate -< (cr, nir)
       returnA -< (cr, nir)
 
     eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
     eqContentId (cr, ir) = crId cr .=== imageContentId ir
 
 -- Helpers
-
 rowToContent :: ContentRow -> NullableImageRow -> Content
 rowToContent cr nir = Content
     { contentId = crHashId cr
@@ -428,11 +422,13 @@ dbConnectInfo = PGS.defaultConnectInfo
 
 main :: IO ()
 main = do
-  let hashId = mkContentId "n"
-  let uri = ContentURI "http://www.myconfinedspace.com/wp-content/uploads/2008/03/pedo-bear-seal-of-approval.png"
+  -- let hashId = mkContentId "n"
+  let hashId = mkContentId "8"
+  -- let uri = ContentURI "http://www.myconfinedspace.com/wp-content/uploads/2008/03/pedo-bear-seal-of-approval.png"
+  -- let uri = ContentURI "https://tpjrba.dm1.livefilestore.com/y2pjwnrmbcw8QyqBxPb91NPhUiEmOKhTcqZ2I750s-F7BF4JLDpymfs0Gyc1NcZBEsnOhTvIRF59ynHDqKztGCw1kf4a8KHjaqLkM7sqtR5QyY/exp_som_text_scale.png"
   conn <- PGS.connect dbConnectInfo
   -- res <- runImageQuery conn (limit 20 imageQuery)
   -- res <- runContentImageQuery conn (limit 1 contentImageQuery)
-  -- res <- getById hashId conn
-  res <- getByURL uri conn
+  res <- getById hashId conn
+  -- res <- getByURL uri conn
   print $ res
