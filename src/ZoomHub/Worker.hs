@@ -15,7 +15,6 @@ import           Data.Aeson                    (Value (String), encode, toJSON,
 import qualified Data.ByteString.Lazy          as BL
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
-import           Data.Text.Encoding            (decodeUtf8)
 import           Data.Time.Units               (Minute, Second,
                                                 fromMicroseconds,
                                                 toMicroseconds)
@@ -35,6 +34,7 @@ import           ZoomHub.Storage.SQLite        (dequeueNextUnprocessed,
                                                 withConnection)
 import           ZoomHub.Types.Content         (contentId, contentURL)
 import           ZoomHub.Types.ContentId       (unId)
+import           ZoomHub.Utils                 (lenientDecodeUtf8)
 
 -- Constants
 processExistingContentInterval :: Minute
@@ -71,7 +71,8 @@ processExistingContent config workerId = forever $ do
         Just content -> do
           let processOp = process workerId raxConfig tempPath content >>=
                           markAsSuccess dbConn
-              jsonToText = Just . decodeUtf8 . BL.toStrict . encode . toJSONError
+              jsonToText =
+                Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError
               errorOp e = markAsFailure dbConn content (jsonToText e)
               handler e = logT "Process content: failure"
                             [ "id" .= contentId content

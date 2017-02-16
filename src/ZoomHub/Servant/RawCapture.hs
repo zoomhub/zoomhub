@@ -13,7 +13,6 @@ module ZoomHub.Servant.RawCapture
 import           Data.Proxy              (Proxy (Proxy))
 import           Data.Text               (Text)
 import qualified Data.Text               as T
-import qualified Data.Text.Encoding      as T
 import           Data.Typeable           (Typeable)
 import           GHC.TypeLits            (KnownSymbol, Symbol)
 import           Network.Wai             (pathInfo, rawPathInfo)
@@ -21,6 +20,8 @@ import           Servant                 ((:>))
 import           Servant.Common.Text     (FromText, fromText)
 import           Servant.Server.Internal (HasServer, RouteMismatch (NotFound),
                                           ServerT, failWith, route)
+
+import           ZoomHub.Utils           (lenientDecodeUtf8)
 
 data RawCapture (sym :: Symbol) a deriving (Typeable)
 
@@ -34,7 +35,7 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
      a -> ServerT sublayout m
 
   route Proxy subserver request respond =
-    let rawWithLeadingSlash = T.decodeUtf8 (rawPathInfo request)
+    let rawWithLeadingSlash = lenientDecodeUtf8 (rawPathInfo request)
         raw = T.tail rawWithLeadingSlash in
     case capturedRaw captureProxy raw of
            Nothing  -> respond $ failWith NotFound

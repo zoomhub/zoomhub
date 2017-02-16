@@ -14,7 +14,6 @@ import           Data.IP                              (fromHostAddress,
 import           Data.Monoid                          ((<>))
 import           Data.Text                            (Text)
 import qualified Data.Text                            as T
-import           Data.Text.Encoding                   (decodeUtf8)
 import           Data.Time                            (NominalDiffTime)
 import           Data.Time.Units                      (Millisecond)
 import           Data.Time.Units.Instances            ()
@@ -33,6 +32,7 @@ import           System.Log.FastLogger                (toLogStr)
 import           Text.Printf                          (printf)
 
 import           ZoomHub.Log.Logger                   (encodeLogLine)
+import           ZoomHub.Utils                        (lenientDecodeUtf8)
 
 formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
@@ -46,10 +46,10 @@ formatAsJSON date req status responseSize duration reqBody response =
         , "size" .= responseSize
         , "body" .=
           if statusCode status >= 400
-            then Just . decodeUtf8 . BB.toByteString $ response
+            then Just . lenientDecodeUtf8 . BB.toByteString $ response
             else Nothing
         ]
-      , "time" .= decodeUtf8 date
+      , "time" .= lenientDecodeUtf8 date
       ]) <> "\n"
 
 word32ToHostAddress :: Word32 -> Text
@@ -62,12 +62,12 @@ readAsDouble = read
 requestToJSON :: NominalDiffTime -> Request -> [S8.ByteString] -> Value
 requestToJSON duration req reqBody =
   object
-    [ "method" .= decodeUtf8 (requestMethod req)
-    , "path" .= decodeUtf8 (rawPathInfo req)
+    [ "method" .= lenientDecodeUtf8 (requestMethod req)
+    , "path" .= lenientDecodeUtf8 (rawPathInfo req)
     , "query" .= toObject (map queryItemToJSON (queryString req))
     , "duration" .= (round (toMilliseconds duration) :: Millisecond)
     , "size" .= requestBodyLengthToJSON (requestBodyLength req)
-    , "body" .= decodeUtf8 (S8.concat reqBody)
+    , "body" .= lenientDecodeUtf8 (S8.concat reqBody)
     , "remoteHost" .= sockToJSON (remoteHost req)
     , "httpVersion" .= httpVersionToJSON (httpVersion req)
     , "headers" .= requestHeadersToJSON (requestHeaders req)
@@ -101,7 +101,7 @@ toObject = toJSON . HM.fromList
 
 queryItemToJSON :: QueryItem -> (Text, Maybe Value)
 queryItemToJSON (name, maybeValue) =
-  (decodeUtf8 name, fmap (String . decodeUtf8) maybeValue)
+  (lenientDecodeUtf8 name, fmap (String . lenientDecodeUtf8) maybeValue)
 
 requestHeadersToJSON :: RequestHeaders -> Value
 requestHeadersToJSON = toObject . map hToJ where
@@ -111,7 +111,9 @@ requestHeadersToJSON = toObject . map hToJ where
 
 headerToJSON :: Header -> (Text, Text)
 headerToJSON (headerName, header) =
-  (decodeUtf8 . original $ headerName, decodeUtf8 header)
+  ( lenientDecodeUtf8 . original $ headerName
+  , lenientDecodeUtf8 header
+  )
 
 portToJSON :: PortNumber -> Value
 portToJSON = toJSON . toInteger

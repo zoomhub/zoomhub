@@ -29,13 +29,14 @@ import           Data.Monoid               ((<>))
 import           Data.Ord                  (comparing)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
-import           Data.Text.Encoding        (decodeUtf8)
 import qualified Data.Text.IO              as TIO
 import           Data.Time.Clock           (getCurrentTime)
 import           Data.Time.Units           (Millisecond)
 import           Data.Time.Units.Instances ()
 import           System.IO                 (stderr, stdout)
 import           System.TimeIt             (timeItT)
+
+import           ZoomHub.Utils             (lenientDecodeUtf8)
 
 data Level = Debug | Info | Warning | Error deriving Eq
 
@@ -107,7 +108,7 @@ log level message meta = do
     handle _     = stdout
 
 encodeLogLine :: Value -> Text
-encodeLogLine = removeNewlines . decodeUtf8 . BL.toStrict . prettyEncode
+encodeLogLine = removeNewlines . lenientDecodeUtf8 . BL.toStrict . prettyEncode
   where
     removeNewlines = (T.intercalate "") . T.lines
     prettyEncode = encodePretty' prettyEncodeConfig

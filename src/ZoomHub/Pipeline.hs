@@ -14,7 +14,6 @@ import           Data.Aeson                               ((.=))
 import           Data.List                                (stripPrefix)
 import           Data.List.Split                          (chunksOf)
 import           Data.Monoid                              ((<>))
-import           Data.Text.Encoding                       (decodeUtf8)
 import           Network.Wreq                             (get, responseBody,
                                                            responseHeader)
 import           System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
@@ -52,6 +51,7 @@ import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFo
                                                            dziTileFormat,
                                                            fromXML)
 import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
+import           ZoomHub.Utils                            (lenientDecodeUtf8)
 
 
 process :: String -> RackspaceConfig -> TempPath -> Content -> IO Content
@@ -112,7 +112,8 @@ downloadURL url dest = do
   res <- get (show url)
   let body = res ^. responseBody
   atomicWriteFile dest body
-  return $ parseMIMEType . decodeUtf8 $ res ^. responseHeader "content-type"
+  return $ parseMIMEType . lenientDecodeUtf8 $
+    res ^. responseHeader "content-type"
 
 createDZI :: String -> FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
 createDZI workerId src dest tileFormat = do

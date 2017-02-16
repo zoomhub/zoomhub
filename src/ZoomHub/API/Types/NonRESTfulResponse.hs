@@ -12,12 +12,13 @@ module ZoomHub.API.Types.NonRESTfulResponse
 
 import           Data.Aeson                (ToJSON, object, toJSON, (.=))
 import qualified Data.Text                 as T
-import           Data.Text.Encoding        (decodeUtf8)
 import           Network.HTTP.Types.Status (Status, badRequest400,
                                             movedPermanently301, notFound404,
                                             ok200, serviceUnavailable503,
                                             statusCode, statusMessage)
 import           Network.URI               (URI)
+
+import           ZoomHub.Utils             (lenientDecodeUtf8)
 
 data NonRESTfulResponse a = ToJSON a => NonRESTfulResponse
   { nrrStatus           :: Status
@@ -70,7 +71,7 @@ mkNonRESTful503 message = NonRESTfulResponse
 instance ToJSON a => ToJSON (NonRESTfulResponse a) where
   toJSON r = object
       [ "status" .= statusCode status
-      , "statusText" .= decodeUtf8 (statusMessage status)
+      , "statusText" .= lenientDecodeUtf8 (statusMessage status)
       , bodyKey .= toJSON (nrrBody r)
       , "redirectLocation" .= redirectLocation
       ]
