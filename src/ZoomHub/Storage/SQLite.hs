@@ -455,19 +455,8 @@ rowToContent cr = Content
     , contentDZI = maybeDZI
     }
   where
-    maybeDZIWidth = crDZIWidth cr
-    maybeDZIHeight = crDZIHeight cr
-    maybeDZITileSize = crDZITileSize cr
-    maybeDZITileOverlap = crDZITileOverlap cr
-    maybeDZITileFormat = crDZITileFormat cr
-    maybeDZI =
-      case (maybeDZIWidth, maybeDZIHeight, maybeDZITileSize,
-            maybeDZITileOverlap, maybeDZITileFormat) of
-      (Just dziWidth, Just dziHeight,
-       Just dziTileSize, Just dziTileOverlap, Just dziTileFormat) ->
-        Just $ mkDeepZoomImage dziWidth dziHeight dziTileSize
-          dziTileOverlap dziTileFormat
-      _ -> Nothing
+    maybeDZI = mkDeepZoomImage <$> (crDZIWidth cr) <*> (crDZIHeight cr) <*>
+      (crDZITileSize cr) <*> (crDZITileOverlap cr) <*> (crDZITileFormat cr)
 
 contentToRow :: Integer -> Content -> ContentRow
 contentToRow id_ c = ContentRow
