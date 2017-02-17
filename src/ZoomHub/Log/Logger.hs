@@ -33,7 +33,7 @@ import qualified Data.Text.IO              as TIO
 import           Data.Time.Clock           (getCurrentTime)
 import           Data.Time.Units           (Millisecond)
 import           Data.Time.Units.Instances ()
-import           System.IO                 (stderr, stdout)
+import           System.IO                 (hSetEncoding, stderr, stdout, utf8)
 import           System.TimeIt             (timeItT)
 
 import           ZoomHub.Utils             (lenientDecodeUtf8)
@@ -95,6 +95,11 @@ logT level msg meta action = do
 log :: Level -> String -> [Pair] -> IO ()
 log level message meta = do
     now <- getCurrentTime
+    -- Force to UTF8 to avoid the dreaded `<stdout>: commitAndReleaseBuffer:
+    -- invalid argument` error when the locale is improperly configured and
+    -- a non-ASCII character is output:
+    -- Source: https://github.com/blitzcode/hue-dashboard/blob/800710d81324835d90b6dde25a28de4493ef2b92/Trace.hs#L61-L69
+    hSetEncoding (handle level) utf8
     TIO.hPutStrLn (handle level) $ line now <> "\n"
   where
     line time = encodeLogLine . object $
