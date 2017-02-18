@@ -16,30 +16,30 @@ module ZoomHub.Config
   , toNewContentStatus
   ) where
 
-import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T
-import GHC.Generics (Generic)
-import Network.URI (URI, parseRelativeReference)
-import Network.URI.Instances ()
-import Network.Wai (Middleware)
-import System.Envy
-  ( DefConfig
-  , FromEnv
-  , Option(..)
-  , customPrefix
-  , defConfig
-  , dropPrefixCount
-  , fromEnv
-  , gFromEnvCustom
-  )
+import           Data.Aeson                           (ToJSON, Value (String),
+                                                       object, toJSON, (.=))
+import qualified Data.ByteString.Lazy                 as BL
+import qualified Data.Text                            as T
+import           Database.PostgreSQL.Simple           (ConnectInfo)
+import           Database.PostgreSQL.Simple.Instances ()
+import           GHC.Generics                         (Generic)
+import           Network.URI                          (URI,
+                                                       parseRelativeReference)
+import           Network.URI.Instances                ()
+import           Network.Wai                          (Middleware)
+import           System.Envy                          (DefConfig, FromEnv,
+                                                       Option (..),
+                                                       customPrefix, defConfig,
+                                                       dropPrefixCount, fromEnv,
+                                                       gFromEnvCustom)
 
-import ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
-import ZoomHub.Types.BaseURI (BaseURI)
-import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
-import ZoomHub.Types.DatabasePath (DatabasePath)
-import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
-import ZoomHub.Types.TempPath (TempPath)
+import           ZoomHub.Rackspace.CloudFiles         (Container,
+                                                       parseContainer)
+import           ZoomHub.Types.BaseURI                (BaseURI)
+import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
+import           ZoomHub.Types.DatabasePath           (DatabasePath)
+import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI)
+import           ZoomHub.Types.TempPath               (TempPath)
 
 
 defaultPort :: Integer
@@ -49,6 +49,7 @@ data Config = Config
   { baseURI               :: BaseURI
   , contentBaseURI        :: ContentBaseURI
   , dbPath                :: DatabasePath
+  , dbConnectInfo         :: ConnectInfo
   , encodeId              :: Integer -> String
   , error404              :: BL.ByteString
   , existingContentStatus :: ExistingContentStatus
@@ -67,6 +68,7 @@ instance ToJSON Config where
   toJSON Config{..} = object
     [ "baseURI" .= baseURI
     , "contentBaseURI" .= contentBaseURI
+    , "dbConnectInfo" .= dbConnectInfo
     , "dbPath" .= dbPath
     , "existingContentStatus" .= existingContentStatus
     , "newContentStatus" .= newContentStatus

@@ -23,6 +23,8 @@ module ZoomHub.Storage.PostgreSQL
   -- , resetAsInitialized
   -- ** Misc
   -- , withConnection
+  , PGS.ConnectInfo
+  -- ** Testing
   , main
   ) where
 

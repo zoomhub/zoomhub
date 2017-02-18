@@ -3,60 +3,61 @@
 
 module ZoomHub.Main (main) where
 
-import Control.Concurrent (getNumCapabilities, threadDelay)
-import Control.Concurrent.Async (async)
-import Control.Exception (SomeException, tryJust)
-import Control.Monad (forM_, guard, unless, when)
-import Data.Aeson ((.=))
-import qualified Data.ByteString.Char8 as BC
-import qualified Data.ByteString.Lazy as BL
-import Data.Default (def)
-import Data.Maybe (fromJust, fromMaybe)
-import Data.Time.Units (Second, toMicroseconds)
-import Data.Time.Units.Instances ()
-import GHC.Conc (getNumProcessors)
-import Network.BSD (getHostName)
-import Network.URI (parseAbsoluteURI)
-import Network.Wai (Request)
-import Network.Wai.Handler.Warp
-  ( defaultSettings
-  , defaultShouldDisplayException
-  , runSettings
-  , setOnException
-  , setPort
-  )
-import Network.Wai.Middleware.RequestLogger
-  (OutputFormat(CustomOutputFormatWithDetails), mkRequestLogger, outputFormat)
-import System.Directory
-  (createDirectoryIfMissing, doesFileExist, getCurrentDirectory)
-import System.Environment (getEnvironment)
-import System.Envy (decodeEnv)
-import System.FilePath ((</>))
-import System.IO.Error (isDoesNotExistError)
-import System.Random (randomRIO)
-import Text.Read (readMaybe)
-import Web.Hashids (encode, hashidsSimple)
+import           Control.Concurrent                   (getNumCapabilities,
+                                                       threadDelay)
+import           Control.Concurrent.Async             (async)
+import           Control.Exception                    (SomeException, tryJust)
+import           Control.Monad                        (forM_, guard, unless,
+                                                       when)
+import           Data.Aeson                           ((.=))
+import qualified Data.ByteString.Char8                as BC
+import qualified Data.ByteString.Lazy                 as BL
+import           Data.Default                         (def)
+import           Data.Maybe                           (fromJust, fromMaybe)
+import           Data.Time.Units                      (Second, toMicroseconds)
+import           Data.Time.Units.Instances            ()
+import           Database.PostgreSQL.Simple           (ConnectInfo (..),
+                                                       defaultConnectInfo)
+import           GHC.Conc                             (getNumProcessors)
+import           Network.BSD                          (getHostName)
+import           Network.URI                          (parseAbsoluteURI)
+import           Network.Wai                          (Request)
+import           Network.Wai.Handler.Warp             (defaultSettings, defaultShouldDisplayException,
+                                                       runSettings,
+                                                       setOnException, setPort)
+import           Network.Wai.Middleware.RequestLogger (OutputFormat (CustomOutputFormatWithDetails),
+                                                       mkRequestLogger,
+                                                       outputFormat)
+import           System.Directory                     (createDirectoryIfMissing,
+                                                       doesFileExist,
+                                                       getCurrentDirectory)
+import           System.Environment                   (getEnvironment)
+import           System.Envy                          (decodeEnv)
+import           System.FilePath                      ((</>))
+import           System.IO.Error                      (isDoesNotExistError)
+import           System.Random                        (randomRIO)
+import           Text.Read                            (readMaybe)
+import           Web.Hashids                          (encode, hashidsSimple)
 
-import ZoomHub.API (app)
-import ZoomHub.Config
-  ( Config(..)
-  , ExistingContentStatus(IgnoreExistingContent, ProcessExistingContent)
-  , NewContentStatus(NewContentDisallowed)
-  , defaultPort
-  , raxContainer
-  , raxContainerPath
-  , toExistingContentStatus
-  , toNewContentStatus
-  )
-import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
-import ZoomHub.Log.RequestLogger (formatAsJSON)
-import ZoomHub.Rackspace.CloudFiles (unContainer)
-import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
-import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath), unDatabasePath)
-import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
-import ZoomHub.Types.TempPath (TempPath(TempPath), unTempPath)
-import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
+import           ZoomHub.API                          (app)
+import           ZoomHub.Config                       (Config (..), ExistingContentStatus (ProcessExistingContent, IgnoreExistingContent), NewContentStatus (NewContentDisallowed),
+                                                       defaultPort,
+                                                       raxContainer,
+                                                       raxContainerPath,
+                                                       toExistingContentStatus,
+                                                       toNewContentStatus)
+import           ZoomHub.Log.Logger                   (logException_, logInfo,
+                                                       logInfo_)
+import           ZoomHub.Log.RequestLogger            (formatAsJSON)
+import           ZoomHub.Rackspace.CloudFiles         (unContainer)
+import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
+import           ZoomHub.Types.ContentBaseURI         (mkContentBaseURI)
+import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
+                                                       unDatabasePath)
+import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI (StaticBaseURI))
+import           ZoomHub.Types.TempPath               (TempPath (TempPath),
+                                                       unTempPath)
+import           ZoomHub.Worker                       (processExistingContent, processExpiredActiveContent)
 
 -- Environment variables
 baseURIEnvName :: String
@@ -125,6 +126,19 @@ main = do
       defaultDBPath = DatabasePath $
         currentDirectory </> "data" </> "zoomhub-development.sqlite3"
       dbPath = maybe defaultDBPath DatabasePath (lookup dbPathEnvName env)
+
+      defaultDBHost = connectHost defaultConnectInfo
+      defaultDBPort = connectPort defaultConnectInfo
+      defaultDBUser = connectUser defaultConnectInfo
+      defaultDBPassword = connectPassword defaultConnectInfo
+      defaultDBName = "zoomhub_development"
+      dbConnectInfo = ConnectInfo {
+        connectHost = fromMaybe defaultDBHost (lookup "PGHOST" env)
+      , connectPort = fromMaybe defaultDBPort (lookup "PGPORT" env >>= readMaybe)
+      , connectUser = fromMaybe defaultDBUser (lookup "PGUSER" env)
+      , connectPassword = fromMaybe defaultDBPassword (lookup "PGPASSWORD" env)
+      , connectDatabase = fromMaybe defaultDBName (lookup "PGDATABASE" env)
+      }
 
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)

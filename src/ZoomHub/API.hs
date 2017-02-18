@@ -146,6 +146,7 @@ server config =
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dbPath = Config.dbPath config
+    dbConnectInfo = Config.dbConnectInfo config
     encodeId = Config.encodeId config
     newContentStatus = Config.newContentStatus config
     publicPath = Config.publicPath config
