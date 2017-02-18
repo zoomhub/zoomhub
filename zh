@@ -83,7 +83,16 @@ run)
                 --exec ./scripts/run-development.sh
     ;;
 test)
+    createdb zoomhub_test
+    psql --dbname=zoomhub_test --file=./scripts/schema-7-pg.sql
+    # TODO: Figure out how to preserve schema with `pgloader`:
+    pgloader \
+      ./data/zoomhub-development.sqlite3 \
+      postgresql://$(whoami):@localhost/zoomhub_test
+
     stack test
+
+    dropdb zoomhub_test
     ;;
 *)
     echo "Unknown command: $0 $@. Try: $0 format|init|lint|ops|run|test"

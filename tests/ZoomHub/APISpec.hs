@@ -19,6 +19,8 @@ import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
 import           ZoomHub.API                  (app)
 import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
 import qualified ZoomHub.Config               as Config
+import           ZoomHub.Storage.PostgreSQL   (ConnectInfo (..),
+                                               defaultConnectInfo)
 import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import           ZoomHub.Types.ContentId      (ContentId, fromString,
@@ -109,6 +111,9 @@ config = Config
         Just uri -> uri
         _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
   , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
+  , dbConnectInfo = defaultConnectInfo {
+      connectDatabase = "zoomhub_test"
+    }
   , encodeId = show
   , error404 = "404"
   , existingContentStatus = IgnoreExistingContent

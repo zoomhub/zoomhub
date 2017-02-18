@@ -23,7 +23,8 @@ module ZoomHub.Storage.PostgreSQL
   -- , resetAsInitialized
   -- ** Misc
   -- , withConnection
-  , PGS.ConnectInfo
+  , PGS.ConnectInfo(..)
+  , PGS.defaultConnectInfo
   ) where
 
 import           Data.Int                                (Int64)
