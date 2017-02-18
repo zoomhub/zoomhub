@@ -9,7 +9,7 @@ module ZoomHub.Types.ContentURI
   , ContentURIColumn
   , pContentURI
   , toColumn
-  -- Test
+  -- TODO: Can we test this without exporting it?
   , unContentURI
   ) where
 
