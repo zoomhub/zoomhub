@@ -129,7 +129,7 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbPath
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restContentById baseURI contentBaseURI dbPath
+    :<|> restContentById baseURI contentBaseURI dbConnectInfo
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbPath encodeId newContentStatus
     :<|> restInvalidRequest
@@ -157,12 +157,6 @@ server config =
 app :: Config -> Application
 app config = logger . simpleCors $ serve api (server config)
   where logger = Config.logger config
-
--- Database
-pgConnectInfo :: PGS.ConnectInfo
-pgConnectInfo = PGS.defaultConnectInfo
-  { PGS.connectDatabase = "zoomhub-production"
-  }
 
 -- Handlers
 
@@ -229,14 +223,12 @@ jsonpInvalidRequest maybeURL callback =
 -- API: RESTful
 restContentById :: BaseURI ->
                    ContentBaseURI ->
-                   DatabasePath ->
+                   ConnectInfo ->
                    ContentId ->
                    Handler Content
-restContentById baseURI contentBaseURI dbPath contentId = do
-  pgConn <- liftIO $ PGS.connect pgConnectInfo
+restContentById baseURI contentBaseURI dbConnectInfo contentId = do
+  pgConn <- liftIO $ PGS.connect dbConnectInfo
   maybeContent <- liftIO $ PG.getById contentId pgConn
-  -- maybeContent <-
-    -- liftIO $ SQLite.withConnection dbPath (SQLite.getById' contentId  dbPath)
   case maybeContent of
     Nothing      -> throwError . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
