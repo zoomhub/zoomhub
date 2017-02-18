@@ -402,17 +402,11 @@ rowToContent cr nir = Content
     mDZIWidth = fromIntegral <$> imageWidth nir
     mDZIHeight = fromIntegral <$> imageHeight nir
     mDZITileSize = fromIntegral <$> imageTileSize nir >>= TileSize.fromInteger
-    mDZITileOverlap =
-      fromIntegral <$> imageTileOverlap nir >>= TileOverlap.fromInteger
+    mDZITileOverlap = fromIntegral <$> imageTileOverlap nir >>=
+      TileOverlap.fromInteger
     mDZITileFormat = imageTileFormat nir >>= TileFormat.fromText
-    mDZI =
-      case (mDZIWidth, mDZIHeight,
-            mDZITileSize, mDZITileOverlap, mDZITileFormat) of
-      (Just dziWidth, Just dziHeight,
-       Just dziTileSize, Just dziTileOverlap, Just dziTileFormat) ->
-        Just $ mkDeepZoomImage dziWidth dziHeight dziTileSize
-          dziTileOverlap dziTileFormat
-      _ -> Nothing
+    mDZI = mkDeepZoomImage <$> mDZIWidth <*> mDZIHeight <*> mDZITileSize <*>
+      mDZITileOverlap <*> mDZITileFormat
 
 -- Main
 dbConnectInfo :: PGS.ConnectInfo
