@@ -150,7 +150,7 @@ server config =
     newContentStatus = Config.newContentStatus config
     publicPath = Config.publicPath config
     staticBaseURI = Config.staticBaseURI config
-    viewerScript = Config.openseadragonScript config
+    viewerScript = Config.openSeadragonScript config
 
 -- App
 app :: Config -> Application

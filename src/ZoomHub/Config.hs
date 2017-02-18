@@ -54,7 +54,7 @@ data Config = Config
   , existingContentStatus :: ExistingContentStatus
   , logger                :: Middleware
   , newContentStatus      :: NewContentStatus
-  , openseadragonScript   :: String
+  , openSeadragonScript   :: String
   , port                  :: Integer
   , publicPath            :: FilePath
   , rackspace             :: RackspaceConfig

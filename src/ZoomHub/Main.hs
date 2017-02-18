@@ -95,7 +95,7 @@ main = do
   maybeRaxConfig <- decodeEnv
   hostname <- getHostName
   currentDirectory <- getCurrentDirectory
-  openseadragonScript <- readFile $ currentDirectory </>
+  openSeadragonScript <- readFile $ currentDirectory </>
     "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
   error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
