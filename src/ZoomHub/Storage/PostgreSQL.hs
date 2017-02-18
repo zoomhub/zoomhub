@@ -24,8 +24,6 @@ module ZoomHub.Storage.PostgreSQL
   -- ** Misc
   -- , withConnection
   , PGS.ConnectInfo
-  -- ** Testing
-  , main
   ) where
 
 import           Data.Int                                (Int64)
@@ -409,22 +407,3 @@ rowToContent cr nir = Content
     mDZITileFormat = imageTileFormat nir >>= TileFormat.fromText
     mDZI = mkDeepZoomImage <$> mDZIWidth <*> mDZIHeight <*> mDZITileSize <*>
       mDZITileOverlap <*> mDZITileFormat
-
--- Main
-dbConnectInfo :: PGS.ConnectInfo
-dbConnectInfo = PGS.defaultConnectInfo
-  { PGS.connectDatabase = "zoomhub-production"
-  }
-
-main :: IO ()
-main = do
-  -- let hashId = mkContentId "n"
-  let hashId = mkContentId "8"
-  -- let uri = ContentURI "http://www.myconfinedspace.com/wp-content/uploads/2008/03/pedo-bear-seal-of-approval.png"
-  -- let uri = ContentURI "https://tpjrba.dm1.livefilestore.com/y2pjwnrmbcw8QyqBxPb91NPhUiEmOKhTcqZ2I750s-F7BF4JLDpymfs0Gyc1NcZBEsnOhTvIRF59ynHDqKztGCw1kf4a8KHjaqLkM7sqtR5QyY/exp_som_text_scale.png"
-  conn <- PGS.connect dbConnectInfo
-  -- res <- runImageQuery conn (limit 20 imageQuery)
-  -- res <- runContentImageQuery conn (limit 1 contentImageQuery)
-  res <- getById hashId conn
-  -- res <- getByURL uri conn
-  print $ res
