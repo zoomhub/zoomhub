@@ -5,8 +5,9 @@
 module ZoomHub.Types.ContentMIME
   ( ContentMIME
   , ContentMIME'(ContentMIME)
-  , unContentMIME
+  , ContentMIMEColumn
   , pContentMIME
+  , unContentMIME
   ) where
 
 import           Codec.MIME.Parse                     (parseMIMEType)
@@ -22,7 +23,7 @@ import           Database.SQLite.Simple.FromField     (FromField, ResultError (C
 import           Database.SQLite.Simple.Internal      (Field (Field))
 import           Database.SQLite.Simple.Ok            (Ok (Ok))
 import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           Opaleye                              (Column, PGText,
+import           Opaleye                              (Column, Nullable, PGText,
                                                        QueryRunnerColumnDefault,
                                                        fieldQueryRunnerColumn,
                                                        queryRunnerColumnDefault)
@@ -48,7 +49,7 @@ instance ToJSON ContentMIME where
   toJSON = String . showType . unContentMIME
 
 -- PostgreSQL
-type ContentMIMEColumn = ContentMIME' (Column PGText)
+type ContentMIMEColumn = ContentMIME' (Column (Nullable PGText))
 $(makeAdaptorAndInstance "pContentMIME" ''ContentMIME')
 
 instance PGS.FromField ContentMIME where

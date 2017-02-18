@@ -66,8 +66,7 @@ import           ZoomHub.Types.ContentId                 (ContentId, ContentId',
                                                           mkContentId,
                                                           pContentId)
 import qualified ZoomHub.Types.ContentId                 as ContentId
-import           ZoomHub.Types.ContentMIME               (ContentMIME, ContentMIME' (ContentMIME),
-                                                          pContentMIME)
+import           ZoomHub.Types.ContentMIME               (ContentMIME, ContentMIME' (ContentMIME))
 import           ZoomHub.Types.ContentState              (ContentState,
                                                           ContentStateColumn)
 import           ZoomHub.Types.ContentType               (ContentType,
