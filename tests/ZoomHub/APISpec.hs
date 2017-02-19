@@ -109,30 +109,30 @@ nullLogger = id
 
 config :: Config
 config = Config
-  { baseURI = BaseURI (toURI "http://localhost:8000")
-  , contentBaseURI =
-      case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
-        Just uri -> uri
-        _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
-  , dbConnInfo = dbConnInfo'
-  , dbConnPool = dbConnPool'
-  , dbConnPoolIdleTime = dbConnPoolIdleTime'
-  , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
-  , dbConnPoolNumStripes = dbConnPoolNumStripes'
-  , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
-  , encodeId = show
-  , error404 = "404"
-  , existingContentStatus = IgnoreExistingContent
-  , logger = nullLogger
-  , newContentStatus = NewContentDisallowed
-  , openSeadragonScript = "osd"
-  , port = 8000
-  , publicPath = "./public"
-  , rackspace = undefined
-  , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
-  , tempPath = TempPath "./data/temp"
-  , version = "test"
-  }
+    { baseURI = BaseURI (toURI "http://localhost:8000")
+    , contentBaseURI =
+        case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
+          Just uri -> uri
+          _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
+    , dbConnInfo = dbConnInfo'
+    , dbConnPool = dbConnPool'
+    , dbConnPoolIdleTime = dbConnPoolIdleTime'
+    , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
+    , dbConnPoolNumStripes = dbConnPoolNumStripes'
+    , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
+    , encodeId = show
+    , error404 = "404"
+    , existingContentStatus = IgnoreExistingContent
+    , logger = nullLogger
+    , newContentStatus = NewContentDisallowed
+    , openSeadragonScript = "osd"
+    , port = 8000
+    , publicPath = "./public"
+    , rackspace = undefined
+    , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
+    , tempPath = TempPath "./data/temp"
+    , version = "test"
+    }
   where
     numSpindles = 1
     -- TODO: How can we avoid `unsafePerformIO`?
