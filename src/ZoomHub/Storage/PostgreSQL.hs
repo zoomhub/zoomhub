@@ -22,7 +22,7 @@ module ZoomHub.Storage.PostgreSQL
   -- , markAsSuccess
   -- , resetAsInitialized
   -- ** Misc
-  -- , withConnection
+  , createConnectionPool
   , PGS.ConnectInfo(..)
   , PGS.defaultConnectInfo
   -- ** Debug
@@ -30,10 +30,14 @@ module ZoomHub.Storage.PostgreSQL
   ) where
 
 import           Data.Int                                (Int64)
+import           Data.Pool                               (Pool, createPool)
 import           Data.Profunctor.Product.Default         (Default)
 import           Data.Profunctor.Product.TH              (makeAdaptorAndInstance)
 import           Data.Text                               (Text)
-import           Data.Time.Clock                         (UTCTime)
+import           Data.Time.Clock                         (NominalDiffTime,
+                                                          UTCTime)
+import           Data.Time.Units                         (Second, TimeUnit,
+                                                          toMicroseconds)
 import qualified Database.PostgreSQL.Simple              as PGS
 import           Opaleye                                 (Column, Nullable,
                                                           PGBool, PGFloat8,
@@ -355,6 +359,16 @@ runContentImageQuery :: PGS.Connection ->
 runContentImageQuery = runQuery
 
 -- Public API
+createConnectionPool :: (TimeUnit a) =>
+              PGS.ConnectInfo ->
+              Integer ->
+              a ->
+              Integer ->
+              IO (Pool PGS.Connection)
+createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
+  createPool (PGS.connect connInfo) PGS.close (fromIntegral numStripes)
+    (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
+
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
 getById hashId = getBy predicate
   where
@@ -443,3 +457,7 @@ rowToContent cr nir = Content
     mDZITileFormat = imageTileFormat nir >>= TileFormat.fromText
     mDZI = mkDeepZoomImage <$> mDZIWidth <*> mDZIHeight <*> mDZITileSize <*>
       mDZITileOverlap <*> mDZITileFormat
+
+toIdleTime :: (TimeUnit a) => a -> NominalDiffTime
+toIdleTime duration = fromIntegral $ toMicroseconds duration `div`
+  toMicroseconds (1 :: Second)

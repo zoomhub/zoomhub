@@ -18,6 +18,7 @@ import           Data.Time.Units                      (Second, toMicroseconds)
 import           Data.Time.Units.Instances            ()
 import           Database.PostgreSQL.Simple           (ConnectInfo (..),
                                                        defaultConnectInfo)
+import qualified Database.PostgreSQL.Simple           as PGS
 import           GHC.Conc                             (getNumProcessors)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)
@@ -50,6 +51,7 @@ import           ZoomHub.Log.Logger                   (logException_, logInfo,
                                                        logInfo_)
 import           ZoomHub.Log.RequestLogger            (formatAsJSON)
 import           ZoomHub.Rackspace.CloudFiles         (unContainer)
+import           ZoomHub.Storage.PostgreSQL           (createConnectionPool)
 import           ZoomHub.Types.BaseURI                (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI         (mkContentBaseURI)
 import           ZoomHub.Types.DatabasePath           (DatabasePath (DatabasePath),
@@ -103,6 +105,9 @@ main = do
   logger <- mkRequestLogger def
               { outputFormat = CustomOutputFormatWithDetails formatAsJSON }
 
+  numProcessors <- getNumProcessors
+  numCapabilities <- getNumCapabilities
+
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
 
       maybeHashidsSalt = BC.pack <$> lookup hashidsSaltEnvName env
@@ -154,6 +159,17 @@ main = do
       staticBaseURI = StaticBaseURI . fromJust .
         parseAbsoluteURI $ "http://static.zoomhub.net"
 
+      -- Database connection pool:
+      -- https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing#the-formula
+      numSpindles = 1
+      dbConnPoolNumStripes = 1
+      dbConnPoolIdleTime = 10 :: Second
+      dbConnPoolMaxResourcesPerStripe = fromIntegral $
+        (numCapabilities * 2) + numSpindles
+
+  dbConnPool <- createConnectionPool dbConnInfo dbConnPoolNumStripes
+    dbConnPoolIdleTime dbConnPoolMaxResourcesPerStripe
+
   ensureTempPathExists tempPath
   ensureDBExists dbPath
 
@@ -181,8 +197,6 @@ main = do
         [ "config" .= config ]
 
       -- Workers
-      numProcessors <- getNumProcessors
-      numCapabilities <- getNumCapabilities
       logInfo "Config: Worker"
         [ "numProcessors" .= numProcessors
         , "numCapabilities" .= numCapabilities

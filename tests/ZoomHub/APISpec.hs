@@ -5,11 +5,14 @@ module ZoomHub.APISpec
   , spec
   ) where
 
+import           Control.Concurrent           (getNumCapabilities)
 import qualified Data.ByteString.Char8        as BC
 import           Data.Monoid                  ((<>))
+import           Data.Time.Units              (Second)
 import           Network.HTTP.Types           (methodGet)
 import           Network.URI                  (URI, parseURIReference)
 import           Network.Wai                  (Middleware)
+import           System.IO.Unsafe             (unsafePerformIO)
 import           Test.Hspec                   (Spec, describe, hspec, it)
 import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
                                                get, matchHeaders, matchStatus,
@@ -21,6 +24,7 @@ import           ZoomHub.Config               (Config (..), ExistingContentStatu
 import qualified ZoomHub.Config               as Config
 import           ZoomHub.Storage.PostgreSQL   (ConnectInfo (..),
                                                defaultConnectInfo)
+import           ZoomHub.Storage.PostgreSQL   (createConnectionPool)
 import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import           ZoomHub.Types.ContentId      (ContentId, fromString,
@@ -111,6 +115,10 @@ config = Config
         Just uri -> uri
         _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
   , dbConnInfo = dbConnInfo'
+  , dbConnPool = dbConnPool'
+  , dbConnPoolIdleTime = dbConnPoolIdleTime'
+  , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
+  , dbConnPoolNumStripes = dbConnPoolNumStripes'
   , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
   , encodeId = show
   , error404 = "404"
@@ -126,7 +134,16 @@ config = Config
   , version = "test"
   }
   where
+    numSpindles = 1
+    -- TODO: How can we avoid `unsafePerformIO`?
+    numCapabilities = fromIntegral $ unsafePerformIO getNumCapabilities
     dbConnInfo' = defaultConnectInfo { connectDatabase = "zoomhub_test" }
+    -- TODO: How can we avoid `unsafePerformIO`?
+    dbConnPool' = unsafePerformIO $ createConnectionPool dbConnInfo'
+      dbConnPoolNumStripes' dbConnPoolIdleTime' dbConnPoolMaxResourcesPerStripe'
+    dbConnPoolIdleTime' = 10 :: Second
+    dbConnPoolMaxResourcesPerStripe' = (numCapabilities * 2) + numSpindles
+    dbConnPoolNumStripes' = 1
 
 spec :: Spec
 spec = with (return $ app config) $ do

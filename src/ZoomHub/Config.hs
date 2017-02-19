@@ -19,7 +19,9 @@ module ZoomHub.Config
 import           Data.Aeson                           (ToJSON, Value (String),
                                                        object, toJSON, (.=))
 import qualified Data.ByteString.Lazy                 as BL
+import           Data.Pool                            (Pool)
 import qualified Data.Text                            as T
+import           Data.Time.Units                      (Second)
 import qualified Database.PostgreSQL.Simple           as PGS
 import           Database.PostgreSQL.Simple.Instances ()
 import           GHC.Generics                         (Generic)
@@ -46,22 +48,26 @@ defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { baseURI               :: BaseURI
-  , contentBaseURI        :: ContentBaseURI
-  , dbConnInfo            :: PGS.ConnectInfo
-  , dbPath                :: DatabasePath
-  , encodeId              :: Integer -> String
-  , error404              :: BL.ByteString
-  , existingContentStatus :: ExistingContentStatus
-  , logger                :: Middleware
-  , newContentStatus      :: NewContentStatus
-  , openSeadragonScript   :: String
-  , port                  :: Integer
-  , publicPath            :: FilePath
-  , rackspace             :: RackspaceConfig
-  , staticBaseURI         :: StaticBaseURI
-  , tempPath              :: TempPath
-  , version               :: String
+  { baseURI                         :: BaseURI
+  , contentBaseURI                  :: ContentBaseURI
+  , dbConnInfo                      :: PGS.ConnectInfo
+  , dbConnPool                      :: Pool PGS.Connection
+  , dbConnPoolIdleTime              :: Second
+  , dbConnPoolMaxResourcesPerStripe :: Integer
+  , dbConnPoolNumStripes            :: Integer
+  , dbPath                          :: DatabasePath
+  , encodeId                        :: Integer -> String
+  , error404                        :: BL.ByteString
+  , existingContentStatus           :: ExistingContentStatus
+  , logger                          :: Middleware
+  , newContentStatus                :: NewContentStatus
+  , openSeadragonScript             :: String
+  , port                            :: Integer
+  , publicPath                      :: FilePath
+  , rackspace                       :: RackspaceConfig
+  , staticBaseURI                   :: StaticBaseURI
+  , tempPath                        :: TempPath
+  , version                         :: String
   }
 
 instance ToJSON Config where
@@ -69,6 +75,9 @@ instance ToJSON Config where
     [ "baseURI" .= baseURI
     , "contentBaseURI" .= contentBaseURI
     , "dbConnInfo" .= dbConnInfo
+    , "dbConnPoolIdleTime" .= dbConnPoolIdleTime
+    , "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
+    , "dbConnPoolNumStripes" .= dbConnPoolNumStripes
     , "dbPath" .= dbPath
     , "existingContentStatus" .= existingContentStatus
     , "newContentStatus" .= newContentStatus

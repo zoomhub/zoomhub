@@ -109,6 +109,7 @@ library
     , process
     , product-profunctors
     , random
+    , resource-pool
     , retry
     , safe
     , servant
@@ -168,5 +169,6 @@ test-suite tests
     , servant-server
     , sqlite-simple
     , text
+    , time-units
     , wai
     , zoomhub
