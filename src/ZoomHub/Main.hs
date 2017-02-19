@@ -18,7 +18,6 @@ import           Data.Time.Units                      (Second, toMicroseconds)
 import           Data.Time.Units.Instances            ()
 import           Database.PostgreSQL.Simple           (ConnectInfo (..),
                                                        defaultConnectInfo)
-import qualified Database.PostgreSQL.Simple           as PGS
 import           GHC.Conc                             (getNumProcessors)
 import           Network.BSD                          (getHostName)
 import           Network.URI                          (parseAbsoluteURI)

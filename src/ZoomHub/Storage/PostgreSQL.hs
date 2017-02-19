@@ -11,11 +11,9 @@ module ZoomHub.Storage.PostgreSQL
   (
   -- ** Read operations
     getById
-  -- , getById'
   , getByURL
-  -- , getByURL'
   -- , getExpiredActive
-  -- ** Write operations
+  -- -- ** Write operations
   -- , create
   -- , dequeueNextUnprocessed
   -- , markAsFailure
@@ -29,9 +27,9 @@ module ZoomHub.Storage.PostgreSQL
   , printIncrNumViewsQuery
   ) where
 
+import           Control.Arrow                           (returnA)
 import           Data.Int                                (Int64)
 import           Data.Pool                               (Pool, createPool)
-import           Data.Profunctor.Product.Default         (Default)
 import           Data.Profunctor.Product.TH              (makeAdaptorAndInstance)
 import           Data.Text                               (Text)
 import           Data.Time.Clock                         (NominalDiffTime,
@@ -45,16 +43,13 @@ import           Opaleye                                 (Column, Nullable,
                                                           PGText, PGTimestamptz,
                                                           Query, QueryArr,
                                                           Table (Table),
-                                                          Unpackspec,
                                                           arrangeUpdateSql,
-                                                          leftJoin, limit,
-                                                          optional, queryTable,
-                                                          required, restrict,
-                                                          runQuery, runUpdate,
-                                                          showSql, (.===))
+                                                          leftJoin, optional,
+                                                          queryTable, required,
+                                                          restrict, runQuery,
+                                                          runUpdate, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
-import           Control.Arrow                           (returnA)
 import           ZoomHub.Types.Content                   (Content (Content),
                                                           contentActiveAt,
                                                           contentCompletedAt,
@@ -68,13 +63,13 @@ import           ZoomHub.Types.Content                   (Content (Content),
                                                           contentSize,
                                                           contentState,
                                                           contentType,
-                                                          contentURL, mkContent)
-import           ZoomHub.Types.ContentId                 (ContentId, ContentId',
+                                                          contentURL)
+import           ZoomHub.Types.ContentId                 (ContentId,
                                                           ContentIdColumn,
                                                           mkContentId,
                                                           pContentId)
 import qualified ZoomHub.Types.ContentId                 as ContentId
-import           ZoomHub.Types.ContentMIME               (ContentMIME, ContentMIME' (ContentMIME))
+import           ZoomHub.Types.ContentMIME               (ContentMIME)
 import           ZoomHub.Types.ContentState              (ContentState,
                                                           ContentStateColumn)
 import           ZoomHub.Types.ContentType               (ContentType,
@@ -83,51 +78,36 @@ import           ZoomHub.Types.ContentURI                (ContentURI, ContentURI
                                                           ContentURIColumn,
                                                           pContentURI)
 import qualified ZoomHub.Types.ContentURI                as ContentURI
--- import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
-import           ZoomHub.Types.DeepZoomImage             (TileFormat,
-                                                          TileOverlap, TileSize,
-                                                          dziHeight,
-                                                          dziTileFormat,
-                                                          dziTileOverlap,
-                                                          dziTileSize, dziWidth,
-                                                          mkDeepZoomImage)
+import           ZoomHub.Types.DeepZoomImage             (mkDeepZoomImage)
 import qualified ZoomHub.Types.DeepZoomImage.TileFormat  as TileFormat
 import qualified ZoomHub.Types.DeepZoomImage.TileOverlap as TileOverlap
 import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
 
--- Public API
-create :: (Integer -> String) -> ContentURI -> PGS.Connection -> IO Content
-create encodeId uri conn = undefined
+-- -- Public API
+-- create :: (Integer -> String) -> ContentURI -> PGS.Connection -> IO Content
+-- create encodeId uri conn = undefined
 
-getNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
-getNextUnprocessed conn = undefined
+-- getNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
+-- getNextUnprocessed conn = undefined
 
-getExpiredActive :: PGS.Connection -> IO [Content]
-getExpiredActive conn = undefined
+-- getExpiredActive :: PGS.Connection -> IO [Content]
+-- getExpiredActive conn = undefined
 
--- Writes
-dequeueNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
-dequeueNextUnprocessed conn = undefined
+-- -- Writes
+-- dequeueNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
+-- dequeueNextUnprocessed conn = undefined
 
-resetAsInitialized :: PGS.Connection -> [Content] -> IO ()
-resetAsInitialized conn cs = undefined
+-- resetAsInitialized :: PGS.Connection -> [Content] -> IO ()
+-- resetAsInitialized conn cs = undefined
 
-markAsActive :: PGS.Connection -> Content -> IO Content
-markAsActive conn content = undefined
+-- markAsActive :: PGS.Connection -> Content -> IO Content
+-- markAsActive conn content = undefined
 
-markAsFailure :: PGS.Connection -> Content -> Maybe Text -> IO Content
-markAsFailure conn content maybeError = undefined
+-- markAsFailure :: PGS.Connection -> Content -> Maybe Text -> IO Content
+-- markAsFailure conn content maybeError = undefined
 
-markAsSuccess :: PGS.Connection -> Content -> IO Content
-markAsSuccess conn content = undefined
-
--- get :: IO [ContentRow] -> IO (Maybe Content)
--- get queryAction = undefined
-
-printSql :: Default Unpackspec a a => Query a -> IO ()
-printSql q = case showSql q of
-  Just t  -> putStrLn t
-  Nothing -> return ()
+-- markAsSuccess :: PGS.Connection -> Content -> IO Content
+-- markAsSuccess conn content = undefined
 
 data ContentRow'
   tId
@@ -280,15 +260,6 @@ data ImageRow'
   , imageTileFormat    :: tTileFormat
   } deriving (Show)
 
-type ImageRow = ImageRow'
-  Int64   -- contentId
-  UTCTime -- initializedAt
-  Int64   -- width       -- TODO: Introduce type
-  Int64   -- height      -- TODO: Introduce type
-  Int64   -- tileSize    -- TODO: Introduce type
-  Int64   -- tileOverlap -- TODO: Introduce type
-  Text    -- tileFormat  -- TODO: Introduce type
-
 type NullableImageRow = ImageRow'
   (Maybe Int64)   -- contentId
   (Maybe UTCTime) -- initializedAt
@@ -343,15 +314,9 @@ restrictContentURL :: ContentURI -> QueryArr ContentURIColumn ()
 restrictContentURL url = proc uriColumn -> do
     restrict -< uriColumn .=== ContentURI.toColumn url
 
-runContentQuery :: PGS.Connection -> Query ContentRowRead -> IO [ContentRow]
-runContentQuery = runQuery
-
 -- Query: Image
 imageQuery :: Query ImageRowReadWrite
 imageQuery = queryTable imageTable
-
-runImageQuery :: PGS.Connection -> Query ImageRowReadWrite -> IO [ImageRow]
-runImageQuery = runQuery
 
 runContentImageQuery :: PGS.Connection ->
                         Query (ContentRowRead, NullableImageRowReadWrite) ->
@@ -431,7 +396,6 @@ printIncrNumViewsQuery :: ContentId -> Integer -> IO ()
 printIncrNumViewsQuery cHashId numViewsSampleRate =
   putStrLn $ incrNumViewsQuery arrangeUpdateSql cHashId numViewsSampleRate
 
--- Helpers
 rowToContent :: ContentRow -> NullableImageRow -> Content
 rowToContent cr nir = Content
     { contentId = crHashId cr
