@@ -20,7 +20,7 @@ import           Data.Aeson                           (ToJSON, Value (String),
                                                        object, toJSON, (.=))
 import qualified Data.ByteString.Lazy                 as BL
 import qualified Data.Text                            as T
-import           Database.PostgreSQL.Simple           (ConnectInfo)
+import qualified Database.PostgreSQL.Simple           as PGS
 import           Database.PostgreSQL.Simple.Instances ()
 import           GHC.Generics                         (Generic)
 import           Network.URI                          (URI,
@@ -48,8 +48,8 @@ defaultPort = 8000
 data Config = Config
   { baseURI               :: BaseURI
   , contentBaseURI        :: ContentBaseURI
+  , dbConnInfo            :: PGS.ConnectInfo
   , dbPath                :: DatabasePath
-  , dbConnectInfo         :: ConnectInfo
   , encodeId              :: Integer -> String
   , error404              :: BL.ByteString
   , existingContentStatus :: ExistingContentStatus
@@ -68,7 +68,7 @@ instance ToJSON Config where
   toJSON Config{..} = object
     [ "baseURI" .= baseURI
     , "contentBaseURI" .= contentBaseURI
-    , "dbConnectInfo" .= dbConnectInfo
+    , "dbConnInfo" .= dbConnInfo
     , "dbPath" .= dbPath
     , "existingContentStatus" .= existingContentStatus
     , "newContentStatus" .= newContentStatus

@@ -132,7 +132,7 @@ main = do
       defaultDBUser = connectUser defaultConnectInfo
       defaultDBPassword = connectPassword defaultConnectInfo
       defaultDBName = "zoomhub_development"
-      dbConnectInfo = ConnectInfo {
+      dbConnInfo = ConnectInfo {
         connectHost = fromMaybe defaultDBHost (lookup "PGHOST" env)
       , connectPort = fromMaybe defaultDBPort (lookup "PGPORT" env >>= readMaybe)
       , connectUser = fromMaybe defaultDBUser (lookup "PGUSER" env)

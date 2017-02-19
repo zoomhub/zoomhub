@@ -110,10 +110,8 @@ config = Config
       case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
         Just uri -> uri
         _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
+  , dbConnInfo = dbConnInfo'
   , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
-  , dbConnectInfo = defaultConnectInfo {
-      connectDatabase = "zoomhub_test"
-    }
   , encodeId = show
   , error404 = "404"
   , existingContentStatus = IgnoreExistingContent
@@ -127,6 +125,8 @@ config = Config
   , tempPath = TempPath "./data/temp"
   , version = "test"
   }
+  where
+    dbConnInfo' = defaultConnectInfo { connectDatabase = "zoomhub_test" }
 
 spec :: Spec
 spec = with (return $ app config) $ do
