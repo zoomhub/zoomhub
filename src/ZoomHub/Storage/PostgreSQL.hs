@@ -25,6 +25,8 @@ module ZoomHub.Storage.PostgreSQL
   -- , withConnection
   , PGS.ConnectInfo(..)
   , PGS.defaultConnectInfo
+  -- ** Debug
+  , printIncrNumViewsQuery
   ) where
 
 import           Data.Int                                (Int64)
@@ -39,10 +41,12 @@ import           Opaleye                                 (Column, Nullable,
                                                           PGText, PGTimestamptz,
                                                           Query, QueryArr,
                                                           Table (Table),
-                                                          Unpackspec, leftJoin,
-                                                          limit, optional,
-                                                          queryTable, required,
-                                                          restrict, runQuery,
+                                                          Unpackspec,
+                                                          arrangeUpdateSql,
+                                                          leftJoin, limit,
+                                                          optional, queryTable,
+                                                          required, restrict,
+                                                          runQuery, runUpdate,
                                                           showSql, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
@@ -380,6 +384,38 @@ getBy predicate conn = do
 
     eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
     eqContentId (cr, ir) = crId cr .=== imageContentId ir
+
+type Op a columnsW columnsR =
+  Table columnsW columnsR ->
+  (columnsR -> columnsW) ->
+  (columnsR -> Column PGBool) ->
+  a
+
+incrNumViewsQuery :: (Op a ContentRowWrite ContentRowRead) ->
+                     ContentId ->
+                     Integer ->
+                     a
+incrNumViewsQuery op cHashId numViewsSampleRate = op contentTable
+  -- TODO: Why do we have to repeat optional fields?
+  -- See: https://github.com/tomjaguarpaw/haskell-opaleye/issues/92
+  (\cr -> cr
+    { crId = Just $ crId cr
+    , crProgress = Just $ crProgress cr
+    , crAbuseLevelId = Just $ crAbuseLevelId cr
+    , crNumAbuseReports = Just $ crNumAbuseReports cr
+    , crNumViews = Just $ (crNumViews cr) + fromIntegral numViewsSampleRate
+    , crVersion = Just $ crVersion cr
+    }
+  )
+  -- TODO: Could we reuse `restrictByContentId` here?
+  (\cr -> (crHashId cr) .=== ContentId.toColumn cHashId)
+
+runIncrNumViewsQuery :: PGS.Connection -> ContentId -> Integer -> IO Int64
+runIncrNumViewsQuery conn = incrNumViewsQuery (runUpdate conn)
+
+printIncrNumViewsQuery :: ContentId -> Integer -> IO ()
+printIncrNumViewsQuery cHashId numViewsSampleRate =
+  putStrLn $ incrNumViewsQuery arrangeUpdateSql cHashId numViewsSampleRate
 
 -- Helpers
 rowToContent :: ContentRow -> NullableImageRow -> Content
