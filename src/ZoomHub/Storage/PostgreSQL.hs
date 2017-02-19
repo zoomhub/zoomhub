@@ -335,17 +335,18 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
     (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
 
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
-getById hashId = getBy predicate
-  where
-    predicate = proc (cr, _) -> do
-      restrictContentId hashId -< crHashId cr
+getById = getBy . hashIdRestriction
+
+getById' :: ContentId -> PGS.Connection -> IO (Maybe Content)
+getById' = getBy' . hashIdRestriction
 
 getByURL :: ContentURI -> PGS.Connection -> IO (Maybe Content)
-getByURL url = getBy predicate
-  where
-    predicate = proc (cr, _) -> do
-      restrictContentURL url -< crURL cr
+getByURL = getBy . urlRestriction
 
+getByURL' :: ContentURI -> PGS.Connection -> IO (Maybe Content)
+getByURL' = getBy' . urlRestriction
+
+-- Helper
 getBy :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
          PGS.Connection ->
          IO (Maybe Content)
@@ -363,6 +364,42 @@ getBy predicate conn = do
 
     eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
     eqContentId (cr, ir) = crId cr .=== imageContentId ir
+
+getBy' :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
+          PGS.Connection ->
+          IO (Maybe Content)
+getBy' predicate conn = do
+    maybeContent <- getBy predicate conn
+    case maybeContent of
+      Just content -> do
+        -- Sample how often we count views to reduce database load:
+        -- http://stackoverflow.com/a/4762559/125305
+        let numViews = contentNumViews content
+        let numViewsSampleRate = sampleRate numViews
+        numViewsSample <- randomRIO (1, numViewsSampleRate)
+        when (numViewsSample == 1) $ do
+          _ <- async $
+            runIncrNumViewsQuery conn (contentId content) numViewsSample
+          return ()
+      Nothing -> return ()
+    return maybeContent
+  where
+    sampleRate :: Integer -> Integer
+    sampleRate numViews
+      | numViews < 50   = 1
+      | numViews < 500  = 10
+      | numViews < 5000 = 20
+      | otherwise       = 50
+
+hashIdRestriction :: ContentId ->
+                     (QueryArr (ContentRowRead, NullableImageRowReadWrite) ())
+hashIdRestriction cHashId = proc (cr, _) -> do
+  restrictContentId cHashId -< crHashId cr
+
+urlRestriction :: ContentURI ->
+                  (QueryArr (ContentRowRead, NullableImageRowReadWrite) ())
+urlRestriction url = proc (cr, _) -> do
+  restrictContentURL url -< crURL cr
 
 type Op a columnsW columnsR =
   Table columnsW columnsR ->
