@@ -7,6 +7,7 @@ module ZoomHub.APISpec
 
 import           Control.Concurrent           (getNumCapabilities)
 import qualified Data.ByteString.Char8        as BC
+import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid                  ((<>))
 import           Data.Time.Units              (Second)
 import           Network.HTTP.Types           (methodGet)
@@ -18,6 +19,8 @@ import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
                                                get, matchHeaders, matchStatus,
                                                post, put, request,
                                                shouldRespondWith, with, (<:>))
+
+import           System.Environment           (lookupEnv)
 
 import           ZoomHub.API                  (app)
 import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
@@ -137,7 +140,14 @@ config = Config
     numSpindles = 1
     -- TODO: How can we avoid `unsafePerformIO`?
     numCapabilities = fromIntegral $ unsafePerformIO getNumCapabilities
-    dbConnInfo' = defaultConnectInfo { connectDatabase = "zoomhub_test" }
+    dbConnUser = fromMaybe (connectUser defaultConnectInfo)
+      (unsafePerformIO $ lookupEnv "PGUSER")
+    dbConnName = fromMaybe "zoomhub_test"
+      (unsafePerformIO $ lookupEnv "PGDATABASE")
+    dbConnInfo' = defaultConnectInfo
+                    { connectDatabase = dbConnName
+                    , connectUser = dbConnUser
+                    }
     -- TODO: How can we avoid `unsafePerformIO`?
     dbConnPool' = unsafePerformIO $ createConnectionPool dbConnInfo'
       dbConnPoolNumStripes' dbConnPoolIdleTime' dbConnPoolMaxResourcesPerStripe'

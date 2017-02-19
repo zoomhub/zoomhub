@@ -25,6 +25,10 @@ jobs:
     <<: *defaults
     docker:
       - image: fpco/stack-build
+      - image: circleci/postgres:9.6.2-alpine
+        environment:
+          POSTGRES_USER: circleci-db-user
+          POSTGRES_DB: circleci-test-db
     steps:
     - checkout
 
@@ -34,6 +38,9 @@ jobs:
     - run:
         name: Initialize artifact storage
         command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+    - run:
+        name: Install pgloader
+        command: sudo apt-get update && sudo apt-get install pgloader -y
 
     # Dependencies
     #   This would typically go in either a build or a build-and-test job when
@@ -81,8 +88,11 @@ jobs:
 
     # Test
     - run:
+        name: Prepare database for test
+        command: pgloader ./data/zoomhub-development.sqlite3 postgresql://circleci-db-user@localhost:5432/circleci-test-db
+    - run:
         name: Run tests
-        command: stack test --no-terminal --coverage
+        command: PGUSER='circleci-db-user' PGDATABASE='circleci-test-db' stack test --no-terminal --coverage
     - run:
         name: Copy coverage reports
         command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
