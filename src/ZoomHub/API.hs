@@ -11,6 +11,7 @@ import           Control.Monad.IO.Class               (liftIO)
 
 import qualified Data.ByteString.Char8                as BC
 import           Data.Maybe                           (fromJust, fromMaybe)
+import           Data.Pool                            (Pool, withResource)
 import           Data.Proxy                           (Proxy (Proxy))
 import qualified Database.PostgreSQL.Simple           as PGS
 import           Network.URI                          (URI,
@@ -124,28 +125,28 @@ server config =
          health
     :<|> version (Config.version config)
     -- API: JSONP
-    :<|> jsonpContentById baseURI contentBaseURI dbPath
+    :<|> jsonpContentById baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidContentId
-    :<|> jsonpContentByURL baseURI contentBaseURI dbPath
+    :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restContentById baseURI contentBaseURI dbConnInfo
+    :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbPath encodeId newContentStatus
+    :<|> restContentByURL baseURI dbPath dbConnPool encodeId newContentStatus
     :<|> restInvalidRequest
     -- Web: Embed
-    :<|> webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript
+    :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
     -- Web: View
-    :<|> webContentById baseURI contentBaseURI dbPath
-    :<|> webContentByURL baseURI dbPath
+    :<|> webContentById baseURI contentBaseURI dbConnPool
+    :<|> webContentByURL baseURI dbConnPool
     :<|> webInvalidURLParam
-    :<|> webContentByURL baseURI dbPath
+    :<|> webContentByURL baseURI dbConnPool
     -- Web: Static files
     :<|> serveDirectory (Config.error404 config) publicPath
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
-    dbConnInfo = Config.dbConnInfo config
+    dbConnPool = Config.dbConnPool config
     dbPath = Config.dbPath config
     encodeId = Config.encodeId config
     newContentStatus = Config.newContentStatus config
@@ -170,13 +171,12 @@ version = return
 -- API: JSONP
 jsonpContentById :: BaseURI ->
                     ContentBaseURI ->
-                    DatabasePath ->
+                    Pool PGS.Connection ->
                     ContentId ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
-jsonpContentById baseURI contentBaseURI dbPath contentId callback = do
-  maybeContent <- liftIO $
-    SQLite.withConnection dbPath (SQLite.getById' contentId dbPath)
+jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
+  maybeContent <- liftIO $ withResource dbConnPool (PG.getById' contentId)
   case maybeContent of
     Nothing      -> throwError $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
@@ -186,13 +186,12 @@ jsonpContentById baseURI contentBaseURI dbPath contentId callback = do
 
 jsonpContentByURL :: BaseURI ->
                      ContentBaseURI ->
-                     DatabasePath ->
+                     Pool PGS.Connection ->
                      ContentURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
-jsonpContentByURL baseURI contentBaseURI dbPath url callback = do
-  maybeContent <-
-    liftIO $ SQLite.withConnection dbPath (SQLite.getByURL' url dbPath)
+jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
+  maybeContent <- liftIO $ withResource dbConnPool (PG.getByURL' url)
   case maybeContent of
     Nothing      -> throwError . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
@@ -223,12 +222,11 @@ jsonpInvalidRequest maybeURL callback =
 -- API: RESTful
 restContentById :: BaseURI ->
                    ContentBaseURI ->
-                   ConnectInfo ->
+                   Pool PGS.Connection ->
                    ContentId ->
                    Handler Content
-restContentById baseURI contentBaseURI dbConnectInfo contentId = do
-  pgConn <- liftIO $ PGS.connect dbConnectInfo
-  maybeContent <- liftIO $ PG.getById contentId pgConn
+restContentById baseURI contentBaseURI dbConnPool contentId = do
+  maybeContent <- liftIO $ withResource dbConnPool (PG.getById' contentId)
   case maybeContent of
     Nothing      -> throwError . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
@@ -239,13 +237,13 @@ restInvalidContentId contentId =
 
 restContentByURL :: BaseURI ->
                     DatabasePath ->
+                    Pool PGS.Connection ->
                     (Integer -> String) ->
                     NewContentStatus ->
                     ContentURI ->
                     Handler Content
-restContentByURL baseURI dbPath encodeId newContentStatus url = do
-  maybeContent <-
-    liftIO $ SQLite.withConnection dbPath (SQLite.getByURL' url dbPath)
+restContentByURL baseURI dbPath dbConnPool encodeId newContentStatus url = do
+  maybeContent <- liftIO $ withResource dbConnPool (PG.getByURL' url)
   case maybeContent of
     Nothing      -> do
       newContent <- case newContentStatus of
@@ -264,17 +262,16 @@ restInvalidRequest maybeURL = case maybeURL of
 webEmbed :: BaseURI ->
             ContentBaseURI ->
             StaticBaseURI ->
-            DatabasePath ->
+            Pool PGS.Connection ->
             String ->
             EmbedId ->
             Maybe String ->
             Maybe EmbedDimension ->
             Maybe EmbedDimension ->
             Handler Embed
-webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript embedId
+webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript embedId
          maybeId width height = do
-  maybeContent <-
-    liftIO $ SQLite.withConnection dbPath (SQLite.getById' contentId  dbPath)
+  maybeContent <- liftIO $ withResource dbConnPool (PG.getById' contentId)
   case maybeContent of
     Nothing      -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
@@ -291,12 +288,11 @@ webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript embedId
 -- Web: View
 webContentById :: BaseURI ->
                   ContentBaseURI ->
-                  DatabasePath ->
+                  Pool PGS.Connection ->
                   ContentId ->
                   Handler ViewContent
-webContentById baseURI contentBaseURI dbPath contentId = do
-  maybeContent <-
-    liftIO $ SQLite.withConnection dbPath (SQLite.getById contentId)
+webContentById baseURI contentBaseURI dbConnPool contentId = do
+  maybeContent <- liftIO $ withResource dbConnPool (PG.getById contentId)
   case maybeContent of
     Nothing -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c  -> do
@@ -304,10 +300,12 @@ webContentById baseURI contentBaseURI dbPath contentId = do
       return $ mkViewContent baseURI content
 
 -- TODO: Add support for submission, i.e. create content in the background:
-webContentByURL :: BaseURI -> DatabasePath -> ContentURI -> Handler ViewContent
-webContentByURL baseURI dbPath contentURI = do
-  maybeContent <-
-    liftIO $ SQLite.withConnection dbPath (SQLite.getByURL contentURI)
+webContentByURL :: BaseURI ->
+                   Pool PGS.Connection ->
+                   ContentURI ->
+                   Handler ViewContent
+webContentByURL baseURI dbConnPool contentURI = do
+  maybeContent <- liftIO $ withResource dbConnPool (PG.getByURL contentURI)
   case maybeContent of
     Nothing -> noNewContentErrorWeb
     Just c  -> redirectToView baseURI (Internal.contentId c)
