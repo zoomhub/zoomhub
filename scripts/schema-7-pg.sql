@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS public.content;
+DROP TABLE IF EXISTS public.content CASCADE;
 DROP TABLE IF EXISTS public.image;
 DROP TABLE IF EXISTS public.flickr;
 
