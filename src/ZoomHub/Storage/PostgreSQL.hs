@@ -324,16 +324,8 @@ runContentImageQuery :: PGS.Connection ->
 runContentImageQuery = runQuery
 
 -- Public API
-createConnectionPool :: (TimeUnit a) =>
-              PGS.ConnectInfo ->
-              Integer ->
-              a ->
-              Integer ->
-              IO (Pool PGS.Connection)
-createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
-  createPool (PGS.connect connInfo) PGS.close (fromIntegral numStripes)
-    (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
 
+-- Read
 getById :: ContentId -> PGS.Connection -> IO (Maybe Content)
 getById = getBy . hashIdRestriction
 
@@ -345,6 +337,17 @@ getByURL = getBy . urlRestriction
 
 getByURL' :: ContentURI -> PGS.Connection -> IO (Maybe Content)
 getByURL' = getBy' . urlRestriction
+
+-- Helpers
+createConnectionPool :: (TimeUnit a) =>
+                        PGS.ConnectInfo ->
+                        Integer ->
+                        a ->
+                        Integer ->
+                        IO (Pool PGS.Connection)
+createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
+  createPool (PGS.connect connInfo) PGS.close (fromIntegral numStripes)
+    (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
 
 -- Helper
 getBy :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
