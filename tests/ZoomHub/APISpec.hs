@@ -14,12 +14,14 @@ import           Network.HTTP.Types           (methodGet)
 import           Network.URI                  (URI, parseURIReference)
 import           Network.Wai                  (Middleware)
 import           System.IO.Unsafe             (unsafePerformIO)
-import           Test.Hspec                   (Spec, describe, hspec, it)
+import           Test.Hspec                   (Spec, context, describe, hspec,
+                                               it, shouldBe)
 import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
-                                               get, matchHeaders, matchStatus,
-                                               post, put, request,
+                                               get, liftIO, matchHeaders,
+                                               matchStatus, post, put, request,
                                                shouldRespondWith, with, (<:>))
 
+import           Data.Pool                    (withResource)
 import           System.Environment           (lookupEnv)
 
 import           ZoomHub.API                  (app)
@@ -27,8 +29,9 @@ import           ZoomHub.Config               (Config (..), ExistingContentStatu
 import qualified ZoomHub.Config               as Config
 import           ZoomHub.Storage.PostgreSQL   (ConnectInfo (..),
                                                defaultConnectInfo)
-import           ZoomHub.Storage.PostgreSQL   (createConnectionPool)
+import           ZoomHub.Storage.PostgreSQL   (createConnectionPool, getById)
 import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
+import           ZoomHub.Types.Content        (contentNumViews)
 import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import           ZoomHub.Types.ContentId      (ContentId, fromString,
                                                unContentId)
@@ -284,3 +287,16 @@ spec = with (return $ app config) $ do
     describe "Version (/version)" $
       it "should respond with version" $
         get "/version" `shouldRespondWith` "test" {matchStatus = 200}
+
+  describe "Number of views" $
+    context "when requesting content through REST API" $
+      it "should increase `numViews`" $ do
+        -- TODO: How can we avoid this dummy `Test.Hspec.Wai` request to satisfy
+        -- type checker?
+        get "/v1/content/4rcn" `shouldRespondWith` 200
+
+        liftIO $ do
+          let pool = Config.dbConnPool config
+          maybeContent <- withResource pool (getById $ fromString "4rcn")
+          let numViews = fromMaybe 0 (contentNumViews <$> maybeContent)
+          numViews `shouldBe` 4

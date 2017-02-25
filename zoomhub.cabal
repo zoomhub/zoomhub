@@ -166,9 +166,11 @@ test-suite tests
     , network-uri
     , QuickCheck
     , quickcheck-instances
+    , resource-pool
     , servant-server
     , sqlite-simple
     , text
     , time-units
+    , transformers
     , wai
     , zoomhub
