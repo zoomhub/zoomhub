@@ -220,23 +220,23 @@ contentTable :: Table ContentRowWrite ContentRowRead
 contentTable = Table "content"
   (pContent ContentRow
     { crId = optional "id"
-    , crHashId = pContentId (mkContentId (required "hashid"))
-    , crTypeId = required "typeid" -- TODO: Make type-safe using `newtype`
+    , crHashId = pContentId (mkContentId (required "hash_id"))
+    , crTypeId = required "type_id" -- TODO: Make type-safe using `newtype`
     , crURL = pContentURI (ContentURI (required "url"))
     , crState = required "state"   -- TODO: Make type-safe using `newtype`
-    , crInitializedAt = required "initializedat"
-    , crActiveAt = required "activeat"
-    , crCompletedAt = required "completedat"
+    , crInitializedAt = required "initialized_at"
+    , crActiveAt = required "active_at"
+    , crCompletedAt = required "completed_at"
     , crTitle = required "title"
-    , crAttributionText = required "attributiontext"
-    , crAttributionLink = required "attributionlink"
+    , crAttributionText = required "attribution_text"
+    , crAttributionLink = required "attribution_link"
     , crMIME = required "mime"
     , crSize = required "size"
     , crError = required "error"
     , crProgress = optional "progress"
-    , crAbuseLevelId = optional "abuselevelid"
-    , crNumAbuseReports = optional "numabusereports"
-    , crNumViews = optional "numviews"
+    , crAbuseLevelId = optional "abuse_level_id"
+    , crNumAbuseReports = optional "num_abuse_reports"
+    , crNumViews = optional "num_views"
     , crVersion = optional "version"
     }
   )
@@ -292,13 +292,13 @@ $(makeAdaptorAndInstance "pImage" ''ImageRow')
 imageTable :: Table ImageRowReadWrite ImageRowReadWrite
 imageTable = Table "image"
   (pImage ImageRow
-    { imageContentId = required "contentid"
-    , imageInitializedAt = required "initializedat"
+    { imageContentId = required "content_id"
+    , imageInitializedAt = required "initialized_at"
     , imageWidth = required "width"
     , imageHeight = required "height"
-    , imageTileSize = required "tilesize"
-    , imageTileOverlap = required "tileoverlap"
-    , imageTileFormat = required "tileformat"
+    , imageTileSize = required "tile_size"
+    , imageTileOverlap = required "tile_overlap"
+    , imageTileFormat = required "tile_format"
     }
   )
 
