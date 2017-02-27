@@ -40,6 +40,7 @@ library
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
+    , ZoomHub.Storage.Internal.PostgreSQL
     , ZoomHub.Storage.PostgreSQL
     , ZoomHub.Storage.SQLite
     , ZoomHub.Types.BaseURI
