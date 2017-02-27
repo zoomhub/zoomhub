@@ -339,6 +339,10 @@ getByURL' :: ContentURI -> PGS.Connection -> IO (Maybe Content)
 getByURL' = getBy' . urlRestriction
 
 -- Helpers
+toIdleTime :: (TimeUnit a) => a -> NominalDiffTime
+toIdleTime duration = fromIntegral $ toMicroseconds duration `div`
+  toMicroseconds (1 :: Second)
+
 createConnectionPool :: (TimeUnit a) =>
                         PGS.ConnectInfo ->
                         Integer ->
@@ -350,6 +354,32 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
     (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
 
 -- Helper
+rowToContent :: ContentRow -> NullableImageRow -> Content
+rowToContent cr nir = Content
+    { contentId = crHashId cr
+    , contentType = crTypeId cr
+    , contentURL = crURL cr
+    , contentState = crState cr
+    , contentInitializedAt = crInitializedAt cr
+    , contentActiveAt = crActiveAt cr
+    , contentCompletedAt = crCompletedAt cr
+    , contentMIME = crMIME cr
+    , contentSize = fromIntegral <$> (crSize cr)
+    , contentProgress = crProgress cr
+    , contentNumViews = fromIntegral (crNumViews cr)
+    , contentError = crError cr
+    , contentDZI = mDZI
+    }
+  where
+    mDZIWidth = fromIntegral <$> imageWidth nir
+    mDZIHeight = fromIntegral <$> imageHeight nir
+    mDZITileSize = fromIntegral <$> imageTileSize nir >>= TileSize.fromInteger
+    mDZITileOverlap = fromIntegral <$> imageTileOverlap nir >>=
+      TileOverlap.fromInteger
+    mDZITileFormat = imageTileFormat nir >>= TileFormat.fromText
+    mDZI = mkDeepZoomImage <$> mDZIWidth <*> mDZIHeight <*> mDZITileSize <*>
+      mDZITileOverlap <*> mDZITileFormat
+
 getBy :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
          PGS.Connection ->
          IO (Maybe Content)
@@ -435,33 +465,3 @@ runIncrNumViewsQuery conn = incrNumViewsQuery (runUpdate conn)
 printIncrNumViewsQuery :: ContentId -> Integer -> IO ()
 printIncrNumViewsQuery cHashId numViewsSampleRate =
   putStrLn $ incrNumViewsQuery arrangeUpdateSql cHashId numViewsSampleRate
-
-rowToContent :: ContentRow -> NullableImageRow -> Content
-rowToContent cr nir = Content
-    { contentId = crHashId cr
-    , contentType = crTypeId cr
-    , contentURL = crURL cr
-    , contentState = crState cr
-    , contentInitializedAt = crInitializedAt cr
-    , contentActiveAt = crActiveAt cr
-    , contentCompletedAt = crCompletedAt cr
-    , contentMIME = crMIME cr
-    , contentSize = fromIntegral <$> (crSize cr)
-    , contentProgress = crProgress cr
-    , contentNumViews = fromIntegral (crNumViews cr)
-    , contentError = crError cr
-    , contentDZI = mDZI
-    }
-  where
-    mDZIWidth = fromIntegral <$> imageWidth nir
-    mDZIHeight = fromIntegral <$> imageHeight nir
-    mDZITileSize = fromIntegral <$> imageTileSize nir >>= TileSize.fromInteger
-    mDZITileOverlap = fromIntegral <$> imageTileOverlap nir >>=
-      TileOverlap.fromInteger
-    mDZITileFormat = imageTileFormat nir >>= TileFormat.fromText
-    mDZI = mkDeepZoomImage <$> mDZIWidth <*> mDZIHeight <*> mDZITileSize <*>
-      mDZITileOverlap <*> mDZITileFormat
-
-toIdleTime :: (TimeUnit a) => a -> NominalDiffTime
-toIdleTime duration = fromIntegral $ toMicroseconds duration `div`
-  toMicroseconds (1 :: Second)
