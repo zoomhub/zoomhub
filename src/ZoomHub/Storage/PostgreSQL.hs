@@ -25,6 +25,7 @@ module ZoomHub.Storage.PostgreSQL
   , PGS.defaultConnectInfo
   -- ** Debug
   , printIncrNumViewsQuery
+  , lastContentRowInsertIdQuery
   ) where
 
 import           Control.Arrow                           (returnA)
@@ -465,3 +466,31 @@ runIncrNumViewsQuery conn = incrNumViewsQuery (runUpdate conn)
 printIncrNumViewsQuery :: ContentId -> Integer -> IO ()
 printIncrNumViewsQuery cHashId numViewsSampleRate =
   putStrLn $ incrNumViewsQuery arrangeUpdateSql cHashId numViewsSampleRate
+
+-- `content_id_seq`
+data ContentSeqRow' tLastValue = ContentSeqRow
+  { csLastValue :: tLastValue
+  } deriving Show
+
+$(makeAdaptorAndInstance "pContentSeq" ''ContentSeqRow')
+
+type ContentSeqRow = ContentSeqRow'
+  Int64           -- last_value
+
+type ContentSeqRowReadWrite = ContentSeqRow'
+  (Column PGInt8) -- last_value
+
+contentSeqTable :: Table ContentSeqRowReadWrite ContentSeqRowReadWrite
+contentSeqTable = Table "content_id_seq"
+  (pContentSeq ContentSeqRow
+    { csLastValue = required "last_value"
+    }
+  )
+
+contentSeqQuery :: Query ContentSeqRowReadWrite
+contentSeqQuery = queryTable contentSeqTable
+
+lastContentRowInsertIdQuery :: Query (ContentSeqRowReadWrite)
+lastContentRowInsertIdQuery = proc () -> do
+  cs <- contentSeqQuery -< ()
+  returnA -< cs
