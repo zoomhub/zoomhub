@@ -32,9 +32,12 @@ import           Opaleye                              (Column, Nullable, PGText,
 newtype ContentMIME' a = ContentMIME { unContentMIME :: a } deriving (Eq, Show)
 type ContentMIME = ContentMIME' Type
 
+toText :: ContentMIME -> T.Text
+toText = showType . unContentMIME
+
 -- SQLite
 instance ToField ContentMIME where
-  toField = SQLText . showType . unContentMIME
+  toField = SQLText . toText
 
 instance FromField ContentMIME where
   fromField f@(Field (SQLText t) _) =
@@ -46,7 +49,7 @@ instance FromField ContentMIME where
 
 -- JSON
 instance ToJSON ContentMIME where
-  toJSON = String . showType . unContentMIME
+  toJSON = String . toText
 
 -- PostgreSQL
 type ContentMIMEColumn = ContentMIME' (Column (Nullable PGText))
