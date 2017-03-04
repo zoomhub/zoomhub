@@ -215,81 +215,81 @@ ALTER TABLE ONLY image
     ADD CONSTRAINT image_content_id_key UNIQUE (content_id);
 
 
---
--- Name: idx_29290_content_activeat_desc_index; Type: INDEX; Schema: public; Owner: dani
---
+-- --
+-- -- Name: idx_29290_content_activeat_desc_index; Type: INDEX; Schema: public; Owner: dani
+-- --
 
-CREATE INDEX idx_29290_content_activeat_desc_index ON content USING btree (active_at);
-
-
---
--- Name: idx_29290_content_completedat_index; Type: INDEX; Schema: public; Owner: dani
---
-
-CREATE INDEX idx_29290_content_completedat_index ON content USING btree (completed_at);
+-- CREATE INDEX idx_29290_content_activeat_desc_index ON content USING btree (active_at);
 
 
---
--- Name: idx_29290_content_hashid_index; Type: INDEX; Schema: public; Owner: dani
---
+-- --
+-- -- Name: idx_29290_content_completedat_index; Type: INDEX; Schema: public; Owner: dani
+-- --
 
-CREATE INDEX idx_29290_content_hashid_index ON content USING btree (hash_id);
-
-
---
--- Name: idx_29290_content_hashid_index_unique; Type: INDEX; Schema: public; Owner: dani
---
-
-CREATE UNIQUE INDEX idx_29290_content_hashid_index_unique ON content USING btree (hash_id);
+-- CREATE INDEX idx_29290_content_completedat_index ON content USING btree (completed_at);
 
 
---
--- Name: idx_29290_content_initializedat_desc_index; Type: INDEX; Schema: public; Owner: dani
---
+-- --
+-- -- Name: idx_29290_content_hashid_index; Type: INDEX; Schema: public; Owner: dani
+-- --
 
-CREATE INDEX idx_29290_content_initializedat_desc_index ON content USING btree (initialized_at);
-
-
---
--- Name: idx_29290_content_numviews_desc_index; Type: INDEX; Schema: public; Owner: dani
---
-
-CREATE INDEX idx_29290_content_numviews_desc_index ON content USING btree (num_views);
+-- CREATE INDEX idx_29290_content_hashid_index ON content USING btree (hash_id);
 
 
---
--- Name: idx_29290_content_state_index; Type: INDEX; Schema: public; Owner: dani
---
+-- --
+-- -- Name: idx_29290_content_hashid_index_unique; Type: INDEX; Schema: public; Owner: dani
+-- --
 
-CREATE INDEX idx_29290_content_state_index ON content USING btree (state);
-
-
---
--- Name: idx_29290_content_url_index; Type: INDEX; Schema: public; Owner: dani
---
-
-CREATE INDEX idx_29290_content_url_index ON content USING btree (url);
+-- CREATE UNIQUE INDEX idx_29290_content_hashid_index_unique ON content USING btree (hash_id);
 
 
---
--- Name: idx_29290_content_url_index_unique; Type: INDEX; Schema: public; Owner: dani
---
+-- --
+-- -- Name: idx_29290_content_initializedat_desc_index; Type: INDEX; Schema: public; Owner: dani
+-- --
 
-CREATE UNIQUE INDEX idx_29290_content_url_index_unique ON content USING btree (url);
-
-
---
--- Name: idx_29290_sqlite_autoindex_content_1; Type: INDEX; Schema: public; Owner: dani
---
-
-CREATE UNIQUE INDEX idx_29290_sqlite_autoindex_content_1 ON content USING btree (hash_id);
+-- CREATE INDEX idx_29290_content_initializedat_desc_index ON content USING btree (initialized_at);
 
 
---
--- Name: idx_29290_sqlite_autoindex_content_2; Type: INDEX; Schema: public; Owner: dani
---
+-- --
+-- -- Name: idx_29290_content_numviews_desc_index; Type: INDEX; Schema: public; Owner: dani
+-- --
 
-CREATE UNIQUE INDEX idx_29290_sqlite_autoindex_content_2 ON content USING btree (url);
+-- CREATE INDEX idx_29290_content_numviews_desc_index ON content USING btree (num_views);
+
+
+-- --
+-- -- Name: idx_29290_content_state_index; Type: INDEX; Schema: public; Owner: dani
+-- --
+
+-- CREATE INDEX idx_29290_content_state_index ON content USING btree (state);
+
+
+-- --
+-- -- Name: idx_29290_content_url_index; Type: INDEX; Schema: public; Owner: dani
+-- --
+
+-- CREATE INDEX idx_29290_content_url_index ON content USING btree (url);
+
+
+-- --
+-- -- Name: idx_29290_content_url_index_unique; Type: INDEX; Schema: public; Owner: dani
+-- --
+
+-- CREATE UNIQUE INDEX idx_29290_content_url_index_unique ON content USING btree (url);
+
+
+-- --
+-- -- Name: idx_29290_sqlite_autoindex_content_1; Type: INDEX; Schema: public; Owner: dani
+-- --
+
+-- CREATE UNIQUE INDEX idx_29290_sqlite_autoindex_content_1 ON content USING btree (hash_id);
+
+
+-- --
+-- -- Name: idx_29290_sqlite_autoindex_content_2; Type: INDEX; Schema: public; Owner: dani
+-- --
+
+-- CREATE UNIQUE INDEX idx_29290_sqlite_autoindex_content_2 ON content USING btree (url);
 
 
 --
