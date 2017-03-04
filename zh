@@ -93,6 +93,19 @@ test)
 
     dropdb "$DB_NAME"
     ;;
+
+db)
+    case "$2" in
+    dump)
+      pg_dump "$DB_NAME"
+      ;;
+    *)
+        echo "Unknown command: $0 $@. Try $0 $1 \
+dump"
+        exit 1
+    esac
+    ;;
+
 *)
     echo "Unknown command: $0 $@. Try: $0 format|init|lint|ops|run|test"
     ;;
