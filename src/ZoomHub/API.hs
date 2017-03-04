@@ -45,13 +45,11 @@ import qualified ZoomHub.Config                       as Config
 import           ZoomHub.Servant.RawCapture           (RawCapture)
 import           ZoomHub.Servant.RequiredQueryParam   (RequiredQueryParam)
 import           ZoomHub.Storage.PostgreSQL           as PG
-import           ZoomHub.Storage.SQLite               as SQLite
 import           ZoomHub.Types.BaseURI                (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content                as Internal
 import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
 import           ZoomHub.Types.ContentId              (ContentId, unContentId)
 import           ZoomHub.Types.ContentURI             (ContentURI)
-import           ZoomHub.Types.DatabasePath           (DatabasePath)
 import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI)
 import qualified ZoomHub.Web.Errors                   as Web
 import           ZoomHub.Web.Static                   (serveDirectory)
@@ -132,7 +130,7 @@ server config =
     -- API: RESTful
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbPath dbConnPool encodeId newContentStatus
+    :<|> restContentByURL baseURI dbConnPool encodeId newContentStatus
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -147,7 +145,6 @@ server config =
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dbConnPool = Config.dbConnPool config
-    dbPath = Config.dbPath config
     encodeId = Config.encodeId config
     newContentStatus = Config.newContentStatus config
     publicPath = Config.publicPath config
@@ -236,19 +233,18 @@ restInvalidContentId contentId =
   throwError . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL :: BaseURI ->
-                    DatabasePath ->
                     Pool PGS.Connection ->
                     (Integer -> String) ->
                     NewContentStatus ->
                     ContentURI ->
                     Handler Content
-restContentByURL baseURI dbPath dbConnPool encodeId newContentStatus url = do
+restContentByURL baseURI dbConnPool encodeId newContentStatus url = do
   maybeContent <- liftIO $ withResource dbConnPool (PG.getByURL' url)
   case maybeContent of
     Nothing      -> do
       newContent <- case newContentStatus of
         NewContentAllowed ->
-          liftIO $ SQLite.withConnection dbPath (SQLite.create encodeId url)
+          liftIO $ withResource dbConnPool (PG.create encodeId url)
         _ -> noNewContentErrorAPI
       redirectToAPI baseURI (Internal.contentId newContent)
     Just content -> redirectToAPI baseURI (Internal.contentId content)

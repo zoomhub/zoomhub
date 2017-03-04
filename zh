@@ -16,6 +16,8 @@ print_hosts () {
     separator
 }
 
+DB_NAME='zoomhub_test'
+
 # Commands
 case "$1" in
 init)
@@ -83,20 +85,13 @@ run)
                 --exec ./scripts/run-development.sh
     ;;
 test)
-    SOURCE_SQLITE_DB='./data/zoomhub-development.sqlite3'
-    # SOURCE_SQLITE_DB='/Users/dani/zoomhub-backup/zoomhub-production-2017-02-19T05-47-23Z.sqlite3'
-    dropdb --if-exists zoomhub_test
-    createdb zoomhub_test
-    pgloader \
-      --type sqlite \
-      "$SOURCE_SQLITE_DB" \
-      postgresql://$(whoami):@localhost/zoomhub_test
-
-    psql --dbname=zoomhub_test --file=./scripts/schema-7-pg.sql
+    dropdb --if-exists "$DB_NAME"
+    createdb "$DB_NAME"
+    psql --quiet "$DB_NAME" < ./data/zoomhub_test-pg-backup-2017-03-04.sql
 
     stack test
 
-    dropdb zoomhub_test
+    dropdb "$DB_NAME"
     ;;
 *)
     echo "Unknown command: $0 $@. Try: $0 format|init|lint|ops|run|test"

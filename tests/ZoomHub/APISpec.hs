@@ -25,7 +25,7 @@ import           Data.Pool                    (withResource)
 import           System.Environment           (lookupEnv)
 
 import           ZoomHub.API                  (app)
-import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
+import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentAllowed))
 import qualified ZoomHub.Config               as Config
 import           ZoomHub.Storage.PostgreSQL   (ConnectInfo (..),
                                                defaultConnectInfo)
@@ -113,6 +113,12 @@ viewRedirect cId =
 nullLogger :: Middleware
 nullLogger = id
 
+newContentId :: String
+newContentId = "deadbeef"
+
+newContentURL :: String
+newContentURL = "http://example.com"
+
 config :: Config
 config = Config
     { baseURI = BaseURI (toURI "http://localhost:8000")
@@ -126,11 +132,11 @@ config = Config
     , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
     , dbConnPoolNumStripes = dbConnPoolNumStripes'
     , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
-    , encodeId = show
+    , encodeId = const newContentId
     , error404 = "404"
     , existingContentStatus = IgnoreExistingContent
     , logger = nullLogger
-    , newContentStatus = NewContentDisallowed
+    , newContentStatus = NewContentAllowed
     , openSeadragonScript = "osd"
     , port = 8000
     , publicPath = "./public"
@@ -190,9 +196,19 @@ spec = with (return $ app config) $ do
         get "/v1/content?url=mailto://example@example.com" `shouldRespondWith`
           invalidURL
 
-      it "should reject new HTTP URLs (for now)" $
-        get "/v1/content?url=http://example.com" `shouldRespondWith`
-          noNewContent
+      it "should accept new HTTP URLs" $ do
+        get ("/v1/content?url=" <> BC.pack newContentURL) `shouldRespondWith`
+          restRedirect (fromString newContentId)
+
+        get ("/v1/content/" <> BC.pack newContentId) `shouldRespondWith`
+          "{\"dzi\":null,\"progress\":0.0,\"url\":\"http://example.com\"\
+          \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/deadbeef\
+          \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
+          \:\"http://localhost:8000/deadbeef\",\"id\"\
+          \:\"deadbeef\",\"ready\":false,\"failed\":false}"
+          { matchStatus = 200
+          , matchHeaders = [applicationJSON]
+          }
 
       it "should redirect existing (converted) HTTP URLs to ID" $
         let (existingId, existingURL) = existingContent in
