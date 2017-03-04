@@ -45,9 +45,10 @@ import           Opaleye                                 (Column, Nullable,
                                                           Query, QueryArr,
                                                           Table (Table),
                                                           arrangeUpdateSql,
-                                                          leftJoin, optional,
-                                                          queryTable, required,
-                                                          restrict, runQuery,
+                                                          constant, leftJoin,
+                                                          optional, queryTable,
+                                                          required, restrict,
+                                                          runInsert, runQuery,
                                                           runUpdate, (.===))
 
 -- import           ZoomHub.Log.Logger             (logWarning)
@@ -355,6 +356,29 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
     (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
 
 -- Helper
+contentToRow :: Content -> ContentRowWrite
+contentToRow c = ContentRow
+  { crId = Nothing
+  , crHashId = constant $ contentId c
+  , crTypeId = constant $ contentType c
+  , crURL = constant $ contentURL c
+  , crState = constant $ contentState c
+  , crInitializedAt = Just . constant $ contentInitializedAt c
+  , crActiveAt = Just . constant $ contentActiveAt c
+  , crCompletedAt = Just . constant $ contentCompletedAt c
+  , crTitle = Nothing
+  , crAttributionText = Nothing
+  , crAttributionLink = Nothing
+  , crMIME = Just . constant $ contentMIME c
+  , crSize = Just . constant $ (fromInteger <$> contentSize c :: Maybe Int64)
+  , crError = Just . constant $ contentError c
+  , crProgress = Just . constant $ contentProgress c
+  , crAbuseLevelId = Nothing
+  , crNumAbuseReports = Nothing
+  , crNumViews = Just . constant $ (fromInteger . contentNumViews $ c :: Int64)
+  , crVersion = Nothing
+  }
+
 rowToContent :: ContentRow -> NullableImageRow -> Content
 rowToContent cr nir = Content
     { contentId = crHashId cr
