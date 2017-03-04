@@ -82,7 +82,8 @@ process workerId raxConfig tempPath content =
       ] $ createDZI workerId rawPath dziPath (toTileFormat maybeMIME)
 
     logInfo "Content metadata"
-      [ "mime" .= maybeMIME
+      [ "id" .= contentId content
+      , "mime" .= maybeMIME
       , "size" .= rawSize
       , "dzi" .= dzi
       , "worker" .= workerId
