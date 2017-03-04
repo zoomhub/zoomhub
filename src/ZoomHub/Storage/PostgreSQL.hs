@@ -179,15 +179,15 @@ type ContentRowWrite = ContentRow'
   ContentTypeColumn                 -- typeId
   ContentURIColumn                  -- url
   ContentStateColumn                -- state
-  (Column PGTimestamptz)            -- initializedAt
-  (Column (Nullable PGTimestamptz)) -- activeAt
-  (Column (Nullable PGTimestamptz)) -- completedAt
-  (Column (Nullable PGText))        -- title
-  (Column (Nullable PGText))        -- attributionText
-  (Column (Nullable PGText))        -- attributionLink
-  (Column (Nullable PGText))        -- mime
-  (Column (Nullable PGInt8))        -- size
-  (Column (Nullable PGText))        -- error
+  (Maybe (Column PGTimestamptz) )           -- initializedAt
+  (Maybe (Column (Nullable PGTimestamptz))) -- activeAt
+  (Maybe (Column (Nullable PGTimestamptz))) -- completedAt
+  (Maybe (Column (Nullable PGText)))        -- title
+  (Maybe (Column (Nullable PGText)))        -- attributionText
+  (Maybe (Column (Nullable PGText)))        -- attributionLink
+  (Maybe (Column (Nullable PGText)))        -- mime
+  (Maybe (Column (Nullable PGInt8)))        -- size
+  (Maybe (Column (Nullable PGText)))        -- error
   (Maybe (Column PGFloat8))         -- progress
   (Maybe (Column PGInt4))           -- abuseLevelId
   (Maybe (Column PGInt8))           -- numAbuseReports
@@ -225,15 +225,15 @@ contentTable = Table "content"
     , crTypeId = required "type_id" -- TODO: Make type-safe using `newtype`
     , crURL = pContentURI (ContentURI (required "url"))
     , crState = required "state"   -- TODO: Make type-safe using `newtype`
-    , crInitializedAt = required "initialized_at"
-    , crActiveAt = required "active_at"
-    , crCompletedAt = required "completed_at"
-    , crTitle = required "title"
-    , crAttributionText = required "attribution_text"
-    , crAttributionLink = required "attribution_link"
-    , crMIME = required "mime"
-    , crSize = required "size"
-    , crError = required "error"
+    , crInitializedAt = optional "initialized_at"
+    , crActiveAt = optional "active_at"
+    , crCompletedAt = optional "completed_at"
+    , crTitle = optional "title"
+    , crAttributionText = optional "attribution_text"
+    , crAttributionLink = optional "attribution_link"
+    , crMIME = optional "mime"
+    , crSize = optional "size"
+    , crError = optional "error"
     , crProgress = optional "progress"
     , crAbuseLevelId = optional "abuse_level_id"
     , crNumAbuseReports = optional "num_abuse_reports"
@@ -450,11 +450,22 @@ incrNumViewsQuery op cHashId numViewsSampleRate = op contentTable
   -- See: https://github.com/tomjaguarpaw/haskell-opaleye/issues/92
   (\cr -> cr
     { crId = Just $ crId cr
+    , crInitializedAt = Just $ crInitializedAt cr
+    , crActiveAt = Just $ crActiveAt cr
+    , crCompletedAt = Just $ crCompletedAt cr
+    , crTitle = Just $ crTitle cr
+    , crAttributionText = Just $ crAttributionText cr
+    , crAttributionLink = Just $ crAttributionLink cr
+    , crMIME = Just $ crMIME cr
+    , crSize = Just $ crSize cr
+    , crError = Just $ crError cr
     , crProgress = Just $ crProgress cr
     , crAbuseLevelId = Just $ crAbuseLevelId cr
     , crNumAbuseReports = Just $ crNumAbuseReports cr
-    , crNumViews = Just $ (crNumViews cr) + fromIntegral numViewsSampleRate
     , crVersion = Just $ crVersion cr
+
+    -- Actual update:
+    , crNumViews = Just $ (crNumViews cr) + fromIntegral numViewsSampleRate
     }
   )
   -- TODO: Could we reuse `restrictByContentId` here?
