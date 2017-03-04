@@ -14,6 +14,7 @@ import           Codec.MIME.Parse                     (parseMIMEType)
 import           Codec.MIME.Type                      (Type, showType)
 import           Data.Aeson                           (ToJSON, Value (String),
                                                        toJSON)
+import           Data.Profunctor.Product.Default      (Default, def)
 import           Data.Profunctor.Product.TH           (makeAdaptorAndInstance)
 import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as PGS
@@ -23,9 +24,12 @@ import           Database.SQLite.Simple.FromField     (FromField, ResultError (C
 import           Database.SQLite.Simple.Internal      (Field (Field))
 import           Database.SQLite.Simple.Ok            (Ok (Ok))
 import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           Opaleye                              (Column, Nullable, PGText,
+import           Opaleye                              (Column,
+                                                       Constant (Constant),
+                                                       Nullable, PGText,
                                                        QueryRunnerColumnDefault,
                                                        fieldQueryRunnerColumn,
+                                                       pgStrictText,
                                                        queryRunnerColumnDefault)
 
 
@@ -64,3 +68,6 @@ instance PGS.FromField ContentMIME where
 
 instance QueryRunnerColumnDefault PGText ContentMIME where
   queryRunnerColumnDefault = fieldQueryRunnerColumn
+
+instance Default Constant ContentMIME (Column PGText) where
+  def = Constant $ pgStrictText . toText
