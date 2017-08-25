@@ -1,5 +1,7 @@
 SELECT
-  content.hashId, content.numViews, image.width, image.height
+  ("http://zoomhub.net/" || content.hashId) AS URL,
+  content.numViews AS Views,
+  ROUND(image.width * image.height / 1e6, 1) AS Megapixels
 FROM
   content, image
 WHERE
