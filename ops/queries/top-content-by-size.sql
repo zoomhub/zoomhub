@@ -6,6 +6,7 @@ FROM
   content, image
 WHERE
   content.id = image.contentid AND
-  content.state = 'completed:success'
+  content.state = 'completed:success' AND
+  content.numViews >= 200
 ORDER BY (image.width * image.height) DESC
-LIMIT 10;
+LIMIT 100;
