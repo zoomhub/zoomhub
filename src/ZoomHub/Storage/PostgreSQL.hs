@@ -313,11 +313,11 @@ contentQuery :: Query ContentRowRead
 contentQuery = queryTable contentTable
 
 restrictContentId :: ContentId -> QueryArr ContentIdColumn ()
-restrictContentId hashId = proc hashIdColumn -> do
+restrictContentId hashId = proc hashIdColumn ->
     restrict -< hashIdColumn .=== ContentId.toColumn hashId
 
 restrictContentURL :: ContentURI -> QueryArr ContentURIColumn ()
-restrictContentURL url = proc uriColumn -> do
+restrictContentURL url = proc uriColumn ->
     restrict -< uriColumn .=== ContentURI.toColumn url
 
 -- Query: Image
@@ -458,12 +458,12 @@ getBy' predicate conn = do
 
 hashIdRestriction :: ContentId ->
                      (QueryArr (ContentRowRead, NullableImageRowReadWrite) ())
-hashIdRestriction cHashId = proc (cr, _) -> do
+hashIdRestriction cHashId = proc (cr, _) ->
   restrictContentId cHashId -< crHashId cr
 
 urlRestriction :: ContentURI ->
                   (QueryArr (ContentRowRead, NullableImageRowReadWrite) ())
-urlRestriction url = proc (cr, _) -> do
+urlRestriction url = proc (cr, _) ->
   restrictContentURL url -< crURL cr
 
 type Op a columnsW columnsR =
@@ -537,7 +537,7 @@ runContentSeqQuery :: PGS.Connection ->
                       IO [ContentSeqRow]
 runContentSeqQuery = runQuery
 
-lastContentRowInsertIdQuery :: Query (ContentSeqRowReadWrite)
+lastContentRowInsertIdQuery :: Query ContentSeqRowReadWrite
 lastContentRowInsertIdQuery = proc () -> do
   cs <- contentSeqQuery -< ()
   returnA -< cs
