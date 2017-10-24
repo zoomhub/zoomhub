@@ -26,6 +26,8 @@ module ZoomHub.Storage.PostgreSQL
   -- ** Debug
   , printIncrNumViewsQuery
   , lastContentRowInsertIdQuery
+  -- ** Test
+  , getNextUnprocessed
   ) where
 
 import           Control.Arrow                           (returnA)
@@ -34,6 +36,7 @@ import           Control.Exception                       (tryJust)
 import           Control.Monad                           (guard, when)
 import           Data.Aeson                              ((.=))
 import           Data.Int                                (Int64)
+import           Data.Monoid                             ((<>))
 import           Data.Pool                               (Pool, createPool)
 import           Data.Profunctor.Product.TH              (makeAdaptorAndInstance)
 import           Data.Text                               (Text)
@@ -93,10 +96,7 @@ import qualified ZoomHub.Types.DeepZoomImage.TileFormat  as TileFormat
 import qualified ZoomHub.Types.DeepZoomImage.TileOverlap as TileOverlap
 import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
 
--- -- Public API
-
--- getNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
--- getNextUnprocessed conn = undefined
+-- Public API
 
 -- getExpiredActive :: PGS.Connection -> IO [Content]
 -- getExpiredActive conn = undefined
@@ -367,6 +367,30 @@ createConnectionPool :: (TimeUnit a) =>
 createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
   createPool (PGS.connect connInfo) PGS.close (fromIntegral numStripes)
     (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
+
+-- Worker
+getNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
+getNextUnprocessed conn = do
+    rs <- runQuery conn nextUnprocessedQuery
+    case rs of
+      [r] -> return . Just $ rowToContent r
+      _   -> return Nothing
+
+nextUnprocessedQuery :: Query ContentRowRead
+nextUnprocessedQuery = proc () -> do
+    cs <- restrictBy contentQuery -< ()
+    stateRestriction Initialized -< cs
+    returnA -< cs
+  where
+    restrictBy :: Query ContentRowRead -> Query ContentRowRead
+    restrictBy query =
+      first $
+      orderBy (mostPopularFirst <> oldestFirst)
+      query
+
+    first = limit 1
+    mostPopularFirst = desc crNumViews
+    oldestFirst = asc crInitializedAt
 
 -- Helper
 contentToRow :: Content -> ContentRowWrite

@@ -153,6 +153,7 @@ test-suite tests
   type:             exitcode-stdio-1.0
   other-modules:
     ZoomHub.APISpec
+    ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
     ZoomHub.Types.DeepZoomImageSpec
@@ -165,12 +166,14 @@ test-suite tests
     , hspec-wai
     , http-types
     , network-uri
+    , postgresql-simple
     , QuickCheck
     , quickcheck-instances
     , resource-pool
     , servant-server
     , sqlite-simple
     , text
+    , time
     , time-units
     , transformers
     , wai

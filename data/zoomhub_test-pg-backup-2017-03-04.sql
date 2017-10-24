@@ -142,12 +142,53 @@ INSERT INTO content (id, hash_id, type_id, url, state, initialized_at, active_at
 INSERT INTO content (id, hash_id, type_id, url, state, initialized_at, active_at, completed_at, title, attribution_text, attribution_link, mime, size, error, progress, abuse_level_id, num_abuse_reports, num_views, version) VALUES (4, '4rcn', 1, 'http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg', 'completed:success', '2014-04-11 13:41:21.717-07', NULL, NULL, NULL, NULL, NULL, 'image/jpeg', 9115770, NULL, 1, 0, 0, 0, 4);
 INSERT INTO content (id, hash_id, type_id, url, state, initialized_at, active_at, completed_at, title, attribution_text, attribution_link, mime, size, error, progress, abuse_level_id, num_abuse_reports, num_views, version) VALUES (5, 'h', 1, 'http://upload.wikimedia.org/wikipedia/commons/3/36/SeattleI5Skyline.jpg#zoomhub=h', 'completed:success', '2016-04-03 22:54:55-07', NULL, NULL, NULL, NULL, NULL, 'image/jpeg', 3232686, NULL, 1, 2, 37, 0, 3);
 
+INSERT INTO content (
+  id,
+  hash_id,
+  type_id,
+  url,
+  state,
+  initialized_at,
+  active_at,
+  completed_at,
+  title,
+  attribution_text,
+  attribution_link,
+  mime,
+  size,
+  error,
+  progress,
+  abuse_level_id,
+  num_abuse_reports,
+  num_views,
+  version
+) VALUES (
+  6,
+  'nextUnprocessed',
+  1,
+  'http://example.com/unprocessed.jpg',
+  'initialized',
+  '2017-01-01 00:00:00-07',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  0,
+  2,
+  0,
+  4242 /* numViws */,
+  3
+);
 
 --
 -- Name: content_id_seq; Type: SEQUENCE SET; Schema: public; Owner: dani
 --
 
-SELECT pg_catalog.setval('content_id_seq', 6, false);
+SELECT pg_catalog.setval('content_id_seq', 7, false);
 
 
 --
