@@ -50,12 +50,14 @@ import           Opaleye                                 (Column, Nullable,
                                                           PGText, PGTimestamptz,
                                                           Query, QueryArr,
                                                           Table (Table),
-                                                          arrangeUpdateSql,
-                                                          constant, leftJoin,
-                                                          optional, queryTable,
-                                                          required, restrict,
-                                                          runInsert, runQuery,
-                                                          runUpdate, (.===))
+                                                          arrangeUpdateSql, asc,
+                                                          constant, desc,
+                                                          leftJoin, limit,
+                                                          optional, orderBy,
+                                                          queryTable, required,
+                                                          restrict, runInsert,
+                                                          runQuery, runUpdate,
+                                                          (.===))
 import           System.Random                           (randomRIO)
 
 import           ZoomHub.Log.Logger                      (logWarning)
@@ -79,8 +81,8 @@ import           ZoomHub.Types.ContentId                 (ContentId,
                                                           pContentId)
 import qualified ZoomHub.Types.ContentId                 as ContentId
 import           ZoomHub.Types.ContentMIME               (ContentMIME)
-import           ZoomHub.Types.ContentState              (ContentState,
-                                                          ContentStateColumn)
+import           ZoomHub.Types.ContentState              (ContentStateColumn)
+import           ZoomHub.Types.ContentState              as ContentState
 import           ZoomHub.Types.ContentType               as ContentType
 import           ZoomHub.Types.ContentURI                (ContentURI, ContentURI' (ContentURI),
                                                           ContentURIColumn,
@@ -320,6 +322,10 @@ restrictContentURL :: ContentURI -> QueryArr ContentURIColumn ()
 restrictContentURL url = proc uriColumn ->
     restrict -< uriColumn .=== ContentURI.toColumn url
 
+restrictContentState :: ContentState -> QueryArr ContentStateColumn ()
+restrictContentState state = proc stateColumn ->
+    restrict -< stateColumn .=== ContentState.toColumn state
+
 -- Query: Image
 imageQuery :: Query ImageRowReadWrite
 imageQuery = queryTable imageTable
@@ -470,6 +476,10 @@ urlRestriction :: ContentURI ->
                   (QueryArr (ContentRowRead, NullableImageRowReadWrite) ())
 urlRestriction url = proc (cr, _) ->
   restrictContentURL url -< crURL cr
+
+stateRestriction :: ContentState -> QueryArr ContentRowRead ()
+stateRestriction state = proc cr ->
+  restrictContentState state -< crState cr
 
 type Op a columnsW columnsR =
   Table columnsW columnsR ->
