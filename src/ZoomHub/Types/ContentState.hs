@@ -6,6 +6,7 @@ module ZoomHub.Types.ContentState
   ( ContentState(..)
   , ContentStateColumn
   , fromString
+  , toColumn
   ) where
 
 import           Data.Profunctor.Product.Default      (Default, def)
@@ -56,6 +57,12 @@ instance FromField ContentState where
 -- PostgreSQL
 type ContentStateColumn = Column PGText
 
+toColumn :: ContentState -> ContentStateColumn
+toColumn Initialized      = pgStrictText "initialized"
+toColumn Active           = pgStrictText "active"
+toColumn CompletedSuccess = pgStrictText "completed:success"
+toColumn CompletedFailure = pgStrictText "completed:failure"
+
 instance PGS.FromField ContentState where
   fromField f mdata = PGS.fromField f mdata >>= parseContentState
     where
@@ -72,10 +79,4 @@ instance QueryRunnerColumnDefault PGText ContentState where
   queryRunnerColumnDefault = fieldQueryRunnerColumn
 
 instance Default Constant ContentState ContentStateColumn where
-  def = Constant def'
-    where
-      def' :: ContentState -> ContentStateColumn
-      def' Initialized      = pgStrictText "initialized"
-      def' Active           = pgStrictText "active"
-      def' CompletedSuccess = pgStrictText "completed:success"
-      def' CompletedFailure = pgStrictText "completed:failure"
+  def = Constant toColumn
