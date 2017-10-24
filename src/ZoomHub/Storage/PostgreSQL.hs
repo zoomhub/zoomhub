@@ -386,8 +386,8 @@ contentToRow c = ContentRow
   , crVersion = Nothing
   }
 
-rowToContent :: ContentRow -> NullableImageRow -> Content
-rowToContent cr nir = Content
+rowToContent :: ContentRow -> Content
+rowToContent cr = Content
     { contentId = crHashId cr
     , contentType = crTypeId cr
     , contentURL = crURL cr
@@ -400,8 +400,13 @@ rowToContent cr nir = Content
     , contentProgress = crProgress cr
     , contentNumViews = fromIntegral (crNumViews cr)
     , contentError = crError cr
-    , contentDZI = mDZI
+    , contentDZI = Nothing
     }
+
+rowWithImageToContent :: ContentRow -> NullableImageRow -> Content
+rowWithImageToContent cr nir =
+    let content = (rowToContent cr) in
+    content { contentDZI = mDZI }
   where
     mDZIWidth = fromIntegral <$> imageWidth nir
     mDZIHeight = fromIntegral <$> imageHeight nir
@@ -418,7 +423,7 @@ getBy :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
 getBy predicate conn = do
     rs <- runContentImageQuery conn query
     case rs of
-      [(cr, nir)] -> return . Just $ rowToContent cr nir
+      [(cr, nir)] -> return . Just $ rowWithImageToContent cr nir
       _ -> return Nothing
   where
     query :: Query (ContentRowRead, NullableImageRowReadWrite)
