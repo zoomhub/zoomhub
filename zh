@@ -89,7 +89,9 @@ test)
     createdb "$DB_NAME"
     psql --quiet "$DB_NAME" < ./data/zoomhub_test-pg-backup-2017-03-04.sql
 
-    stack test
+    # See: https://github.com/commercialhaskell/stack/issues/2210
+    MODULES="$2"
+    stack test --test-arguments '-m "'"$MODULES"'"'
 
     dropdb "$DB_NAME"
     ;;
