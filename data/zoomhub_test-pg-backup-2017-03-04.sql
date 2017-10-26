@@ -164,9 +164,9 @@ INSERT INTO content (
   version
 ) VALUES (
   6,
-  'nextUnprocessed',
+  '6',
   1,
-  'http://example.com/unprocessed.jpg',
+  'http://example.com/6/initialized.jpg',
   'initialized',
   '2017-01-01 00:00:00Z',
   NULL,
@@ -180,7 +180,49 @@ INSERT INTO content (
   0,
   2,
   0,
-  4242 /* numViws */,
+  100 /* numViws */,
+  3
+);
+
+INSERT INTO content (
+  id,
+  hash_id,
+  type_id,
+  url,
+  state,
+  initialized_at,
+  active_at,
+  completed_at,
+  title,
+  attribution_text,
+  attribution_link,
+  mime,
+  size,
+  error,
+  progress,
+  abuse_level_id,
+  num_abuse_reports,
+  num_views,
+  version
+) VALUES (
+  7,
+  '7',
+  1,
+  'http://example.com/7/completed_success.jpg',
+  'completed:success',
+  '2016-01-01 00:00:00Z',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  0,
+  2,
+  0,
+  200 /* numViws */,
   3
 );
 
@@ -188,7 +230,7 @@ INSERT INTO content (
 -- Name: content_id_seq; Type: SEQUENCE SET; Schema: public; Owner: dani
 --
 
-SELECT pg_catalog.setval('content_id_seq', 7, false);
+SELECT pg_catalog.setval('content_id_seq', 8, false);
 
 
 --

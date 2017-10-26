@@ -43,9 +43,9 @@ spec =
       it "should return most viewed item that hasn’t been converted" $ \conn -> do
         -- TODO: Create database state instead of relying on import:
         let content = mkContent Image
-                        (ContentId.fromString "nextUnprocessed")
-                        (fromJust . fromText $ "http://example.com/unprocessed.jpg")
+                        (ContentId.fromString "6")
+                        (fromJust . fromText $ "http://example.com/6/initialized.jpg")
                         (read "2017-01-01 00:00:00Z")
-            contentWithViews = content { contentNumViews = 4242 }
+            contentWithViews = content { contentNumViews = 100 }
 
         getNextUnprocessed conn `shouldReturn` (Just contentWithViews)
