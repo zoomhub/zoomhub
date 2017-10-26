@@ -84,7 +84,6 @@ import           ZoomHub.Types.ContentId                 (ContentId,
                                                           pContentId)
 import qualified ZoomHub.Types.ContentId                 as ContentId
 import           ZoomHub.Types.ContentMIME               (ContentMIME)
-import           ZoomHub.Types.ContentState              (ContentStateColumn)
 import           ZoomHub.Types.ContentState              as ContentState
 import           ZoomHub.Types.ContentType               as ContentType
 import           ZoomHub.Types.ContentURI                (ContentURI, ContentURI' (ContentURI),
