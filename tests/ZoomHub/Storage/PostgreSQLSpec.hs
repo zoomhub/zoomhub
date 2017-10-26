@@ -7,7 +7,6 @@ module ZoomHub.Storage.PostgreSQLSpec
 
 import           Control.Exception          (bracket)
 import           Data.Maybe                 (fromJust)
-import           Data.Time.Clock.POSIX      (posixSecondsToUTCTime)
 import qualified Database.PostgreSQL.Simple as PGS
 import           Servant                    (fromText)
 import           Test.Hspec                 (Spec, around, describe, hspec, it,
@@ -46,7 +45,7 @@ spec =
         let content = mkContent Image
                         (ContentId.fromString "nextUnprocessed")
                         (fromJust . fromText $ "http://example.com/unprocessed.jpg")
-                        (posixSecondsToUTCTime 1483254000)
+                        (read "2017-01-01 00:00:00Z")
             contentWithViews = content { contentNumViews = 4242 }
 
         getNextUnprocessed conn `shouldReturn` (Just contentWithViews)

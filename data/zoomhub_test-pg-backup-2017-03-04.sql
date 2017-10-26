@@ -168,7 +168,7 @@ INSERT INTO content (
   1,
   'http://example.com/unprocessed.jpg',
   'initialized',
-  '2017-01-01 00:00:00-07',
+  '2017-01-01 00:00:00Z',
   NULL,
   NULL,
   NULL,
