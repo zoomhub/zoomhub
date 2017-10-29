@@ -40,15 +40,11 @@ import           Control.Monad                           (guard, when)
 import           Data.Aeson                              ((.=))
 import           Data.Int                                (Int64)
 import           Data.Monoid                             ((<>))
-import           Data.Pool                               (Pool, createPool)
 import           Data.Profunctor.Product.TH              (makeAdaptorAndInstance)
 import           Data.Text                               (Text)
-import           Data.Time.Clock                         (NominalDiffTime,
-                                                          UTCTime, addUTCTime,
+import           Data.Time.Clock                         (UTCTime,
                                                           getCurrentTime)
-import           Data.Time.Units                         (Minute, Second,
-                                                          TimeUnit,
-                                                          toMicroseconds)
+import           Data.Time.Units                         (Minute)
 import qualified Database.PostgreSQL.Simple              as PGS
 import qualified Database.PostgreSQL.Simple.Errors       as PGS
 import           Opaleye                                 (Column, Nullable,
@@ -70,6 +66,9 @@ import           Opaleye                                 (Column, Nullable,
 import           System.Random                           (randomRIO)
 
 import           ZoomHub.Log.Logger                      (logWarning)
+import           ZoomHub.Storage.PostgreSQL.Internal     (createConnectionPool,
+                                                          subtractUTCTime,
+                                                          toNominalDiffTime)
 import           ZoomHub.Types.Content                   (Content (Content),
                                                           contentActiveAt,
                                                           contentCompletedAt,
@@ -357,21 +356,6 @@ getByURL = getBy . urlRestriction
 getByURL' :: ContentURI -> PGS.Connection -> IO (Maybe Content)
 getByURL' = getBy' . urlRestriction
 
--- Helpers
-toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
-toNominalDiffTime duration = fromIntegral $ toMicroseconds duration `div`
-  toMicroseconds (1 :: Second)
-
-createConnectionPool :: (TimeUnit a) =>
-                        PGS.ConnectInfo ->
-                        Integer ->
-                        a ->
-                        Integer ->
-                        IO (Pool PGS.Connection)
-createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
-  createPool (PGS.connect connInfo) PGS.close (fromIntegral numStripes)
-    (toNominalDiffTime idleTime) (fromIntegral maxResourcesPerStripe)
-
 -- Worker
 getNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
 getNextUnprocessed conn = do
@@ -400,9 +384,6 @@ getExpiredActive conn = do
         lastActiveTime = subtractUTCTime currentTime ttl
     rs <- runQuery conn (expiredActiveQuery lastActiveTime)
     return $ map rowToContent rs
-  where
-    subtractUTCTime :: UTCTime -> NominalDiffTime -> UTCTime
-    subtractUTCTime time amount = addUTCTime (-amount) time
 
 expiredActiveQuery :: UTCTime -> Query ContentRowRead
 expiredActiveQuery lastActiveTime = proc () -> do
