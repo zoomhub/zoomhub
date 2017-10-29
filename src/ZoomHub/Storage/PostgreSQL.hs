@@ -23,11 +23,10 @@ module ZoomHub.Storage.PostgreSQL
   , createConnectionPool
   , PGS.ConnectInfo(..)
   , PGS.defaultConnectInfo
-  -- ** Debug
-  , printIncrNumViewsQuery
-  , lastContentRowInsertIdQuery
-  -- ** Test
+  -- ** Debug (TODO: Move to `Internal`)
   , getNextUnprocessed
+  , lastContentRowInsertIdQuery
+  , printIncrNumViewsQuery
   ) where
 
 import           Control.Arrow                           (returnA)
