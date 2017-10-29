@@ -354,8 +354,8 @@ getByURL' :: ContentURI -> PGS.Connection -> IO (Maybe Content)
 getByURL' = getBy' . urlRestriction
 
 -- Helpers
-toIdleTime :: (TimeUnit a) => a -> NominalDiffTime
-toIdleTime duration = fromIntegral $ toMicroseconds duration `div`
+toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
+toNominalDiffTime duration = fromIntegral $ toMicroseconds duration `div`
   toMicroseconds (1 :: Second)
 
 createConnectionPool :: (TimeUnit a) =>
@@ -366,7 +366,7 @@ createConnectionPool :: (TimeUnit a) =>
                         IO (Pool PGS.Connection)
 createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
   createPool (PGS.connect connInfo) PGS.close (fromIntegral numStripes)
-    (toIdleTime idleTime) (fromIntegral maxResourcesPerStripe)
+    (toNominalDiffTime idleTime) (fromIntegral maxResourcesPerStripe)
 
 -- Worker
 getNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
