@@ -5,21 +5,28 @@ module ZoomHub.Storage.PostgreSQLSpec
   , spec
   ) where
 
-import           Control.Exception          (bracket)
-import qualified Database.PostgreSQL.Simple as PGS
-import           Test.Hspec                 (Spec, around, describe, hspec, it,
-                                             shouldReturn)
+import           Control.Exception                   (bracket)
+import           Data.Maybe                          (fromJust)
+import           Data.Time.Clock                     (UTCTime, getCurrentTime)
+import           Data.Time.Units                     (Minute)
+import qualified Database.PostgreSQL.Simple          as PGS
+import           Test.Hspec                          (Spec, around, describe,
+                                                      hspec, it, shouldReturn)
 
-import           ZoomHub.Storage.PostgreSQL (ConnectInfo (..),
-                                             defaultConnectInfo,
-                                             getNextUnprocessed,
-                                             runInsertContent)
-import           ZoomHub.Types.Content      (contentNumViews, contentState,
-                                             mkContent)
-import qualified ZoomHub.Types.ContentId    as ContentId
-import qualified ZoomHub.Types.ContentState as ContentState
-import           ZoomHub.Types.ContentType  (ContentType (Image))
-import           ZoomHub.Types.ContentURI   (ContentURI' (ContentURI))
+import           ZoomHub.Storage.PostgreSQL          (ConnectInfo (..),
+                                                      defaultConnectInfo,
+                                                      getExpiredActive,
+                                                      getNextUnprocessed,
+                                                      runInsertContent)
+import           ZoomHub.Storage.PostgreSQL.Internal (subtractUTCTime,
+                                                      toNominalDiffTime)
+import           ZoomHub.Types.Content               (contentActiveAt,
+                                                      contentNumViews,
+                                                      contentState, mkContent)
+import qualified ZoomHub.Types.ContentId             as ContentId
+import qualified ZoomHub.Types.ContentState          as ContentState
+import           ZoomHub.Types.ContentType           (ContentType (Image))
+import           ZoomHub.Types.ContentURI            (ContentURI' (ContentURI))
 
 
 main :: IO ()
@@ -43,24 +50,24 @@ spec =
   around withDatabaseConnection $
     describe "getNextUnprocessed" $ do
       it "should return most viewed item that hasn’t been converted" $ \conn -> do
-        let c1 = mkContent Image
-                        (ContentId.fromString "6")
-                        (ContentURI "http://example.com/6/initialized.jpg")
-                        (read "2017-01-01 00:00:00Z")
-            c1WithViews = c1
+        let initializedContent = mkContent Image
+              (ContentId.fromString "6")
+              (ContentURI "http://example.com/6")
+              (read "2017-01-01 00:00:00Z" :: UTCTime)
+            initializedContentWithViews = initializedContent
               { contentNumViews = 100
               }
 
-            c2 = mkContent Image
-                        (ContentId.fromString "7")
-                        (ContentURI  "http://example.com/7/initialized.jpg")
-                        (read "2016-01-01 00:00:00Z")
-            c2WithViews = c2
+            completedContent = mkContent Image
+              (ContentId.fromString "7")
+              (ContentURI "http://example.com/7")
+              (read "2016-01-01 00:00:00Z" :: UTCTime)
+            completedContentWithViews = completedContent
               { contentState = ContentState.CompletedSuccess
               , contentNumViews = 200
               }
 
-        _ <- runInsertContent conn c1WithViews
-        _ <- runInsertContent conn c2WithViews
+        _ <- runInsertContent conn initializedContentWithViews
+        _ <- runInsertContent conn completedContentWithViews
 
-        getNextUnprocessed conn `shouldReturn` (Just c1WithViews)
+        getNextUnprocessed conn `shouldReturn` (Just initializedContentWithViews)
