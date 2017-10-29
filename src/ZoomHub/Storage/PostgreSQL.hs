@@ -11,8 +11,10 @@ module ZoomHub.Storage.PostgreSQL
   (
   -- ** Read operations
     getById
+  , getById'
   , getByURL
-  -- , getExpiredActive
+  , getByURL'
+  , getExpiredActive
   -- ** Write operations
   , create
   -- , dequeueNextUnprocessed
@@ -24,6 +26,7 @@ module ZoomHub.Storage.PostgreSQL
   , PGS.ConnectInfo(..)
   , PGS.defaultConnectInfo
   -- ** Debug (TODO: Move to `Internal`)
+  , expiredActiveQuery
   , getNextUnprocessed
   , lastContentRowInsertIdQuery
   , printIncrNumViewsQuery
@@ -40,7 +43,7 @@ import           Data.Pool                               (Pool, createPool)
 import           Data.Profunctor.Product.TH              (makeAdaptorAndInstance)
 import           Data.Text                               (Text)
 import           Data.Time.Clock                         (NominalDiffTime,
-                                                          UTCTime,
+                                                          UTCTime, addUTCTime,
                                                           getCurrentTime)
 import           Data.Time.Units                         (Second, TimeUnit,
                                                           toMicroseconds)
@@ -55,11 +58,13 @@ import           Opaleye                                 (Column, Nullable,
                                                           arrangeUpdateSql, asc,
                                                           constant, desc,
                                                           leftJoin, limit,
+                                                          matchNullable,
                                                           optional, orderBy,
+                                                          pgBool, pgUTCTime,
                                                           queryTable, required,
                                                           restrict, runInsert,
                                                           runQuery, runUpdate,
-                                                          (.===))
+                                                          (.<=), (.===))
 import           System.Random                           (randomRIO)
 
 import           ZoomHub.Log.Logger                      (logWarning)
@@ -95,9 +100,6 @@ import qualified ZoomHub.Types.DeepZoomImage.TileOverlap as TileOverlap
 import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
 
 -- Public API
-
--- getExpiredActive :: PGS.Connection -> IO [Content]
--- getExpiredActive conn = undefined
 
 -- -- Writes
 -- dequeueNextUnprocessed :: PGS.Connection -> IO (Maybe Content)
@@ -386,6 +388,32 @@ nextUnprocessedQuery = first $ proc () -> do
     first = limit 1
     mostPopularFirst = desc crNumViews
     oldestFirst = asc crInitializedAt
+
+getExpiredActive :: PGS.Connection -> IO [Content]
+getExpiredActive conn = do
+    currentTime <- getCurrentTime
+    -- TODO: Use `TimeUnit`:
+    let ttl = 30 * 60
+        lastActiveTime = subtractUTCTime currentTime ttl
+    rs <- runQuery conn (expiredActiveQuery lastActiveTime)
+    return $ map rowToContent rs
+  where
+    subtractUTCTime :: UTCTime -> NominalDiffTime -> UTCTime
+    subtractUTCTime time amount = addUTCTime (-amount) time
+
+expiredActiveQuery :: UTCTime -> Query ContentRowRead
+expiredActiveQuery lastActiveTime = proc () -> do
+    cs <- contentQuery -< ()
+    stateRestriction ContentState.Active -< cs
+    restrict -< isExpired cs lastActiveTime
+    returnA -< cs
+  where
+    isExpired :: ContentRowRead -> UTCTime -> Column PGBool
+    isExpired cr cutOffTime =
+      let activeAt = crActiveAt cr
+          defaultValue = pgBool False
+      in
+      matchNullable defaultValue (.<= pgUTCTime cutOffTime) activeAt
 
 -- Helper
 contentToRow :: Content -> ContentRowWrite

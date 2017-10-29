@@ -201,7 +201,7 @@ spec = with (return $ app config) $ do
           restRedirect (fromString newContentId)
 
         get ("/v1/content/" <> BC.pack newContentId) `shouldRespondWith`
-          "{\"dzi\":null,\"progress\":0.0,\"url\":\"http://example.com\"\
+          "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
           \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/deadbeef\
           \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
           \:\"http://localhost:8000/deadbeef\",\"id\"\
@@ -315,4 +315,4 @@ spec = with (return $ app config) $ do
           let pool = Config.dbConnPool config
           maybeContent <- withResource pool (getById $ fromString "4rcn")
           let numViews = fromMaybe 0 (contentNumViews <$> maybeContent)
-          numViews `shouldBe` 4
+          numViews `shouldBe` 5

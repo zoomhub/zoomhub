@@ -6,9 +6,7 @@ module ZoomHub.Storage.PostgreSQLSpec
   ) where
 
 import           Control.Exception          (bracket)
-import           Data.Maybe                 (fromJust)
 import qualified Database.PostgreSQL.Simple as PGS
-import           Servant                    (fromText)
 import           Test.Hspec                 (Spec, around, describe, hspec, it,
                                              shouldReturn)
 
@@ -18,6 +16,7 @@ import           ZoomHub.Storage.PostgreSQL (ConnectInfo (..),
 import           ZoomHub.Types.Content      (contentNumViews, mkContent)
 import qualified ZoomHub.Types.ContentId    as ContentId
 import           ZoomHub.Types.ContentType  (ContentType (Image))
+import           ZoomHub.Types.ContentURI   (ContentURI' (ContentURI))
 
 
 main :: IO ()
@@ -44,7 +43,7 @@ spec =
         -- TODO: Create database state instead of relying on import:
         let content = mkContent Image
                         (ContentId.fromString "6")
-                        (fromJust . fromText $ "http://example.com/6/initialized.jpg")
+                        (ContentURI "http://example.com/6/initialized.jpg")
                         (read "2017-01-01 00:00:00Z")
             contentWithViews = content { contentNumViews = 100 }
 
