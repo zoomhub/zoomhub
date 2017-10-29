@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module ZoomHub.Storage.Internal.PostgreSQL where
+module ZoomHub.Storage.PostgreSQL.Internal where
 
 import           Data.Maybe                      (fromMaybe)
 import           Data.Profunctor.Product.Default (Default)
