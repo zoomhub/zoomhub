@@ -377,7 +377,7 @@ getNextUnprocessed conn = do
 nextUnprocessedQuery :: Query ContentRowRead
 nextUnprocessedQuery = first $ proc () -> do
     cs <- query -< ()
-    stateRestriction Initialized -< cs
+    stateRestriction ContentState.Initialized -< cs
     returnA -< cs
   where
     query :: Query ContentRowRead
