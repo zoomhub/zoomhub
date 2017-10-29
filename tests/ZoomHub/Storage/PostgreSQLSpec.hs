@@ -17,7 +17,7 @@ import           ZoomHub.Storage.PostgreSQL (ConnectInfo (..),
 import           ZoomHub.Types.Content      (contentNumViews, contentState,
                                              mkContent)
 import qualified ZoomHub.Types.ContentId    as ContentId
-import qualified ZoomHub.Types.ContentState    as ContentState
+import qualified ZoomHub.Types.ContentState as ContentState
 import           ZoomHub.Types.ContentType  (ContentType (Image))
 import           ZoomHub.Types.ContentURI   (ContentURI' (ContentURI))
 
@@ -53,7 +53,7 @@ spec =
 
             c2 = mkContent Image
                         (ContentId.fromString "7")
-                        (fromJust . fromText $ "http://example.com/7/initialized.jpg")
+                        (ContentURI  "http://example.com/7/initialized.jpg")
                         (read "2016-01-01 00:00:00Z")
             c2WithViews = c2
               { contentState = ContentState.CompletedSuccess

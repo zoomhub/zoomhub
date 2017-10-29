@@ -46,8 +46,9 @@ import           Data.Text                               (Text)
 import           Data.Time.Clock                         (NominalDiffTime,
                                                           UTCTime, addUTCTime,
                                                           getCurrentTime)
-import           Data.Time.Units                         (Second, TimeUnit,
-                                                          toMicroseconds, Minute)
+import           Data.Time.Units                         (Minute, Second,
+                                                          TimeUnit,
+                                                          toMicroseconds)
 import qualified Database.PostgreSQL.Simple              as PGS
 import qualified Database.PostgreSQL.Simple.Errors       as PGS
 import           Opaleye                                 (Column, Nullable,
