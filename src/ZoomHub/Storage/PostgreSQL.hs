@@ -46,7 +46,7 @@ import           Data.Time.Clock                         (NominalDiffTime,
                                                           UTCTime, addUTCTime,
                                                           getCurrentTime)
 import           Data.Time.Units                         (Second, TimeUnit,
-                                                          toMicroseconds)
+                                                          toMicroseconds, Minute)
 import qualified Database.PostgreSQL.Simple              as PGS
 import qualified Database.PostgreSQL.Simple.Errors       as PGS
 import           Opaleye                                 (Column, Nullable,
@@ -392,8 +392,7 @@ nextUnprocessedQuery = first $ proc () -> do
 getExpiredActive :: PGS.Connection -> IO [Content]
 getExpiredActive conn = do
     currentTime <- getCurrentTime
-    -- TODO: Use `TimeUnit`:
-    let ttl = 30 * 60
+    let ttl = toNominalDiffTime (30 :: Minute)
         lastActiveTime = subtractUTCTime currentTime ttl
     rs <- runQuery conn (expiredActiveQuery lastActiveTime)
     return $ map rowToContent rs
