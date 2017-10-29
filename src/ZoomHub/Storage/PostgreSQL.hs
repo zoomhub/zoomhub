@@ -30,6 +30,7 @@ module ZoomHub.Storage.PostgreSQL
   , getNextUnprocessed
   , lastContentRowInsertIdQuery
   , printIncrNumViewsQuery
+  , runInsertContent
   ) where
 
 import           Control.Arrow                           (returnA)
