@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ZoomHub.API.Types.Callback
   ( Callback
   , unCallback

@@ -111,7 +111,7 @@ parseToken :: Metadata -> Maybe Token
 parseToken meta =
   let tokenId = key "access" . key "token" . key "id" . _String
       maybeToken = unMetadata meta ^? tokenId in
-  (Token . T.unpack) <$> maybeToken
+  Token . T.unpack <$> maybeToken
 
 parseEndpoint :: Metadata -> Maybe Endpoint
 parseEndpoint meta =

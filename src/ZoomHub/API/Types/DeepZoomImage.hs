@@ -17,6 +17,7 @@ module ZoomHub.API.Types.DeepZoomImage
 import           Data.Aeson                   (ToJSON, Value (String),
                                                genericToJSON, toJSON)
 import           Data.Aeson.Casing            (aesonPrefix, camelCase)
+import           Data.Maybe                   (fromMaybe)
 import qualified Data.Text                    as T
 import           GHC.Generics                 (Generic)
 import           Network.URI                  (URI, parseRelativeReference,
@@ -51,12 +52,9 @@ fromInternal baseURI cId dzi = DeepZoomImage
   }
   where
     name = unId cId <.> "dzi"
-    path =
-      case parseRelativeReference $ show (contentBasePath baseURI) </> name of
-        Just p  -> p
-        Nothing ->
-          error $ "ZoomHub.API.Types.DeepZoomImage.fromInternal:\
-                  \ Failed to parse DZI path."
+    path = fromMaybe
+            (error "ZoomHub.API.Types.DeepZoomImage.fromInternal: Failed to parse DZI path.")
+            (parseRelativeReference $ show (contentBasePath baseURI) </> name)
     url = path `relativeTo` contentBaseHost baseURI
 
 mkDeepZoomImage :: DeepZoomImageURI ->

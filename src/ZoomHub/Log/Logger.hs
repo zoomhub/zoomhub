@@ -115,7 +115,7 @@ log level message meta = do
 encodeLogLine :: Value -> Text
 encodeLogLine = removeNewlines . lenientDecodeUtf8 . BL.toStrict . prettyEncode
   where
-    removeNewlines = (T.intercalate "") . T.lines
+    removeNewlines = T.intercalate "" . T.lines
     prettyEncode = encodePretty' prettyEncodeConfig
 
 -- JSON

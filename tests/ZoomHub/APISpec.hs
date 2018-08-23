@@ -106,7 +106,7 @@ config = Config
   , contentBaseURI =
       case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
         Just uri -> uri
-        _ -> error $ "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
+        _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
   , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
   , encodeId = show
   , error404 = "404"

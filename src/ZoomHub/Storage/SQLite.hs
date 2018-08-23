@@ -455,8 +455,8 @@ rowToContent cr = Content
     , contentDZI = maybeDZI
     }
   where
-    maybeDZI = mkDeepZoomImage <$> (crDZIWidth cr) <*> (crDZIHeight cr) <*>
-      (crDZITileSize cr) <*> (crDZITileOverlap cr) <*> (crDZITileFormat cr)
+    maybeDZI = mkDeepZoomImage <$> crDZIWidth cr <*> crDZIHeight cr <*>
+      crDZITileSize cr <*> crDZITileOverlap cr <*> crDZITileFormat cr
 
 contentToRow :: Integer -> Content -> ContentRow
 contentToRow id_ c = ContentRow
@@ -491,7 +491,7 @@ backoffPolicy =
     maxRetries = 10
 
 withRetries :: IO a -> IO a
-withRetries action = recovering backoffPolicy handlers (\_ -> action)
+withRetries action = recovering backoffPolicy handlers (const action)
   where
     handlers = [sqlErrorH]
 
