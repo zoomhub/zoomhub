@@ -1,47 +1,45 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module ZoomHub.Servant.RawCapture
   ( RawCapture
   ) where
 
 
-import           Data.Proxy              (Proxy (Proxy))
-import           Data.Text               (Text)
-import qualified Data.Text               as T
-import           Data.Typeable           (Typeable)
-import           GHC.TypeLits            (KnownSymbol, Symbol)
-import           Network.Wai             (pathInfo, rawPathInfo)
-import           Servant                 ((:>))
-import           Servant.Common.Text     (FromText, fromText)
-import           Servant.Server.Internal (HasServer, RouteMismatch (NotFound),
-                                          ServerT, failWith, route)
+import           Data.Proxy                                 (Proxy (Proxy))
+import           Data.Typeable                              (Typeable)
+import           GHC.TypeLits                               (KnownSymbol,
+                                                             Symbol)
+import           Servant                                    (FromHttpApiData)
+import           Servant.API                                ((:>))
+import           Servant.Server.Internal                    (HasServer, Router' (RawCaptureRouter),
+                                                             ServerT, hoistServerWithContext,
+                                                             route)
+import           Servant.Server.Internal.RoutingApplication (addCapture,
+                                                             delayedFail)
+import           Servant.Server.Internal.ServantErr         (err400)
+import           Web.HttpApiData                            (parseUrlPieceMaybe)
 
-import           ZoomHub.Utils           (lenientDecodeUtf8)
 
-data RawCapture (sym :: Symbol) a deriving (Typeable)
+data RawCapture (sym :: Symbol) (a :: *) deriving (Typeable)
 
-capturedRaw :: FromText a => proxy (RawCapture sym a) -> Text -> Maybe a
-capturedRaw _ = fromText
+instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
+  => HasServer (RawCapture capture a :> api) context where
 
-instance (KnownSymbol capture, FromText a, HasServer sublayout)
-      => HasServer (RawCapture capture a :> sublayout) where
+  type ServerT (RawCapture capture a :> api) m =
+    a -> ServerT api m
 
-  type ServerT (RawCapture capture a :> sublayout) m =
-     a -> ServerT sublayout m
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
-  route Proxy subserver request respond =
-    let rawWithLeadingSlash = lenientDecodeUtf8 (rawPathInfo request)
-        raw = T.tail rawWithLeadingSlash in
-    case capturedRaw captureProxy raw of
-           Nothing  -> respond $ failWith NotFound
-           Just v   -> route (Proxy :: Proxy sublayout) (subserver v) request{
-                         -- Finish routing as we captured entire path:
-                         pathInfo = [""]
-                       } respond
-
-    where captureProxy = Proxy :: Proxy (RawCapture capture a)
+  route Proxy context d =
+    RawCaptureRouter $
+        route (Proxy :: Proxy api)
+              context
+              (addCapture d $ \txt -> case parseUrlPieceMaybe txt of
+                 Nothing -> delayedFail err400
+                 Just v  -> return v
+              )

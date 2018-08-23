@@ -4,10 +4,11 @@ module ZoomHub.Web.Types.EmbedDimension
   , parseCSSValue
   ) where
 
-import           Data.Char (isDigit)
-import qualified Data.Text as T
-import           Safe      (readMay)
-import           Servant   (FromText, fromText)
+import           Data.Bifunctor (first)
+import           Data.Char      (isDigit)
+import qualified Data.Text      as T
+import           Safe           (readEitherSafe)
+import           Servant        (FromHttpApiData, parseUrlPiece)
 
 -- Type
 data EmbedDimension = Zero
@@ -22,17 +23,17 @@ toCSSValue Zero = "0"
 toCSSValue (Pixels n) = show n ++ "px"
 toCSSValue (Percentage n) = show n ++ "%"
 
-parseCSSValue :: String -> Maybe EmbedDimension
-parseCSSValue "auto" = Just Auto
-parseCSSValue "0" = Just Zero
+parseCSSValue :: String -> Either String EmbedDimension
+parseCSSValue "auto"        = Right Auto
+parseCSSValue "0"           = Right Zero
 parseCSSValue s = case unit of
-    "px" -> readMay value >>= Just . Pixels
-    "%"  -> readMay value >>= Just . Percentage
-    _    -> Nothing
+    "px" -> readEitherSafe value >>= Right . Pixels
+    "%"  -> readEitherSafe value >>= Right . Percentage
+    u    -> Left $ "Invalid CSS unit: " <> u
   where
     value = takeWhile isDigit s
     unit = dropWhile isDigit s
 
 -- Text
-instance FromText EmbedDimension where
-  fromText = parseCSSValue . T.unpack
+instance FromHttpApiData EmbedDimension where
+  parseUrlPiece p = first T.pack $ parseCSSValue . T.unpack $ p

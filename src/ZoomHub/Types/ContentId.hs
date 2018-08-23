@@ -28,7 +28,8 @@ import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 import           GHC.Generics                     (Generic)
-import           Servant                          (FromText, fromText)
+import           Servant                          (FromHttpApiData,
+                                                   parseUrlPiece)
 
 
 
@@ -62,10 +63,10 @@ isValid :: String -> Bool
 isValid = all (`Set.member` validCharsSet)
 
 -- Text
-instance FromText ContentId where
-  fromText t
-    | isValid s = Just . fromString $ s
-    | otherwise = Nothing
+instance FromHttpApiData ContentId where
+  parseUrlPiece t
+    | isValid s = Right . fromString $ s
+    | otherwise = Left "Invalid content ID"
     where s = T.unpack t
 
 -- JSON
@@ -80,7 +81,7 @@ instance ToField ContentId where
 
 instance FromField ContentId where
   fromField f@(Field (SQLText t) _) =
-    case fromText t of
-      Just r  -> Ok r
-      Nothing -> returnError ConversionFailed f "invalid content ID"
-  fromField f = returnError ConversionFailed f "invalid content ID"
+    case parseUrlPiece t of
+      Right r  -> Ok r
+      Left _ -> returnError ConversionFailed f "Invalid content ID"
+  fromField f = returnError ConversionFailed f "Invalid content ID"

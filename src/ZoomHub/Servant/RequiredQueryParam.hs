@@ -1,44 +1,58 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module ZoomHub.Servant.RequiredQueryParam
   ( RequiredQueryParam
   ) where
 
-import           Data.Proxy              (Proxy (Proxy))
-import           Data.String.Conversions (cs)
-import           Data.Typeable           (Typeable)
-import           GHC.TypeLits            (KnownSymbol, Symbol, symbolVal)
-import           Network.HTTP.Types      (parseQueryText)
-import           Network.Wai             (rawQueryString)
-import           Servant                 ((:>))
-import           Servant.Common.Text     (FromText, fromText)
-import           Servant.Server.Internal (HasServer, RouteMismatch (NotFound),
-                                          ServerT, failWith, route)
+import           Control.Monad                              (join)
+import           Data.Proxy                                 (Proxy (Proxy))
+import           Data.String.Conversions                    (cs)
+import           Data.Text                                  as T
+import           Data.Typeable                              (Typeable)
+import           GHC.TypeLits                               (KnownSymbol,
+                                                             Symbol, symbolVal)
+import           Network.HTTP.Types                         (parseQueryText)
+import           Network.Wai                                (Request,
+                                                             rawQueryString)
+import           Servant                                    (FromHttpApiData)
+import           Servant.API                                ((:>))
+import           Servant.Server.Internal                    (HasServer, ServerT, hoistServerWithContext,
+                                                             route)
+import           Servant.Server.Internal.RoutingApplication (DelayedIO,
+                                                             addParameterCheck,
+                                                             delayedFail,
+                                                             withRequest)
+import           Servant.Server.Internal.ServantErr         (err400)
+import           Web.HttpApiData                            (parseQueryParam)
+
 
 data RequiredQueryParam (sym :: Symbol) a deriving Typeable
 
-instance (KnownSymbol sym, FromText a, HasServer sublayout)
-      => HasServer (RequiredQueryParam sym a :> sublayout) where
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
+  => HasServer (RequiredQueryParam sym a :> api) context where
 
-  type ServerT (RequiredQueryParam sym a :> sublayout) m =
-    a -> ServerT sublayout m
+  type ServerT (RequiredQueryParam sym a :> api) m =
+    a -> ServerT api m
 
-  route Proxy subserver request respond = do
-    let querytext = parseQueryText $ rawQueryString request
-        maybeParam =
-          case lookup paramname querytext of
-            Nothing       -> Nothing -- param absent from the query string
-            Just Nothing  -> Nothing -- param present with no value -> Nothing
-            Just (Just v) -> fromText v -- if present, we try to convert to
-                                        -- the right type
-    case maybeParam of
-      Nothing    -> respond $ failWith NotFound
-      Just param ->
-        route (Proxy :: Proxy sublayout) (subserver param) request respond
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+  route Proxy context subserver =
+    let querytext req = parseQueryText $ rawQueryString req
+        paramname = cs $ symbolVal (Proxy :: Proxy sym)
+
+        parseParam :: Request -> DelayedIO a
+        parseParam req = case mev of
+          Just (Right x) -> return x
+          _              -> delayedFail err400 -- Skip to next handler if param not present
+          where
+            mev :: Maybe (Either T.Text a)
+            mev = fmap parseQueryParam $ join $ lookup paramname $ querytext req
+
+        delayed = addParameterCheck subserver . withRequest $ parseParam
+
+    in route (Proxy :: Proxy api) context delayed

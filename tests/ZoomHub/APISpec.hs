@@ -44,7 +44,7 @@ existingContent =
 
 -- Matchers
 applicationJSON :: MatchHeader
-applicationJSON = "Content-Type" <:> "application/json"
+applicationJSON = "Content-Type" <:> "application/json;charset=utf-8"
 
 plainTextUTF8 :: MatchHeader
 plainTextUTF8 = "Content-Type" <:> "text/plain; charset=utf-8"

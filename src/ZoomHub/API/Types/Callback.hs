@@ -4,12 +4,11 @@ module ZoomHub.API.Types.Callback
   ) where
 
 import qualified Data.Text as T
-import           Servant   (FromText, fromText)
+import           Servant   (FromHttpApiData (..))
 
 
 newtype Callback = Callback { unCallback :: String } deriving (Eq, Show)
 
--- Text
 -- TODO: Disallow invalid JavaScript identifiers:
-instance FromText Callback where
-  fromText = Just . Callback . T.unpack
+instance FromHttpApiData Callback where
+  parseUrlPiece = Right . Callback . T.unpack
