@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Rackspace.CloudFiles
@@ -166,14 +167,14 @@ putContent meta path mime container objectName =
     httpErrorH = logRetries testE logRetry
 
     testE :: (Monad m) => HttpException -> m Bool
-    testE e = case e of
-      FailedConnectionException2 _ _ _ _ -> return True
-      _                                  -> return False
+    testE = \case
+      HttpExceptionRequest _ (ConnectionFailure _) -> return True
+      _                                            -> return False
 
-    logRetry :: Bool -> String -> IO ()
-    logRetry shouldRetry errorMessage =
+    logRetry :: Bool -> HttpException -> RetryStatus -> IO ()
+    logRetry shouldRetry e _ =
         logWarning "Retrying `CloudFiles.putContent` due to error"
-          [ "error" .= errorMessage
+          [ "error" .= e
           , "nextAction" .= next
           ]
       where
