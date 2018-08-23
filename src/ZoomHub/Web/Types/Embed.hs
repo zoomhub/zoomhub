@@ -8,7 +8,7 @@ module ZoomHub.Web.Types.Embed
   , mkEmbed
   ) where
 
-import           Data.Aeson.Encode                           (encode)
+import           Data.Aeson                                  (encode)
 import qualified Data.ByteString.Lazy.Char8                  as BLC
 import           Data.List                                   (intercalate)
 import           Data.Maybe                                  (fromJust,
