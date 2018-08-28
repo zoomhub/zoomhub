@@ -38,9 +38,8 @@ toURI s =
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( fromString "h"
-  , "http://upload.wikimedia.org/wikipedia/commons/3/36/\
-      \SeattleI5Skyline.jpg#zoomhub=h"
+  ( fromString "4rcn"
+  , "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
 
 -- Matchers
@@ -86,6 +85,16 @@ restRedirect cId =
   where
     baseURIPrefix = show . Config.baseURI $ config
     expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unId cId
+
+viewRedirect :: ContentId -> ResponseMatcher
+viewRedirect cId =
+    ""
+    { matchStatus = 301
+    , matchHeaders = ["Location" <:> BC.pack expectedLocation]
+    }
+  where
+    baseURIPrefix = show . Config.baseURI $ config
+    expectedLocation = baseURIPrefix <> "/" <> unId cId
 
 -- Config
 nullLogger :: Middleware
@@ -216,6 +225,12 @@ spec = with (return $ app config) $ do
           { matchStatus = 200
           , matchHeaders = [javaScriptUTF8]
           }
+
+  describe "View by URL (GET /:url)" $ do
+    it "should return correct redirect existing content" $
+        let (existingId, existingURL) = existingContent in
+        get ("/" <> BC.pack existingURL) `shouldRespondWith`
+          viewRedirect existingId
 
   describe "CORS" $
     it "should allow all origins" $
