@@ -14,24 +14,32 @@ jobs:
     - run:
         name: Initialize artifact storage
         command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+
     # Dependencies
     #   This would typically go in either a build or a build-and-test job when
     #   using workflows
     # Restore the dependency cache
     - restore_cache:
         keys:
-            - zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
-            # This branch if available
-            - zh-stack-cache-v1-dep-{{ .Branch }}-
-            # Default branch if not
-            - zh-stack-cache-v1-dep-master-
-            # Any branch if there are none on the default branch -
-            # this should be unnecessary if you have your default branch
-            # configured correctly
-            - zh-stack-cache-v1-dep-
-    - run: stack build --ghc-options="-Wall -Werror -O3"
-    - run: ./ops/keter-bundle.sh
-    - run: cp zoomhub.keter $CIRCLE_ARTIFACTS
+        - zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+        # This branch if available
+        - zh-stack-cache-v1-dep-{{ .Branch }}-
+        # Default branch if not
+        - zh-stack-cache-v1-dep-master-
+        # Any branch if there are none on the default branch -
+        # this should be unnecessary if you have your default branch
+        # configured correctly
+        - zh-stack-cache-v1-dep-
+    - run:
+        name: Build binary
+        command: stack build --ghc-options="-Wall -Werror -O3"
+    - run:
+        name: Create Keter package
+        command: ./ops/keter-bundle.sh
+    - run:
+        name: Copy Keter package
+        command: cp zoomhub.keter $CIRCLE_ARTIFACTS
+
     # Save dependency cache
     - save_cache:
         key: zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
