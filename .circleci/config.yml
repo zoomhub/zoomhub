@@ -32,7 +32,7 @@ jobs:
         - zh-stack-cache-v1-dep-
     - run:
         name: Build binary
-        command: stack build --pedantic --ghc-options="-O3"
+        command: stack build --install-ghc --pedantic --ghc-options="-O2"
     - run:
         name: Create Keter package
         command: ./ops/keter-bundle.sh
