@@ -29,7 +29,7 @@ lint)
         echo 'Commit all changes to Git before running `./zh lint`'
         exit 1
     fi
-    git ls-files | grep '.hs$' | xargs stylish-haskell --inplace
+    git ls-files | grep --invert 'vendor/' | grep '.hs$' | xargs stylish-haskell --inplace
     ;;
 ops)
     case "$2" in

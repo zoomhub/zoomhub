@@ -21,8 +21,9 @@ import           Prelude                   hiding (log)
 
 import           Control.Exception         (SomeException)
 import           Data.Aeson                (Value, object, (.=))
-import           Data.Aeson.Encode.Pretty  (Config (Config), confCompare,
-                                            confIndent, encodePretty', keyOrder)
+import           Data.Aeson.Encode.Pretty  (Config, Indent (Spaces),
+                                            confCompare, confIndent, defConfig,
+                                            encodePretty', keyOrder)
 import           Data.Aeson.Types          (Pair)
 import qualified Data.ByteString.Lazy      as BL
 import           Data.Monoid               ((<>))
@@ -115,13 +116,13 @@ log level message meta = do
 encodeLogLine :: Value -> Text
 encodeLogLine = removeNewlines . lenientDecodeUtf8 . BL.toStrict . prettyEncode
   where
-    removeNewlines = (T.intercalate "") . T.lines
+    removeNewlines = T.intercalate "" . T.lines
     prettyEncode = encodePretty' prettyEncodeConfig
 
 -- JSON
 prettyEncodeConfig :: Config
-prettyEncodeConfig = Config
-  { confIndent = 0
+prettyEncodeConfig = defConfig
+  { confIndent = Spaces 0
   , confCompare = keyCompare
   }
 

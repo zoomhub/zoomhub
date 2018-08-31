@@ -6,8 +6,9 @@ module ZoomHub.API
   ( app
   ) where
 
+import           Control.Monad.Except                 (throwError)
 import           Control.Monad.IO.Class               (liftIO)
-import           Control.Monad.Trans.Either           (EitherT, left)
+
 import qualified Data.ByteString.Char8                as BC
 import           Data.Maybe                           (fromJust, fromMaybe)
 import           Data.Proxy                           (Proxy (Proxy))
@@ -17,7 +18,8 @@ import           Network.URI                          (URI,
 import           Network.Wai                          (Application)
 import           Network.Wai.Middleware.Cors          (simpleCors)
 import           Servant                              ((:<|>) (..), (:>),
-                                                       Capture, Get, JSON,
+                                                       Capture, Get,
+                                                       Handler, JSON,
                                                        QueryParam, Raw,
                                                        ServantErr, Server,
                                                        err301, errHeaders,
@@ -59,10 +61,6 @@ import           ZoomHub.Web.Types.EmbedDimension     (EmbedDimension)
 import           ZoomHub.Web.Types.EmbedId            (EmbedId, unEmbedId)
 import           ZoomHub.Web.Types.ViewContent        (ViewContent,
                                                        mkViewContent)
-
-
--- Servant default handler type
-type Handler a = EitherT ServantErr IO a
 
 -- API
 type API =
@@ -180,7 +178,7 @@ jsonpContentById :: BaseURI ->
 jsonpContentById baseURI contentBaseURI dbPath contentId callback = do
   maybeContent <- liftIO $ withConnection dbPath (getById' contentId dbPath)
   case maybeContent of
-    Nothing      -> left $ JSONP.mkError $
+    Nothing      -> throwError $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
     Just content -> do
       let publicContent = fromInternal baseURI contentBaseURI content
@@ -195,7 +193,7 @@ jsonpContentByURL :: BaseURI ->
 jsonpContentByURL baseURI contentBaseURI dbPath url callback = do
   maybeContent <- liftIO $ withConnection dbPath (getByURL' url dbPath)
   case maybeContent of
-    Nothing      -> left . JSONP.mkError $
+    Nothing      -> throwError . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
     Just content -> do
       let publicContent = fromInternal baseURI contentBaseURI content
@@ -230,12 +228,12 @@ restContentById :: BaseURI ->
 restContentById baseURI contentBaseURI dbPath contentId = do
   maybeContent <- liftIO $ withConnection dbPath (getById' contentId  dbPath)
   case maybeContent of
-    Nothing      -> left . API.error404 $ contentNotFoundMessage contentId
+    Nothing      -> throwError . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
 
 restInvalidContentId :: String -> Handler Content
 restInvalidContentId contentId =
-  left . API.error404 $ noContentWithIdMessage contentId
+  throwError . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL :: BaseURI ->
                     DatabasePath ->
@@ -256,8 +254,8 @@ restContentByURL baseURI dbPath encodeId newContentStatus url = do
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
-  Nothing  -> left . API.error400 $ apiMissingIdOrURLMessage
-  Just _   -> left . API.error400 $ invalidURLErrorMessage
+  Nothing  -> throwError . API.error400 $ apiMissingIdOrURLMessage
+  Just _   -> throwError . API.error400 $ invalidURLErrorMessage
 
 -- Web: Embed
 webEmbed :: BaseURI ->
@@ -274,7 +272,7 @@ webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript embedId
          maybeId width height = do
   maybeContent <- liftIO $ withConnection dbPath (getById' contentId  dbPath)
   case maybeContent of
-    Nothing      -> left . Web.error404 $ contentNotFoundMessage contentId
+    Nothing      -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
       let randomIdRange = (100000, 999999) :: (Int, Int)
       randomId <- liftIO $ randomRIO randomIdRange
@@ -295,7 +293,7 @@ webContentById :: BaseURI ->
 webContentById baseURI contentBaseURI dbPath contentId = do
   maybeContent <- liftIO $ withConnection dbPath (getById contentId)
   case maybeContent of
-    Nothing -> left . Web.error404 $ contentNotFoundMessage contentId
+    Nothing -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c  -> do
       let content = fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
@@ -309,7 +307,7 @@ webContentByURL baseURI dbPath contentURI = do
     Just c  -> redirectToView baseURI (Internal.contentId c)
 
 webInvalidURLParam :: String -> Handler ViewContent
-webInvalidURLParam _ = left . Web.error400 $ invalidURLErrorMessage
+webInvalidURLParam _ = throwError . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
 contentNotFoundMessage :: ContentId -> String
@@ -326,7 +324,7 @@ noNewContentErrorAPI = noNewContentError API.error503
 
 noNewContentError :: (String -> ServantErr) -> Handler a
 noNewContentError err =
-  left . err $ noNewContentErrorMessage
+  throwError . err $ noNewContentErrorMessage
 
 noNewContentErrorMessage :: String
 noNewContentErrorMessage = "We are currently not processing new content."
@@ -367,7 +365,7 @@ redirectURI pathPrefix baseURI contentId =
 -- permanent HTTP 301 redirects:
 redirect :: URI -> Handler a
 redirect location =
-  left $ err301{
+  throwError $ err301{
     -- HACK: Redirect using error: http://git.io/vBCz9
     errHeaders = [("Location", BC.pack (show location))]
   }

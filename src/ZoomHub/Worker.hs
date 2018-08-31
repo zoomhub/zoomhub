@@ -9,7 +9,7 @@ module ZoomHub.Worker
 import           Control.Concurrent            (threadDelay)
 import           Control.Exception             (SomeException, fromException)
 import           Control.Exception.Enclosed    (catchAny)
-import           Control.Monad                 (forever)
+import           Control.Monad                 (forever, void)
 import           Data.Aeson                    (Value (String), encode, toJSON,
                                                 (.=))
 import qualified Data.ByteString.Lazy          as BL
@@ -54,12 +54,12 @@ processExistingContent config workerId = forever $ do
 
     logInfo "worker:end" extraLogMeta
 
-    let delta = (2 * (toMicroseconds sleepBase)) `div` 2
+    let delta = (2 * toMicroseconds sleepBase) `div` 2
     jitter <- randomRIO (0, delta)
     let sleepDuration = fromMicroseconds $ delta + jitter :: Second
 
     logInfo "Wait for next unprocessed content" $
-      [ "sleepDuration" .= sleepDuration ] ++ extraLogMeta
+      ( "sleepDuration" .= sleepDuration ) : extraLogMeta
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     go = withConnection dbPath $ \dbConn -> do
@@ -81,14 +81,14 @@ processExistingContent config workerId = forever $ do
                             , "wwwURL" .= wwwURL content
                             , "error" .= toJSONError e
                             , "worker" .= workerId
-                            ] $ (errorOp e)
+                            ] $ errorOp e
           logT "Process content: success"
             [ "id" .= contentId content
             , "url" .= contentURL content
             , "apiURL" .= apiURL content
             , "wwwURL" .= wwwURL content
             , "worker" .= workerId
-            ] $ (processOp `catchAny` handler) >> return ()
+            ] $ void (processOp `catchAny` handler)
         Nothing -> return ()
 
     dbPath = Config.dbPath config

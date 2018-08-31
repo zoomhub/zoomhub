@@ -44,7 +44,7 @@ existingContent =
 
 -- Matchers
 applicationJSON :: MatchHeader
-applicationJSON = "Content-Type" <:> "application/json"
+applicationJSON = "Content-Type" <:> "application/json;charset=utf-8"
 
 plainTextUTF8 :: MatchHeader
 plainTextUTF8 = "Content-Type" <:> "text/plain; charset=utf-8"
@@ -106,7 +106,7 @@ config = Config
   , contentBaseURI =
       case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
         Just uri -> uri
-        _ -> error $ "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
+        _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
   , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
   , encodeId = show
   , error404 = "404"

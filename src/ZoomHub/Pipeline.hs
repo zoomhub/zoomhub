@@ -106,7 +106,7 @@ process workerId raxConfig tempPath content =
     template = rawContentId ++ "-"
 
     getFileSize :: FilePath -> IO Integer
-    getFileSize path = (toInteger . fileSize) <$> getFileStatus path
+    getFileSize path = toInteger . fileSize <$> getFileStatus path
 
 downloadURL :: ContentURI -> FilePath -> IO (Maybe MIME.Type)
 downloadURL url dest = do

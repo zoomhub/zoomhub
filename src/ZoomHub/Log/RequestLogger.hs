@@ -1,5 +1,6 @@
 -- Adapted from: https://git.io/v27pJ
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-deprecations #-}
 
 module ZoomHub.Log.RequestLogger (formatAsJSON) where
 

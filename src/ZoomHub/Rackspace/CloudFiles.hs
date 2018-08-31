@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Rackspace.CloudFiles
@@ -19,33 +20,37 @@ module ZoomHub.Rackspace.CloudFiles
   ) where
 
 
-import qualified Codec.MIME.Type        as MIME
-import           Control.Exception      (tryJust)
-import           Control.Lens           (each, filtered, (&), (.~), (^.), (^..),
-                                         (^?))
-import           Control.Monad          (guard)
-import           Control.Monad.Catch    (Handler)
-import           Control.Monad.IO.Class (MonadIO)
-import           Control.Retry          (RetryPolicyM, RetryStatus, capDelay,
-                                         fullJitterBackoff, limitRetries,
-                                         logRetries, recovering)
-import           Data.Aeson             (ToJSON, Value (String), object, toJSON,
-                                         (.=))
-import           Data.Aeson.Lens        (key, _Array, _Object, _String)
-import qualified Data.ByteString.Char8  as BC
-import qualified Data.ByteString.Lazy   as BL
-import           Data.List              (intercalate, isPrefixOf)
-import           Data.Monoid            ((<>))
-import           Data.Text              (Text)
-import qualified Data.Text              as T
-import           Data.Time.Units        (Second, toMicroseconds)
-import           Network.HTTP.Client    (HttpException (FailedConnectionException2, StatusCodeException))
-import           Network.Wreq           (Options, Status, defaults, getWith,
-                                         header, post, putWith, responseBody,
-                                         responseStatus, statusCode)
-import           System.Envy            (Var, fromVar, toVar)
+import qualified Codec.MIME.Type               as MIME
+import           Control.Exception             (tryJust)
+import           Control.Lens                  (each, filtered, (&), (.~), (^.),
+                                                (^..), (^?))
+import           Control.Monad                 (guard)
+import           Control.Monad.Catch           (Handler)
+import           Control.Monad.IO.Class        (MonadIO)
+import           Control.Retry                 (RetryPolicyM, RetryStatus,
+                                                capDelay, fullJitterBackoff,
+                                                limitRetries, logRetries,
+                                                recovering)
+import           Data.Aeson                    (ToJSON, Value (String), object,
+                                                toJSON, (.=))
+import           Data.Aeson.Lens               (key, _Array, _Object, _String)
+import qualified Data.ByteString.Char8         as BC
+import qualified Data.ByteString.Lazy          as BL
+import           Data.List                     (intercalate, isPrefixOf)
+import           Data.Monoid                   ((<>))
+import           Data.Text                     (Text)
+import qualified Data.Text                     as T
+import           Data.Time.Units               (Second, toMicroseconds)
+import           Network.HTTP.Client           (HttpException (HttpExceptionRequest), HttpExceptionContent (ConnectionFailure, StatusCodeException))
+import qualified Network.HTTP.Client           as HC hiding (responseBody)
+import           Network.HTTP.Client.Instances ()
+import           Network.HTTP.Types            (notFound404)
+import           Network.Wreq                  (Options, Status, defaults,
+                                                getWith, header, post, putWith,
+                                                responseBody, responseStatus)
+import           System.Envy                   (Var, fromVar, toVar)
 
-import           ZoomHub.Log.Logger     (logWarning)
+import           ZoomHub.Log.Logger            (logWarning)
 
 -- Types
 data Credentials = Credentials
@@ -111,7 +116,7 @@ parseToken :: Metadata -> Maybe Token
 parseToken meta =
   let tokenId = key "access" . key "token" . key "id" . _String
       maybeToken = unMetadata meta ^? tokenId in
-  (Token . T.unpack) <$> maybeToken
+  Token . T.unpack <$> maybeToken
 
 parseEndpoint :: Metadata -> Maybe Endpoint
 parseEndpoint meta =
@@ -142,7 +147,7 @@ getContent meta urlPath =
             _         -> return Nothing
     where
       is404 :: HttpException -> Bool
-      is404 (StatusCodeException s _ _) = s ^. statusCode == 404
+      is404 (HttpExceptionRequest _ (StatusCodeException r _)) = HC.responseStatus  r == notFound404
       is404 _ = False
 
 -- TODO: Add support for using a `wreq` session for improved performance:
@@ -162,14 +167,14 @@ putContent meta path mime container objectName =
     httpErrorH = logRetries testE logRetry
 
     testE :: (Monad m) => HttpException -> m Bool
-    testE e = case e of
-      FailedConnectionException2 _ _ _ _ -> return True
-      _                                  -> return False
+    testE = \case
+      HttpExceptionRequest _ (ConnectionFailure _) -> return True
+      _                                            -> return False
 
-    logRetry :: Bool -> String -> IO ()
-    logRetry shouldRetry errorMessage =
+    logRetry :: Bool -> HttpException -> RetryStatus -> IO ()
+    logRetry shouldRetry e _ =
         logWarning "Retrying `CloudFiles.putContent` due to error"
-          [ "error" .= errorMessage
+          [ "error" .= e
           , "nextAction" .= next
           ]
       where

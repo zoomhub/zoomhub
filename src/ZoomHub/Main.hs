@@ -123,8 +123,7 @@ main = do
 
       defaultDBPath = DatabasePath $
         currentDirectory </> "data" </> "zoomhub-development.sqlite3"
-      dbPath = fromMaybe defaultDBPath
-        (DatabasePath <$> lookup dbPathEnvName env)
+      dbPath = maybe defaultDBPath DatabasePath (lookup dbPathEnvName env)
 
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
@@ -157,7 +156,7 @@ main = do
           contentBaseURI =
             case maybeContentBaseURI of
               Just uri -> uri
-              _ -> error $ "ZoomHub.Main: Failed to parse `contentBaseURI`."
+              _ -> error "ZoomHub.Main: Failed to parse `contentBaseURI`."
 
           config = Config{..}
 
@@ -177,14 +176,14 @@ main = do
         ]
 
       _ <- async $ do
-        let delay = (30 :: Second)
+        let delay = 30 :: Second
         logInfo "Worker: Schedule resetting expired active content"
           [ "delay" .= delay ]
         threadDelay (fromIntegral $ toMicroseconds delay)
         processExpiredActiveContent config
 
       case existingContentStatus of
-        ProcessExistingContent -> do
+        ProcessExistingContent ->
           forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
             let base = 20
                 jitterRange = (0, base `div` 2) :: (Integer, Integer)
@@ -198,8 +197,6 @@ main = do
               ]
             threadDelay (fromIntegral $ toMicroseconds delay)
             processExistingContent config (show index)
-
-          return ()
         _ -> return ()
 
       -- Web server

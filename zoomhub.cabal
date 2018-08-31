@@ -66,20 +66,20 @@ library
   ghc-options:      -Wall
   hs-source-dirs:   src
   build-depends:
-      aeson == 0.10.*
-    , aeson-casing == 0.1.*
+      aeson
+    , aeson-casing
     , aeson-pretty
-    , async == 2.1.0
+    , async
     , atomic-write
-    , base >= 4.8 && < 5
+    , base
     , blaze-builder
     , bytestring
     , case-insensitive
     , cassava
     , containers
-    , cryptonite == 0.10.*
+    , cryptonite
     , data-default
-    , directory == 1.2.5.1
+    , directory
     , either
     , enclosed-exceptions
     , envy
@@ -87,23 +87,25 @@ library
     , fast-logger
     , filepath
     , hashids
+    , http-api-data
     , http-client
     , http-media
     , http-types
     , iproute
-    , lens == 4.13.*
-    , lens-aeson == 1.*
+    , lens
+    , lens-aeson
     , lucid
     , mime
+    , mtl
     , network
     , network-uri
     , process
     , random
-    , retry == 0.7.1
+    , retry
     , safe
-    , servant == 0.4.4.6
-    , servant-lucid == 0.4.4.5
-    , servant-server == 0.4.4.6
+    , servant
+    , servant-lucid
+    , servant-server
     , split
     , sqlite-simple
     , stm
@@ -122,7 +124,7 @@ library
     , wai-cors
     , wai-extra
     , warp
-    , wreq == 0.4.*
+    , wreq
     , xml
 
 executable zoomhub
