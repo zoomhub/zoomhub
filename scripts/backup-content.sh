@@ -15,3 +15,5 @@ rsync -avz \
   --progress \
   admin@zoomhub.net:"/mnt/datavolume/zoomhub/data/zoomhub-backup-$TIMESTAMP.sqlite3" \
   ~/zoomhub-backup/zoomhub-production-$TIMESTAMP.sqlite3
+ssh -t admin@zoomhub.net \
+  "cd /mnt/datavolume/zoomhub/data/; rm zoomhub-backup-$TIMESTAMP.sqlite3"
