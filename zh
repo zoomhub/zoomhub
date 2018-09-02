@@ -23,6 +23,9 @@ init)
     stack setup
     ;;
 lint)
+    stack exec hlint src
+    ;;
+format)
     git diff-files --quiet
     HAS_GIT_UNSTAGED_CHANGES=$?
     if [[ "$HAS_GIT_UNSTAGED_CHANGES" != "0" ]] ; then
@@ -78,6 +81,6 @@ test)
     stack test
     ;;
 *)
-    echo "Unknown command: $0 $@. Try: $0 init|lint|ops|run|test"
+    echo "Unknown command: $0 $@. Try: $0 format|init|lint|ops|run|test"
     ;;
 esac

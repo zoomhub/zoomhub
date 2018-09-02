@@ -35,11 +35,18 @@ Run the app tests:
 
 ### Lint
 
-Run lint tools. Note: `stylish-haskell` can perform in-place fixes, so we
-enforce that all changes are committed to Git:
+Lint code:
 
 ```bash
 ./zh lint
+```
+
+### Format
+
+Format code:
+
+```bash
+./zh format
 ```
 
 
