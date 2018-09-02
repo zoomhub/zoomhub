@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module ZoomHub.Main (main) where
+module ZoomHub.Main
+  ( main
+  ) where
 
 import           Control.Concurrent                   (getNumCapabilities,
                                                        threadDelay)
@@ -38,7 +40,8 @@ import           Text.Read                            (readMaybe)
 import           Web.Hashids                          (encode, hashidsSimple)
 
 import           ZoomHub.API                          (app)
-import           ZoomHub.Config                       (Config (..), ExistingContentStatus (ProcessExistingContent, IgnoreExistingContent), NewContentStatus (NewContentDisallowed),
+import           ZoomHub.Config                       (Config (..), ExistingContentStatus (IgnoreExistingContent, ProcessExistingContent),
+                                                       NewContentStatus (NewContentDisallowed),
                                                        defaultPort,
                                                        raxContainer,
                                                        raxContainerPath,
@@ -87,126 +90,126 @@ tempRootPathEnvName = "TEMP_PATH"
 
 -- Main
 main :: IO ()
-main = do
+main
   -- TODO: Migrate configuration to `configurator`:
   -- https://hackage.haskell.org/package/configurator
+ = do
   env <- getEnvironment
   maybeRaxConfig <- decodeEnv
   hostname <- getHostName
   currentDirectory <- getCurrentDirectory
-  openseadragonScript <- readFile $ currentDirectory </>
-    "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
+  openseadragonScript <-
+    readFile $
+    currentDirectory </> "public" </> "lib" </> "openseadragon" </>
+    "openseadragon.min.js"
   error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
-  logger <- mkRequestLogger def
-              { outputFormat = CustomOutputFormatWithDetails formatAsJSON }
-
+  logger <-
+    mkRequestLogger
+      def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
-
       maybeHashidsSalt = BC.pack <$> lookup hashidsSaltEnvName env
-
-      maybeExistingContentStatus = toExistingContentStatus <$>
-        lookup existingContentStatusEnvName env
+      maybeExistingContentStatus =
+        toExistingContentStatus <$> lookup existingContentStatusEnvName env
       existingContentStatus =
         fromMaybe IgnoreExistingContent maybeExistingContentStatus
-
-      maybeNewContentStatus = toNewContentStatus <$>
-        lookup newContentStatusEnvName env
-      newContentStatus =
-        fromMaybe NewContentDisallowed maybeNewContentStatus
-
+      maybeNewContentStatus =
+        toNewContentStatus <$> lookup newContentStatusEnvName env
+      newContentStatus = fromMaybe NewContentDisallowed maybeNewContentStatus
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers =
         lookup numProcessingWorkersEnvName env >>= readMaybe
       numProcessingWorkers =
         fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
-
-      defaultDBPath = DatabasePath $
+      defaultDBPath =
+        DatabasePath $
         currentDirectory </> "data" </> "zoomhub-development.sqlite3"
       dbPath = maybe defaultDBPath DatabasePath (lookup dbPathEnvName env)
-
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
-
       defaultTempRootPath = currentDirectory </> "data"
-      tempPath = TempPath $ fromMaybe defaultTempRootPath
-        (lookup tempRootPathEnvName env) </> "temp"
-
-      baseURI = case lookup baseURIEnvName env of
-        Just uriString -> toBaseURI uriString
-        Nothing        -> toBaseURI ("http://" ++ hostname)
-
-      staticBaseURI = StaticBaseURI . fromJust .
-        parseAbsoluteURI $ "http://static.zoomhub.net"
-
+      tempPath =
+        TempPath $
+        fromMaybe defaultTempRootPath (lookup tempRootPathEnvName env) </>
+        "temp"
+      baseURI =
+        case lookup baseURIEnvName env of
+          Just uriString -> toBaseURI uriString
+          Nothing        -> toBaseURI ("http://" ++ hostname)
+      staticBaseURI =
+        StaticBaseURI . fromJust . parseAbsoluteURI $
+        "http://static.zoomhub.net"
   ensureTempPathExists tempPath
   ensureDBExists dbPath
-
   case (maybeHashidsSalt, maybeRaxConfig) of
     (Just hashidsSalt, Right rackspace) -> do
-
       let encodeContext = hashidsSimple hashidsSalt
           encodeId integerId =
             BC.unpack $ encode encodeContext (fromIntegral integerId)
-          maybeContentBaseHost = parseAbsoluteURI $
+          maybeContentBaseHost =
+            parseAbsoluteURI $
             "http://" ++ unContainer (raxContainer rackspace) ++ ".zoomhub.net"
           contentBasePath = raxContainerPath rackspace
-          maybeContentBaseURI = maybeContentBaseHost >>=
-            \baseHost -> mkContentBaseURI baseHost contentBasePath
+          maybeContentBaseURI =
+            maybeContentBaseHost >>= \baseHost ->
+              mkContentBaseURI baseHost contentBasePath
           contentBaseURI =
             case maybeContentBaseURI of
               Just uri -> uri
               _ -> error "ZoomHub.Main: Failed to parse `contentBaseURI`."
-
-          config = Config{..}
-
-      logInfo_ $ "Welcome to ZoomHub.\
-        \ Go to <" ++ show baseURI ++ "> and have fun!"
-      logInfo "Config: App"
-        [ "config" .= config ]
-
+          config = Config {..}
+      logInfo_ $
+        "Welcome to ZoomHub.\
+        \ Go to <" ++
+        show baseURI ++ "> and have fun!"
+      logInfo "Config: App" ["config" .= config]
       -- Workers
       numProcessors <- getNumProcessors
       numCapabilities <- getNumCapabilities
-      logInfo "Config: Worker"
+      logInfo
+        "Config: Worker"
         [ "numProcessors" .= numProcessors
         , "numCapabilities" .= numCapabilities
         , "numProcessingWorkers" .= numProcessingWorkers
         , "numProcessExpiredActiveWorkers" .= (1 :: Integer)
         ]
-
-      _ <- async $ do
-        let delay = 30 :: Second
-        logInfo "Worker: Schedule resetting expired active content"
-          [ "delay" .= delay ]
-        threadDelay (fromIntegral $ toMicroseconds delay)
-        processExpiredActiveContent config
-
+      _ <-
+        async $ do
+          let delay = 30 :: Second
+          logInfo
+            "Worker: Schedule resetting expired active content"
+            ["delay" .= delay]
+          threadDelay (fromIntegral $ toMicroseconds delay)
+          processExpiredActiveContent config
       case existingContentStatus of
         ProcessExistingContent ->
-          forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
-            let base = 20
-                jitterRange = (0, base `div` 2) :: (Integer, Integer)
-                baseDelay = index * base
-            jitter <- randomRIO jitterRange
-            let delay = (fromIntegral $ baseDelay + jitter) :: Second
-            logInfo "Worker: Start processing existing content"
-              [ "jitter" .= (fromIntegral jitter :: Second)
-              , "index" .= index
-              , "delay" .= delay
-              ]
-            threadDelay (fromIntegral $ toMicroseconds delay)
-            processExistingContent config (show index)
+          forM_ [0 .. (numProcessingWorkers - 1)] $ \index ->
+            async $ do
+              let base = 20
+                  jitterRange = (0, base `div` 2) :: (Integer, Integer)
+                  baseDelay = index * base
+              jitter <- randomRIO jitterRange
+              let delay = (fromIntegral $ baseDelay + jitter) :: Second
+              logInfo
+                "Worker: Start processing existing content"
+                [ "jitter" .= (fromIntegral jitter :: Second)
+                , "index" .= index
+                , "delay" .= delay
+                ]
+              threadDelay (fromIntegral $ toMicroseconds delay)
+              processExistingContent config (show index)
         _ -> return ()
-
       -- Web server
-      logInfo "Start web server"
-        [ "port" .= port ]
+      logInfo "Start web server" ["port" .= port]
       let waiSettings =
             setPort (fromIntegral port) $
             setOnException serverExceptionHandler defaultSettings
       runSettings waiSettings (app config)
-    (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++ "`\
+    (Nothing, _) ->
+      error $
+      "Please set `" ++
+      hashidsSaltEnvName ++
+      "`\
       \ environment variable.\n\
       \This secret salt enables ZoomHub to encode integer IDs as short,\
       \ non-sequential string IDs which make it harder to guess valid\
@@ -217,32 +220,34 @@ main = do
     toBaseURI uriString =
       case parseAbsoluteURI uriString of
         Just uri -> BaseURI uri
-        Nothing  -> error $ "'" ++ uriString ++ "' is not a valid URL. Please\
-        \ set `" ++ baseURIEnvName ++ "` to override usage of hostname."
-
+        Nothing ->
+          error $
+          "'" ++
+          uriString ++
+          "' is not a valid URL. Please\
+        \ set `" ++
+          baseURIEnvName ++ "` to override usage of hostname."
     ensureDBExists :: DatabasePath -> IO ()
     ensureDBExists dbPath = do
       exists <- doesFileExist (unDatabasePath dbPath)
       unless exists $
-        error $ "Couldn’t find a database at " ++ unDatabasePath dbPath ++
-          ". Please check `" ++ dbPathEnvName ++ "`."
-
+        error $
+        "Couldn’t find a database at " ++
+        unDatabasePath dbPath ++ ". Please check `" ++ dbPathEnvName ++ "`."
     ensureTempPathExists :: TempPath -> IO ()
-    ensureTempPathExists tempPath =
-        createDirectoryIfMissing True rawTempPath
+    ensureTempPathExists tempPath = createDirectoryIfMissing True rawTempPath
       where
         rawTempPath = unTempPath tempPath
-
     readVersion :: FilePath -> IO String
     readVersion currentDirectory = do
       r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
-      return $ case r of
-        Left _        -> "unknown"
-        Right version -> version
+      return $
+        case r of
+          Left _        -> "unknown"
+          Right version -> version
       where
         versionPath = currentDirectory </> "version.txt"
-
     serverExceptionHandler :: Maybe Request -> SomeException -> IO ()
     serverExceptionHandler _ e =
       when (defaultShouldDisplayException e) $
-        logException_ "Web server exception" e
+      logException_ "Web server exception" e

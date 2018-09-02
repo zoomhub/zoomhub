@@ -1,5 +1,5 @@
 module ZoomHub.Utils
-  ((<$$>)
+  ( (<$$>)
   , intercalate
   , lenientDecodeUtf8
   ) where

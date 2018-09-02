@@ -11,22 +11,24 @@ import           Safe           (readEitherSafe)
 import           Servant        (FromHttpApiData, parseUrlPiece)
 
 -- Type
-data EmbedDimension = Zero
-                    | Auto
-                    | Pixels Integer
-                    | Percentage Integer
-                    deriving (Eq, Show)
+data EmbedDimension
+  = Zero
+  | Auto
+  | Pixels Integer
+  | Percentage Integer
+  deriving (Eq, Show)
 
 toCSSValue :: EmbedDimension -> String
-toCSSValue Auto = "auto"
-toCSSValue Zero = "0"
-toCSSValue (Pixels n) = show n ++ "px"
+toCSSValue Auto           = "auto"
+toCSSValue Zero           = "0"
+toCSSValue (Pixels n)     = show n ++ "px"
 toCSSValue (Percentage n) = show n ++ "%"
 
 parseCSSValue :: String -> Either String EmbedDimension
-parseCSSValue "auto"        = Right Auto
-parseCSSValue "0"           = Right Zero
-parseCSSValue s = case unit of
+parseCSSValue "auto" = Right Auto
+parseCSSValue "0" = Right Zero
+parseCSSValue s =
+  case unit of
     "px" -> readEitherSafe value >>= Right . Pixels
     "%"  -> readEitherSafe value >>= Right . Percentage
     u    -> Left $ "Invalid CSS unit: " <> u

@@ -15,8 +15,9 @@ import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 
-
-newtype ContentMIME = ContentMIME { unContentMIME :: Type } deriving (Eq, Show)
+newtype ContentMIME = ContentMIME
+  { unContentMIME :: Type
+  } deriving (Eq, Show)
 
 -- SQLite
 instance ToField ContentMIME where
@@ -25,9 +26,12 @@ instance ToField ContentMIME where
 instance FromField ContentMIME where
   fromField f@(Field (SQLText t) _) =
     case parseMIMEType t of
-      Just r  -> Ok (ContentMIME r)
-      Nothing -> returnError ConversionFailed f
-        ("couldn’t parse MIME type: " ++ T.unpack t)
+      Just r -> Ok (ContentMIME r)
+      Nothing ->
+        returnError
+          ConversionFailed
+          f
+          ("couldn’t parse MIME type: " ++ T.unpack t)
   fromField f = returnError ConversionFailed f "invalid MIME type"
 
 -- JSON

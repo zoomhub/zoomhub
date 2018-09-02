@@ -36,7 +36,6 @@ import           ZoomHub.Types.DatabasePath   (DatabasePath)
 import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI)
 import           ZoomHub.Types.TempPath       (TempPath)
 
-
 defaultPort :: Integer
 defaultPort = 8000
 
@@ -59,53 +58,59 @@ data Config = Config
   }
 
 instance ToJSON Config where
-  toJSON Config{..} = object
-    [ "baseURI" .= baseURI
-    , "contentBaseURI" .= contentBaseURI
-    , "dbPath" .= dbPath
-    , "existingContentStatus" .= existingContentStatus
-    , "newContentStatus" .= newContentStatus
-    , "port" .= port
-    , "publicPath" .= publicPath
-    , "staticBaseURI" .= staticBaseURI
-    , "tempPath" .= tempPath
-    , "version" .= version
-    ]
+  toJSON Config {..} =
+    object
+      [ "baseURI" .= baseURI
+      , "contentBaseURI" .= contentBaseURI
+      , "dbPath" .= dbPath
+      , "existingContentStatus" .= existingContentStatus
+      , "newContentStatus" .= newContentStatus
+      , "port" .= port
+      , "publicPath" .= publicPath
+      , "staticBaseURI" .= staticBaseURI
+      , "tempPath" .= tempPath
+      , "version" .= version
+      ]
 
 -- Rackspace
 data RackspaceConfig = RackspaceConfig
-  { raxUsername      :: String    -- RACKSPACE_USERNAME
-  , raxApiKey        :: String    -- RACKSPACE_API_KEY
+  { raxUsername      :: String -- RACKSPACE_USERNAME
+  , raxApiKey        :: String -- RACKSPACE_API_KEY
   , raxContainer     :: Container -- RACKSPACE_CONTAINER
-  , raxContainerPath :: URI       -- RACKSPACE_CONTAINER_PATH
+  , raxContainerPath :: URI -- RACKSPACE_CONTAINER_PATH
   } deriving (Generic, Show)
 
 -- Default configuration will be used for fields that could not be
 -- retrieved from the environment:
 instance DefConfig RackspaceConfig where
-  defConfig = RackspaceConfig
-    { raxUsername = "zoomingservice"
-    , raxApiKey = ""
-    , raxContainer =
-        case parseContainer "cache-development" of
-          Just container -> container
-          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
-                       " Failed to parse `raxContainer`."
-    , raxContainerPath =
-        case parseRelativeReference "content" of
-          Just containerPath -> containerPath
-          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
-                       " Failed to parse `raxContainerPath`."
-    }
+  defConfig =
+    RackspaceConfig
+      { raxUsername = "zoomingservice"
+      , raxApiKey = ""
+      , raxContainer =
+          case parseContainer "cache-development" of
+            Just container -> container
+            _ ->
+              error $
+              "ZoomHub.Config.RackspaceConfig.defConfig:" ++
+              " Failed to parse `raxContainer`."
+      , raxContainerPath =
+          case parseRelativeReference "content" of
+            Just containerPath -> containerPath
+            _ ->
+              error $
+              "ZoomHub.Config.RackspaceConfig.defConfig:" ++
+              " Failed to parse `raxContainerPath`."
+      }
 
 instance FromEnv RackspaceConfig where
-  fromEnv = gFromEnvCustom Option
-    { dropPrefixCount=3
-    , customPrefix="RACKSPACE"
-    }
+  fromEnv =
+    gFromEnvCustom Option {dropPrefixCount = 3, customPrefix = "RACKSPACE"}
 
 -- ExistingContentStatus
-data ExistingContentStatus = ProcessExistingContent | IgnoreExistingContent
+data ExistingContentStatus
+  = ProcessExistingContent
+  | IgnoreExistingContent
   deriving (Eq, Show)
 
 toExistingContentStatus :: String -> ExistingContentStatus
@@ -117,7 +122,9 @@ instance ToJSON ExistingContentStatus where
   toJSON = String . T.pack . show
 
 -- NewContentStatus
-data NewContentStatus = NewContentAllowed | NewContentDisallowed
+data NewContentStatus
+  = NewContentAllowed
+  | NewContentDisallowed
   deriving (Eq, Show)
 
 toNewContentStatus :: String -> NewContentStatus

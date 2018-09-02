@@ -6,8 +6,9 @@ module ZoomHub.Types.DatabasePath
 import           Data.Aeson (ToJSON, Value (String), toJSON)
 import qualified Data.Text  as T
 
-newtype DatabasePath = DatabasePath { unDatabasePath :: FilePath }
-  deriving (Eq, Show)
+newtype DatabasePath = DatabasePath
+  { unDatabasePath :: FilePath
+  } deriving (Eq, Show)
 
 -- JSON
 instance ToJSON DatabasePath where

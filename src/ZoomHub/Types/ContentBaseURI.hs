@@ -14,13 +14,11 @@ import           Network.URI (URI, uriIsAbsolute, uriIsRelative)
 data ContentBaseURI = ContentBaseURI
   { contentBaseHost :: URI
   , contentBasePath :: URI
-  } deriving Eq
+  } deriving (Eq)
 
 instance ToJSON ContentBaseURI where
-  toJSON ContentBaseURI{..} = object
-    [ "host" .= show contentBaseHost
-    , "path" .= show contentBasePath
-    ]
+  toJSON ContentBaseURI {..} =
+    object ["host" .= show contentBaseHost, "path" .= show contentBasePath]
 
 mkContentBaseURI :: URI -> URI -> Maybe ContentBaseURI
 mkContentBaseURI base path =

@@ -8,10 +8,10 @@ import           Data.Text       (Text)
 import           Data.Time.Units (Millisecond, Minute, Second)
 
 instance ToJSON Millisecond where
-  toJSON t = object [ "value" .= toInteger t, "unit" .= ("ms" :: Text) ]
+  toJSON t = object ["value" .= toInteger t, "unit" .= ("ms" :: Text)]
 
 instance ToJSON Second where
-  toJSON t = object [ "value" .= toInteger t, "unit" .= ("s" :: Text) ]
+  toJSON t = object ["value" .= toInteger t, "unit" .= ("s" :: Text)]
 
 instance ToJSON Minute where
-  toJSON t = object [ "value" .= toInteger t, "unit" .= ("min" :: Text) ]
+  toJSON t = object ["value" .= toInteger t, "unit" .= ("min" :: Text)]

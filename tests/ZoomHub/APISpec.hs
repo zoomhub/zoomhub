@@ -17,7 +17,8 @@ import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
                                                shouldRespondWith, with, (<:>))
 
 import           ZoomHub.API                  (app)
-import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentDisallowed))
+import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent),
+                                               NewContentStatus (NewContentDisallowed))
 import qualified ZoomHub.Config               as Config
 import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
 import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
@@ -34,13 +35,12 @@ toURI :: String -> URI
 toURI s =
   case parseURIReference s of
     Just uri -> uri
-    _ -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " ++ s
+    _        -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " ++ s
 
 existingContent :: (ContentId, String)
 existingContent =
   ( fromString "4rcn"
-  , "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
-  )
+  , "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg")
 
 -- Matchers
 applicationJSON :: MatchHeader
@@ -58,27 +58,21 @@ javaScriptUTF8 = "Content-Type" <:> "application/javascript;charset=utf-8"
 invalidURL :: ResponseMatcher
 invalidURL =
   "Please give us the full URL, including ‘http://’ or ‘https://’."
-  { matchStatus = 400
-  , matchHeaders = [plainTextUTF8]
-  }
+    {matchStatus = 400, matchHeaders = [plainTextUTF8]}
 
 invalidHTTPMethod :: ResponseMatcher
 invalidHTTPMethod =
   "Only GET or HEAD is supported"
-  { matchStatus = 405
-  , matchHeaders = [plainText]
-  }
+    {matchStatus = 405, matchHeaders = [plainText]}
 
 noNewContent :: ResponseMatcher
 noNewContent =
   "We are currently not processing new content."
-  { matchStatus = 503
-  , matchHeaders = [plainTextUTF8]
-  }
+    {matchStatus = 503, matchHeaders = [plainTextUTF8]}
 
 restRedirect :: ContentId -> ResponseMatcher
 restRedirect cId =
-    ""
+  ""
     { matchStatus = 301
     , matchHeaders = ["Location" <:> BC.pack expectedLocation]
     }
@@ -88,7 +82,7 @@ restRedirect cId =
 
 viewRedirect :: ContentId -> ResponseMatcher
 viewRedirect cId =
-    ""
+  ""
     { matchStatus = 301
     , matchHeaders = ["Location" <:> BC.pack expectedLocation]
     }
@@ -101,71 +95,61 @@ nullLogger :: Middleware
 nullLogger = id
 
 config :: Config
-config = Config
-  { baseURI = BaseURI (toURI "http://localhost:8000")
-  , contentBaseURI =
-      case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
-        Just uri -> uri
-        _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
-  , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
-  , encodeId = show
-  , error404 = "404"
-  , existingContentStatus = IgnoreExistingContent
-  , logger = nullLogger
-  , newContentStatus = NewContentDisallowed
-  , openseadragonScript = "osd"
-  , port = 8000
-  , publicPath = "./public"
-  , rackspace = undefined
-  , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
-  , tempPath = TempPath "./data/temp"
-  , version = "test"
-  }
+config =
+  Config
+    { baseURI = BaseURI (toURI "http://localhost:8000")
+    , contentBaseURI =
+        case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
+          Just uri -> uri
+          _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
+    , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
+    , encodeId = show
+    , error404 = "404"
+    , existingContentStatus = IgnoreExistingContent
+    , logger = nullLogger
+    , newContentStatus = NewContentDisallowed
+    , openseadragonScript = "osd"
+    , port = 8000
+    , publicPath = "./public"
+    , rackspace = undefined
+    , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
+    , tempPath = TempPath "./data/temp"
+    , version = "test"
+    }
 
 spec :: Spec
-spec = with (return $ app config) $ do
-  describe "RESTful" $ do
-    describe "List (GET /v1/content)" $
+spec =
+  with (return $ app config) $ do
+    describe "RESTful" $ do
+      describe "List (GET /v1/content)" $
         it "should be interpreted as a ‘get by URL’, with no URL given" $
-          get "/v1/content" `shouldRespondWith` "Missing ID or URL.\
+        get "/v1/content" `shouldRespondWith`
+        "Missing ID or URL.\
             \ Please provide ID, e.g. `/v1/content/<id>`,\
             \ or URL via `/v1/content?url=<url>` query parameter."
-            { matchStatus = 400
-            , matchHeaders = [plainTextUTF8]
-            }
-
-    describe "Get by URL (GET /v1/content?url=…)" $ do
-      it "should reject empty URLs" $
-        get "/v1/content?url=" `shouldRespondWith`
+          {matchStatus = 400, matchHeaders = [plainTextUTF8]}
+      describe "Get by URL (GET /v1/content?url=…)" $ do
+        it "should reject empty URLs" $
+          get "/v1/content?url=" `shouldRespondWith` invalidURL
+        it "should reject malformed URLs" $
+          get "/v1/content?url=lasjdoasj)(¨‚Ô‚ˆÔ∏ŒÂ;sd)" `shouldRespondWith`
           invalidURL
-
-      it "should reject malformed URLs" $
-        get "/v1/content?url=lasjdoasj)(¨‚Ô‚ˆÔ∏ŒÂ;sd)" `shouldRespondWith`
-          invalidURL
-
-      it "should reject URLs without protocol" $
-        get "/v1/content?url=example.com" `shouldRespondWith`
-          invalidURL
-
-      it "should reject URLs with non-HTTP protocol" $ do
-        get "/v1/content?url=ftp://example.com" `shouldRespondWith`
-          invalidURL
-
-        get "/v1/content?url=mailto://example@example.com" `shouldRespondWith`
-          invalidURL
-
-      it "should reject new HTTP URLs (for now)" $
-        get "/v1/content?url=http://example.com" `shouldRespondWith`
+        it "should reject URLs without protocol" $
+          get "/v1/content?url=example.com" `shouldRespondWith` invalidURL
+        it "should reject URLs with non-HTTP protocol" $ do
+          get "/v1/content?url=ftp://example.com" `shouldRespondWith` invalidURL
+          get "/v1/content?url=mailto://example@example.com" `shouldRespondWith`
+            invalidURL
+        it "should reject new HTTP URLs (for now)" $
+          get "/v1/content?url=http://example.com" `shouldRespondWith`
           noNewContent
-
-      it "should redirect existing (converted) HTTP URLs to ID" $
-        let (existingId, existingURL) = existingContent in
-        get ("/v1/content?url=" <> BC.pack existingURL) `shouldRespondWith`
-          restRedirect existingId
-
-    describe "Get by ID (GET /v1/content/:id)" $ do
-      it "should return correct data for existing content" $
-        get "/v1/content/4rcn" `shouldRespondWith`
+        it "should redirect existing (converted) HTTP URLs to ID" $
+          let (existingId, existingURL) = existingContent
+           in get ("/v1/content?url=" <> BC.pack existingURL) `shouldRespondWith`
+              restRedirect existingId
+      describe "Get by ID (GET /v1/content/:id)" $ do
+        it "should return correct data for existing content" $
+          get "/v1/content/4rcn" `shouldRespondWith`
           "{\"dzi\":{\"height\":3750,\"url\":\
             \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
             \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
@@ -174,44 +158,33 @@ spec = with (return $ app config) $ do
             \\"<script src=\\\"http://localhost:8000/4rcn.js?width=auto&\
             \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:8000\
             \/4rcn\",\"id\":\"4rcn\",\"ready\":true,\"failed\":false}"
-          { matchStatus = 200
-          , matchHeaders = [applicationJSON]
-          }
-
-      it "should return 404 non-existent content" $
-        get "/v1/content/nonExistentContent" `shouldRespondWith`
+            {matchStatus = 200, matchHeaders = [applicationJSON]}
+        it "should return 404 non-existent content" $
+          get "/v1/content/nonExistentContent" `shouldRespondWith`
           "No content with ID: nonExistentContent"
-          { matchStatus = 404
-          , matchHeaders = [plainTextUTF8]
-          }
-
-    describe "POST /v1/content?url=…" $
-      it "should be rejected" $
+            {matchStatus = 404, matchHeaders = [plainTextUTF8]}
+      describe "POST /v1/content?url=…" $
+        it "should be rejected" $
         post "/v1/content?url=http://example.com" "" `shouldRespondWith`
-          invalidHTTPMethod
-
-    describe "PUT /v1/content?url=…" $
-      it "should be rejected" $
+        invalidHTTPMethod
+      describe "PUT /v1/content?url=…" $
+        it "should be rejected" $
         put "/v1/content?url=http://example.com" "" `shouldRespondWith`
-          invalidHTTPMethod
-
-  describe "JSONP" $ do
-    describe "GET /v1/content?url=…&callback=…" $
-      it "should accept `callback` query parameter" $
+        invalidHTTPMethod
+    describe "JSONP" $ do
+      describe "GET /v1/content?url=…&callback=…" $
+        it "should accept `callback` query parameter" $
         get "/v1/content?callback=handleContent" `shouldRespondWith`
-          "/**/ typeof handleContent === 'function' &&\
+        "/**/ typeof handleContent === 'function' &&\
           \ handleContent({\"status\":400,\"error\":\"Missing ID or URL.\
           \ Please provide ID, e.g. `/v1/content/<id>`, or URL via\
           \ `/v1/content?url=<url>` query parameter.\",\"statusText\":\
           \\"Bad Request\",\"redirectLocation\":null});"
-          { matchStatus = 200
-          , matchHeaders = [javaScriptUTF8]
-          }
-
-    describe "GET /v1/content/:id?callback=…" $
-      it "should accept `callback` query parameter" $
+          {matchStatus = 200, matchHeaders = [javaScriptUTF8]}
+      describe "GET /v1/content/:id?callback=…" $
+        it "should accept `callback` query parameter" $
         get "/v1/content/4rcn?callback=handleContent" `shouldRespondWith`
-          "/**/ typeof handleContent === 'function' && \
+        "/**/ typeof handleContent === 'function' && \
           \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
           \{\"dzi\":{\"height\":3750,\"url\":\
           \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
@@ -222,32 +195,24 @@ spec = with (return $ app config) $ do
           \</script>\",\"shareUrl\":\"http://localhost:8000/4rcn\",\"id\":\
           \\"4rcn\",\"ready\":true,\"failed\":false},\
           \\"redirectLocation\":null});"
-          { matchStatus = 200
-          , matchHeaders = [javaScriptUTF8]
-          }
-
-  describe "View by URL (GET /:url)" $ do
-    it "should return correct redirect existing content" $
-        let (existingId, existingURL) = existingContent in
-        get ("/" <> BC.pack existingURL) `shouldRespondWith`
-          viewRedirect existingId
-
-  describe "CORS" $
-    it "should allow all origins" $
-      let getWithHeader path headers = request methodGet path headers "" in
-      getWithHeader "/v1/content/4rcn" [("Origin", "http://example.com")]
-        `shouldRespondWith` 200 {
-          matchHeaders =
-            [ "Access-Control-Allow-Origin" <:> "*"
-            , applicationJSON
-            ]
-        }
-
-  describe "Meta" $ do
-    describe "Health (/health)" $
-      it "should respond with `up`" $
+          {matchStatus = 200, matchHeaders = [javaScriptUTF8]}
+    describe "View by URL (GET /:url)" $ do
+      it "should return correct redirect existing content" $
+        let (existingId, existingURL) = existingContent
+         in get ("/" <> BC.pack existingURL) `shouldRespondWith`
+            viewRedirect existingId
+    describe "CORS" $
+      it "should allow all origins" $
+      let getWithHeader path headers = request methodGet path headers ""
+       in getWithHeader "/v1/content/4rcn" [("Origin", "http://example.com")] `shouldRespondWith`
+          200
+            { matchHeaders =
+                ["Access-Control-Allow-Origin" <:> "*", applicationJSON]
+            }
+    describe "Meta" $ do
+      describe "Health (/health)" $
+        it "should respond with `up`" $
         get "/health" `shouldRespondWith` "up" {matchStatus = 200}
-
-    describe "Version (/version)" $
-      it "should respond with version" $
+      describe "Version (/version)" $
+        it "should respond with version" $
         get "/version" `shouldRespondWith` "test" {matchStatus = 200}

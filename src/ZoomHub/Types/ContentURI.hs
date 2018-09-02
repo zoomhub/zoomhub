@@ -18,7 +18,9 @@ import           Database.SQLite.Simple.ToField   (ToField, toField)
 import           Servant                          (FromHttpApiData,
                                                    parseUrlPiece)
 
-newtype ContentURI = ContentURI { unContentURI :: Text } deriving Eq
+newtype ContentURI = ContentURI
+  { unContentURI :: Text
+  } deriving (Eq)
 
 instance Show ContentURI where
   show = T.unpack . unContentURI
@@ -26,8 +28,8 @@ instance Show ContentURI where
 -- Text
 instance FromHttpApiData ContentURI where
   parseUrlPiece t
-    | "http://" `T.isPrefixOf` t             = Right $ ContentURI t
-    | "https://" `T.isPrefixOf` t            = Right $ ContentURI t
+    | "http://" `T.isPrefixOf` t = Right $ ContentURI t
+    | "https://" `T.isPrefixOf` t = Right $ ContentURI t
     | "zoomit://thumbnail/" `T.isPrefixOf` t = Right $ ContentURI t
     | otherwise = Left "Invalid content URI"
 

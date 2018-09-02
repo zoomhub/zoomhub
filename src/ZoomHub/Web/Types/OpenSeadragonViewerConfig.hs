@@ -17,17 +17,17 @@ import           ZoomHub.Types.StaticBaseURI               (StaticBaseURI,
                                                             unStaticBaseURI)
 import           ZoomHub.Web.Types.OpenSeadragonTileSource (OpenSeadragonTileSource)
 
-
 data OpenSeadragonViewerConfig = OpenSeadragonViewerConfig
   { osvcContainerId :: String
   , osvcPrefixURI   :: URI
   , oscvTileSource  :: OpenSeadragonTileSource
   } deriving (Eq, Show)
 
-mkOpenSeadragonViewerConfig :: StaticBaseURI ->
-                               String ->
-                               OpenSeadragonTileSource ->
-                               OpenSeadragonViewerConfig
+mkOpenSeadragonViewerConfig ::
+     StaticBaseURI
+  -> String
+  -> OpenSeadragonTileSource
+  -> OpenSeadragonViewerConfig
 mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource =
   OpenSeadragonViewerConfig
     { osvcContainerId = containerId
@@ -42,8 +42,8 @@ mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource =
 instance ToJSON OpenSeadragonViewerConfig where
   toJSON o =
     object
-    [ "id" .= T.pack (osvcContainerId o)
-    , "prefixUrl" .=
+      [ "id" .= T.pack (osvcContainerId o)
+      , "prefixUrl" .=
         (T.pack . addTrailingPathSeparator . show . osvcPrefixURI) o
-    , "tileSources" .= toJSON (oscvTileSource o) -- NOTE: plural key
-    ]
+      , "tileSources" .= toJSON (oscvTileSource o) -- NOTE: plural key
+      ]

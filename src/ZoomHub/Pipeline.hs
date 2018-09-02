@@ -2,8 +2,7 @@
 
 module ZoomHub.Pipeline
   ( process
-  )
-  where
+  ) where
 
 import           Codec.MIME.Parse                         (parseMIMEType)
 import qualified Codec.MIME.Type                          as MIME
@@ -47,12 +46,13 @@ import           ZoomHub.Types.Content                    (Content, contentDZI,
 import           ZoomHub.Types.ContentId                  (unId)
 import           ZoomHub.Types.ContentMIME                (ContentMIME (ContentMIME))
 import           ZoomHub.Types.ContentURI                 (ContentURI)
-import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFormat (JPEG, PNG), TileOverlap (TileOverlap1), TileSize (TileSize254),
+import           ZoomHub.Types.DeepZoomImage              (DeepZoomImage, TileFormat (JPEG, PNG),
+                                                           TileOverlap (TileOverlap1),
+                                                           TileSize (TileSize254),
                                                            dziTileFormat,
                                                            fromXML)
 import           ZoomHub.Types.TempPath                   (TempPath, unTempPath)
 import           ZoomHub.Utils                            (lenientDecodeUtf8)
-
 
 process :: String -> RackspaceConfig -> TempPath -> Content -> IO Content
 process workerId raxConfig tempPath content =
@@ -60,51 +60,46 @@ process workerId raxConfig tempPath content =
     let rawPathPrefix = tmpDir </> rawContentId
         rawPath = rawPathPrefix ++ ".raw"
         dziPath = rawPathPrefix <.> "dzi"
-
-    logInfo "Create temporary working directory"
-      [ "id" .= contentId content
-      , "path" .= tmpDir
-      , "worker" .= workerId
-      ]
-
-    maybeMIME <- logInfoT "Download content"
-      [ "id" .= contentId content
-      , "url" .= contentURL content
-      , "worker" .= workerId
-      ] $ ((<$>) . (<$>)) ContentMIME $
-          downloadURL (contentURL content) rawPath
-
+    logInfo
+      "Create temporary working directory"
+      ["id" .= contentId content, "path" .= tmpDir, "worker" .= workerId]
+    maybeMIME <-
+      logInfoT
+        "Download content"
+        [ "id" .= contentId content
+        , "url" .= contentURL content
+        , "worker" .= workerId
+        ] $
+      ((<$>) . (<$>)) ContentMIME $ downloadURL (contentURL content) rawPath
     rawSize <- getFileSize rawPath
-
-    dzi <- logInfoT "Create DZI"
-      [ "id" .= contentId content
-      , "worker" .= workerId
-      ] $ createDZI workerId rawPath dziPath (toTileFormat maybeMIME)
-
-    logInfo "Content metadata"
+    dzi <-
+      logInfoT "Create DZI" ["id" .= contentId content, "worker" .= workerId] $
+      createDZI workerId rawPath dziPath (toTileFormat maybeMIME)
+    logInfo
+      "Content metadata"
       [ "id" .= contentId content
       , "mime" .= maybeMIME
       , "size" .= rawSize
       , "dzi" .= dzi
       , "worker" .= workerId
       ]
-
-    logInfoT "Upload DZI"
+    logInfoT
+      "Upload DZI"
       [ "id" .= contentId content
       , "dzi" .= dzi
       , "dziPath" .= dziPath
       , "worker" .= workerId
-      ] $ uploadDZI workerId raxConfig tmpDir dziPath dzi
-
-    return content
-      { contentMIME = maybeMIME
-      , contentSize = Just rawSize
-      , contentDZI = Just dzi
-      }
+      ] $
+      uploadDZI workerId raxConfig tmpDir dziPath dzi
+    return
+      content
+        { contentMIME = maybeMIME
+        , contentSize = Just rawSize
+        , contentDZI = Just dzi
+        }
   where
     rawContentId = unId (contentId content)
     template = rawContentId ++ "-"
-
     getFileSize :: FilePath -> IO Integer
     getFileSize path = toInteger . fileSize <$> getFileStatus path
 
@@ -113,27 +108,28 @@ downloadURL url dest = do
   res <- get (show url)
   let body = res ^. responseBody
   atomicWriteFile dest body
-  return $ parseMIMEType . lenientDecodeUtf8 $
-    res ^. responseHeader "content-type"
+  return $
+    parseMIMEType . lenientDecodeUtf8 $ res ^. responseHeader "content-type"
 
 createDZI :: String -> FilePath -> FilePath -> TileFormat -> IO DeepZoomImage
 createDZI workerId src dest tileFormat = do
-    (exitCode, stdout, stderr) <- readProcessWithExitCode "vips" args ""
-    logInfo "VIPS command"
-      [ "command" .= show args
-      , "exitCode" .= show exitCode
-      , "stdout" .= stdout
-      , "stderr" .= stderr
-      , "worker" .= workerId
-      ]
-    when (exitCode /= ExitSuccess) $
-      fail $ "VIPS error: Exit code: " ++ show exitCode ++
-             ". stderr: " ++ stderr ++ ". stdout: " ++ stdout
-
-    xml <- readFile dest
-    case fromXML xml of
-      (Just dzi) -> return dzi
-      _ -> fail "Failed to create DZI"
+  (exitCode, stdout, stderr) <- readProcessWithExitCode "vips" args ""
+  logInfo
+    "VIPS command"
+    [ "command" .= show args
+    , "exitCode" .= show exitCode
+    , "stdout" .= stdout
+    , "stderr" .= stderr
+    , "worker" .= workerId
+    ]
+  when (exitCode /= ExitSuccess) $
+    fail $
+    "VIPS error: Exit code: " ++
+    show exitCode ++ ". stderr: " ++ stderr ++ ". stdout: " ++ stdout
+  xml <- readFile dest
+  case fromXML xml of
+    (Just dzi) -> return dzi
+    _          -> fail "Failed to create DZI"
   where
     args =
       [ "dzsave"
@@ -144,50 +140,50 @@ createDZI workerId src dest tileFormat = do
       , "--suffix=" <> toVIPSSuffix tileFormat
       ]
 
-uploadDZI :: String ->
-             RackspaceConfig ->
-             FilePath ->
-             FilePath ->
-             DeepZoomImage ->
-             IO ()
+uploadDZI ::
+     String -> RackspaceConfig -> FilePath -> FilePath -> DeepZoomImage -> IO ()
 uploadDZI workerId raxConfig rootPath path dzi = do
-    meta <- getMetadata raxCreds
-    tilePaths <- getDZITilePaths path
-
+  meta <- getMetadata raxCreds
+  tilePaths <- getDZITilePaths path
     -- Upload tiles
-    let chunks = chunksOf numParallelUploads tilePaths
-    sequence_ $ (`map` chunks) $ \chunk ->
+  let chunks = chunksOf numParallelUploads tilePaths
+  sequence_ $
+    (`map` chunks) $ \chunk ->
       forConcurrently chunk $ \tilePath ->
         case toObjectName tilePath of
           (Just tileObjectName) -> do
-            _ <- logDebugT "Upload DZI tile"
-                  [ "container" .= container
-                  , "objectName" .= tileObjectName
-                  , "worker" .= workerId
-                  ] $ putContent meta tilePath tileMIME container tileObjectName
+            _ <-
+              logDebugT
+                "Upload DZI tile"
+                [ "container" .= container
+                , "objectName" .= tileObjectName
+                , "worker" .= workerId
+                ] $
+              putContent meta tilePath tileMIME container tileObjectName
             return ()
-
-          Nothing -> logError "Invalid DZI tile object name"
-                        [ "tilePath" .= tilePath
-                        , "rootPath" .= rootPath
-                        , "worker" .= workerId
-                        ]
-
-    -- Upload manifest
-    case toObjectName path of
-      (Just dziObjectName) -> do
-        _ <- logDebugT "Upload DZI manifest"
-              [ "container" .= container
-              , "objectName" .= dziObjectName
+          Nothing ->
+            logError
+              "Invalid DZI tile object name"
+              [ "tilePath" .= tilePath
+              , "rootPath" .= rootPath
               , "worker" .= workerId
-              ] $ putContent meta path manifestMIME container dziObjectName
-        return ()
-      _ ->
-        logError "Invalid DZI manifest object name"
-          [ "path" .= path
-          , "rootPath" .= rootPath
+              ]
+    -- Upload manifest
+  case toObjectName path of
+    (Just dziObjectName) -> do
+      _ <-
+        logDebugT
+          "Upload DZI manifest"
+          [ "container" .= container
+          , "objectName" .= dziObjectName
           , "worker" .= workerId
-          ]
+          ] $
+        putContent meta path manifestMIME container dziObjectName
+      return ()
+    _ ->
+      logError
+        "Invalid DZI manifest object name"
+        ["path" .= path, "rootPath" .= rootPath, "worker" .= workerId]
   where
     manifestMIME = MIME.Type (MIME.Application "xml") []
     tileMIME = toMIME (dziTileFormat dzi)
@@ -195,19 +191,17 @@ uploadDZI workerId raxConfig rootPath path dzi = do
     containerPath = raxContainerPath raxConfig
     raxCreds = mkCredentials (raxUsername raxConfig) (raxApiKey raxConfig)
     numParallelUploads = 5
-
     stripRoot :: FilePath -> Maybe FilePath
     stripRoot = stripPrefix (addTrailingPathSeparator rootPath)
-
     toObjectName :: FilePath -> Maybe ObjectName
     toObjectName p =
       stripRoot p >>= Just . (show containerPath </>) >>= parseObjectName
 
 getDZITilePaths :: FilePath -> IO [FilePath]
 getDZITilePaths dziPath = do
-    levelDirs <- map (filesDir </>) <$> listDirectory filesDir
-    concat <$> mapM (\levelDir -> map (levelDir </>) <$> listDirectory levelDir)
-      levelDirs
+  levelDirs <- map (filesDir </>) <$> listDirectory filesDir
+  concat <$>
+    mapM (\levelDir -> map (levelDir </>) <$> listDirectory levelDir) levelDirs
   where
     filesDir = dropExtension dziPath <> "_files"
 
@@ -220,5 +214,5 @@ toMIME JPEG = MIME.Type (MIME.Image "jpeg") []
 toMIME PNG  = MIME.Type (MIME.Image "png") []
 
 toVIPSSuffix :: TileFormat -> String
-toVIPSSuffix PNG = ".png"
+toVIPSSuffix PNG  = ".png"
 toVIPSSuffix JPEG = ".jpg[Q=90]"

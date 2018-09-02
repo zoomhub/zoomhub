@@ -45,77 +45,76 @@ processExpiredActiveContentInterval = 30
 
 -- Public API
 processExistingContent :: Config -> String -> IO ()
-processExistingContent config workerId = forever $ do
-    logInfo "worker:start" [ "worker" .= workerId ]
-
-    go `catchAny` \ex ->
+processExistingContent config workerId =
+  forever $ do
+    logInfo "worker:start" ["worker" .= workerId]
+    go `catchAny` \ex
       -- TODO: Mark as `completed:failure` or `initialized`:
-      logException "worker:error" ex extraLogMeta
-
+     -> logException "worker:error" ex extraLogMeta
     logInfo "worker:end" extraLogMeta
-
     let delta = (2 * toMicroseconds sleepBase) `div` 2
     jitter <- randomRIO (0, delta)
     let sleepDuration = fromMicroseconds $ delta + jitter :: Second
-
     logInfo "Wait for next unprocessed content" $
-      ( "sleepDuration" .= sleepDuration ) : extraLogMeta
+      ("sleepDuration" .= sleepDuration) : extraLogMeta
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
-    go = withConnection dbPath $ \dbConn -> do
-      maybeContent <-
-        logT "Get next unprocessed content and mark as active" [] $
+    go =
+      withConnection dbPath $ \dbConn -> do
+        maybeContent <-
+          logT "Get next unprocessed content and mark as active" [] $
           dequeueNextUnprocessed dbConn
-
-      case maybeContent of
-        Just content -> do
-          let processOp = process workerId raxConfig tempPath content >>=
-                          markAsSuccess dbConn
-              jsonToText =
-                Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError
-              errorOp e = markAsFailure dbConn content (jsonToText e)
-              handler e = logT "Process content: failure"
-                            [ "id" .= contentId content
-                            , "url" .= contentURL content
-                            , "apiURL" .= apiURL content
-                            , "wwwURL" .= wwwURL content
-                            , "error" .= toJSONError e
-                            , "worker" .= workerId
-                            ] $ errorOp e
-          logT "Process content: success"
-            [ "id" .= contentId content
-            , "url" .= contentURL content
-            , "apiURL" .= apiURL content
-            , "wwwURL" .= wwwURL content
-            , "worker" .= workerId
-            ] $ void (processOp `catchAny` handler)
-        Nothing -> return ()
-
+        case maybeContent of
+          Just content -> do
+            let processOp =
+                  process workerId raxConfig tempPath content >>=
+                  markAsSuccess dbConn
+                jsonToText =
+                  Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError
+                errorOp e = markAsFailure dbConn content (jsonToText e)
+                handler e =
+                  logT
+                    "Process content: failure"
+                    [ "id" .= contentId content
+                    , "url" .= contentURL content
+                    , "apiURL" .= apiURL content
+                    , "wwwURL" .= wwwURL content
+                    , "error" .= toJSONError e
+                    , "worker" .= workerId
+                    ] $
+                  errorOp e
+            logT
+              "Process content: success"
+              [ "id" .= contentId content
+              , "url" .= contentURL content
+              , "apiURL" .= apiURL content
+              , "wwwURL" .= wwwURL content
+              , "worker" .= workerId
+              ] $
+              void (processOp `catchAny` handler)
+          Nothing -> return ()
     dbPath = Config.dbPath config
     raxConfig = Config.rackspace config
     tempPath = Config.tempPath config
-
     sleepBase = processExistingContentInterval
-
     wwwURL c = "http://zoomhub.net/" ++ unId (contentId c)
     apiURL c = "http://zoomhub.net/v1/content/" ++ unId (contentId c)
-
     logT msg meta = logInfoT msg (meta ++ extraLogMeta)
     extraLogMeta =
-      [ "worker" .= workerId
-      , "topic" .= ("worker:process:existing" :: Text)
-      ]
+      ["worker" .= workerId, "topic" .= ("worker:process:existing" :: Text)]
 
 processExpiredActiveContent :: Config -> IO ()
-processExpiredActiveContent config = forever $
+processExpiredActiveContent config =
+  forever $
   withConnection (Config.dbPath config) $ \dbConn -> do
     cs <- getExpiredActive dbConn
-    logInfoT "Reset expired active content"
-      [ "ids" .= map contentId cs ]
+    logInfoT
+      "Reset expired active content"
+      ["ids" .= map contentId cs]
       (resetAsInitialized dbConn cs)
-
-    logInfo "Wait for next expired active content"
-      [ "sleepDuration" .= sleepDuration ]
+    logInfo
+      "Wait for next expired active content"
+      ["sleepDuration" .= sleepDuration]
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     sleepDuration = processExpiredActiveContentInterval
@@ -124,4 +123,4 @@ toJSONError :: SomeException -> Value
 toJSONError e =
   case fromException e of
     Just (h :: HttpException) -> toJSON h
-    _ -> String . T.pack . show $ e
+    _                         -> String . T.pack . show $ e

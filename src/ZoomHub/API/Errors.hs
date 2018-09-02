@@ -4,8 +4,7 @@ module ZoomHub.API.Errors
   ( error400
   , error404
   , error503
-  )
-  where
+  ) where
 
 import qualified Data.ByteString.Lazy.UTF8 as BU
 import           Servant                   (ServantErr, err400, err404, err503,
@@ -21,7 +20,8 @@ error503 :: String -> ServantErr
 error503 = mkError err503
 
 mkError :: ServantErr -> String -> ServantErr
-mkError errorType message = errorType
-  { errHeaders = [("Content-Type", "text/plain; charset=utf-8")]
-  , errBody = BU.fromString message
-  }
+mkError errorType message =
+  errorType
+    { errHeaders = [("Content-Type", "text/plain; charset=utf-8")]
+    , errBody = BU.fromString message
+    }

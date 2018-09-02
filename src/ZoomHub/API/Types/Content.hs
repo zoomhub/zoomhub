@@ -29,9 +29,8 @@ import           ZoomHub.Types.BaseURI           (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content           as Internal
 import           ZoomHub.Types.ContentBaseURI    (ContentBaseURI)
 import           ZoomHub.Types.ContentId         (ContentId, unId)
-import           ZoomHub.Types.ContentState      (ContentState (CompletedSuccess, CompletedFailure))
+import           ZoomHub.Types.ContentState      (ContentState (CompletedFailure, CompletedSuccess))
 import           ZoomHub.Types.ContentURI        (ContentURI)
-
 
 -- Content
 data Content = Content
@@ -47,16 +46,17 @@ data Content = Content
 
 -- Constructor
 fromInternal :: BaseURI -> ContentBaseURI -> Internal.Content -> Content
-fromInternal baseURI contentBaseURI c = Content
-  { contentId = cId
-  , contentUrl = Internal.contentURL c
-  , contentReady = Internal.contentState c == CompletedSuccess
-  , contentFailed = Internal.contentState c == CompletedFailure
-  , contentProgress = Internal.contentProgress c
-  , contentShareUrl = shareURI
-  , contentEmbedHtml = embedHTML
-  , contentDzi = dzi
-  }
+fromInternal baseURI contentBaseURI c =
+  Content
+    { contentId = cId
+    , contentUrl = Internal.contentURL c
+    , contentReady = Internal.contentState c == CompletedSuccess
+    , contentFailed = Internal.contentState c == CompletedFailure
+    , contentProgress = Internal.contentProgress c
+    , contentShareUrl = shareURI
+    , contentEmbedHtml = embedHTML
+    , contentDzi = dzi
+    }
   where
     cId = Internal.contentId c
     shareURI = ContentShareURI $ sharePathURI `relativeTo` unBaseURI baseURI
@@ -67,11 +67,12 @@ fromInternal baseURI contentBaseURI c = Content
 
 -- JSON
 instance ToJSON Content where
-   toJSON = genericToJSON $ aesonPrefix camelCase
+  toJSON = genericToJSON $ aesonPrefix camelCase
 
 -- Types
-newtype ContentShareURI = ContentShareURI { unContentShareURI :: URI }
-  deriving Eq
+newtype ContentShareURI = ContentShareURI
+  { unContentShareURI :: URI
+  } deriving (Eq)
 
 instance Show ContentShareURI where
   show = show . unContentShareURI

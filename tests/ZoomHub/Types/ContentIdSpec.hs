@@ -30,5 +30,5 @@ main = hspec spec
 spec :: Spec
 spec =
   describe "encode" $
-    context "when used with valid strings, i.e. no underscores," $
-      it "is inverse to `decode`" $ property prop_invertible
+  context "when used with valid strings, i.e. no underscores," $
+  it "is inverse to `decode`" $ property prop_invertible

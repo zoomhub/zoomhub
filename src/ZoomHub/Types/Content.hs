@@ -31,18 +31,19 @@ data Content = Content
   } deriving (Eq, Show)
 
 mkContent :: ContentType -> ContentId -> ContentURI -> UTCTime -> Content
-mkContent type_ cId uri initializedAt = Content
-  { contentId = cId
-  , contentURL = uri
-  , contentType = type_
-  , contentState = Initialized
-  , contentInitializedAt = initializedAt
-  , contentActiveAt = Nothing
-  , contentCompletedAt = Nothing
-  , contentMIME = Nothing
-  , contentSize = Nothing
-  , contentProgress = 0.0
-  , contentNumViews = 0
-  , contentError = Nothing
-  , contentDZI = Nothing
-  }
+mkContent type_ cId uri initializedAt =
+  Content
+    { contentId = cId
+    , contentURL = uri
+    , contentType = type_
+    , contentState = Initialized
+    , contentInitializedAt = initializedAt
+    , contentActiveAt = Nothing
+    , contentCompletedAt = Nothing
+    , contentMIME = Nothing
+    , contentSize = Nothing
+    , contentProgress = 0.0
+    , contentNumViews = 0
+    , contentError = Nothing
+    , contentDZI = Nothing
+    }

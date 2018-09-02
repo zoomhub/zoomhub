@@ -3,9 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module ZoomHub.Storage.SQLite
-  (
   -- ** Read operations
-    getById
+  ( getById
   , getById'
   , getByURL
   , getByURL'
@@ -42,7 +41,7 @@ import           Data.Time.Units                (Minute, Second,
                                                  fromMicroseconds,
                                                  toMicroseconds)
 import           Data.Time.Units.Instances      ()
-import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
+import           Database.SQLite.Simple         (Connection, Error (ErrorBusy, ErrorCan'tOpen, ErrorConstraint, ErrorLocked),
                                                  NamedParam ((:=)), Only (Only),
                                                  Query,
                                                  SQLError (SQLError, sqlError),
@@ -68,8 +67,8 @@ import           ZoomHub.Types.Content          (Content (Content),
 import           ZoomHub.Types.ContentId        (ContentId, unId)
 import qualified ZoomHub.Types.ContentId        as ContentId
 import           ZoomHub.Types.ContentMIME      (ContentMIME)
-import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
-import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
+import           ZoomHub.Types.ContentState     (ContentState (Active, CompletedFailure, CompletedSuccess, Initialized))
+import           ZoomHub.Types.ContentType      (ContentType (Image, Unknown))
 import           ZoomHub.Types.ContentURI       (ContentURI)
 import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
 import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
@@ -81,7 +80,8 @@ import           ZoomHub.Utils                  (intercalate)
 
 -- Public API
 create :: (Integer -> String) -> ContentURI -> Connection -> IO Content
-create encodeId uri conn = withTransaction conn $ do
+create encodeId uri conn =
+  withTransaction conn $ do
     (rowId:_) <- query_ conn lastContentRowInsertIdQuery :: IO [Only Integer]
     let newId = toInteger (fromOnly rowId) + 1
     insertWith newId
@@ -92,25 +92,24 @@ create encodeId uri conn = withTransaction conn $ do
       let cId = ContentId.fromInteger encodeId newId
           -- TODO: Infer content type:
           content = mkContent Image cId uri initializedAt
-      result <- tryJust (guard . isConstraintError) $
+      result <-
+        tryJust (guard . isConstraintError) $
         execute conn insertQuery (contentToRow newId content)
       case result of
-        Left _ -> do
+        Left _
           -- TODO: Implement proper logging:
+         -> do
           logWarnExistingId newId cId
           insertWith (newId + 1)
         Right _ -> return content
-
     isConstraintError :: SQLError -> Bool
     isConstraintError (SQLError ErrorConstraint _ _) = True
-    isConstraintError _ = False
-
+    isConstraintError _                              = False
     logWarnExistingId :: Integer -> ContentId -> IO ()
     logWarnExistingId dbId cId =
-      logWarning "Failed to insert ID because it already exists"
-        [ "dbId" .= dbId
-        , "id" .= cId
-        ]
+      logWarning
+        "Failed to insert ID because it already exists"
+        ["dbId" .= dbId, "id" .= cId]
 
 -- TODO: Generalize:
 getById' :: ContentId -> DatabasePath -> Connection -> IO (Maybe Content)
@@ -128,19 +127,24 @@ getByURL' uri = getBy' "content.url" (show uri)
 
 getNextUnprocessed :: Connection -> IO (Maybe Content)
 getNextUnprocessed conn =
-  get $ query conn (selectContent <> "WHERE state = ? \
+  get $
+  query
+    conn
+    (selectContent <>
+     "WHERE state = ? \
     \ ORDER BY content.numViews DESC, content.initializedAt ASC LIMIT 1")
     (Only Initialized)
 
 getExpiredActive :: Connection -> IO [Content]
 getExpiredActive conn =
-  ((<$>) . (<$>)) rowToContent $ queryNamed conn
-    (selectContent <> "WHERE content.state = :activeState AND\
+  ((<$>) . (<$>)) rowToContent $
+  queryNamed
+    conn
+    (selectContent <>
+     "WHERE content.state = :activeState AND\
      \ (julianday(datetime('now')) - julianday(datetime(content.activeAt))) \
      \ * 24 * 60 > :ttlMinutes")
-      [ ":activeState" := Active
-      , ":ttlMinutes" := (30 :: Integer)
-      ]
+    [":activeState" := Active, ":ttlMinutes" := (30 :: Integer)]
 
 -- Writes
 dequeueNextUnprocessed :: Connection -> IO (Maybe Content)
@@ -149,62 +153,67 @@ dequeueNextUnprocessed conn =
     maybeNext <- getNextUnprocessed conn
     case maybeNext of
       Just next -> Just <$> markAsActive conn next
-      Nothing -> return Nothing
+      Nothing   -> return Nothing
 
 resetAsInitialized :: Connection -> [Content] -> IO ()
 resetAsInitialized conn cs =
-  withRetries $ withTransaction conn $
-    forM_ cs $ \content ->
-      executeNamed conn "UPDATE content \
+  withRetries $
+  withTransaction conn $
+  forM_ cs $ \content ->
+    executeNamed
+      conn
+      "UPDATE content \
         \ SET state = :initializedState, activeAt = NULL, error = NULL, \
         \ mime = NULL, size = NULL, progress = 0.0 WHERE hashId = :hashId"
-        [ ":initializedState" := Initialized
-        , ":hashId" := (unId . contentId) content
-        ]
+      [ ":initializedState" := Initialized
+      , ":hashId" := (unId . contentId) content
+      ]
 
 markAsActive :: Connection -> Content -> IO Content
 markAsActive conn content = do
   activeAt <- getCurrentTime
-  let content' = content
-                  { contentState = Active
-                  , contentActiveAt = Just activeAt
-                  }
-  withRetries $ executeNamed conn "\
+  let content' =
+        content {contentState = Active, contentActiveAt = Just activeAt}
+  withRetries $
+    executeNamed
+      conn
+      "\
     \UPDATE content \
     \ SET state = :state\
     \   , activeAt = :activeAt\
     \ WHERE hashId = :hashId"
-    [ ":state" := contentState content'
-    , ":activeAt" := contentActiveAt content'
-    , ":hashId" := contentId content'
-    ]
+      [ ":state" := contentState content'
+      , ":activeAt" := contentActiveAt content'
+      , ":hashId" := contentId content'
+      ]
   return content'
 
-markAsFailure :: Connection ->
-                 Content ->
-                 Maybe Text ->
-                 IO Content
+markAsFailure :: Connection -> Content -> Maybe Text -> IO Content
 markAsFailure conn content maybeError = do
   completedAt <- getCurrentTime
-  let content' = content
-        { contentState = CompletedFailure
-        , contentType = Unknown
-        , contentCompletedAt = Just completedAt
-        , contentError = maybeError
-        }
-  withRetries $ executeNamed conn "\
+  let content' =
+        content
+          { contentState = CompletedFailure
+          , contentType = Unknown
+          , contentCompletedAt = Just completedAt
+          , contentError = maybeError
+          }
+  withRetries $
+    executeNamed
+      conn
+      "\
     \UPDATE content\
     \  SET state = :state\
     \    , typeId = :typeId\
     \    , completedAt = :completedAt\
     \    , error = :error\
     \  WHERE hashId = :hashId"
-    [ ":state" := contentState content'
-    , ":typeId" := contentType content'
-    , ":completedAt" := contentCompletedAt content'
-    , ":hashId" := contentId content'
-    , ":error" := contentError content'
-    ]
+      [ ":state" := contentState content'
+      , ":typeId" := contentType content'
+      , ":completedAt" := contentCompletedAt content'
+      , ":hashId" := contentId content'
+      , ":error" := contentError content'
+      ]
   return content'
 
 markAsSuccess :: Connection -> Content -> IO Content
@@ -212,19 +221,25 @@ markAsSuccess conn content =
   case contentDZI content of
     Nothing -> do
       let rawId = unId (contentId content)
-      fail $ "ZoomHub.Storage.SQLite.markAsSuccess:\
-        \ Expected completed content '" ++ rawId ++ "' to have DZI."
+      fail $
+        "ZoomHub.Storage.SQLite.markAsSuccess:\
+        \ Expected completed content '" ++
+        rawId ++ "' to have DZI."
     Just dzi -> do
       completedAt <- getCurrentTime
-      let content' = content
-            { contentState = CompletedSuccess
-            , contentType = Image -- TODO: Parametrize
-            , contentCompletedAt = Just completedAt
-            , contentProgress = 1.0
-            , contentError = Nothing
-            }
-      withRetries $ withTransaction conn $ do
-        executeNamed conn "\
+      let content' =
+            content
+              { contentState = CompletedSuccess
+              , contentType = Image -- TODO: Parametrize
+              , contentCompletedAt = Just completedAt
+              , contentProgress = 1.0
+              , contentError = Nothing
+              }
+      withRetries $
+        withTransaction conn $ do
+          executeNamed
+            conn
+            "\
           \ UPDATE content \
           \   SET state = :state\
           \     , typeId = :typeId\
@@ -234,16 +249,18 @@ markAsSuccess conn content =
           \     , progress = :progress\
           \     , error = :error\
           \   WHERE hashId = :hashId"
-          [ ":hashId" := contentId content'
-          , ":typeId" := contentType content'
-          , ":state" := contentState content'
-          , ":completedAt" := contentCompletedAt content'
-          , ":mime" := contentMIME content'
-          , ":size" := contentSize content'
-          , ":progress" := contentProgress content'
-          , ":error" := contentError content'
-          ]
-        executeNamed conn "\
+            [ ":hashId" := contentId content'
+            , ":typeId" := contentType content'
+            , ":state" := contentState content'
+            , ":completedAt" := contentCompletedAt content'
+            , ":mime" := contentMIME content'
+            , ":size" := contentSize content'
+            , ":progress" := contentProgress content'
+            , ":error" := contentError content'
+            ]
+          executeNamed
+            conn
+            "\
           \ INSERT OR REPLACE INTO image\
           \    ( contentId\
           \    , initializedAt\
@@ -263,13 +280,13 @@ markAsSuccess conn content =
           \   , :image_tileOverlap\
           \   , :image_tileFormat\
           \   )"
-          [ ":hashId" := contentId content'
-          , ":image_width" := Just (dziWidth dzi)
-          , ":image_height" := Just (dziHeight dzi)
-          , ":image_tileSize" := Just (dziTileSize dzi)
-          , ":image_tileOverlap" := Just (dziTileOverlap dzi)
-          , ":image_tileFormat" := Just (dziTileFormat dzi)
-          ]
+            [ ":hashId" := contentId content'
+            , ":image_width" := Just (dziWidth dzi)
+            , ":image_height" := Just (dziHeight dzi)
+            , ":image_tileSize" := Just (dziTileSize dzi)
+            , ":image_tileOverlap" := Just (dziTileOverlap dzi)
+            , ":image_tileFormat" := Just (dziTileFormat dzi)
+            ]
       return content'
 
 withConnection :: DatabasePath -> (Connection -> IO a) -> IO a
@@ -278,30 +295,33 @@ withConnection dbPath = SQLite.withConnection (unDatabasePath dbPath)
 -- Internal
 getBy' :: String -> String -> DatabasePath -> Connection -> IO (Maybe Content)
 getBy' fieldName param dbPath conn = do
-    maybeContent <- getBy fieldName param conn
-    case maybeContent of
-      Just content -> do
+  maybeContent <- getBy fieldName param conn
+  case maybeContent of
+    Just content
         -- Sample how often we count views to reduce database load:
         -- http://stackoverflow.com/a/4762559/125305
-        let numViews = contentNumViews content
-        let numViewsSampleRate = sampleRate numViews
-        numViewsSample <- randomRIO (1, numViewsSampleRate)
-        when (numViewsSample == 1) $ do
-          _ <- async $ withConnection dbPath $ \dbConn ->
-            executeNamed dbConn (incrNumViewsQueryFor fieldName)
-              [ ":param" := param
-              , ":numViewsSampleRate" := numViewsSampleRate
-              ]
-          return ()
-      Nothing -> return ()
-    return maybeContent
+     -> do
+      let numViews = contentNumViews content
+      let numViewsSampleRate = sampleRate numViews
+      numViewsSample <- randomRIO (1, numViewsSampleRate)
+      when (numViewsSample == 1) $ do
+        _ <-
+          async $
+          withConnection dbPath $ \dbConn ->
+            executeNamed
+              dbConn
+              (incrNumViewsQueryFor fieldName)
+              [":param" := param, ":numViewsSampleRate" := numViewsSampleRate]
+        return ()
+    Nothing -> return ()
+  return maybeContent
   where
     sampleRate :: Integer -> Integer
     sampleRate numViews
-      | numViews < 50   = 1
-      | numViews < 500  = 10
+      | numViews < 50 = 1
+      | numViews < 500 = 10
       | numViews < 5000 = 20
-      | otherwise       = 50
+      | otherwise = 50
 
 getBy :: String -> String -> Connection -> IO (Maybe Content)
 getBy fieldName param conn =
@@ -343,8 +363,7 @@ fieldNamesWithDefaults = Set.fromList ["content.initializedAt"]
 
 -- Filter out fields with default values
 insertFieldNames :: [Query]
-insertFieldNames =
-  filter (`Set.notMember` fieldNamesWithDefaults) fieldNames
+insertFieldNames = filter (`Set.notMember` fieldNamesWithDefaults) fieldNames
 
 selectQueryFor :: String -> Query
 selectQueryFor fieldName =
@@ -353,18 +372,24 @@ selectQueryFor fieldName =
 incrNumViewsQueryFor :: String -> Query
 incrNumViewsQueryFor fieldName =
   "UPDATE content SET numViews = numViews + :numViewsSampleRate WHERE " <>
-    fromString fieldName <> " = :param"
+  fromString fieldName <>
+  " = :param"
 
 selectContent :: Query
 selectContent =
-    "SELECT " <> columns <> " FROM content\
+  "SELECT " <> columns <>
+  " FROM content\
     \ LEFT JOIN image ON content.id = image.contentId "
   where
     columns = intercalate ", " fieldNames
 
 insertQuery :: Query
-insertQuery = "INSERT INTO content (" <> columns <> ")\
-    \ VALUES (" <> placeholders <> ")"
+insertQuery =
+  "INSERT INTO content (" <> columns <>
+  ")\
+    \ VALUES (" <>
+  placeholders <>
+  ")"
   where
     names = insertFieldNames
     columns = intercalate ", " names
@@ -396,8 +421,8 @@ data ContentRow = ContentRow
   } deriving (Show)
 
 instance FromRow ContentRow where
-  fromRow = ContentRow <$>
-    field <*> -- id
+  fromRow =
+    ContentRow <$> field <*> -- id
     field <*> -- hashId
     field <*> -- type
     field <*> -- url
@@ -414,10 +439,10 @@ instance FromRow ContentRow where
     field <*> -- dziHeight
     field <*> -- dziTileSize
     field <*> -- dziTileOverlap
-    field     -- dziTileFormat
+    field -- dziTileFormat
 
 instance ToRow ContentRow where
-  toRow ContentRow{..} =
+  toRow ContentRow {..} =
     [ toField crId
     , toField crHashId
     , toField crType
@@ -439,7 +464,8 @@ instance ToRow ContentRow where
     ]
 
 rowToContent :: ContentRow -> Content
-rowToContent cr = Content
+rowToContent cr =
+  Content
     { contentId = crHashId cr
     , contentType = crType cr
     , contentURL = crURL cr
@@ -455,11 +481,14 @@ rowToContent cr = Content
     , contentDZI = maybeDZI
     }
   where
-    maybeDZI = mkDeepZoomImage <$> crDZIWidth cr <*> crDZIHeight cr <*>
-      crDZITileSize cr <*> crDZITileOverlap cr <*> crDZITileFormat cr
+    maybeDZI =
+      mkDeepZoomImage <$> crDZIWidth cr <*> crDZIHeight cr <*> crDZITileSize cr <*>
+      crDZITileOverlap cr <*>
+      crDZITileFormat cr
 
 contentToRow :: Integer -> Content -> ContentRow
-contentToRow id_ c = ContentRow
+contentToRow id_ c =
+  ContentRow
     { crId = Just id_
     , crHashId = contentId c
     , crType = contentType c
@@ -476,15 +505,16 @@ contentToRow id_ c = ContentRow
     , crDZIWidth = dziWidth <$> dzi
     , crDZIHeight = dziHeight <$> dzi
     , crDZITileSize = dziTileSize <$> dzi
-    , crDZITileOverlap = dziTileOverlap  <$> dzi
-    , crDZITileFormat = dziTileFormat  <$> dzi
+    , crDZITileOverlap = dziTileOverlap <$> dzi
+    , crDZITileFormat = dziTileFormat <$> dzi
     }
-  where dzi = contentDZI c
+  where
+    dzi = contentDZI c
 
 -- Retry
 backoffPolicy :: (MonadIO m) => RetryPolicyM m
 backoffPolicy =
-    capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
+  capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
   where
     maxDelay = fromIntegral $ toMicroseconds (2 :: Minute)
     base = fromIntegral $ toMicroseconds (1 :: Second)
@@ -494,25 +524,26 @@ withRetries :: IO a -> IO a
 withRetries action = recovering backoffPolicy handlers (const action)
   where
     handlers = [sqlErrorH]
-
     sqlErrorH :: RetryStatus -> Handler IO Bool
     sqlErrorH = logRetries testE
-
     testE :: (Monad m) => SQLError -> m Bool
-    testE e = case sqlError e of
-      ErrorBusy      -> return True
-      ErrorCan'tOpen -> return True
-      ErrorLocked    -> return True
-      _              -> return False
-
-    logRetries test status = Handler $ \e -> do
+    testE e =
+      case sqlError e of
+        ErrorBusy      -> return True
+        ErrorCan'tOpen -> return True
+        ErrorLocked    -> return True
+        _              -> return False
+    logRetries test status =
+      Handler $ \e -> do
         shouldRetry <- test e
-        logWarning "Encountered error during SQLite operation"
+        logWarning
+          "Encountered error during SQLite operation"
           [ "error" .= show e
-          , "retry" .= object
+          , "retry" .=
+            object
               [ "iteration" .= rsIterNumber status
               , "cumulativeDelay" .=
-                  toSeconds (Just . rsCumulativeDelay $ status)
+                toSeconds (Just . rsCumulativeDelay $ status)
               , "previousDelay" .= toSeconds (rsPreviousDelay status)
               , "nextAction" .= (bool "crash" "retry" shouldRetry :: Text)
               ]

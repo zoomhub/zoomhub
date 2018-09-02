@@ -39,13 +39,18 @@ import           System.TimeIt             (timeItT)
 
 import           ZoomHub.Utils             (lenientDecodeUtf8)
 
-data Level = Debug | Info | Warning | Error deriving Eq
+data Level
+  = Debug
+  | Info
+  | Warning
+  | Error
+  deriving (Eq)
 
 instance Show Level where
-  show Debug = "debug"
-  show Info = "info"
+  show Debug   = "debug"
+  show Info    = "info"
   show Warning = "warning"
-  show Error = "error"
+  show Error   = "error"
 
 logDebug :: String -> [Pair] -> IO ()
 logDebug = log Debug
@@ -78,7 +83,7 @@ logError_ :: String -> IO ()
 logError_ = log_ Error
 
 logException :: String -> SomeException -> [Pair] -> IO ()
-logException msg e meta = logError msg ( meta ++ [ "error" .= show e ])
+logException msg e meta = logError msg (meta ++ ["error" .= show e])
 
 logException_ :: String -> SomeException -> IO ()
 logException_ msg e = logException msg e []
@@ -89,27 +94,30 @@ log_ level message = log level message []
 logT :: Level -> String -> [Pair] -> IO a -> IO a
 logT level msg meta action = do
   (duration, result) <- timeItT action
-  log level msg
-    (meta ++ [ "duration" .= (round (duration * 1000) :: Millisecond) ])
+  log
+    level
+    msg
+    (meta ++ ["duration" .= (round (duration * 1000) :: Millisecond)])
   return result
 
 log :: Level -> String -> [Pair] -> IO ()
 log level message meta = do
-    now <- getCurrentTime
+  now <- getCurrentTime
     -- Force to UTF8 to avoid the dreaded `<stdout>: commitAndReleaseBuffer:
     -- invalid argument` error when the locale is improperly configured and
     -- a non-ASCII character is output:
     -- Source: https://github.com/blitzcode/hue-dashboard/blob/800710d81324835d90b6dde25a28de4493ef2b92/Trace.hs#L61-L69
-    hSetEncoding (handle level) utf8
-    TIO.hPutStrLn (handle level) $ line now <> "\n"
+  hSetEncoding (handle level) utf8
+  TIO.hPutStrLn (handle level) $ line now <> "\n"
   where
-    line time = encodeLogLine . object $
+    line time =
+      encodeLogLine . object $
       [ "time" .= time
       , "type" .= ("app" :: Text)
       , "level" .= show level
       , "message" .= message
-      ] ++ meta
-
+      ] ++
+      meta
     handle Error = stderr
     handle _     = stdout
 
@@ -121,21 +129,10 @@ encodeLogLine = removeNewlines . lenientDecodeUtf8 . BL.toStrict . prettyEncode
 
 -- JSON
 prettyEncodeConfig :: Config
-prettyEncodeConfig = defConfig
-  { confIndent = Spaces 0
-  , confCompare = keyCompare
-  }
+prettyEncodeConfig = defConfig {confIndent = Spaces 0, confCompare = keyCompare}
 
 keyCompare :: Text -> Text -> Ordering
 keyCompare = keyOrder keyOrdering `mappend` comparing T.length
 
 keyOrdering :: [Text]
-keyOrdering =
-  [ "time"
-  , "type"
-  , "level"
-  , "message"
-  , "req"
-  , "res"
-  , "worker"
-  ]
+keyOrdering = ["time", "type", "level", "message", "req", "res", "worker"]

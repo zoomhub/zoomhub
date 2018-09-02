@@ -2,7 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-deprecations #-}
 
-module ZoomHub.Log.RequestLogger (formatAsJSON) where
+module ZoomHub.Log.RequestLogger
+  ( formatAsJSON
+  ) where
 
 import qualified Blaze.ByteString.Builder             as BB
 import           Data.Aeson                           (ToJSON, Value (String),
@@ -22,7 +24,7 @@ import           Data.Word                            (Word32)
 import           Network.HTTP.Types                   as H
 import           Network.Socket                       (PortNumber,
                                                        SockAddr (..))
-import           Network.Wai                          (Request, RequestBodyLength (KnownLength, ChunkedBody),
+import           Network.Wai                          (Request, RequestBodyLength (ChunkedBody, KnownLength),
                                                        httpVersion, queryString,
                                                        rawPathInfo, remoteHost,
                                                        requestBodyLength,
@@ -37,21 +39,23 @@ import           ZoomHub.Utils                        (lenientDecodeUtf8)
 
 formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =
-  toLogStr (encodeLogLine $
-    object
-      [ "type" .= ("access" :: Text)
-      , "req" .= requestToJSON duration req reqBody
-      , "res" .=
-      object
-        [ "status" .= statusCode status
-        , "size" .= responseSize
-        , "body" .=
-          if statusCode status >= 400
-            then Just . lenientDecodeUtf8 . BB.toByteString $ response
-            else Nothing
-        ]
-      , "time" .= lenientDecodeUtf8 date
-      ]) <> "\n"
+  toLogStr
+    (encodeLogLine $
+     object
+       [ "type" .= ("access" :: Text)
+       , "req" .= requestToJSON duration req reqBody
+       , "res" .=
+         object
+           [ "status" .= statusCode status
+           , "size" .= responseSize
+           , "body" .=
+             if statusCode status >= 400
+               then Just . lenientDecodeUtf8 . BB.toByteString $ response
+               else Nothing
+           ]
+       , "time" .= lenientDecodeUtf8 date
+       ]) <>
+  "\n"
 
 word32ToHostAddress :: Word32 -> Text
 word32ToHostAddress =
@@ -76,26 +80,17 @@ requestToJSON duration req reqBody =
   where
     rationalToDouble :: Rational -> Double
     rationalToDouble = fromRational
-
     toMilliseconds :: NominalDiffTime -> Double
-    toMilliseconds d = readAsDouble . printf "%.2f" . rationalToDouble $
-      toRational d * 1000
+    toMilliseconds d =
+      readAsDouble . printf "%.2f" . rationalToDouble $ toRational d * 1000
 
 sockToJSON :: SockAddr -> Value
 sockToJSON (SockAddrInet pn ha) =
-  object
-    [ "port" .= portToJSON pn
-    , "hostAddress" .= word32ToHostAddress ha
-    ]
+  object ["port" .= portToJSON pn, "hostAddress" .= word32ToHostAddress ha]
 sockToJSON (SockAddrInet6 pn _ ha _) =
-  object
-    [ "port" .= portToJSON pn
-    , "hostAddress" .= ha
-    ]
-sockToJSON (SockAddrUnix sock) =
-  object [ "unix" .= sock ]
-sockToJSON (SockAddrCan i) =
-  object [ "can" .= i ]
+  object ["port" .= portToJSON pn, "hostAddress" .= ha]
+sockToJSON (SockAddrUnix sock) = object ["unix" .= sock]
+sockToJSON (SockAddrCan i) = object ["can" .= i]
 
 toObject :: ToJSON a => [(Text, a)] -> Value
 toObject = toJSON . HM.fromList
@@ -105,16 +100,15 @@ queryItemToJSON (name, maybeValue) =
   (lenientDecodeUtf8 name, fmap (String . lenientDecodeUtf8) maybeValue)
 
 requestHeadersToJSON :: RequestHeaders -> Value
-requestHeadersToJSON = toObject . map hToJ where
+requestHeadersToJSON = toObject . map hToJ
   -- Redact cookies
-  hToJ ("Cookie", _) = ("Cookie" :: Text, "<redacted>" :: Text)
-  hToJ hd = headerToJSON hd
+  where
+    hToJ ("Cookie", _) = ("Cookie" :: Text, "<redacted>" :: Text)
+    hToJ hd            = headerToJSON hd
 
 headerToJSON :: Header -> (Text, Text)
 headerToJSON (headerName, header) =
-  ( lenientDecodeUtf8 . original $ headerName
-  , lenientDecodeUtf8 header
-  )
+  (lenientDecodeUtf8 . original $ headerName, lenientDecodeUtf8 header)
 
 portToJSON :: PortNumber -> Value
 portToJSON = toJSON . toInteger
@@ -124,5 +118,5 @@ httpVersionToJSON (HttpVersion major minor) =
   String $ T.pack (show major) <> "." <> T.pack (show minor)
 
 requestBodyLengthToJSON :: RequestBodyLength -> Value
-requestBodyLengthToJSON ChunkedBody = String "Unknown"
+requestBodyLengthToJSON ChunkedBody     = String "Unknown"
 requestBodyLengthToJSON (KnownLength l) = toJSON l

@@ -6,8 +6,9 @@ module ZoomHub.API.Types.Callback
 import qualified Data.Text as T
 import           Servant   (FromHttpApiData (..))
 
-
-newtype Callback = Callback { unCallback :: String } deriving (Eq, Show)
+newtype Callback = Callback
+  { unCallback :: String
+  } deriving (Eq, Show)
 
 -- TODO: Disallow invalid JavaScript identifiers:
 instance FromHttpApiData Callback where

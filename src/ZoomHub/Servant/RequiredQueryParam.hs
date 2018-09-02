@@ -30,29 +30,24 @@ import           Servant.Server.Internal.RoutingApplication (DelayedIO,
 import           Servant.Server.Internal.ServantErr         (err400)
 import           Web.HttpApiData                            (parseQueryParam)
 
+data RequiredQueryParam (sym :: Symbol) a
+  deriving (Typeable)
 
-data RequiredQueryParam (sym :: Symbol) a deriving Typeable
-
-instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
-  => HasServer (RequiredQueryParam sym a :> api) context where
-
-  type ServerT (RequiredQueryParam sym a :> api) m =
-    a -> ServerT api m
-
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
-
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context) =>
+         HasServer (RequiredQueryParam sym a :> api) context where
+  type ServerT (RequiredQueryParam sym a :> api) m = a -> ServerT api m
+  hoistServerWithContext _ pc nt s =
+    hoistServerWithContext (Proxy :: Proxy api) pc nt . s
   route Proxy context subserver =
     let querytext req = parseQueryText $ rawQueryString req
         paramname = cs $ symbolVal (Proxy :: Proxy sym)
-
         parseParam :: Request -> DelayedIO a
-        parseParam req = case mev of
-          Just (Right x) -> return x
-          _              -> delayedFail err400 -- Skip to next handler if param not present
+        parseParam req =
+          case mev of
+            Just (Right x) -> return x
+            _              -> delayedFail err400 -- Skip to next handler if param not present
           where
             mev :: Maybe (Either T.Text a)
             mev = fmap parseQueryParam $ join $ lookup paramname $ querytext req
-
         delayed = addParameterCheck subserver . withRequest $ parseParam
-
-    in route (Proxy :: Proxy api) context delayed
+     in route (Proxy :: Proxy api) context delayed

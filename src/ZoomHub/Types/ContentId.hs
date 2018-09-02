@@ -31,11 +31,10 @@ import           GHC.Generics                     (Generic)
 import           Servant                          (FromHttpApiData,
                                                    parseUrlPiece)
 
-
-
 -- TODO: Use record syntax, i.e. `ContentId { unId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
-newtype ContentId = ContentId String
+newtype ContentId =
+  ContentId String
   deriving (Eq, Generic, Show)
 
 unId :: ContentId -> String
@@ -48,13 +47,15 @@ fromInteger encode intId = fromString $ encode intId
 fromString :: String -> ContentId
 fromString s
   | isValid s = ContentId s
-  | otherwise = error $ "Invalid content ID '" ++ s ++ "'." ++
-    " Valid characters: " ++ intersperse ',' validChars ++ "."
+  | otherwise =
+    error $
+    "Invalid content ID '" ++
+    s ++ "'." ++ " Valid characters: " ++ intersperse ',' validChars ++ "."
 
 -- NOTE: Duplicated from `hashids`: https://git.io/vgpT4
 -- TODO: Use this for `hashids` initialization.
 validChars :: String
-validChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']
+validChars = ['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9']
 
 validCharsSet :: Set Char
 validCharsSet = Set.fromList validChars
@@ -67,13 +68,15 @@ instance FromHttpApiData ContentId where
   parseUrlPiece t
     | isValid s = Right . fromString $ s
     | otherwise = Left "Invalid content ID"
-    where s = T.unpack t
+    where
+      s = T.unpack t
 
 -- JSON
 instance ToJSON ContentId where
-   toJSON = genericToJSON $ aesonPrefix camelCase
+  toJSON = genericToJSON $ aesonPrefix camelCase
+
 instance FromJSON ContentId where
-   parseJSON = genericParseJSON $ aesonPrefix camelCase
+  parseJSON = genericParseJSON $ aesonPrefix camelCase
 
 -- SQLite
 instance ToField ContentId where
@@ -82,6 +85,6 @@ instance ToField ContentId where
 instance FromField ContentId where
   fromField f@(Field (SQLText t) _) =
     case parseUrlPiece t of
-      Right r  -> Ok r
-      Left _ -> returnError ConversionFailed f "Invalid content ID"
+      Right r -> Ok r
+      Left _  -> returnError ConversionFailed f "Invalid content ID"
   fromField f = returnError ConversionFailed f "Invalid content ID"

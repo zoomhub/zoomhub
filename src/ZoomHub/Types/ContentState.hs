@@ -12,15 +12,19 @@ import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 
-data ContentState = Initialized | Active | CompletedSuccess | CompletedFailure
+data ContentState
+  = Initialized
+  | Active
+  | CompletedSuccess
+  | CompletedFailure
   deriving (Eq, Show)
 
 fromString :: String -> Maybe ContentState
-fromString "initialized" = Just Initialized
-fromString "active" = Just Active
+fromString "initialized"       = Just Initialized
+fromString "active"            = Just Active
 fromString "completed:success" = Just CompletedSuccess
 fromString "completed:failure" = Just CompletedFailure
-fromString _ = Nothing
+fromString _                   = Nothing
 
 instance ToField ContentState where
   toField Initialized      = SQLText "initialized"
