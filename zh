@@ -26,13 +26,7 @@ lint)
     stack exec hlint src
     ;;
 format)
-    git diff-files --quiet
-    HAS_GIT_UNSTAGED_CHANGES=$?
-    if [[ "$HAS_GIT_UNSTAGED_CHANGES" != "0" ]] ; then
-        echo 'Commit all changes to Git before running `./zh lint`'
-        exit 1
-    fi
-    git ls-files | grep --invert 'vendor/' | grep '.hs$' | xargs stylish-haskell --inplace
+    stack exec hfmt -- --write-sources
     ;;
 ops)
     case "$2" in
