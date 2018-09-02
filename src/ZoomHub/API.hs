@@ -18,9 +18,8 @@ import           Network.URI                          (URI,
 import           Network.Wai                          (Application)
 import           Network.Wai.Middleware.Cors          (simpleCors)
 import           Servant                              ((:<|>) (..), (:>),
-                                                       Capture, Get,
-                                                       Handler, JSON,
-                                                       QueryParam, Raw,
+                                                       Capture, Get, Handler,
+                                                       JSON, QueryParam, Raw,
                                                        ServantErr, Server,
                                                        err301, errHeaders,
                                                        serve)
