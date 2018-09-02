@@ -26,11 +26,11 @@ import           Opaleye                              (Column,
                                                        pgStrictText,
                                                        queryRunnerColumnDefault)
 
-data ContentState =
-  Initialized |
-  Active |
-  CompletedSuccess |
-  CompletedFailure
+data ContentState
+  = Initialized
+  | Active
+  | CompletedSuccess
+  | CompletedFailure
   deriving (Eq, Show)
 
 fromString :: String -> Maybe ContentState
