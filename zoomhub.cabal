@@ -92,6 +92,7 @@ library
     , exceptions
     , fast-logger
     , filepath
+    , generics-sop
     , hashids
     , http-api-data
     , http-client
@@ -118,6 +119,7 @@ library
     , servant-server
     , split
     , sqlite-simple
+    , squeal-postgresql
     , stm
     , string-conversions
     , temporary
@@ -126,6 +128,7 @@ library
     , time-units
     , timeit
     , transformers
+    , transformers-base
     , unix
     , unordered-containers
     , utf8-string
