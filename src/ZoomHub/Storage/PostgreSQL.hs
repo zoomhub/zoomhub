@@ -329,7 +329,7 @@ restrictContentState state = proc stateColumn ->
 
 -- Manipulation: Content
 runInsertContent :: PGS.Connection -> Content -> IO Int64
-runInsertContent conn content =  runInsert conn contentTable (contentToRow content)
+runInsertContent conn content = runInsert conn contentTable (contentToRow content)
 
 -- Query: Image
 imageQuery :: Query ImageRowReadWrite
