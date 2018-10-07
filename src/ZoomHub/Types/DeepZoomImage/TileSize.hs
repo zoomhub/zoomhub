@@ -1,3 +1,7 @@
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications      #-}
+
 module ZoomHub.Types.DeepZoomImage.TileSize
   ( TileSize(..)
   , fromString
@@ -8,12 +12,16 @@ import           Prelude                          hiding (fromInteger)
 
 import           Data.Aeson                       (ToJSON, Value (Number),
                                                    toJSON)
+import           Data.Int                         (Int32)
+import           Data.Maybe                       (fromJust)
 import           Database.SQLite.Simple           (SQLData (SQLInteger))
 import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
                                                    fromField, returnError)
 import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
+import           Squeal.PostgreSQL                (FromValue (..),
+                                                   PGType (PGint4))
 
 data TileSize = TileSize254 | TileSize256 | TileSize1024
   deriving (Bounded, Enum, Eq)
@@ -53,3 +61,10 @@ instance FromField TileSize where
   fromField (Field (SQLInteger 1024) _) = Ok TileSize1024
   fromField f =
     returnError ConversionFailed f "invalid Deep Zoom image tile size"
+
+instance FromValue 'PGint4 TileSize where
+  -- TODO: What if database value is not a valid?
+  fromValue = convert <$> fromValue @'PGint4
+    where
+      convert :: Int32 -> TileSize
+      convert = fromJust . fromInteger . fromIntegral

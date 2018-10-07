@@ -48,8 +48,8 @@ import           Opaleye                              (Column, PGText,
                                                        queryRunnerColumnDefault)
 import           Servant                              (FromHttpApiData,
                                                        parseUrlPiece)
-import Squeal.PostgreSQL (FromValue(..), PGType(PGtext))
-
+import           Squeal.PostgreSQL                    (FromValue (..),
+                                                       PGType (PGtext))
 
 -- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:

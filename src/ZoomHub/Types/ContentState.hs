@@ -11,8 +11,8 @@ module ZoomHub.Types.ContentState
   , toColumn
   ) where
 
+import           Data.Maybe                           (fromJust)
 import           Data.Profunctor.Product.Default      (Default, def)
-import Data.Maybe (fromJust)
 import           Data.Text                            (Text)
 import qualified Database.PostgreSQL.Simple.FromField as PGS
 import           Database.SQLite.Simple               (SQLData (SQLText))
@@ -28,7 +28,8 @@ import           Opaleye                              (Column,
                                                        fieldQueryRunnerColumn,
                                                        pgStrictText,
                                                        queryRunnerColumnDefault)
-import Squeal.PostgreSQL (FromValue(..), PGType(PGtext))
+import           Squeal.PostgreSQL                    (FromValue (..),
+                                                       PGType (PGtext))
 
 data ContentState
   = Initialized

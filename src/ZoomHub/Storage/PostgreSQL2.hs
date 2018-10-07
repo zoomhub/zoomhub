@@ -18,6 +18,10 @@ import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentState (ContentState)
 import ZoomHub.Types.ContentType (ContentType)
 import ZoomHub.Types.ContentURI (ContentURI)
+import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
+import ZoomHub.Types.DeepZoomImage.TileFormat(TileFormat)
+import ZoomHub.Types.DeepZoomImage.TileOverlap(TileOverlap)
+import ZoomHub.Types.DeepZoomImage.TileSize(TileSize)
 
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
@@ -40,6 +44,7 @@ import Squeal.PostgreSQL
   , as
   , firstRow
   , from
+  , leftOuterJoin
   , param
   , runQueryParams
   , select
@@ -47,7 +52,6 @@ import Squeal.PostgreSQL
   , where_
   )
 import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
-
 
 -- Public API
 
@@ -57,58 +61,70 @@ getById cid = runPoolPQ session
   where
     session :: (MonadBaseControl IO m, MonadPQ Schema m) => m (Maybe Content)
     session = do
-      contentResult <- runQueryParams selectContentByHashId (Only $ unContentId cid)
-      contentRow <- firstRow contentResult
+      result <- runQueryParams selectContentByHashId (Only $ unContentId cid)
+      contentRow <- firstRow result
       return (rowToContent <$> contentRow)
 
-    selectContentByHashId ::
-      Query
-      Schema
-      '[ 'NotNull 'PGtext ]
-      '[ "crId" ::: 'NotNull 'PGint8
-      , "crHashId" ::: 'NotNull 'PGtext
-      , "crTypeId" ::: 'NotNull 'PGint4
-      , "crURL" ::: 'NotNull 'PGtext
-      , "crState" ::: 'NotNull 'PGtext
-      , "crInitializedAt" ::: 'NotNull 'PGtimestamptz
-      , "crActiveAt" ::: 'Null 'PGtimestamptz
-      , "crCompletedAt" ::: 'Null 'PGtimestamptz
-      , "crTitle" ::: 'Null 'PGtext
-      , "crAttributionText" ::: 'Null 'PGtext
-      , "crAttributionLink" ::: 'Null 'PGtext
-      , "crMIME" ::: 'Null 'PGtext
-      , "crSize" ::: 'Null 'PGint8
-      , "crError" ::: 'Null 'PGtext
-      , "crProgress" ::: 'NotNull 'PGfloat8
-      , "crAbuseLevelId" ::: 'NotNull 'PGint4
-      , "crNumAbuseReports" ::: 'NotNull 'PGint8
-      , "crNumViews" ::: 'NotNull 'PGint8
-      , "crVersion" ::: 'NotNull 'PGint4
-      ]
-    selectContentByHashId = select
-      (#c ! #id `as` #crId :*
-      #c ! #hash_id `as` #crHashId :*
-      #c ! #type_id `as` #crTypeId :*
-      #c ! #url `as` #crURL :*
-      #c ! #state `as` #crState :*
-      #c ! #initialized_at `as` #crInitializedAt :*
-      #c ! #active_at `as` #crActiveAt :*
-      #c ! #completed_at `as` #crCompletedAt :*
-      #c ! #title `as` #crTitle :*
-      #c ! #attribution_text `as` #crAttributionText :*
-      #c ! #attribution_link `as` #crAttributionLink :*
-      #c ! #mime `as` #crMIME :*
-      #c ! #size `as` #crSize :*
-      #c ! #error `as` #crError :*
-      #c ! #progress `as` #crProgress :*
-      #c ! #abuse_level_id `as` #crAbuseLevelId :*
-      #c ! #num_abuse_reports `as` #crNumAbuseReports :*
-      #c ! #num_views `as` #crNumViews :*
-      #c ! #version `as` #crVersion
-      )
-      ( from (table (#content `as` #c))
-        & where_ ((#c ! #hash_id) .== param @1)
-      )
+selectContentByHashId ::
+  Query
+  Schema
+  '[ 'NotNull 'PGtext ]
+  '[ "crId" ::: 'NotNull 'PGint8
+  , "crHashId" ::: 'NotNull 'PGtext
+  , "crTypeId" ::: 'NotNull 'PGint4
+  , "crURL" ::: 'NotNull 'PGtext
+  , "crState" ::: 'NotNull 'PGtext
+  , "crInitializedAt" ::: 'NotNull 'PGtimestamptz
+  , "crActiveAt" ::: 'Null 'PGtimestamptz
+  , "crCompletedAt" ::: 'Null 'PGtimestamptz
+  , "crTitle" ::: 'Null 'PGtext
+  , "crAttributionText" ::: 'Null 'PGtext
+  , "crAttributionLink" ::: 'Null 'PGtext
+  , "crMIME" ::: 'Null 'PGtext
+  , "crSize" ::: 'Null 'PGint8
+  , "crError" ::: 'Null 'PGtext
+  , "crProgress" ::: 'NotNull 'PGfloat8
+  , "crAbuseLevelId" ::: 'NotNull 'PGint4
+  , "crNumAbuseReports" ::: 'NotNull 'PGint8
+  , "crNumViews" ::: 'NotNull 'PGint8
+  , "crVersion" ::: 'NotNull 'PGint4
+  , "irWidth" ::: 'Null 'PGint8
+  , "irHeight" ::: 'Null 'PGint8
+  , "irTileSize" ::: 'Null 'PGint4
+  , "irTileOverlap" ::: 'Null 'PGint4
+  , "irTileFormat" ::: 'Null 'PGtext
+  ]
+selectContentByHashId = select
+  ( #c ! #id `as` #crId :*
+    #c ! #hash_id `as` #crHashId :*
+    #c ! #type_id `as` #crTypeId :*
+    #c ! #url `as` #crURL :*
+    #c ! #state `as` #crState :*
+    #c ! #initialized_at `as` #crInitializedAt :*
+    #c ! #active_at `as` #crActiveAt :*
+    #c ! #completed_at `as` #crCompletedAt :*
+    #c ! #title `as` #crTitle :*
+    #c ! #attribution_text `as` #crAttributionText :*
+    #c ! #attribution_link `as` #crAttributionLink :*
+    #c ! #mime `as` #crMIME :*
+    #c ! #size `as` #crSize :*
+    #c ! #error `as` #crError :*
+    #c ! #progress `as` #crProgress :*
+    #c ! #abuse_level_id `as` #crAbuseLevelId :*
+    #c ! #num_abuse_reports `as` #crNumAbuseReports :*
+    #c ! #num_views `as` #crNumViews :*
+    #c ! #version `as` #crVersion :*
+    #i ! #width `as` #irWidth :*
+    #i ! #height `as` #irHeight :*
+    #i ! #tile_size `as` #irTileSize :*
+    #i ! #tile_overlap `as` #irTileOverlap :*
+    #i ! #tile_format `as` #irTileFormat
+  )
+  ( from (table (#content `as` #c)
+         & leftOuterJoin (table (#image `as` #i)) (#c ! #id .== #i ! #content_id)
+         )
+    & where_ ((#c ! #hash_id) .== param @1)
+  )
 
 data ContentRow = ContentRow
   { crId :: Int64
@@ -130,6 +146,11 @@ data ContentRow = ContentRow
   , crNumAbuseReports :: Int64
   , crNumViews :: Int64
   , crVersion :: Int32
+  , irWidth :: Maybe Int64
+  , irHeight :: Maybe Int64
+  , irTileSize :: Maybe TileSize
+  , irTileOverlap :: Maybe TileOverlap
+  , irTileFormat :: Maybe TileFormat
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
@@ -148,5 +169,12 @@ rowToContent cr = Content
     , contentProgress = crProgress cr
     , contentNumViews = fromIntegral (crNumViews cr)
     , contentError = crError cr
-    , contentDZI = Nothing
+    , contentDZI = mDZI
     }
+  where
+    mDZI = mkDeepZoomImage <$>
+      (fromIntegral <$> irWidth cr) <*>
+      (fromIntegral <$> irHeight cr) <*>
+      (irTileSize cr) <*>
+      (irTileOverlap cr) <*>
+      (irTileFormat cr)

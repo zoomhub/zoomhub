@@ -8,36 +8,36 @@ module ZoomHub.Storage.PostgreSQL.Schema
     ) where
 
 import Squeal.PostgreSQL
-    ( (:::)
-    , (:=>)
-    , ColumnConstraint(Def, NoDef)
-    , Definition
-    , NP((:*))
-    , NullityType(NotNull, Null)
-    , PGType(PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
-    , SchemumType(Table)
-    , TableConstraint(ForeignKey, PrimaryKey)
-    , (&)
-    , (>>>)
-    , as
-    , bigint
-    , bigserial
-    , createTable
-    , currentTimestamp
-    , default_
-    , doublePrecision
-    , int
-    , int4
-    , notNullable
-    , nullable
-    , foreignKey
-    , OnDeleteClause(OnDeleteCascade)
-    , OnUpdateClause(OnUpdateCascade)
-    , bool
-    , primaryKey
-    , text
-    , timestampWithTimeZone
-    )
+  ( (:::)
+  , (:=>)
+  , ColumnConstraint(Def, NoDef)
+  , Definition
+  , NP((:*))
+  , NullityType(NotNull, Null)
+  , OnDeleteClause(OnDeleteCascade)
+  , OnUpdateClause(OnUpdateCascade)
+  , PGType(PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
+  , SchemumType(Table)
+  , TableConstraint(ForeignKey, PrimaryKey)
+  , (&)
+  , (>>>)
+  , as
+  , bigint
+  , bigserial
+  , bool
+  , createTable
+  , currentTimestamp
+  , default_
+  , doublePrecision
+  , foreignKey
+  , int
+  , int4
+  , notNullable
+  , nullable
+  , primaryKey
+  , text
+  , timestampWithTimeZone
+  )
 
 type Schema =
     '[ ContentTable

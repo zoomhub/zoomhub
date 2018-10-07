@@ -10,8 +10,8 @@ module ZoomHub.Types.ContentType
   , ContentTypeColumn
   ) where
 
+import           Data.Int                             (Int32)
 import           Data.Profunctor.Product.Default      (Default, def)
-import Data.Int (Int32)
 import qualified Database.PostgreSQL.Simple.FromField as PGS
 import           Database.SQLite.Simple               (SQLData (SQLInteger))
 import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
@@ -26,7 +26,8 @@ import           Opaleye                              (Column,
                                                        fieldQueryRunnerColumn,
                                                        pgInt4,
                                                        queryRunnerColumnDefault)
-import Squeal.PostgreSQL (FromValue(..), PGType(PGint4))
+import           Squeal.PostgreSQL                    (FromValue (..),
+                                                       PGType (PGint4))
 
 data ContentType =
     Unknown
