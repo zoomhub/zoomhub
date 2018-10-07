@@ -79,4 +79,4 @@ instance Default Constant ContentMIME (Column PGText) where
 -- Squeal / PostgreSQL
 instance FromValue 'PGtext ContentMIME where
   -- TODO: What if database value is not a valid MIME type?
-  fromValue = (ContentMIME . fromJust . parseMIMEType) <$> fromValue @'PGtext
+  fromValue = ContentMIME . fromJust . parseMIMEType <$> fromValue @'PGtext

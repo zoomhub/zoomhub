@@ -371,7 +371,7 @@ nextUnprocessedQuery = first $ proc () -> do
     returnA -< cs
   where
     query :: Query ContentRowRead
-    query = orderBy (mostPopularFirst <> oldestFirst) $ contentQuery
+    query = orderBy (mostPopularFirst <> oldestFirst) contentQuery
 
     first = limit 1
     mostPopularFirst = desc crNumViews
@@ -433,7 +433,7 @@ rowToContent cr = Content
     , contentActiveAt = crActiveAt cr
     , contentCompletedAt = crCompletedAt cr
     , contentMIME = crMIME cr
-    , contentSize = fromIntegral <$> (crSize cr)
+    , contentSize = fromIntegral <$> crSize cr
     , contentProgress = crProgress cr
     , contentNumViews = fromIntegral (crNumViews cr)
     , contentError = crError cr
@@ -442,7 +442,7 @@ rowToContent cr = Content
 
 rowWithImageToContent :: ContentRow -> NullableImageRow -> Content
 rowWithImageToContent cr nir =
-    let content = (rowToContent cr) in
+    let content = rowToContent cr in
     content { contentDZI = mDZI }
   where
     mDZIWidth = fromIntegral <$> imageWidth nir
@@ -454,7 +454,7 @@ rowWithImageToContent cr nir =
     mDZI = mkDeepZoomImage <$> mDZIWidth <*> mDZIHeight <*> mDZITileSize <*>
       mDZITileOverlap <*> mDZITileFormat
 
-getBy :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
+getBy :: QueryArr (ContentRowRead, NullableImageRowReadWrite) () ->
          PGS.Connection ->
          IO (Maybe Content)
 getBy predicate conn = do
@@ -472,7 +472,7 @@ getBy predicate conn = do
     eqContentId :: (ContentRowRead, ImageRowReadWrite) -> Column PGBool
     eqContentId (cr, ir) = crId cr .=== imageContentId ir
 
-getBy' :: (QueryArr (ContentRowRead, NullableImageRowReadWrite) ()) ->
+getBy' :: QueryArr (ContentRowRead, NullableImageRowReadWrite) () ->
           PGS.Connection ->
           IO (Maybe Content)
 getBy' predicate conn = do
@@ -499,12 +499,12 @@ getBy' predicate conn = do
       | otherwise       = 50
 
 hashIdRestriction :: ContentId ->
-                     (QueryArr (ContentRowRead, NullableImageRowReadWrite) ())
+                     QueryArr (ContentRowRead, NullableImageRowReadWrite) ()
 hashIdRestriction cHashId = proc (cr, _) ->
   restrictContentId cHashId -< crHashId cr
 
 urlRestriction :: ContentURI ->
-                  (QueryArr (ContentRowRead, NullableImageRowReadWrite) ())
+                  QueryArr (ContentRowRead, NullableImageRowReadWrite) ()
 urlRestriction url = proc (cr, _) ->
   restrictContentURL url -< crURL cr
 
@@ -518,7 +518,7 @@ type Op a columnsW columnsR =
   (columnsR -> Column PGBool) ->
   a
 
-incrNumViewsQuery :: (Op a ContentRowWrite ContentRowRead) ->
+incrNumViewsQuery :: Op a ContentRowWrite ContentRowRead ->
                      ContentId ->
                      Integer ->
                      a
@@ -542,11 +542,11 @@ incrNumViewsQuery op cHashId numViewsSampleRate = op contentTable
     , crVersion = Just $ crVersion cr
 
     -- Actual update:
-    , crNumViews = Just $ (crNumViews cr) + fromIntegral numViewsSampleRate
+    , crNumViews = Just $ crNumViews cr + fromIntegral numViewsSampleRate
     }
   )
   -- TODO: Could we reuse `restrictContentId` here?
-  (\cr -> (crHashId cr) .=== ContentId.toColumn cHashId)
+  (\cr -> crHashId cr .=== ContentId.toColumn cHashId)
 
 runIncrNumViewsQuery :: PGS.Connection -> ContentId -> Integer -> IO Int64
 runIncrNumViewsQuery conn = incrNumViewsQuery (runUpdate conn)
@@ -556,7 +556,7 @@ printIncrNumViewsQuery cHashId numViewsSampleRate =
   putStrLn $ incrNumViewsQuery arrangeUpdateSql cHashId numViewsSampleRate
 
 -- `content_id_seq`
-data ContentSeqRow' tLastValue = ContentSeqRow
+newtype ContentSeqRow' tLastValue = ContentSeqRow
   { csLastValue :: tLastValue
   } deriving Show
 

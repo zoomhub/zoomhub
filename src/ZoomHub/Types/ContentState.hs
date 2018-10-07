@@ -89,4 +89,4 @@ instance Default Constant ContentState ContentStateColumn where
 -- Squeal / PostgreSQL
 instance FromValue 'PGtext ContentState where
   -- TODO: What if database value is not a valid?
-  fromValue = (fromJust . fromString) <$> fromValue @'PGtext
+  fromValue = fromJust . fromString <$> fromValue @'PGtext

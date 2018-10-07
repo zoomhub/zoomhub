@@ -54,9 +54,7 @@ instance FromField TileFormat where
   fromField f =
     returnError ConversionFailed f "invalid Deep Zoom image tile format"
 
-
-
 -- Squeal / PostgreSQL
 instance FromValue 'PGtext TileFormat where
   -- TODO: What if database value is not a valid?
-  fromValue = (fromJust . fromString) <$> fromValue @'PGtext
+  fromValue = fromJust . fromString <$> fromValue @'PGtext

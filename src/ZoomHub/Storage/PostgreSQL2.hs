@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
@@ -133,14 +132,14 @@ data ContentRow = ContentRow
   , crURL :: ContentURI
   , crState :: ContentState
   , crInitializedAt :: UTCTime
-  , crActiveAt :: (Maybe UTCTime)
-  , crCompletedAt :: (Maybe UTCTime)
-  , crTitle :: (Maybe Text)
-  , crAttributionText :: (Maybe Text)
-  , crAttributionLink :: (Maybe Text)
-  , crMIME :: (Maybe ContentMIME)
-  , crSize :: (Maybe Int64)
-  , crError :: (Maybe Text)
+  , crActiveAt :: Maybe UTCTime
+  , crCompletedAt :: Maybe UTCTime
+  , crTitle :: Maybe Text
+  , crAttributionText :: Maybe Text
+  , crAttributionLink :: Maybe Text
+  , crMIME :: Maybe ContentMIME
+  , crSize :: Maybe Int64
+  , crError :: Maybe Text
   , crProgress :: Double
   , crAbuseLevelId :: Int32
   , crNumAbuseReports :: Int64
@@ -165,7 +164,7 @@ rowToContent cr = Content
     , contentActiveAt = crActiveAt cr
     , contentCompletedAt = crCompletedAt cr
     , contentMIME = crMIME cr
-    , contentSize = fromIntegral <$> (crSize cr)
+    , contentSize = fromIntegral <$> crSize cr
     , contentProgress = crProgress cr
     , contentNumViews = fromIntegral (crNumViews cr)
     , contentError = crError cr
@@ -175,6 +174,6 @@ rowToContent cr = Content
     mDZI = mkDeepZoomImage <$>
       (fromIntegral <$> irWidth cr) <*>
       (fromIntegral <$> irHeight cr) <*>
-      (irTileSize cr) <*>
-      (irTileOverlap cr) <*>
-      (irTileFormat cr)
+      irTileSize cr <*>
+      irTileOverlap cr <*>
+      irTileFormat cr
