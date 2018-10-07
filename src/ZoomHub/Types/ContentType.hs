@@ -1,7 +1,9 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module ZoomHub.Types.ContentType
   ( ContentType(..)
@@ -9,6 +11,7 @@ module ZoomHub.Types.ContentType
   ) where
 
 import           Data.Profunctor.Product.Default      (Default, def)
+import Data.Int (Int32)
 import qualified Database.PostgreSQL.Simple.FromField as PGS
 import           Database.SQLite.Simple               (SQLData (SQLInteger))
 import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
@@ -23,6 +26,8 @@ import           Opaleye                              (Column,
                                                        fieldQueryRunnerColumn,
                                                        pgInt4,
                                                        queryRunnerColumnDefault)
+import Squeal.PostgreSQL (FromValue(..), PGType(PGint4))
+
 data ContentType =
     Unknown
   | Image
@@ -95,3 +100,20 @@ instance Default Constant ContentType ContentTypeColumn where
       def' PDF10            = pgInt4 10
       def' PDF11            = pgInt4 11
       def' WebpageThumbnail = pgInt4 14
+
+-- Squeal / PostgreSQL
+fromPGint4 :: Int32 -> ContentType
+fromPGint4 0 = Unknown
+fromPGint4 1 = Image
+fromPGint4 2 = Webpage
+fromPGint4 3 = FlickrImage
+fromPGint4 6 = GigaPan
+fromPGint4 7 = Zoomify
+fromPGint4 10 = PDF10
+fromPGint4 11 = PDF11
+fromPGint4 14 = WebpageThumbnail
+fromPGint4 t = error $ "Invalid ContentType: " <> show t
+
+instance FromValue 'PGint4 ContentType where
+  -- TODO: What if database value is not a valid?
+  fromValue = fromPGint4 <$> fromValue @'PGint4

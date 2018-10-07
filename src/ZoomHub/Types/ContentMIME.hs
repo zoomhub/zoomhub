@@ -1,6 +1,8 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module ZoomHub.Types.ContentMIME
   ( ContentMIME
@@ -14,6 +16,7 @@ import           Codec.MIME.Parse                     (parseMIMEType)
 import           Codec.MIME.Type                      (Type, showType)
 import           Data.Aeson                           (ToJSON, Value (String),
                                                        toJSON)
+import Data.Maybe (fromJust)
 import           Data.Profunctor.Product.Default      (Default, def)
 import           Data.Profunctor.Product.TH           (makeAdaptorAndInstance)
 import qualified Data.Text                            as T
@@ -31,6 +34,7 @@ import           Opaleye                              (Column,
                                                        fieldQueryRunnerColumn,
                                                        pgStrictText,
                                                        queryRunnerColumnDefault)
+import Squeal.PostgreSQL (FromValue(..), PGType(PGtext))
 
 
 newtype ContentMIME' a = ContentMIME { unContentMIME :: a } deriving (Eq, Show)
@@ -71,3 +75,8 @@ instance QueryRunnerColumnDefault PGText ContentMIME where
 
 instance Default Constant ContentMIME (Column PGText) where
   def = Constant $ pgStrictText . toText
+
+-- Squeal / PostgreSQL
+instance FromValue 'PGtext ContentMIME where
+  -- TODO: What if database value is not a valid MIME type?
+  fromValue = (ContentMIME . fromJust . parseMIMEType) <$> fromValue @'PGtext

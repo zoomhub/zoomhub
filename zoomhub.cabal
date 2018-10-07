@@ -42,6 +42,7 @@ library
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.PostgreSQL
     , ZoomHub.Storage.PostgreSQL.Internal
+    , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Storage.PostgreSQL2
     , ZoomHub.Storage.SQLite
     , ZoomHub.Types.BaseURI

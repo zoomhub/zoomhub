@@ -1,6 +1,8 @@
+{-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module ZoomHub.Types.ContentState
   ( ContentState(..)
@@ -10,6 +12,7 @@ module ZoomHub.Types.ContentState
   ) where
 
 import           Data.Profunctor.Product.Default      (Default, def)
+import Data.Maybe (fromJust)
 import           Data.Text                            (Text)
 import qualified Database.PostgreSQL.Simple.FromField as PGS
 import           Database.SQLite.Simple               (SQLData (SQLText))
@@ -25,6 +28,7 @@ import           Opaleye                              (Column,
                                                        fieldQueryRunnerColumn,
                                                        pgStrictText,
                                                        queryRunnerColumnDefault)
+import Squeal.PostgreSQL (FromValue(..), PGType(PGtext))
 
 data ContentState
   = Initialized
@@ -80,3 +84,8 @@ instance QueryRunnerColumnDefault PGText ContentState where
 
 instance Default Constant ContentState ContentStateColumn where
   def = Constant toColumn
+
+-- Squeal / PostgreSQL
+instance FromValue 'PGtext ContentState where
+  -- TODO: What if database value is not a valid?
+  fromValue = (fromJust . fromString) <$> fromValue @'PGtext

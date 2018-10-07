@@ -1,7 +1,9 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module ZoomHub.Types.ContentURI
   ( ContentURI
@@ -32,6 +34,7 @@ import           Opaleye                              (Column, PGText,
                                                        queryRunnerColumnDefault)
 import           Servant                              (FromHttpApiData,
                                                        parseUrlPiece)
+import Squeal.PostgreSQL (FromValue(..), PGType(PGtext))
 
 newtype ContentURI' a = ContentURI { unContentURI :: a }
   deriving (Eq)
@@ -83,3 +86,7 @@ instance PGS.FromField ContentURI where
 
 instance QueryRunnerColumnDefault PGText ContentURI where
   queryRunnerColumnDefault = fieldQueryRunnerColumn
+
+-- Squeal / PostgreSQL
+instance FromValue 'PGtext ContentURI where
+  fromValue = ContentURI <$> fromValue @'PGtext

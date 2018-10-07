@@ -1,9 +1,11 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module ZoomHub.Types.ContentId
   ( ContentId
@@ -46,6 +48,7 @@ import           Opaleye                              (Column, PGText,
                                                        queryRunnerColumnDefault)
 import           Servant                              (FromHttpApiData,
                                                        parseUrlPiece)
+import Squeal.PostgreSQL (FromValue(..), PGType(PGtext))
 
 
 -- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
@@ -125,3 +128,7 @@ instance PGS.FromField ContentId where
 
 instance QueryRunnerColumnDefault PGText ContentId where
   queryRunnerColumnDefault = fieldQueryRunnerColumn
+
+-- Squeal / PostgreSQL
+instance FromValue 'PGtext ContentId where
+  fromValue = ContentId <$> fromValue @'PGtext
