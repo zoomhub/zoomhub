@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 
 module ZoomHub.Storage.PostgreSQL2
@@ -13,45 +14,48 @@ module ZoomHub.Storage.PostgreSQL2
 import ZoomHub.Storage.PostgreSQL.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId, unContentId)
+import ZoomHub.Types.ContentMIME (ContentMIME)
+import ZoomHub.Types.ContentState (ContentState)
 import ZoomHub.Types.ContentType (ContentType)
 import ZoomHub.Types.ContentURI (ContentURI)
-import ZoomHub.Types.ContentState (ContentState)
-import ZoomHub.Types.ContentMIME (ContentMIME)
 
+import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL
-    ( (:::)
-    , NP((:*))
-    , NullityType(NotNull, Null)
-    , PGType(PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
-    , PQ
-    , Query
-    , Only(..)
-    , (!)
-    , (&)
-    , (.==)
-    , as
-    , from
-    , runQueryParams
-    , select
-    , table
-    , withConnection
-    , where_
-    , param
-    , firstRow
-    )
+  ( (:::)
+  , Connection
+  , MonadPQ
+  , NP((:*))
+  , NullityType(NotNull, Null)
+  , Only(..)
+  , PGType(PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
+  , Query
+  , (!)
+  , (&)
+  , (.==)
+  , as
+  , firstRow
+  , from
+  , param
+  , runQueryParams
+  , select
+  , table
+  , where_
+  )
+import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
+
 
 -- Public API
 
 -- Reads
-getById :: ContentId -> IO (Maybe Content)
-getById cid = withConnection "host=localhost port=5432 dbname=zoomhub_development" $ session
+getById :: MonadBaseControl IO m => ContentId -> Pool (SOP.K Connection Schema) -> m (Maybe Content)
+getById cid = runPoolPQ session
   where
-    session :: PQ Schema Schema IO (Maybe Content)
+    session :: (MonadBaseControl IO m, MonadPQ Schema m) => m (Maybe Content)
     session = do
       contentResult <- runQueryParams selectContentByHashId (Only $ unContentId cid)
       contentRow <- firstRow contentResult

@@ -105,6 +105,7 @@ library
     , lens-aeson
     , lucid
     , mime
+    , monad-control
     , mtl
     , network
     , network-uri
