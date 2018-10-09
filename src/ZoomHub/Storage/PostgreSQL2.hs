@@ -1,13 +1,18 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
+
+-- Simplify Squeal query type signatures
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module ZoomHub.Storage.PostgreSQL2
   ( -- ** Read operations
     getById
+  , selectContentBy
   ) where
 
 import ZoomHub.Storage.PostgreSQL.Schema (Schema)
@@ -18,9 +23,9 @@ import ZoomHub.Types.ContentState (ContentState)
 import ZoomHub.Types.ContentType (ContentType)
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
-import ZoomHub.Types.DeepZoomImage.TileFormat(TileFormat)
-import ZoomHub.Types.DeepZoomImage.TileOverlap(TileOverlap)
-import ZoomHub.Types.DeepZoomImage.TileSize(TileSize)
+import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
+import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
+import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
@@ -30,7 +35,8 @@ import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL
   ( (:::)
-  , Connection
+  , Condition
+  , Grouping(Ungrouped)
   , MonadPQ
   , NP((:*))
   , NullityType(NotNull, Null)
@@ -50,21 +56,18 @@ import Squeal.PostgreSQL
   , table
   , where_
   )
-import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
 
 -- Public API
 
 -- Reads
-getById :: MonadBaseControl IO m => ContentId -> Pool (SOP.K Connection Schema) -> m (Maybe Content)
-getById cid = runPoolPQ session
-  where
-    session :: (MonadBaseControl IO m, MonadPQ Schema m) => m (Maybe Content)
-    session = do
-      result <- runQueryParams selectContentByHashId (Only $ unContentId cid)
-      contentRow <- firstRow result
-      return (rowToContent <$> contentRow)
+getById :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentId -> m (Maybe Content)
+getById cid = do
+  result <- runQueryParams (selectContentBy ((#content ! #hash_id) .== param @1)) (Only $ unContentId cid)
+  contentRow <- firstRow result
+  pure (rowToContent <$> contentRow)
 
-selectContentByHashId ::
+selectContentBy ::
+  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
   Query
   Schema
   '[ 'NotNull 'PGtext ]
@@ -93,36 +96,36 @@ selectContentByHashId ::
   , "irTileOverlap" ::: 'Null 'PGint4
   , "irTileFormat" ::: 'Null 'PGtext
   ]
-selectContentByHashId = select
-  ( #c ! #id `as` #crId :*
-    #c ! #hash_id `as` #crHashId :*
-    #c ! #type_id `as` #crTypeId :*
-    #c ! #url `as` #crURL :*
-    #c ! #state `as` #crState :*
-    #c ! #initialized_at `as` #crInitializedAt :*
-    #c ! #active_at `as` #crActiveAt :*
-    #c ! #completed_at `as` #crCompletedAt :*
-    #c ! #title `as` #crTitle :*
-    #c ! #attribution_text `as` #crAttributionText :*
-    #c ! #attribution_link `as` #crAttributionLink :*
-    #c ! #mime `as` #crMIME :*
-    #c ! #size `as` #crSize :*
-    #c ! #error `as` #crError :*
-    #c ! #progress `as` #crProgress :*
-    #c ! #abuse_level_id `as` #crAbuseLevelId :*
-    #c ! #num_abuse_reports `as` #crNumAbuseReports :*
-    #c ! #num_views `as` #crNumViews :*
-    #c ! #version `as` #crVersion :*
-    #i ! #width `as` #irWidth :*
-    #i ! #height `as` #irHeight :*
-    #i ! #tile_size `as` #irTileSize :*
-    #i ! #tile_overlap `as` #irTileOverlap :*
-    #i ! #tile_format `as` #irTileFormat
+selectContentBy condition = select
+  ( #content ! #id `as` #crId :*
+    #content ! #hash_id `as` #crHashId :*
+    #content ! #type_id `as` #crTypeId :*
+    #content ! #url `as` #crURL :*
+    #content ! #state `as` #crState :*
+    #content ! #initialized_at `as` #crInitializedAt :*
+    #content ! #active_at `as` #crActiveAt :*
+    #content ! #completed_at `as` #crCompletedAt :*
+    #content ! #title `as` #crTitle :*
+    #content ! #attribution_text `as` #crAttributionText :*
+    #content ! #attribution_link `as` #crAttributionLink :*
+    #content ! #mime `as` #crMIME :*
+    #content ! #size `as` #crSize :*
+    #content ! #error `as` #crError :*
+    #content ! #progress `as` #crProgress :*
+    #content ! #abuse_level_id `as` #crAbuseLevelId :*
+    #content ! #num_abuse_reports `as` #crNumAbuseReports :*
+    #content ! #num_views `as` #crNumViews :*
+    #content ! #version `as` #crVersion :*
+    #image ! #width `as` #irWidth :*
+    #image ! #height `as` #irHeight :*
+    #image ! #tile_size `as` #irTileSize :*
+    #image ! #tile_overlap `as` #irTileOverlap :*
+    #image ! #tile_format `as` #irTileFormat
   )
-  ( from (table (#content `as` #c)
-         & leftOuterJoin (table (#image `as` #i)) (#c ! #id .== #i ! #content_id)
+  ( from (table #content
+         & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
          )
-    & where_ ((#c ! #hash_id) .== param @1)
+    & where_ condition
   )
 
 data ContentRow = ContentRow
