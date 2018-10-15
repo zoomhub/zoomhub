@@ -129,7 +129,7 @@ createTables =
       (int4 & notNullable & default_ 0) `as` #abuse_level_id :*
       (bigint & notNullable & default_ 0) `as` #num_abuse_reports :*
       (bigint & notNullable & default_ 0) `as` #num_views :*
-      (int & notNullable & default_ 0) `as` #version
+      (int & notNullable & default_ 4) `as` #version
     )
     ( primaryKey #id `as` #pk_content )
   >>>
