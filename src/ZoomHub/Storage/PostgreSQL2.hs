@@ -70,7 +70,7 @@ import Squeal.PostgreSQL
 -- Reads
 getById :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentId -> m (Maybe Content)
 getById cid = do
-  result <- runQueryParams (selectContentBy ((#content ! #hash_id) .== param @1)) (Only $ unContentId cid)
+  result <- runQueryParams (selectContentBy ((#content ! #hash_id) .== param @1)) (Only cid)
   contentRow <- firstRow result
   pure (rowToContent <$> contentRow)
 
