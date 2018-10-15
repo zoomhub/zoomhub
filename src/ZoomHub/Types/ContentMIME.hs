@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module ZoomHub.Types.ContentMIME
   ( ContentMIME
@@ -34,7 +35,7 @@ import           Opaleye                              (Column,
                                                        fieldQueryRunnerColumn,
                                                        pgStrictText,
                                                        queryRunnerColumnDefault)
-import Squeal.PostgreSQL (FromValue(..), PGType(PGtext))
+import Squeal.PostgreSQL (FromValue(..), PGType(PGtext), PG, ToParam(..))
 
 
 newtype ContentMIME' a = ContentMIME { unContentMIME :: a } deriving (Eq, Show)
@@ -77,6 +78,11 @@ instance Default Constant ContentMIME (Column PGText) where
   def = Constant $ pgStrictText . toText
 
 -- Squeal / PostgreSQL
+type instance PG ContentMIME = 'PGtext
+instance ToParam ContentMIME 'PGtext where
+  toParam = toParam . toText
+
+
 instance FromValue 'PGtext ContentMIME where
   -- TODO: What if database value is not a valid MIME type?
   fromValue = ContentMIME . fromJust . parseMIMEType <$> fromValue @'PGtext

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module ZoomHub.Types.Content
   ( Content(..)
   , mkContent

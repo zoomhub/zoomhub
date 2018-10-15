@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module ZoomHub.Types.ContentType
   ( ContentType(..)
@@ -26,7 +27,7 @@ import           Opaleye                              (Column,
                                                        pgInt4,
                                                        queryRunnerColumnDefault)
 import           Squeal.PostgreSQL                    (FromValue (..),
-                                                       PGType (PGint4))
+                                                       PGType (PGint4), PG, ToParam(..))
 
 data ContentType =
     Unknown
@@ -113,6 +114,18 @@ fromPGint4 10 = PDF10
 fromPGint4 11 = PDF11
 fromPGint4 14 = WebpageThumbnail
 fromPGint4 t = error $ "Invalid ContentType: " <> show t
+
+type instance PG ContentType = 'PGint4
+instance ToParam ContentType 'PGint4 where
+  toParam Unknown = toParam (0 :: Int32)
+  toParam Image = toParam (1 :: Int32)
+  toParam Webpage = toParam (2 :: Int32)
+  toParam FlickrImage = toParam (3 :: Int32)
+  toParam GigaPan = toParam (6 :: Int32)
+  toParam Zoomify = toParam (7 :: Int32)
+  toParam PDF10 = toParam (10 :: Int32)
+  toParam PDF11 = toParam (11 :: Int32)
+  toParam WebpageThumbnail = toParam (14 :: Int32)
 
 instance FromValue 'PGint4 ContentType where
   -- TODO: What if database value is not a valid?

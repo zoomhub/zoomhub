@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module ZoomHub.Types.ContentState
   ( ContentState(..)
@@ -28,8 +29,8 @@ import           Opaleye                              (Column,
                                                        fieldQueryRunnerColumn,
                                                        pgStrictText,
                                                        queryRunnerColumnDefault)
-import           Squeal.PostgreSQL                    (FromValue (..),
-                                                       PGType (PGtext))
+import           Squeal.PostgreSQL                    (FromValue (..), ToParam(..),
+                                                       PGType (PGtext), PG)
 
 data ContentState
   = Initialized
@@ -90,3 +91,10 @@ instance Default Constant ContentState ContentStateColumn where
 instance FromValue 'PGtext ContentState where
   -- TODO: What if database value is not a valid?
   fromValue = fromJust . fromString <$> fromValue @'PGtext
+
+type instance PG ContentState = 'PGtext
+instance ToParam ContentState 'PGtext where
+  toParam Initialized = toParam ("initialized" :: Text)
+  toParam Active = toParam ("active" :: Text)
+  toParam CompletedSuccess = toParam ("completed:success" :: Text)
+  toParam CompletedFailure = toParam ("completed:failure" :: Text)

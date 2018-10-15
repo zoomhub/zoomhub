@@ -1,11 +1,13 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module ZoomHub.Types.ContentId
   ( ContentId
@@ -49,12 +51,13 @@ import           Opaleye                              (Column, PGText,
 import           Servant                              (FromHttpApiData,
                                                        parseUrlPiece)
 import           Squeal.PostgreSQL                    (FromValue (..),
-                                                       PGType (PGtext))
+                                                       PGType (PGtext), PG,
+                                                       ToParam(..))
 
 -- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
 newtype ContentId' a = ContentId a
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Functor, Generic, Show)
 type ContentId = ContentId' String
 
 unContentId :: ContentId -> String
@@ -83,10 +86,6 @@ validCharsSet = Set.fromList validChars
 
 isValid :: String -> Bool
 isValid = all (`Set.member` validCharsSet)
-
--- Functor
-instance Functor ContentId' where
-  fmap f (ContentId a) = ContentId (f a)
 
 -- Text
 instance FromHttpApiData ContentId where
@@ -130,5 +129,9 @@ instance QueryRunnerColumnDefault PGText ContentId where
   queryRunnerColumnDefault = fieldQueryRunnerColumn
 
 -- Squeal / PostgreSQL
+type instance PG ContentId = 'PGtext
+instance ToParam ContentId 'PGtext where
+  toParam = toParam . unContentId
+
 instance FromValue 'PGtext ContentId where
   fromValue = ContentId <$> fromValue @'PGtext
