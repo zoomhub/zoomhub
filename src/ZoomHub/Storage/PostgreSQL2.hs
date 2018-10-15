@@ -13,6 +13,7 @@ module ZoomHub.Storage.PostgreSQL2
   ( -- ** Read operations
     getById
   , selectContentBy
+  , insertContent
   ) where
 
 import ZoomHub.Storage.PostgreSQL.Schema (Schema)
@@ -35,21 +36,28 @@ import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL
   ( (:::)
+  , ColumnValue(Default, Set)
   , Condition
+  , ConflictClause(OnConflictDoRaise)
   , Grouping(Ungrouped)
+  , Manipulation
   , MonadPQ
   , NP((:*))
   , NullityType(NotNull, Null)
   , Only(..)
   , PGType(PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
   , Query
+  , ReturningClause(Returning)
+  , TuplePG
   , (!)
   , (&)
   , (.==)
   , as
   , firstRow
   , from
+  , insertRow
   , leftOuterJoin
+  , null_
   , param
   , runQueryParams
   , select
@@ -180,3 +188,26 @@ rowToContent cr = Content
       irTileSize cr <*>
       irTileOverlap cr <*>
       irTileFormat cr
+
+insertContent :: Manipulation Schema (TuplePG Content) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
+insertContent = insertRow #content
+  ( Default `as` #id :*
+    Set (param @1) `as` #hash_id :*
+    Set (param @2) `as` #type_id :*
+    Set (param @3) `as` #url :*
+    Set (param @4) `as` #state :*
+    Set (param @5) `as` #initialized_at :*
+    Set (param @6) `as` #active_at :*
+    Set (param @7) `as` #completed_at :*
+    Set null_ `as` #title :*
+    Set null_ `as` #attribution_text :*
+    Set null_ `as` #attribution_link :*
+    Set (param @8) `as` #mime :*
+    Set (param @9) `as` #size :*
+    Set (param @12) `as` #error :*
+    Set (param @10) `as` #progress :*
+    Default `as` #abuse_level_id :*
+    Default `as` #num_abuse_reports :*
+    Set (param @11) `as` #num_views :*
+    Default `as` #version
+  ) OnConflictDoRaise (Returning (#id `as` #fromOnly))

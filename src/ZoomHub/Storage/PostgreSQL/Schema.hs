@@ -4,7 +4,9 @@
 
 module ZoomHub.Storage.PostgreSQL.Schema
     ( Schema
-    , createTables
+    -- * Testing
+    , setup
+    , teardown
     ) where
 
 import Squeal.PostgreSQL
@@ -26,6 +28,7 @@ import Squeal.PostgreSQL
   , bigserial
   , bool
   , createTable
+  , dropTable
   , currentTimestamp
   , default_
   , doublePrecision
@@ -108,8 +111,8 @@ type FlickrTable =
          ]
     )
 
-createTables :: Definition '[] Schema
-createTables =
+setup :: Definition '[] Schema
+setup =
   createTable #content
     ( bigserial `as` #id :*
       (text & notNullable) `as` #hash_id :*
@@ -167,3 +170,6 @@ createTables =
       foreignKey #content_id #content #id
       OnDeleteCascade OnUpdateCascade `as` #fk_content_id
     )
+
+teardown :: Definition Schema '[]
+teardown = dropTable #flickr >>> dropTable #image >>> dropTable #content

@@ -160,6 +160,7 @@ test-suite tests
   other-modules:
     ZoomHub.APISpec
     ZoomHub.Storage.PostgreSQLSpec
+    ZoomHub.Storage.PostgreSQL2Spec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
     ZoomHub.Types.DeepZoomImageSpec
@@ -168,9 +169,11 @@ test-suite tests
     , base
     , bytestring
     , data-default
+    , generics-sop
     , hspec == 2.*
     , hspec-wai
     , http-types
+    , monad-control
     , network-uri
     , postgresql-simple
     , QuickCheck
@@ -178,9 +181,11 @@ test-suite tests
     , resource-pool
     , servant-server
     , sqlite-simple
+    , squeal-postgresql
     , text
     , time
     , time-units
     , transformers
+    , transformers-base
     , wai
     , zoomhub
