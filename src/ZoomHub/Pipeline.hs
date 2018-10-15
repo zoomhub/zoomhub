@@ -98,7 +98,7 @@ process workerId raxConfig tempPath content =
 
     return content
       { contentMIME = maybeMIME
-      , contentSize = Just rawSize
+      , contentSize = Just (fromIntegral rawSize)
       , contentDZI = Just dzi
       }
   where

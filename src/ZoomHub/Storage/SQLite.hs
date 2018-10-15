@@ -32,6 +32,7 @@ import           Control.Retry                  (RetryPolicyM, RetryStatus,
                                                  rsIterNumber, rsPreviousDelay)
 import           Data.Aeson                     (object, (.=))
 import           Data.Bool                      (bool)
+import           Data.Int                       (Int64)
 import           Data.Monoid                    ((<>))
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
@@ -296,7 +297,7 @@ getBy' fieldName param dbPath conn = do
       Nothing -> return ()
     return maybeContent
   where
-    sampleRate :: Integer -> Integer
+    sampleRate :: Int64 -> Int64
     sampleRate numViews
       | numViews < 50   = 1
       | numViews < 500  = 10
@@ -384,9 +385,9 @@ data ContentRow = ContentRow
   , crActiveAt       :: Maybe UTCTime
   , crCompletedAt    :: Maybe UTCTime
   , crMIME           :: Maybe ContentMIME
-  , crSize           :: Maybe Integer
+  , crSize           :: Maybe Int64
   , crProgress       :: Double
-  , crNumViews       :: Integer
+  , crNumViews       :: Int64
   , crError          :: Maybe Text
   , crDZIWidth       :: Maybe Integer
   , crDZIHeight      :: Maybe Integer

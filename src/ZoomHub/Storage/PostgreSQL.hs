@@ -414,12 +414,12 @@ contentToRow c = ContentRow
   , crAttributionText = Nothing
   , crAttributionLink = Nothing
   , crMIME = Just . constant $ contentMIME c
-  , crSize = Just . constant $ (fromInteger <$> contentSize c :: Maybe Int64)
+  , crSize = Just . constant $ contentSize c
   , crError = Just . constant $ contentError c
   , crProgress = Just . constant $ contentProgress c
   , crAbuseLevelId = Nothing
   , crNumAbuseReports = Nothing
-  , crNumViews = Just . constant $ (fromInteger . contentNumViews $ c :: Int64)
+  , crNumViews = Just . constant $ contentNumViews c
   , crVersion = Nothing
   }
 
@@ -491,7 +491,7 @@ getBy' predicate conn = do
       Nothing -> return ()
     return maybeContent
   where
-    sampleRate :: Integer -> Integer
+    sampleRate :: Int64 -> Integer
     sampleRate numViews
       | numViews < 50   = 1
       | numViews < 500  = 10
