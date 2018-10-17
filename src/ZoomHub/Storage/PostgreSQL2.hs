@@ -12,21 +12,22 @@
 module ZoomHub.Storage.PostgreSQL2
   ( -- ** Read operations
     getById
+  , create
   , selectContentBy
   , insertContent
   ) where
 
 import ZoomHub.Storage.PostgreSQL.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
-import ZoomHub.Types.ContentId (ContentId, unContentId)
+import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentState (ContentState)
 import ZoomHub.Types.ContentType (ContentType)
 import ZoomHub.Types.ContentURI (ContentURI)
-import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
-import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
-import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
-import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
+-- import ZoomHub.Types.DeepZoomImage (DeepZoomImage(..), mkDeepZoomImage)
+-- import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
+-- import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
+-- import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
@@ -43,11 +44,14 @@ import Squeal.PostgreSQL
   , Manipulation
   , MonadPQ
   , NP((:*))
-  , NullityType(NotNull, Null)
+  -- , NullityType(NotNull, Null)
+  , NullityType(NotNull)
   , Only(..)
-  , PGType(PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
+  -- , PGType(PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
+  , PGType(PGtext)
   , Query
   , ReturningClause(Returning)
+  , RowPG
   , TuplePG
   , (!)
   , (&)
@@ -55,9 +59,12 @@ import Squeal.PostgreSQL
   , as
   , firstRow
   , from
+  , fromOnly
+  , getRow
   , insertRow
-  , leftOuterJoin
-  , null_
+  -- , leftOuterJoin
+  , manipulateParams
+  -- , null_
   , param
   , runQueryParams
   , select
@@ -74,39 +81,20 @@ getById cid = do
   contentRow <- firstRow result
   pure (rowToContent <$> contentRow)
 
+
+create :: (MonadBaseControl IO m, MonadPQ Schema m) => Content -> m ContentId
+create content = do
+  result <- manipulateParams insertContent (contentToRow content)
+  fmap fromOnly . getRow 0 $ result
+
 selectContentBy ::
   Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
   Query
   Schema
   '[ 'NotNull 'PGtext ]
-  '[ "crId" ::: 'NotNull 'PGint8
-  , "crHashId" ::: 'NotNull 'PGtext
-  , "crTypeId" ::: 'NotNull 'PGint4
-  , "crURL" ::: 'NotNull 'PGtext
-  , "crState" ::: 'NotNull 'PGtext
-  , "crInitializedAt" ::: 'NotNull 'PGtimestamptz
-  , "crActiveAt" ::: 'Null 'PGtimestamptz
-  , "crCompletedAt" ::: 'Null 'PGtimestamptz
-  , "crTitle" ::: 'Null 'PGtext
-  , "crAttributionText" ::: 'Null 'PGtext
-  , "crAttributionLink" ::: 'Null 'PGtext
-  , "crMIME" ::: 'Null 'PGtext
-  , "crSize" ::: 'Null 'PGint8
-  , "crError" ::: 'Null 'PGtext
-  , "crProgress" ::: 'NotNull 'PGfloat8
-  , "crAbuseLevelId" ::: 'NotNull 'PGint4
-  , "crNumAbuseReports" ::: 'NotNull 'PGint8
-  , "crNumViews" ::: 'NotNull 'PGint8
-  , "crVersion" ::: 'NotNull 'PGint4
-  , "irWidth" ::: 'Null 'PGint8
-  , "irHeight" ::: 'Null 'PGint8
-  , "irTileSize" ::: 'Null 'PGint4
-  , "irTileOverlap" ::: 'Null 'PGint4
-  , "irTileFormat" ::: 'Null 'PGtext
-  ]
+  (RowPG ContentRow)
 selectContentBy condition = select
-  ( #content ! #id `as` #crId :*
-    #content ! #hash_id `as` #crHashId :*
+  ( #content ! #hash_id `as` #crHashId :*
     #content ! #type_id `as` #crTypeId :*
     #content ! #url `as` #crURL :*
     #content ! #state `as` #crState :*
@@ -123,22 +111,22 @@ selectContentBy condition = select
     #content ! #abuse_level_id `as` #crAbuseLevelId :*
     #content ! #num_abuse_reports `as` #crNumAbuseReports :*
     #content ! #num_views `as` #crNumViews :*
-    #content ! #version `as` #crVersion :*
-    #image ! #width `as` #irWidth :*
-    #image ! #height `as` #irHeight :*
-    #image ! #tile_size `as` #irTileSize :*
-    #image ! #tile_overlap `as` #irTileOverlap :*
-    #image ! #tile_format `as` #irTileFormat
+    #content ! #version `as` #crVersion
+    -- #image ! #width `as` #irWidth :*
+    -- #image ! #height `as` #irHeight :*
+    -- #image ! #tile_size `as` #irTileSize :*
+    -- #image ! #tile_overlap `as` #irTileOverlap :*
+    -- #image ! #tile_format `as` #irTileFormat
   )
   ( from (table #content
-         & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
+        --  & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
          )
     & where_ condition
   )
 
 data ContentRow = ContentRow
-  { crId :: Int64
-  , crHashId :: ContentId
+  { {-crId :: Int64
+  ,-} crHashId :: ContentId
   , crTypeId :: ContentType
   , crURL :: ContentURI
   , crState :: ContentState
@@ -156,11 +144,11 @@ data ContentRow = ContentRow
   , crNumAbuseReports :: Int64
   , crNumViews :: Int64
   , crVersion :: Int32
-  , irWidth :: Maybe Int64
-  , irHeight :: Maybe Int64
-  , irTileSize :: Maybe TileSize
-  , irTileOverlap :: Maybe TileOverlap
-  , irTileFormat :: Maybe TileFormat
+  -- , irWidth :: Maybe Int64
+  -- , irHeight :: Maybe Int64
+  -- , irTileSize :: Maybe TileSize
+  -- , irTileOverlap :: Maybe TileOverlap
+  -- , irTileFormat :: Maybe TileFormat
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
@@ -179,17 +167,46 @@ rowToContent cr = Content
     , contentProgress = crProgress cr
     , contentNumViews = fromIntegral (crNumViews cr)
     , contentError = crError cr
-    , contentDZI = mDZI
+    , contentDZI = Nothing
     }
-  where
-    mDZI = mkDeepZoomImage <$>
-      (fromIntegral <$> irWidth cr) <*>
-      (fromIntegral <$> irHeight cr) <*>
-      irTileSize cr <*>
-      irTileOverlap cr <*>
-      irTileFormat cr
+  -- where
+  --   mDZI = mkDeepZoomImage <$>
+  --     (fromIntegral <$> irWidth cr) <*>
+  --     (fromIntegral <$> irHeight cr) <*>
+  --     irTileSize cr <*>
+  --     irTileOverlap cr <*>
+  --     irTileFormat cr
 
-insertContent :: Manipulation Schema (TuplePG Content) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
+contentToRow :: Content -> ContentRow
+contentToRow c = ContentRow
+    { crHashId = contentId c
+    , crTypeId = contentType c
+    , crURL = contentURL c
+    , crState = contentState c
+    , crInitializedAt = contentInitializedAt c
+    , crActiveAt = contentActiveAt c
+    , crCompletedAt = contentCompletedAt c
+    , crTitle = Nothing
+    , crAttributionText = Nothing
+    , crAttributionLink = Nothing
+    , crMIME = contentMIME c
+    , crSize = contentSize c
+    , crError = contentError c
+    , crProgress = contentProgress c
+    , crAbuseLevelId = 0
+    , crNumAbuseReports = 0
+    , crNumViews = contentNumViews c
+    , crVersion = 4
+    -- , irWidth = (fromIntegral . dziWidth) <$> dzi
+    -- , irHeight = (fromIntegral . dziHeight) <$> dzi
+    -- , irTileSize = dziTileSize <$> dzi
+    -- , irTileOverlap = dziTileOverlap <$> dzi
+    -- , irTileFormat = dziTileFormat <$> dzi
+    }
+  -- where
+  --   dzi = contentDZI c
+
+insertContent :: Manipulation Schema (TuplePG ContentRow) '[ "fromOnly" ::: 'NotNull 'PGtext ]
 insertContent = insertRow #content
   ( Default `as` #id :*
     Set (param @1) `as` #hash_id :*
@@ -199,15 +216,15 @@ insertContent = insertRow #content
     Set (param @5) `as` #initialized_at :*
     Set (param @6) `as` #active_at :*
     Set (param @7) `as` #completed_at :*
-    Set null_ `as` #title :*
-    Set null_ `as` #attribution_text :*
-    Set null_ `as` #attribution_link :*
-    Set (param @8) `as` #mime :*
-    Set (param @9) `as` #size :*
-    Set (param @12) `as` #error :*
-    Set (param @10) `as` #progress :*
-    Default `as` #abuse_level_id :*
-    Default `as` #num_abuse_reports :*
-    Set (param @11) `as` #num_views :*
-    Default `as` #version
-  ) OnConflictDoRaise (Returning (#id `as` #fromOnly))
+    Set (param @8) `as` #title :*
+    Set (param @9) `as` #attribution_text :*
+    Set (param @10) `as` #attribution_link :*
+    Set (param @11) `as` #mime :*
+    Set (param @12) `as` #size :*
+    Set (param @13) `as` #error :*
+    Set (param @14) `as` #progress :*
+    Set (param @15) `as` #abuse_level_id :*
+    Set (param @16) `as` #num_abuse_reports :*
+    Set (param @17) `as` #num_views :*
+    Set (param @18) `as` #version
+  ) OnConflictDoRaise (Returning (#hash_id `as` #fromOnly))
