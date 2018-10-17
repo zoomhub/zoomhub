@@ -14,13 +14,16 @@ module ZoomHub.API.Types.DeepZoomImage
   , mkDeepZoomImage
   ) where
 
-import Data.Aeson (ToJSON, Value(String), genericToJSON, toJSON)
-import Data.Aeson.Casing (aesonPrefix, camelCase)
-import Data.Maybe (fromMaybe)
-import qualified Data.Text as T
-import GHC.Generics (Generic)
-import Network.URI (URI, parseRelativeReference, relativeTo)
-import System.FilePath ((<.>), (</>))
+import           Data.Aeson                   (ToJSON, Value (String),
+                                               genericToJSON, toJSON)
+import           Data.Aeson.Casing            (aesonPrefix, camelCase)
+import           Data.Maybe                   (fromMaybe)
+import qualified Data.Text                    as T
+import           GHC.Generics                 (Generic)
+import qualified Generics.SOP as SOP
+import           Network.URI                  (URI, parseRelativeReference,
+                                               relativeTo)
+import           System.FilePath              ((<.>), (</>))
 
 import           ZoomHub.Types.ContentBaseURI (ContentBaseURI, contentBaseHost,
                                                contentBasePath)
@@ -84,3 +87,7 @@ instance Show DeepZoomImageURI where
 
 instance ToJSON DeepZoomImageURI where
   toJSON = String . T.pack . show . unDeepZoomImageURI
+
+-- PostgreSQL / Squeal
+instance SOP.Generic DeepZoomImage
+instance SOP.HasDatatypeInfo DeepZoomImage
