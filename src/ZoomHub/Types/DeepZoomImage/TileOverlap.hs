@@ -36,17 +36,17 @@ fromInteger 1 = Just TileOverlap1
 fromInteger 0 = Just TileOverlap0
 fromInteger _ = Nothing
 
--- Tile overlap: Show
+-- Show
 instance Show TileOverlap where
   show TileOverlap1 = "1"
   show TileOverlap0 = "0"
 
--- Tile overlap: JSON
+-- JSON
 instance ToJSON TileOverlap where
   toJSON TileOverlap1 = Number 1
   toJSON TileOverlap0 = Number 0
 
--- Tile overlap: SQLite
+-- SQLite
 instance ToField TileOverlap where
   toField TileOverlap1 = SQLInteger 1
   toField TileOverlap0 = SQLInteger 0
