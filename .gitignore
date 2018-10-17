@@ -39,3 +39,6 @@ npm-debug.log
 # DZI
 *.dzi
 *_files/
+
+# VS Code
+/.vscode
