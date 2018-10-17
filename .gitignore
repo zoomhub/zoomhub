@@ -42,3 +42,6 @@ npm-debug.log
 
 # VS Code
 /.vscode
+
+# Vendor: servant
+/vendor/servant/
