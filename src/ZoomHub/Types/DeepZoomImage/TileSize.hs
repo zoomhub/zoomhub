@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module ZoomHub.Types.DeepZoomImage.TileSize
   ( TileSize(..)
@@ -21,7 +22,7 @@ import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 import           Squeal.PostgreSQL                (FromValue (..),
-                                                   PGType (PGint4))
+                                                   PGType (PGint4), ToParam(..), PG)
 
 data TileSize = TileSize254 | TileSize256 | TileSize1024
   deriving (Bounded, Enum, Eq)
@@ -61,6 +62,13 @@ instance FromField TileSize where
   fromField (Field (SQLInteger 1024) _) = Ok TileSize1024
   fromField f =
     returnError ConversionFailed f "invalid Deep Zoom image tile size"
+
+-- PostgreSQL / Squeal
+type instance PG TileSize = 'PGint4
+instance ToParam TileSize 'PGint4 where
+  toParam TileSize254 = toParam (254 :: Int32)
+  toParam TileSize256 = toParam (256 :: Int32)
+  toParam TileSize1024 = toParam (1024 :: Int32)
 
 instance FromValue 'PGint4 TileSize where
   -- TODO: What if database value is not a valid?

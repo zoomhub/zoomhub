@@ -1,7 +1,8 @@
-{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.DeepZoomImage.TileFormat
   ( TileFormat(..)
@@ -12,6 +13,7 @@ module ZoomHub.Types.DeepZoomImage.TileFormat
 import           Data.Aeson                       (ToJSON, Value (String),
                                                    toJSON)
 import           Data.Maybe                       (fromJust)
+import Data.Text (Text)
 import qualified Data.Text                        as T
 import           Database.SQLite.Simple           (SQLData (SQLText))
 import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
@@ -20,7 +22,7 @@ import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 import           Squeal.PostgreSQL                (FromValue (..),
-                                                   PGType (PGtext))
+                                                   PGType (PGtext), PG, ToParam(..))
 
 data TileFormat = JPEG | PNG deriving Eq
 
@@ -58,3 +60,8 @@ instance FromField TileFormat where
 instance FromValue 'PGtext TileFormat where
   -- TODO: What if database value is not a valid?
   fromValue = fromJust . fromString <$> fromValue @'PGtext
+
+type instance PG TileFormat = 'PGtext
+instance ToParam TileFormat 'PGtext where
+  toParam JPEG = toParam ("jpeg" :: Text)
+  toParam PNG = toParam ("png" :: Text)

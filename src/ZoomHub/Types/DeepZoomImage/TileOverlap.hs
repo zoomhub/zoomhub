@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module ZoomHub.Types.DeepZoomImage.TileOverlap
   ( TileOverlap(..)
@@ -21,7 +22,7 @@ import           Database.SQLite.Simple.Internal  (Field (Field))
 import           Database.SQLite.Simple.Ok        (Ok (Ok))
 import           Database.SQLite.Simple.ToField   (ToField, toField)
 import           Squeal.PostgreSQL                (FromValue (..),
-                                                   PGType (PGint4))
+                                                   PGType (PGint4), ToParam(..), PG)
 
 data TileOverlap = TileOverlap0 | TileOverlap1
   deriving (Bounded, Enum, Eq)
@@ -56,6 +57,12 @@ instance FromField TileOverlap where
   fromField (Field (SQLInteger 0) _) = Ok TileOverlap0
   fromField f =
     returnError ConversionFailed f "invalid Deep Zoom image tile overlap"
+
+-- PostgreSQL / Queal
+type instance PG TileOverlap = 'PGint4
+instance ToParam TileOverlap 'PGint4 where
+  toParam TileOverlap1 = toParam (1 :: Int32)
+  toParam TileOverlap0 = toParam (0 :: Int32)
 
 instance FromValue 'PGint4 TileOverlap where
   -- TODO: What if database value is not a valid?
