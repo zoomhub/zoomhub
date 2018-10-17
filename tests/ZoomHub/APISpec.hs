@@ -82,12 +82,12 @@ invalidHTTPMethod =
   , matchHeaders = [plainText]
   }
 
-noNewContent :: ResponseMatcher
-noNewContent =
-  "We are currently not processing new content."
-  { matchStatus = 503
-  , matchHeaders = [plainTextUTF8]
-  }
+-- noNewContent :: ResponseMatcher
+-- noNewContent =
+--   "We are currently not processing new content."
+--   { matchStatus = 503
+--   , matchHeaders = [plainTextUTF8]
+--   }
 
 restRedirect :: ContentId -> ResponseMatcher
 restRedirect cId =
