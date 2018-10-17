@@ -7,6 +7,8 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
+{-# OPTIONS_GHC -Wno-deprecations #-} -- opaleye
+
 module ZoomHub.Storage.PostgreSQL
   (
   -- ** Read operations
