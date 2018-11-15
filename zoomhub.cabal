@@ -44,6 +44,7 @@ library
     , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Storage.PostgreSQL2
+    , ZoomHub.Storage.PostgreSQL2.Internal
     , ZoomHub.Storage.SQLite
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
@@ -161,6 +162,7 @@ test-suite tests
     ZoomHub.APISpec
     ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Storage.PostgreSQL2Spec
+    ZoomHub.Storage.PostgreSQL2.InternalSpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
     ZoomHub.Types.DeepZoomImageSpec
