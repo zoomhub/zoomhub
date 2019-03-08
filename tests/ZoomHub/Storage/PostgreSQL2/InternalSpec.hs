@@ -48,7 +48,7 @@ spec =
   around withDatabaseConnection $
     describe "createImage" $
       it "should create new Deep Zoom image" $ \conn -> do
-        let cid = 1 :: Int64
+        let cid = 6 :: Int64
             image = mkDeepZoomImage 400 300 TileSize254 TileOverlap1 PNG
         initializedAt <- getCurrentTime
         _ <- runPQ (createImage cid initializedAt image) conn
