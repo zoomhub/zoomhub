@@ -56,7 +56,7 @@ import Squeal.PostgreSQL
   , firstRow
   , getRow
   , insertRow
---   , leftOuterJoin
+  , leftOuterJoin
   , manipulateParams
   , param
   , runQueryParams
@@ -102,58 +102,58 @@ selectContentBy ::
   Query
   Schema
   '[ 'NotNull 'PGtext ]
-  (RowPG ContentRow)
+  (RowPG ContentImageRow)
 selectContentBy condition = select
-  ( #content ! #hash_id `as` #crHashId :*
-    #content ! #type_id `as` #crTypeId :*
-    #content ! #url `as` #crURL :*
-    #content ! #state `as` #crState :*
-    #content ! #initialized_at `as` #crInitializedAt :*
-    #content ! #active_at `as` #crActiveAt :*
-    #content ! #completed_at `as` #crCompletedAt :*
-    #content ! #title `as` #crTitle :*
-    #content ! #attribution_text `as` #crAttributionText :*
-    #content ! #attribution_link `as` #crAttributionLink :*
-    #content ! #mime `as` #crMIME :*
-    #content ! #size `as` #crSize :*
-    #content ! #error `as` #crError :*
-    #content ! #progress `as` #crProgress :*
-    #content ! #abuse_level_id `as` #crAbuseLevelId :*
-    #content ! #num_abuse_reports `as` #crNumAbuseReports :*
-    #content ! #num_views `as` #crNumViews :*
-    #content ! #version `as` #crVersion
-    -- #image ! #width `as` #irWidth :*
-    -- #image ! #height `as` #irHeight :*
-    -- #image ! #tile_size `as` #irTileSize :*
-    -- #image ! #tile_overlap `as` #irTileOverlap :*
-    -- #image ! #tile_format `as` #irTileFormat
+  ( #content ! #hash_id `as` #cirHashId :*
+    #content ! #type_id `as` #cirTypeId :*
+    #content ! #url `as` #cirURL :*
+    #content ! #state `as` #cirState :*
+    #content ! #initialized_at `as` #cirInitializedAt :*
+    #content ! #active_at `as` #cirActiveAt :*
+    #content ! #completed_at `as` #cirCompletedAt :*
+    #content ! #title `as` #cirTitle :*
+    #content ! #attribution_text `as` #cirAttributionText :*
+    #content ! #attribution_link `as` #cirAttributionLink :*
+    #content ! #mime `as` #cirMIME :*
+    #content ! #size `as` #cirSize :*
+    #content ! #error `as` #cirError :*
+    #content ! #progress `as` #cirProgress :*
+    #content ! #abuse_level_id `as` #cirAbuseLevelId :*
+    #content ! #num_abuse_reports `as` #cirNumAbuseReports :*
+    #content ! #num_views `as` #cirNumViews :*
+    #content ! #version `as` #cirVersion :*
+    #image ! #width `as` #cirWidth :*
+    #image ! #height `as` #cirHeight :*
+    #image ! #tile_size `as` #cirTileSize :*
+    #image ! #tile_overlap `as` #cirTileOverlap :*
+    #image ! #tile_format `as` #cirTileFormat
   )
   ( from (table #content
-        --  & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
+         & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
          )
     & where_ condition
   )
 
 data ContentRow = ContentRow
   {{- crId :: Int64
-  , -}crHashId :: ContentId
-  , crTypeId :: ContentType
-  , crURL :: ContentURI
-  , crState :: ContentState
-  , crInitializedAt :: UTCTime
-  , crActiveAt :: Maybe UTCTime
-  , crCompletedAt :: Maybe UTCTime
-  , crTitle :: Maybe Text
-  , crAttributionText :: Maybe Text
-  , crAttributionLink :: Maybe Text
-  , crMIME :: Maybe ContentMIME
-  , crSize :: Maybe Int64
-  , crError :: Maybe Text
-  , crProgress :: Double
-  , crAbuseLevelId :: Int32
-  , crNumAbuseReports :: Int64
-  , crNumViews :: Int64
-  , crVersion :: Int32
+  , -}crHashId :: ContentId           -- 1
+  , crTypeId :: ContentType           -- 2
+  , crURL :: ContentURI               -- 3
+  , crState :: ContentState           -- 4
+  , crInitializedAt :: UTCTime        -- 5
+  , crActiveAt :: Maybe UTCTime       -- 6
+  , crCompletedAt :: Maybe UTCTime    -- 7
+  , crTitle :: Maybe Text             -- 8
+  , crAttributionText :: Maybe Text   -- 9
+  , crAttributionLink :: Maybe Text   -- 10
+  , crMIME :: Maybe ContentMIME       -- 11
+  , crSize :: Maybe Int64             -- 12
+  , crError :: Maybe Text             -- 13
+  , crProgress :: Double              -- 14
+  , crAbuseLevelId :: Int32           -- 15
+  , crNumAbuseReports :: Int64        -- 16
+  , crNumViews :: Int64               -- 17
+  , crVersion :: Int32                -- 18
   -- , irWidth :: Maybe Int64
   -- , irHeight :: Maybe Int64
   -- , irTileSize :: Maybe TileSize
@@ -162,6 +162,38 @@ data ContentRow = ContentRow
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
+
+-- TODO: How can we avoid this duplication between `ContentRow`,
+-- `ContentImageRow`, and `ImageRow`?
+data ContentImageRow = ContentImageRow
+  { -- content
+    cirHashId :: ContentId              -- 1
+  , cirTypeId :: ContentType            -- 2
+  , cirURL :: ContentURI                -- 3
+  , cirState :: ContentState            -- 4
+  , cirInitializedAt :: UTCTime         -- 5
+  , cirActiveAt :: Maybe UTCTime        -- 6
+  , cirCompletedAt :: Maybe UTCTime     -- 7
+  , cirTitle :: Maybe Text              -- 8
+  , cirAttributionText :: Maybe Text    -- 9
+  , cirAttributionLink :: Maybe Text    -- 10
+  , cirMIME :: Maybe ContentMIME        -- 11
+  , cirSize :: Maybe Int64              -- 12
+  , cirError :: Maybe Text              -- 13
+  , cirProgress :: Double               -- 14
+  , cirAbuseLevelId :: Int32            -- 15
+  , cirNumAbuseReports :: Int64         -- 16
+  , cirNumViews :: Int64                -- 17
+  , cirVersion :: Int32                 -- 18
+    -- image
+  , cirWidth :: Maybe Int64             -- 19
+  , cirHeight :: Maybe Int64            -- 20
+  , cirTileSize :: Maybe TileSize       -- 21
+  , cirTileOverlap :: Maybe TileOverlap -- 22
+  , cirTileFormat :: Maybe TileFormat   -- 23
+  } deriving (Show, GHC.Generic)
+instance SOP.Generic ContentImageRow
+instance SOP.HasDatatypeInfo ContentImageRow
 
 data ImageRow = ImageRow
   { irContentId :: Int64
@@ -175,29 +207,29 @@ data ImageRow = ImageRow
 instance SOP.Generic ImageRow
 instance SOP.HasDatatypeInfo ImageRow
 
-rowToContent :: ContentRow -> Content
+rowToContent :: ContentImageRow -> Content
 rowToContent cr = Content
-    { contentId = crHashId cr
-    , contentType = crTypeId cr
-    , contentURL = crURL cr
-    , contentState = crState cr
-    , contentInitializedAt = crInitializedAt cr
-    , contentActiveAt = crActiveAt cr
-    , contentCompletedAt = crCompletedAt cr
-    , contentMIME = crMIME cr
-    , contentSize = fromIntegral <$> crSize cr
-    , contentProgress = crProgress cr
-    , contentNumViews = fromIntegral (crNumViews cr)
-    , contentError = crError cr
-    , contentDZI = Nothing
+    { contentId = cirHashId cr
+    , contentType = cirTypeId cr
+    , contentURL = cirURL cr
+    , contentState = cirState cr
+    , contentInitializedAt = cirInitializedAt cr
+    , contentActiveAt = cirActiveAt cr
+    , contentCompletedAt = cirCompletedAt cr
+    , contentMIME = cirMIME cr
+    , contentSize = fromIntegral <$> cirSize cr
+    , contentProgress = cirProgress cr
+    , contentNumViews = fromIntegral (cirNumViews cr)
+    , contentError = cirError cr
+    , contentDZI = mDZI
     }
-  -- where
-  --   mDZI = mkDeepZoomImage <$>
-  --     (fromIntegral <$> irWidth cr) <*>
-  --     (fromIntegral <$> irHeight cr) <*>
-  --     irTileSize cr <*>
-  --     irTileOverlap cr <*>
-  --     irTileFormat cr
+  where
+    mDZI = mkDeepZoomImage <$>
+      (fromIntegral <$> cirWidth cr) <*>
+      (fromIntegral <$> cirHeight cr) <*>
+      cirTileSize cr <*>
+      cirTileOverlap cr <*>
+      cirTileFormat cr
 
 rowToImage :: ImageRow -> DeepZoomImage
 rowToImage ir = mkDeepZoomImage
@@ -227,14 +259,14 @@ contentToRow c = ContentRow
   , crNumAbuseReports = 0
   , crNumViews = contentNumViews c
   , crVersion = 4
-  -- , irWidth = (fromIntegral . dziWidth) <$> dzi
-  -- , irHeight = (fromIntegral . dziHeight) <$> dzi
-  -- , irTileSize = dziTileSize <$> dzi
-  -- , irTileOverlap = dziTileOverlap <$> dzi
-  -- , irTileFormat = dziTileFormat <$> dzi
+  -- , cirWidth = (fromIntegral . dziWidth) <$> dzi
+  -- , cirHeight = (fromIntegral . dziHeight) <$> dzi
+  -- , cirTileSize = dziTileSize <$> dzi
+  -- , cirTileOverlap = dziTileOverlap <$> dzi
+  -- , cirTileFormat = dziTileFormat <$> dzi
   }
--- where
---   dzi = contentDZI c
+  -- where
+  -- dzi = contentDZI c
 
 imageToRow :: Int64 -> DeepZoomImage -> UTCTime -> ImageRow
 imageToRow cid dzi initializedAt = ImageRow
