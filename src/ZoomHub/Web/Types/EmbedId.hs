@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns    #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Web.Types.EmbedId
@@ -6,14 +6,14 @@ module ZoomHub.Web.Types.EmbedId
   , unEmbedId
   ) where
 
-import           Data.Bifunctor          (first)
-import qualified Data.ByteString.Char8   as BC
-import qualified Data.Text               as T
-import           Network.HTTP.Types      (decodePath)
-import           Servant                 (FromHttpApiData, parseUrlPiece)
-import           System.FilePath         (splitExtension)
+import Data.Bifunctor (first)
+import qualified Data.ByteString.Char8 as BC
+import qualified Data.Text as T
+import Network.HTTP.Types (decodePath)
+import Servant (FromHttpApiData, parseUrlPiece)
+import System.FilePath (splitExtension)
 
-import           ZoomHub.Types.ContentId (ContentId)
+import ZoomHub.Types.ContentId (ContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 
 newtype EmbedId = EmbedId { unEmbedId :: ContentId } deriving (Eq, Show)

@@ -1,36 +1,30 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE NamedFieldPuns    #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Types.Embed
   ( Embed(..)
   , mkEmbed
   ) where
 
-import           Data.Aeson                                  (encode)
-import qualified Data.ByteString.Lazy.Char8                  as BLC
-import           Data.List                                   (intercalate)
-import           Data.Maybe                                  (fromJust,
-                                                              fromMaybe)
-import           GHC.Generics                                (Generic)
-import           Network.URI                                 (parseRelativeReference,
-                                                              relativeTo)
+import Data.Aeson (encode)
+import qualified Data.ByteString.Lazy.Char8 as BLC
+import Data.List (intercalate)
+import Data.Maybe (fromJust, fromMaybe)
+import GHC.Generics (Generic)
+import Network.URI (parseRelativeReference, relativeTo)
 
-import           ZoomHub.API.ContentTypes.JavaScript         (ToJS, toJS)
-import           ZoomHub.API.Types.Content                   (Content,
-                                                              contentDzi,
-                                                              contentReady)
-import           ZoomHub.API.Types.DeepZoomImage             (DeepZoomImageURI (..),
-                                                              mkDeepZoomImage)
-import           ZoomHub.Types.BaseURI                       (BaseURI)
-import           ZoomHub.Types.DeepZoomImage                 (TileFormat (PNG), TileOverlap (TileOverlap1), TileSize (TileSize256))
-import           ZoomHub.Types.StaticBaseURI                 (StaticBaseURI,
-                                                              unStaticBaseURI)
-import           ZoomHub.Web.Types.EmbedDimension            (EmbedDimension (..),
-                                                              toCSSValue)
-import           ZoomHub.Web.Types.OpenSeadragonTileSource   (fromDeepZoomImage)
-import           ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
+import ZoomHub.API.ContentTypes.JavaScript (ToJS, toJS)
+import ZoomHub.API.Types.Content (Content, contentDzi, contentReady)
+import ZoomHub.API.Types.DeepZoomImage (DeepZoomImageURI(..), mkDeepZoomImage)
+import ZoomHub.Types.BaseURI (BaseURI)
+import ZoomHub.Types.DeepZoomImage
+  (TileFormat(PNG), TileOverlap(TileOverlap1), TileSize(TileSize256))
+import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
+import ZoomHub.Web.Types.EmbedDimension (EmbedDimension(..), toCSSValue)
+import ZoomHub.Web.Types.OpenSeadragonTileSource (fromDeepZoomImage)
+import ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
 
 
 data Embed = Embed

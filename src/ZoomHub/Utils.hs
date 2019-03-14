@@ -4,11 +4,11 @@ module ZoomHub.Utils
   , lenientDecodeUtf8
   ) where
 
-import           Data.ByteString          (ByteString)
-import           Data.List                (intersperse)
-import           Data.Text                (Text)
-import           Data.Text.Encoding       (decodeUtf8With)
-import           Data.Text.Encoding.Error (lenientDecode)
+import Data.ByteString (ByteString)
+import Data.List (intersperse)
+import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8With)
+import Data.Text.Encoding.Error (lenientDecode)
 
 -- Operators:
 -- See: https://mail.haskell.org/pipermail/libraries/2010-April/013417.html

@@ -5,15 +5,14 @@ module ZoomHub.Web.Static
   ) where
 
 
-import qualified Data.ByteString.Lazy           as BL
-import           Network.HTTP.Types             (status404)
-import           Network.Wai                    (Application, responseLBS)
-import           Network.Wai.Application.Static (defaultFileServerSettings,
-                                                 ss404Handler)
-import           Servant.API.Raw                (Raw)
-import           Servant.Server                 (Server)
-import           Servant.Server.StaticFiles     (serveDirectoryWith)
-import           System.FilePath                (addTrailingPathSeparator)
+import qualified Data.ByteString.Lazy as BL
+import Network.HTTP.Types (status404)
+import Network.Wai (Application, responseLBS)
+import Network.Wai.Application.Static (defaultFileServerSettings, ss404Handler)
+import Servant.API.Raw (Raw)
+import Servant.Server (Server)
+import Servant.Server.StaticFiles (serveDirectoryWith)
+import System.FilePath (addTrailingPathSeparator)
 
 serveDirectory :: BL.ByteString -> FilePath -> Server Raw
 serveDirectory error404 root =

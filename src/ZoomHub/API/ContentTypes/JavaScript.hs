@@ -1,6 +1,6 @@
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.API.ContentTypes.JavaScript
   ( ToJS
@@ -8,14 +8,14 @@ module ZoomHub.API.ContentTypes.JavaScript
   , toJS
   ) where
 
-import           Data.Aeson                 (ToJSON, encode)
+import Data.Aeson (ToJSON, encode)
 import qualified Data.ByteString.Lazy.Char8 as BC
-import           Data.Typeable              (Typeable)
-import           Network.HTTP.Media         ((//), (/:))
-import           Servant.API.ContentTypes   (Accept (..), MimeRender (..))
+import Data.Typeable (Typeable)
+import Network.HTTP.Media ((//), (/:))
+import Servant.API.ContentTypes (Accept(..), MimeRender(..))
 
-import           ZoomHub.API.Types.Callback (unCallback)
-import           ZoomHub.API.Types.JSONP    (JSONP, jsonpBody, jsonpCallback)
+import ZoomHub.API.Types.Callback (unCallback)
+import ZoomHub.API.Types.JSONP (JSONP, jsonpBody, jsonpCallback)
 
 data JavaScript deriving Typeable
 

@@ -7,8 +7,8 @@ module ZoomHub.API.Types.JSONP
   , mkJSONP
   ) where
 
-import           Data.Aeson                 (ToJSON)
-import           ZoomHub.API.Types.Callback
+import Data.Aeson (ToJSON)
+import ZoomHub.API.Types.Callback
 
 data JSONP a = ToJSON a => JSONP
   { jsonpBody     :: a

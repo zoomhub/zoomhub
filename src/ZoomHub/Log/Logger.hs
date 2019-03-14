@@ -17,27 +17,33 @@ module ZoomHub.Log.Logger
   , encodeLogLine
   ) where
 
-import           Prelude                   hiding (log)
+import Prelude hiding (log)
 
-import           Control.Exception         (SomeException)
-import           Data.Aeson                (Value, object, (.=))
-import           Data.Aeson.Encode.Pretty  (Config, Indent (Spaces),
-                                            confCompare, confIndent, defConfig,
-                                            encodePretty', keyOrder)
-import           Data.Aeson.Types          (Pair)
-import qualified Data.ByteString.Lazy      as BL
-import           Data.Monoid               ((<>))
-import           Data.Ord                  (comparing)
-import           Data.Text                 (Text)
-import qualified Data.Text                 as T
-import qualified Data.Text.IO              as TIO
-import           Data.Time.Clock           (getCurrentTime)
-import           Data.Time.Units           (Millisecond)
-import           Data.Time.Units.Instances ()
-import           System.IO                 (hSetEncoding, stderr, stdout, utf8)
-import           System.TimeIt             (timeItT)
+import Control.Exception (SomeException)
+import Data.Aeson (Value, object, (.=))
+import Data.Aeson.Encode.Pretty
+  ( Config
+  , Indent(Spaces)
+  , confCompare
+  , confIndent
+  , defConfig
+  , encodePretty'
+  , keyOrder
+  )
+import Data.Aeson.Types (Pair)
+import qualified Data.ByteString.Lazy as BL
+import Data.Monoid ((<>))
+import Data.Ord (comparing)
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Units (Millisecond)
+import Data.Time.Units.Instances ()
+import System.IO (hSetEncoding, stderr, stdout, utf8)
+import System.TimeIt (timeItT)
 
-import           ZoomHub.Utils             (lenientDecodeUtf8)
+import ZoomHub.Utils (lenientDecodeUtf8)
 
 data Level = Debug | Info | Warning | Error deriving Eq
 

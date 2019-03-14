@@ -5,12 +5,12 @@ module ZoomHub.Types.ContentState
   , fromString
   ) where
 
-import           Database.SQLite.Simple           (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
 
 data ContentState = Initialized | Active | CompletedSuccess | CompletedFailure
   deriving (Eq, Show)

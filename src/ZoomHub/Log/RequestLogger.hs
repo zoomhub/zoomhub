@@ -4,36 +4,38 @@
 
 module ZoomHub.Log.RequestLogger (formatAsJSON) where
 
-import qualified Blaze.ByteString.Builder             as BB
-import           Data.Aeson                           (ToJSON, Value (String),
-                                                       object, toJSON, (.=))
-import qualified Data.ByteString.Char8                as S8
-import           Data.CaseInsensitive                 (original)
-import qualified Data.HashMap.Strict                  as HM
-import           Data.IP                              (fromHostAddress,
-                                                       fromIPv4)
-import           Data.Monoid                          ((<>))
-import           Data.Text                            (Text)
-import qualified Data.Text                            as T
-import           Data.Time                            (NominalDiffTime)
-import           Data.Time.Units                      (Millisecond)
-import           Data.Time.Units.Instances            ()
-import           Data.Word                            (Word32)
-import           Network.HTTP.Types                   as H
-import           Network.Socket                       (PortNumber,
-                                                       SockAddr (..))
-import           Network.Wai                          (Request, RequestBodyLength (KnownLength, ChunkedBody),
-                                                       httpVersion, queryString,
-                                                       rawPathInfo, remoteHost,
-                                                       requestBodyLength,
-                                                       requestHeaders,
-                                                       requestMethod)
-import           Network.Wai.Middleware.RequestLogger (OutputFormatterWithDetails)
-import           System.Log.FastLogger                (toLogStr)
-import           Text.Printf                          (printf)
+import qualified Blaze.ByteString.Builder as BB
+import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
+import qualified Data.ByteString.Char8 as S8
+import Data.CaseInsensitive (original)
+import qualified Data.HashMap.Strict as HM
+import Data.IP (fromHostAddress, fromIPv4)
+import Data.Monoid ((<>))
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Time (NominalDiffTime)
+import Data.Time.Units (Millisecond)
+import Data.Time.Units.Instances ()
+import Data.Word (Word32)
+import Network.HTTP.Types as H
+import Network.Socket (PortNumber, SockAddr(..))
+import Network.Wai
+  ( Request
+  , RequestBodyLength(ChunkedBody, KnownLength)
+  , httpVersion
+  , queryString
+  , rawPathInfo
+  , remoteHost
+  , requestBodyLength
+  , requestHeaders
+  , requestMethod
+  )
+import Network.Wai.Middleware.RequestLogger (OutputFormatterWithDetails)
+import System.Log.FastLogger (toLogStr)
+import Text.Printf (printf)
 
-import           ZoomHub.Log.Logger                   (encodeLogLine)
-import           ZoomHub.Utils                        (lenientDecodeUtf8)
+import ZoomHub.Log.Logger (encodeLogLine)
+import ZoomHub.Utils (lenientDecodeUtf8)
 
 formatAsJSON :: OutputFormatterWithDetails
 formatAsJSON date req status responseSize duration reqBody response =

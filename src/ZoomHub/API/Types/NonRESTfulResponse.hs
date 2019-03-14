@@ -1,5 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.API.Types.NonRESTfulResponse
   ( NonRESTfulResponse
@@ -10,15 +10,21 @@ module ZoomHub.API.Types.NonRESTfulResponse
   , mkNonRESTful503
   ) where
 
-import           Data.Aeson                (ToJSON, object, toJSON, (.=))
-import qualified Data.Text                 as T
-import           Network.HTTP.Types.Status (Status, badRequest400,
-                                            movedPermanently301, notFound404,
-                                            ok200, serviceUnavailable503,
-                                            statusCode, statusMessage)
-import           Network.URI               (URI)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
+import qualified Data.Text as T
+import Network.HTTP.Types.Status
+  ( Status
+  , badRequest400
+  , movedPermanently301
+  , notFound404
+  , ok200
+  , serviceUnavailable503
+  , statusCode
+  , statusMessage
+  )
+import Network.URI (URI)
 
-import           ZoomHub.Utils             (lenientDecodeUtf8)
+import ZoomHub.Utils (lenientDecodeUtf8)
 
 data NonRESTfulResponse a = ToJSON a => NonRESTfulResponse
   { nrrStatus           :: Status

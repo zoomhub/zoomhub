@@ -1,34 +1,30 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module ZoomHub.Servant.RequiredQueryParam
   ( RequiredQueryParam
   ) where
 
-import           Control.Monad                              (join)
-import           Data.Proxy                                 (Proxy (Proxy))
-import           Data.String.Conversions                    (cs)
-import           Data.Text                                  as T
-import           Data.Typeable                              (Typeable)
-import           GHC.TypeLits                               (KnownSymbol,
-                                                             Symbol, symbolVal)
-import           Network.HTTP.Types                         (parseQueryText)
-import           Network.Wai                                (Request,
-                                                             rawQueryString)
-import           Servant                                    (FromHttpApiData)
-import           Servant.API                                ((:>))
-import           Servant.Server.Internal                    (HasServer, ServerT, hoistServerWithContext,
-                                                             route)
-import           Servant.Server.Internal.RoutingApplication (DelayedIO,
-                                                             addParameterCheck,
-                                                             delayedFail,
-                                                             withRequest)
-import           Servant.Server.Internal.ServantErr         (err400)
-import           Web.HttpApiData                            (parseQueryParam)
+import Control.Monad (join)
+import Data.Proxy (Proxy(Proxy))
+import Data.String.Conversions (cs)
+import Data.Text as T
+import Data.Typeable (Typeable)
+import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
+import Network.HTTP.Types (parseQueryText)
+import Network.Wai (Request, rawQueryString)
+import Servant (FromHttpApiData)
+import Servant.API ((:>))
+import Servant.Server.Internal
+  (HasServer, ServerT, hoistServerWithContext, route)
+import Servant.Server.Internal.RoutingApplication
+  (DelayedIO, addParameterCheck, delayedFail, withRequest)
+import Servant.Server.Internal.ServantErr (err400)
+import Web.HttpApiData (parseQueryParam)
 
 
 data RequiredQueryParam (sym :: Symbol) a deriving Typeable

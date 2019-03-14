@@ -1,28 +1,30 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module ZoomHub.Servant.RawCapture
   ( RawCapture
   ) where
 
 
-import           Data.Proxy                                 (Proxy (Proxy))
-import           Data.Typeable                              (Typeable)
-import           GHC.TypeLits                               (KnownSymbol,
-                                                             Symbol)
-import           Servant                                    (FromHttpApiData)
-import           Servant.API                                ((:>))
-import           Servant.Server.Internal                    (HasServer, Router' (RawCaptureRouter),
-                                                             ServerT, hoistServerWithContext,
-                                                             route)
-import           Servant.Server.Internal.RoutingApplication (addCapture,
-                                                             delayedFail)
-import           Servant.Server.Internal.ServantErr         (err400)
-import           Web.HttpApiData                            (parseUrlPieceMaybe)
+import Data.Proxy (Proxy(Proxy))
+import Data.Typeable (Typeable)
+import GHC.TypeLits (KnownSymbol, Symbol)
+import Servant (FromHttpApiData)
+import Servant.API ((:>))
+import Servant.Server.Internal
+  ( HasServer
+  , Router'(RawCaptureRouter)
+  , ServerT
+  , hoistServerWithContext
+  , route
+  )
+import Servant.Server.Internal.RoutingApplication (addCapture, delayedFail)
+import Servant.Server.Internal.ServantErr (err400)
+import Web.HttpApiData (parseUrlPieceMaybe)
 
 
 data RawCapture (sym :: Symbol) (a :: *) deriving (Typeable)

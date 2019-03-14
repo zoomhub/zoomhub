@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage
@@ -17,22 +17,20 @@ module ZoomHub.Types.DeepZoomImage
   ) where
 
 
-import           Data.Aeson                       (ToJSON,
-                                                   Value (Number, String),
-                                                   genericToJSON, toJSON)
-import           Data.Aeson.Casing                (aesonPrefix, camelCase)
-import qualified Data.Text                        as T
-import           Database.SQLite.Simple           (SQLData (SQLText, SQLInteger))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
-import           GHC.Generics                     (Generic)
-import           Text.Read                        (readMaybe)
-import           Text.XML.Light                   (QName (QName))
-import           Text.XML.Light.Input             (parseXMLDoc)
-import           Text.XML.Light.Proc              (findAttr, findElement)
+import Data.Aeson (ToJSON, Value(Number, String), genericToJSON, toJSON)
+import Data.Aeson.Casing (aesonPrefix, camelCase)
+import qualified Data.Text as T
+import Database.SQLite.Simple (SQLData(SQLInteger, SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import GHC.Generics (Generic)
+import Text.Read (readMaybe)
+import Text.XML.Light (QName(QName))
+import Text.XML.Light.Input (parseXMLDoc)
+import Text.XML.Light.Proc (findAttr, findElement)
 
 data DeepZoomImage = DeepZoomImage
   { dziWidth       :: Integer

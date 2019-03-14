@@ -3,17 +3,16 @@ module ZoomHub.Types.ContentMIME
   , unContentMIME
   ) where
 
-import           Codec.MIME.Parse                 (parseMIMEType)
-import           Codec.MIME.Type                  (Type, showType)
-import           Data.Aeson                       (ToJSON, Value (String),
-                                                   toJSON)
-import qualified Data.Text                        as T
-import           Database.SQLite.Simple           (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
+import Codec.MIME.Parse (parseMIMEType)
+import Codec.MIME.Type (Type, showType)
+import Data.Aeson (ToJSON, Value(String), toJSON)
+import qualified Data.Text as T
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
 
 
 newtype ContentMIME = ContentMIME { unContentMIME :: Type } deriving (Eq, Show)

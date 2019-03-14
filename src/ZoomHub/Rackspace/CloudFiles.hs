@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Rackspace.CloudFiles
@@ -20,37 +20,51 @@ module ZoomHub.Rackspace.CloudFiles
   ) where
 
 
-import qualified Codec.MIME.Type               as MIME
-import           Control.Exception             (tryJust)
-import           Control.Lens                  (each, filtered, (&), (.~), (^.),
-                                                (^..), (^?))
-import           Control.Monad                 (guard)
-import           Control.Monad.Catch           (Handler)
-import           Control.Monad.IO.Class        (MonadIO)
-import           Control.Retry                 (RetryPolicyM, RetryStatus,
-                                                capDelay, fullJitterBackoff,
-                                                limitRetries, logRetries,
-                                                recovering)
-import           Data.Aeson                    (ToJSON, Value (String), object,
-                                                toJSON, (.=))
-import           Data.Aeson.Lens               (key, _Array, _Object, _String)
-import qualified Data.ByteString.Char8         as BC
-import qualified Data.ByteString.Lazy          as BL
-import           Data.List                     (intercalate, isPrefixOf)
-import           Data.Monoid                   ((<>))
-import           Data.Text                     (Text)
-import qualified Data.Text                     as T
-import           Data.Time.Units               (Second, toMicroseconds)
-import           Network.HTTP.Client           (HttpException (HttpExceptionRequest), HttpExceptionContent (ConnectionFailure, StatusCodeException))
-import qualified Network.HTTP.Client           as HC hiding (responseBody)
-import           Network.HTTP.Client.Instances ()
-import           Network.HTTP.Types            (notFound404)
-import           Network.Wreq                  (Options, Status, defaults,
-                                                getWith, header, post, putWith,
-                                                responseBody, responseStatus)
-import           System.Envy                   (Var, fromVar, toVar)
+import qualified Codec.MIME.Type as MIME
+import Control.Exception (tryJust)
+import Control.Lens (each, filtered, (&), (.~), (^.), (^..), (^?))
+import Control.Monad (guard)
+import Control.Monad.Catch (Handler)
+import Control.Monad.IO.Class (MonadIO)
+import Control.Retry
+  ( RetryPolicyM
+  , RetryStatus
+  , capDelay
+  , fullJitterBackoff
+  , limitRetries
+  , logRetries
+  , recovering
+  )
+import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
+import Data.Aeson.Lens (key, _Array, _Object, _String)
+import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Lazy as BL
+import Data.List (intercalate, isPrefixOf)
+import Data.Monoid ((<>))
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Time.Units (Second, toMicroseconds)
+import Network.HTTP.Client
+  ( HttpException(HttpExceptionRequest)
+  , HttpExceptionContent(ConnectionFailure, StatusCodeException)
+  )
+import qualified Network.HTTP.Client as HC hiding (responseBody)
+import Network.HTTP.Client.Instances ()
+import Network.HTTP.Types (notFound404)
+import Network.Wreq
+  ( Options
+  , Status
+  , defaults
+  , getWith
+  , header
+  , post
+  , putWith
+  , responseBody
+  , responseStatus
+  )
+import System.Envy (Var, fromVar, toVar)
 
-import           ZoomHub.Log.Logger            (logWarning)
+import ZoomHub.Log.Logger (logWarning)
 
 -- Types
 data Credentials = Credentials

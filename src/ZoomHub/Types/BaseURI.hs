@@ -3,9 +3,9 @@ module ZoomHub.Types.BaseURI
   , unBaseURI
   ) where
 
-import           Data.Aeson  (ToJSON, Value (String), toJSON)
-import qualified Data.Text   as T
-import           Network.URI (URI)
+import Data.Aeson (ToJSON, Value(String), toJSON)
+import qualified Data.Text as T
+import Network.URI (URI)
 
 newtype BaseURI = BaseURI { unBaseURI :: URI } deriving Eq
 

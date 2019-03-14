@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Types.ContentBaseURI
   ( ContentBaseURI
@@ -8,8 +8,8 @@ module ZoomHub.Types.ContentBaseURI
   , mkContentBaseURI
   ) where
 
-import           Data.Aeson  (ToJSON, object, toJSON, (.=))
-import           Network.URI (URI, uriIsAbsolute, uriIsRelative)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
+import Network.URI (URI, uriIsAbsolute, uriIsRelative)
 
 data ContentBaseURI = ContentBaseURI
   { contentBaseHost :: URI

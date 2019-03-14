@@ -4,7 +4,7 @@ module ZoomHub.API.Types.Callback
   ) where
 
 import qualified Data.Text as T
-import           Servant   (FromHttpApiData (..))
+import Servant (FromHttpApiData(..))
 
 
 newtype Callback = Callback { unCallback :: String } deriving (Eq, Show)

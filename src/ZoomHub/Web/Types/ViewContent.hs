@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Types.ViewContent
   ( ViewContent
@@ -7,20 +7,38 @@ module ZoomHub.Web.Types.ViewContent
   )
   where
 
-import           Data.Maybe                (fromJust)
-import           Data.Monoid               ((<>))
-import           Data.Text                 (Text)
-import qualified Data.Text                 as T
-import           Lucid                     (ToHtml, a_, body_, charset_, class_,
-                                            content_, div_, doctypehtml_, head_,
-                                            href_, link_, meta_, name_, rel_,
-                                            script_, sizes_, src_, style_,
-                                            title_, toHtml, toHtmlRaw)
-import           Network.URI               (parseRelativeReference, relativeTo)
+import Data.Maybe (fromJust)
+import Data.Monoid ((<>))
+import Data.Text (Text)
+import qualified Data.Text as T
+import Lucid
+  ( ToHtml
+  , a_
+  , body_
+  , charset_
+  , class_
+  , content_
+  , div_
+  , doctypehtml_
+  , head_
+  , href_
+  , link_
+  , meta_
+  , name_
+  , rel_
+  , script_
+  , sizes_
+  , src_
+  , style_
+  , title_
+  , toHtml
+  , toHtmlRaw
+  )
+import Network.URI (parseRelativeReference, relativeTo)
 
-import           ZoomHub.API.Types.Content (Content, contentId, contentUrl)
-import           ZoomHub.Types.BaseURI     (BaseURI, unBaseURI)
-import           ZoomHub.Types.ContentId   (unId)
+import ZoomHub.API.Types.Content (Content, contentId, contentUrl)
+import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
+import ZoomHub.Types.ContentId (unId)
 
 data ViewContent = ViewContent
   { vcContent :: Content

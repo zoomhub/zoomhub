@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.ContentId
@@ -10,26 +10,23 @@ module ZoomHub.Types.ContentId
   , validChars
   ) where
 
-import           Prelude                          hiding (fromInteger)
+import Prelude hiding (fromInteger)
 
-import           Data.Aeson                       (FromJSON, ToJSON,
-                                                   genericParseJSON,
-                                                   genericToJSON, parseJSON,
-                                                   toJSON)
-import           Data.Aeson.Casing                (aesonPrefix, camelCase)
-import           Data.List                        (intersperse)
-import           Data.Set                         (Set)
-import qualified Data.Set                         as Set
-import qualified Data.Text                        as T
-import           Database.SQLite.Simple           (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
-import           GHC.Generics                     (Generic)
-import           Servant                          (FromHttpApiData,
-                                                   parseUrlPiece)
+import Data.Aeson
+  (FromJSON, ToJSON, genericParseJSON, genericToJSON, parseJSON, toJSON)
+import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.List (intersperse)
+import Data.Set (Set)
+import qualified Data.Set as Set
+import qualified Data.Text as T
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import GHC.Generics (Generic)
+import Servant (FromHttpApiData, parseUrlPiece)
 
 
 

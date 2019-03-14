@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Config
   ( Config(..)
@@ -16,25 +16,30 @@ module ZoomHub.Config
   , toNewContentStatus
   ) where
 
-import           Data.Aeson                   (ToJSON, Value (String), object,
-                                               toJSON, (.=))
-import qualified Data.ByteString.Lazy         as BL
-import qualified Data.Text                    as T
-import           GHC.Generics                 (Generic)
-import           Network.URI                  (URI, parseRelativeReference)
-import           Network.URI.Instances        ()
-import           Network.Wai                  (Middleware)
-import           System.Envy                  (DefConfig, FromEnv, Option (..),
-                                               customPrefix, defConfig,
-                                               dropPrefixCount, fromEnv,
-                                               gFromEnvCustom)
+import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Text as T
+import GHC.Generics (Generic)
+import Network.URI (URI, parseRelativeReference)
+import Network.URI.Instances ()
+import Network.Wai (Middleware)
+import System.Envy
+  ( DefConfig
+  , FromEnv
+  , Option(..)
+  , customPrefix
+  , defConfig
+  , dropPrefixCount
+  , fromEnv
+  , gFromEnvCustom
+  )
 
-import           ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
-import           ZoomHub.Types.BaseURI        (BaseURI)
-import           ZoomHub.Types.ContentBaseURI (ContentBaseURI)
-import           ZoomHub.Types.DatabasePath   (DatabasePath)
-import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI)
-import           ZoomHub.Types.TempPath       (TempPath)
+import ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
+import ZoomHub.Types.BaseURI (BaseURI)
+import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
+import ZoomHub.Types.DatabasePath (DatabasePath)
+import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
+import ZoomHub.Types.TempPath (TempPath)
 
 
 defaultPort :: Integer

@@ -4,11 +4,11 @@ module ZoomHub.Web.Types.EmbedDimension
   , parseCSSValue
   ) where
 
-import           Data.Bifunctor (first)
-import           Data.Char      (isDigit)
-import qualified Data.Text      as T
-import           Safe           (readEitherSafe)
-import           Servant        (FromHttpApiData, parseUrlPiece)
+import Data.Bifunctor (first)
+import Data.Char (isDigit)
+import qualified Data.Text as T
+import Safe (readEitherSafe)
+import Servant (FromHttpApiData, parseUrlPiece)
 
 -- Type
 data EmbedDimension = Zero

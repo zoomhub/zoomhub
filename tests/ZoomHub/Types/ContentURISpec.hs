@@ -5,12 +5,12 @@ module ZoomHub.Types.ContentURISpec
   , spec
   ) where
 
-import           Data.Text                (Text)
-import qualified Data.Text                as T
-import           Servant                  (parseUrlPiece)
-import           Test.Hspec               (Spec, describe, hspec, it, shouldBe)
+import Data.Text (Text)
+import qualified Data.Text as T
+import Servant (parseUrlPiece)
+import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 
-import           ZoomHub.Types.ContentURI (ContentURI, unContentURI)
+import ZoomHub.Types.ContentURI (ContentURI, unContentURI)
 
 
 -- International Resource Locator

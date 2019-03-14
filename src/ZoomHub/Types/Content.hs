@@ -3,15 +3,15 @@ module ZoomHub.Types.Content
   , mkContent
   ) where
 
-import           Data.Text                   (Text)
-import           Data.Time.Clock             (UTCTime)
+import Data.Text (Text)
+import Data.Time.Clock (UTCTime)
 
-import           ZoomHub.Types.ContentId     (ContentId)
-import           ZoomHub.Types.ContentMIME   (ContentMIME)
-import           ZoomHub.Types.ContentState  (ContentState (Initialized))
-import           ZoomHub.Types.ContentType   (ContentType)
-import           ZoomHub.Types.ContentURI    (ContentURI)
-import           ZoomHub.Types.DeepZoomImage (DeepZoomImage)
+import ZoomHub.Types.ContentId (ContentId)
+import ZoomHub.Types.ContentMIME (ContentMIME)
+import ZoomHub.Types.ContentState (ContentState(Initialized))
+import ZoomHub.Types.ContentType (ContentType)
+import ZoomHub.Types.ContentURI (ContentURI)
+import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
 -- Content
 data Content = Content

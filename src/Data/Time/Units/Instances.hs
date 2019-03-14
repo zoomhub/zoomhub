@@ -3,9 +3,9 @@
 
 module Data.Time.Units.Instances where
 
-import           Data.Aeson      (ToJSON, object, toJSON, (.=))
-import           Data.Text       (Text)
-import           Data.Time.Units (Millisecond, Minute, Second)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
+import Data.Text (Text)
+import Data.Time.Units (Millisecond, Minute, Second)
 
 instance ToJSON Millisecond where
   toJSON t = object [ "value" .= toInteger t, "unit" .= ("ms" :: Text) ]

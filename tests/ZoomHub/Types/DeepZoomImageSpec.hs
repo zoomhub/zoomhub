@@ -5,11 +5,15 @@ module ZoomHub.Types.DeepZoomImageSpec
   , spec
   ) where
 
-import           Test.Hspec                  (Spec, describe, hspec, it,
-                                              shouldBe)
+import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 
-import           ZoomHub.Types.DeepZoomImage (TileFormat (JPEG, PNG), TileOverlap (TileOverlap0, TileOverlap1), TileSize (TileSize254, TileSize256),
-                                              fromXML, mkDeepZoomImage)
+import ZoomHub.Types.DeepZoomImage
+  ( TileFormat(JPEG, PNG)
+  , TileOverlap(TileOverlap0, TileOverlap1)
+  , TileSize(TileSize254, TileSize256)
+  , fromXML
+  , mkDeepZoomImage
+  )
 
 jpegXML :: String
 jpegXML =

@@ -5,18 +5,16 @@ module ZoomHub.Types.ContentURI
   , unContentURI
   ) where
 
-import           Data.Aeson                       (ToJSON, Value (String),
-                                                   toJSON)
-import           Data.Text                        (Text)
-import qualified Data.Text                        as T
-import           Database.SQLite.Simple           (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
-import           Servant                          (FromHttpApiData,
-                                                   parseUrlPiece)
+import Data.Aeson (ToJSON, Value(String), toJSON)
+import Data.Text (Text)
+import qualified Data.Text as T
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import Servant (FromHttpApiData, parseUrlPiece)
 
 newtype ContentURI = ContentURI { unContentURI :: Text } deriving Eq
 
