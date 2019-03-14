@@ -19,7 +19,7 @@ import Squeal.PostgreSQL
   )
 import Test.Hspec (Spec, around, describe, hspec, it, shouldBe)
 
-import ZoomHub.Storage.PostgreSQL.Schema (Schema, setup, teardown)
+import ZoomHub.Storage.PostgreSQL2.Schema (Schema, setup, teardown)
 import ZoomHub.Storage.PostgreSQL2 (create, getById)
 import ZoomHub.Types.Content (contentNumViews, mkContent)
 import qualified ZoomHub.Types.ContentId as ContentId

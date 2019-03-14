@@ -20,7 +20,7 @@ import Squeal.PostgreSQL
   )
 import Test.Hspec (Spec, around, describe, hspec, it, shouldBe)
 
-import ZoomHub.Storage.PostgreSQL.Schema (Schema, setup, teardown)
+import ZoomHub.Storage.PostgreSQL2.Schema (Schema, setup, teardown)
 import ZoomHub.Storage.PostgreSQL2.Internal (createImage, getImageById)
 import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize(..))

@@ -9,7 +9,7 @@ module ZoomHub.Storage.PostgreSQL2
   , create
   ) where
 
-import ZoomHub.Storage.PostgreSQL.Schema (Schema)
+import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Storage.PostgreSQL2.Internal (selectContentBy, rowToContent, insertContent, contentToRow)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)

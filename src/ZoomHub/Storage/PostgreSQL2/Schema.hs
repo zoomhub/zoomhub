@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
 
-module ZoomHub.Storage.PostgreSQL.Schema
+module ZoomHub.Storage.PostgreSQL2.Schema
     ( Schema
     -- * Testing
     , setup
