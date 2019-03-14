@@ -19,12 +19,16 @@ import Squeal.PostgreSQL
   )
 import Test.Hspec (Spec, around, describe, hspec, it, shouldBe)
 
-import ZoomHub.Storage.PostgreSQL2.Schema (Schema, setup, teardown)
-import ZoomHub.Storage.PostgreSQL2 (create, getById)
-import ZoomHub.Types.Content (contentNumViews, mkContent)
 import qualified ZoomHub.Types.ContentId as ContentId
+import ZoomHub.Storage.PostgreSQL2 (create, getById)
+import ZoomHub.Storage.PostgreSQL2.Schema (Schema, setup, teardown)
+import ZoomHub.Types.Content (contentDZI, contentNumViews, mkContent)
 import ZoomHub.Types.ContentType (ContentType(Image))
 import ZoomHub.Types.ContentURI (ContentURI'(ContentURI))
+import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
+import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat(..))
+import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap(..))
+import ZoomHub.Types.DeepZoomImage.TileSize (TileSize(..))
 
 main :: IO ()
 main = hspec spec
@@ -52,8 +56,10 @@ spec =
                 cid
                 (ContentURI "http://example.com/6")
                 (read "2018-10-16 00:00:00Z" :: UTCTime)
+            dzi = mkDeepZoomImage 400 300 TileSize254 TileOverlap1 PNG
             initializedContentWithViews = initializedContent
               { contentNumViews = 100
+              , contentDZI = Just dzi
               }
         _ <- runPQ (create initializedContentWithViews) conn
         (result, _) <- runPQ (getById cid) conn

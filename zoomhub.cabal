@@ -162,7 +162,6 @@ test-suite tests
     ZoomHub.APISpec
     ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Storage.PostgreSQL2Spec
-    ZoomHub.Storage.PostgreSQL2.InternalSpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
     ZoomHub.Types.DeepZoomImageSpec

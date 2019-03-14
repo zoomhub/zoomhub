@@ -279,7 +279,17 @@ imageToRow cid dzi initializedAt = ImageRow
   , irTileFormat = dziTileFormat dzi
   }
 
-insertContent :: Manipulation Schema (TuplePG ContentRow) '[ "fromOnly" ::: 'NotNull 'PGtext ]
+
+data InsertContentResult =
+  InsertContentResult
+  { icrId :: Int64
+  , icrHashId :: ContentId
+  } deriving (Show, GHC.Generic)
+instance SOP.Generic InsertContentResult
+instance SOP.HasDatatypeInfo InsertContentResult
+
+insertContent :: Manipulation Schema (TuplePG ContentRow)
+                 '[ "icrId" ::: 'NotNull 'PGint8, "icrHashId" ::: 'NotNull 'PGtext ]
 insertContent = insertRow #content
   ( Default `as` #id :*
     Set (param @1) `as` #hash_id :*
@@ -300,7 +310,7 @@ insertContent = insertRow #content
     Set (param @16) `as` #num_abuse_reports :*
     Set (param @17) `as` #num_views :*
     Set (param @18) `as` #version
-  ) OnConflictDoRaise (Returning (#hash_id `as` #fromOnly))
+  ) OnConflictDoRaise (Returning (#id `as` #icrId :* #hash_id `as` #icrHashId))
 
 insertImage :: Manipulation Schema (TuplePG ImageRow) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
 insertImage = insertRow #image
