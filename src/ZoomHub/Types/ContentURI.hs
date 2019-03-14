@@ -1,11 +1,11 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentURI
   ( ContentURI
@@ -17,26 +17,27 @@ module ZoomHub.Types.ContentURI
   , unContentURI
   ) where
 
-import           Data.Aeson                           (ToJSON, Value (String),
-                                                       toJSON)
-import           Data.Profunctor.Product.TH           (makeAdaptorAndInstance)
-import           Data.Text                            (Text)
-import qualified Data.Text                            as T
+import Data.Aeson (ToJSON, Value(String), toJSON)
+import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
+import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Database.PostgreSQL.Simple.FromField as PGS
-import           Database.SQLite.Simple               (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
-                                                       fromField, returnError)
-import           Database.SQLite.Simple.Internal      (Field (Field))
-import           Database.SQLite.Simple.Ok            (Ok (Ok))
-import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           Opaleye                              (Column, PGText,
-                                                       QueryRunnerColumnDefault,
-                                                       fieldQueryRunnerColumn,
-                                                       pgStrictText,
-                                                       queryRunnerColumnDefault)
-import           Servant                              (FromHttpApiData,
-                                                       parseUrlPiece)
-import Squeal.PostgreSQL (FromValue(..), PGType(PGtext), ToParam(..), PG)
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import Opaleye
+  ( Column
+  , PGText
+  , QueryRunnerColumnDefault
+  , fieldQueryRunnerColumn
+  , pgStrictText
+  , queryRunnerColumnDefault
+  )
+import Servant (FromHttpApiData, parseUrlPiece)
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
 newtype ContentURI' a = ContentURI { unContentURI :: a }
   deriving (Eq, Functor)

@@ -36,9 +36,9 @@ import Lucid
   )
 import Network.URI (parseRelativeReference, relativeTo)
 
-import           ZoomHub.API.Types.Content (Content, contentId, contentUrl)
-import           ZoomHub.Types.BaseURI     (BaseURI, unBaseURI)
-import           ZoomHub.Types.ContentId   (unContentId)
+import ZoomHub.API.Types.Content (Content, contentId, contentUrl)
+import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
+import ZoomHub.Types.ContentId (unContentId)
 
 data ViewContent = ViewContent
   { vcContent :: Content

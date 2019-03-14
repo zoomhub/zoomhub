@@ -20,65 +20,93 @@ module ZoomHub.Storage.SQLite
   , withConnection
   ) where
 
-import           Control.Concurrent.Async       (async)
-import           Control.Exception              (tryJust)
-import           Control.Monad                  (forM_, guard, when)
-import           Control.Monad.Catch            (Handler (Handler))
-import           Control.Monad.IO.Class         (MonadIO)
-import           Control.Retry                  (RetryPolicyM, RetryStatus,
-                                                 capDelay, fullJitterBackoff,
-                                                 limitRetries, recovering,
-                                                 rsCumulativeDelay,
-                                                 rsIterNumber, rsPreviousDelay)
-import           Data.Aeson                     (object, (.=))
-import           Data.Bool                      (bool)
-import           Data.Int                       (Int64)
-import           Data.Monoid                    ((<>))
-import           Data.Set                       (Set)
-import qualified Data.Set                       as Set
-import           Data.String                    (IsString (fromString))
-import           Data.Text                      (Text)
-import           Data.Time.Clock                (UTCTime, getCurrentTime)
-import           Data.Time.Units                (Minute, Second,
-                                                 fromMicroseconds,
-                                                 toMicroseconds)
-import           Data.Time.Units.Instances      ()
-import           Database.SQLite.Simple         (Connection, Error (ErrorConstraint, ErrorBusy, ErrorCan'tOpen, ErrorLocked),
-                                                 NamedParam ((:=)), Only (Only),
-                                                 Query,
-                                                 SQLError (SQLError, sqlError),
-                                                 execute, executeNamed, field,
-                                                 fromOnly, query, queryNamed,
-                                                 query_, withTransaction)
-import qualified Database.SQLite.Simple         as SQLite
-import           Database.SQLite.Simple.FromRow (FromRow, fromRow)
-import           Database.SQLite.Simple.ToField (toField)
-import           Database.SQLite.Simple.ToRow   (ToRow, toRow)
-import           System.Random                  (randomRIO)
+import Control.Concurrent.Async (async)
+import Control.Exception (tryJust)
+import Control.Monad (forM_, guard, when)
+import Control.Monad.Catch (Handler(Handler))
+import Control.Monad.IO.Class (MonadIO)
+import Control.Retry
+  ( RetryPolicyM
+  , RetryStatus
+  , capDelay
+  , fullJitterBackoff
+  , limitRetries
+  , recovering
+  , rsCumulativeDelay
+  , rsIterNumber
+  , rsPreviousDelay
+  )
+import Data.Aeson (object, (.=))
+import Data.Bool (bool)
+import Data.Int (Int64)
+import Data.Monoid ((<>))
+import Data.Set (Set)
+import qualified Data.Set as Set
+import Data.String (IsString(fromString))
+import Data.Text (Text)
+import Data.Time.Clock (UTCTime, getCurrentTime)
+import Data.Time.Units (Minute, Second, fromMicroseconds, toMicroseconds)
+import Data.Time.Units.Instances ()
+import Database.SQLite.Simple
+  ( Connection
+  , Error(ErrorBusy, ErrorCan'tOpen, ErrorConstraint, ErrorLocked)
+  , NamedParam((:=))
+  , Only(Only)
+  , Query
+  , SQLError(SQLError, sqlError)
+  , execute
+  , executeNamed
+  , field
+  , fromOnly
+  , query
+  , queryNamed
+  , query_
+  , withTransaction
+  )
+import qualified Database.SQLite.Simple as SQLite
+import Database.SQLite.Simple.FromRow (FromRow, fromRow)
+import Database.SQLite.Simple.ToField (toField)
+import Database.SQLite.Simple.ToRow (ToRow, toRow)
+import System.Random (randomRIO)
 
-import           ZoomHub.Log.Logger             (logWarning)
-import           ZoomHub.Types.Content          (Content (Content),
-                                                 contentActiveAt,
-                                                 contentCompletedAt, contentDZI,
-                                                 contentError, contentId,
-                                                 contentInitializedAt,
-                                                 contentMIME, contentNumViews,
-                                                 contentProgress, contentSize,
-                                                 contentState, contentType,
-                                                 contentURL, mkContent)
-import           ZoomHub.Types.ContentId        (ContentId, unContentId)
-import qualified ZoomHub.Types.ContentId        as ContentId
-import           ZoomHub.Types.ContentMIME      (ContentMIME)
-import           ZoomHub.Types.ContentState     (ContentState (Initialized, Active, CompletedSuccess, CompletedFailure))
-import           ZoomHub.Types.ContentType      (ContentType (Unknown, Image))
-import           ZoomHub.Types.ContentURI       (ContentURI)
-import           ZoomHub.Types.DatabasePath     (DatabasePath, unDatabasePath)
-import           ZoomHub.Types.DeepZoomImage    (TileFormat, TileOverlap,
-                                                 TileSize, dziHeight,
-                                                 dziTileFormat, dziTileOverlap,
-                                                 dziTileSize, dziWidth,
-                                                 mkDeepZoomImage)
-import           ZoomHub.Utils                  (intercalate)
+import ZoomHub.Log.Logger (logWarning)
+import ZoomHub.Types.Content
+  ( Content(Content)
+  , contentActiveAt
+  , contentCompletedAt
+  , contentDZI
+  , contentError
+  , contentId
+  , contentInitializedAt
+  , contentMIME
+  , contentNumViews
+  , contentProgress
+  , contentSize
+  , contentState
+  , contentType
+  , contentURL
+  , mkContent
+  )
+import ZoomHub.Types.ContentId (ContentId, unContentId)
+import qualified ZoomHub.Types.ContentId as ContentId
+import ZoomHub.Types.ContentMIME (ContentMIME)
+import ZoomHub.Types.ContentState
+  (ContentState(Active, CompletedFailure, CompletedSuccess, Initialized))
+import ZoomHub.Types.ContentType (ContentType(Image, Unknown))
+import ZoomHub.Types.ContentURI (ContentURI)
+import ZoomHub.Types.DatabasePath (DatabasePath, unDatabasePath)
+import ZoomHub.Types.DeepZoomImage
+  ( TileFormat
+  , TileOverlap
+  , TileSize
+  , dziHeight
+  , dziTileFormat
+  , dziTileOverlap
+  , dziTileSize
+  , dziWidth
+  , mkDeepZoomImage
+  )
+import ZoomHub.Utils (intercalate)
 
 -- Public API
 create :: (Integer -> String) -> ContentURI -> Connection -> IO Content

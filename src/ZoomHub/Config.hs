@@ -16,32 +16,34 @@ module ZoomHub.Config
   , toNewContentStatus
   ) where
 
-import           Data.Aeson                           (ToJSON, Value (String),
-                                                       object, toJSON, (.=))
-import qualified Data.ByteString.Lazy                 as BL
-import           Data.Pool                            (Pool)
-import qualified Data.Text                            as T
-import           Data.Time.Units                      (Second)
-import qualified Database.PostgreSQL.Simple           as PGS
-import           Database.PostgreSQL.Simple.Instances ()
-import           GHC.Generics                         (Generic)
-import           Network.URI                          (URI,
-                                                       parseRelativeReference)
-import           Network.URI.Instances                ()
-import           Network.Wai                          (Middleware)
-import           System.Envy                          (DefConfig, FromEnv,
-                                                       Option (..),
-                                                       customPrefix, defConfig,
-                                                       dropPrefixCount, fromEnv,
-                                                       gFromEnvCustom)
+import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
+import qualified Data.ByteString.Lazy as BL
+import Data.Pool (Pool)
+import qualified Data.Text as T
+import Data.Time.Units (Second)
+import qualified Database.PostgreSQL.Simple as PGS
+import Database.PostgreSQL.Simple.Instances ()
+import GHC.Generics (Generic)
+import Network.URI (URI, parseRelativeReference)
+import Network.URI.Instances ()
+import Network.Wai (Middleware)
+import System.Envy
+  ( DefConfig
+  , FromEnv
+  , Option(..)
+  , customPrefix
+  , defConfig
+  , dropPrefixCount
+  , fromEnv
+  , gFromEnvCustom
+  )
 
-import           ZoomHub.Rackspace.CloudFiles         (Container,
-                                                       parseContainer)
-import           ZoomHub.Types.BaseURI                (BaseURI)
-import           ZoomHub.Types.ContentBaseURI         (ContentBaseURI)
-import           ZoomHub.Types.DatabasePath           (DatabasePath)
-import           ZoomHub.Types.StaticBaseURI          (StaticBaseURI)
-import           ZoomHub.Types.TempPath               (TempPath)
+import ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
+import ZoomHub.Types.BaseURI (BaseURI)
+import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
+import ZoomHub.Types.DatabasePath (DatabasePath)
+import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
+import ZoomHub.Types.TempPath (TempPath)
 
 
 defaultPort :: Integer

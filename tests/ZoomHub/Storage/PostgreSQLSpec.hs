@@ -5,27 +5,26 @@ module ZoomHub.Storage.PostgreSQLSpec
   , spec
   ) where
 
-import           Control.Exception                   (bracket)
-import           Data.Time.Clock                     (UTCTime, getCurrentTime)
-import           Data.Time.Units                     (Minute)
-import qualified Database.PostgreSQL.Simple          as PGS
-import           Test.Hspec                          (Spec, around, describe,
-                                                      hspec, it, shouldReturn)
+import Control.Exception (bracket)
+import Data.Time.Clock (UTCTime, getCurrentTime)
+import Data.Time.Units (Minute)
+import qualified Database.PostgreSQL.Simple as PGS
+import Test.Hspec (Spec, around, describe, hspec, it, shouldReturn)
 
-import           ZoomHub.Storage.PostgreSQL          (ConnectInfo (..),
-                                                      defaultConnectInfo,
-                                                      getExpiredActive,
-                                                      getNextUnprocessed,
-                                                      runInsertContent)
-import           ZoomHub.Storage.PostgreSQL.Internal (subtractUTCTime,
-                                                      toNominalDiffTime)
-import           ZoomHub.Types.Content               (contentActiveAt,
-                                                      contentNumViews,
-                                                      contentState, mkContent)
-import qualified ZoomHub.Types.ContentId             as ContentId
-import qualified ZoomHub.Types.ContentState          as ContentState
-import           ZoomHub.Types.ContentType           (ContentType (Image))
-import           ZoomHub.Types.ContentURI            (ContentURI' (ContentURI))
+import ZoomHub.Storage.PostgreSQL
+  ( ConnectInfo(..)
+  , defaultConnectInfo
+  , getExpiredActive
+  , getNextUnprocessed
+  , runInsertContent
+  )
+import ZoomHub.Storage.PostgreSQL.Internal (subtractUTCTime, toNominalDiffTime)
+import ZoomHub.Types.Content
+  (contentActiveAt, contentNumViews, contentState, mkContent)
+import qualified ZoomHub.Types.ContentId as ContentId
+import qualified ZoomHub.Types.ContentState as ContentState
+import ZoomHub.Types.ContentType (ContentType(Image))
+import ZoomHub.Types.ContentURI (ContentURI'(ContentURI))
 
 
 main :: IO ()

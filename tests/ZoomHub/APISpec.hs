@@ -5,39 +5,50 @@ module ZoomHub.APISpec
   , spec
   ) where
 
-import           Control.Concurrent           (getNumCapabilities)
-import qualified Data.ByteString.Char8        as BC
-import           Data.Maybe                   (fromMaybe)
-import           Data.Monoid                  ((<>))
-import           Data.Time.Units              (Second)
-import           Network.HTTP.Types           (methodGet)
-import           Network.URI                  (URI, parseURIReference)
-import           Network.Wai                  (Middleware)
-import           System.IO.Unsafe             (unsafePerformIO)
-import           Test.Hspec                   (Spec, context, describe, hspec,
-                                               it, shouldBe)
-import           Test.Hspec.Wai               (MatchHeader, ResponseMatcher,
-                                               get, liftIO, matchHeaders,
-                                               matchStatus, post, put, request,
-                                               shouldRespondWith, with, (<:>))
+import Control.Concurrent (getNumCapabilities)
+import qualified Data.ByteString.Char8 as BC
+import Data.Maybe (fromMaybe)
+import Data.Monoid ((<>))
+import Data.Time.Units (Second)
+import Network.HTTP.Types (methodGet)
+import Network.URI (URI, parseURIReference)
+import Network.Wai (Middleware)
+import System.IO.Unsafe (unsafePerformIO)
+import Test.Hspec (Spec, context, describe, hspec, it, shouldBe)
+import Test.Hspec.Wai
+  ( MatchHeader
+  , ResponseMatcher
+  , get
+  , liftIO
+  , matchHeaders
+  , matchStatus
+  , post
+  , put
+  , request
+  , shouldRespondWith
+  , with
+  , (<:>)
+  )
 
-import           Data.Pool                    (withResource)
-import           System.Environment           (lookupEnv)
+import Data.Pool (withResource)
+import System.Environment (lookupEnv)
 
-import           ZoomHub.API                  (app)
-import           ZoomHub.Config               (Config (..), ExistingContentStatus (IgnoreExistingContent), NewContentStatus (NewContentAllowed))
-import qualified ZoomHub.Config               as Config
-import           ZoomHub.Storage.PostgreSQL   (ConnectInfo (..),
-                                               defaultConnectInfo)
-import           ZoomHub.Storage.PostgreSQL   (createConnectionPool, getById)
-import           ZoomHub.Types.BaseURI        (BaseURI (BaseURI))
-import           ZoomHub.Types.Content        (contentNumViews)
-import           ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import           ZoomHub.Types.ContentId      (ContentId, fromString,
-                                               unContentId)
-import           ZoomHub.Types.DatabasePath   (DatabasePath (DatabasePath))
-import           ZoomHub.Types.StaticBaseURI  (StaticBaseURI (StaticBaseURI))
-import           ZoomHub.Types.TempPath       (TempPath (TempPath))
+import ZoomHub.API (app)
+import ZoomHub.Config
+  ( Config(..)
+  , ExistingContentStatus(IgnoreExistingContent)
+  , NewContentStatus(NewContentAllowed)
+  )
+import qualified ZoomHub.Config as Config
+import ZoomHub.Storage.PostgreSQL (ConnectInfo(..), defaultConnectInfo)
+import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
+import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
+import ZoomHub.Types.Content (contentNumViews)
+import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
+import ZoomHub.Types.ContentId (ContentId, fromString, unContentId)
+import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath))
+import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
+import ZoomHub.Types.TempPath (TempPath(TempPath))
 
 main :: IO ()
 main = hspec spec

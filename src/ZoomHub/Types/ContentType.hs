@@ -1,33 +1,34 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentType
   ( ContentType(..)
   , ContentTypeColumn
   ) where
 
-import           Data.Int                             (Int32)
-import           Data.Profunctor.Product.Default      (Default, def)
+import Data.Int (Int32)
+import Data.Profunctor.Product.Default (Default, def)
 import qualified Database.PostgreSQL.Simple.FromField as PGS
-import           Database.SQLite.Simple               (SQLData (SQLInteger))
-import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
-                                                       fromField, returnError)
-import           Database.SQLite.Simple.Internal      (Field (Field))
-import           Database.SQLite.Simple.Ok            (Ok (Ok))
-import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           Opaleye                              (Column,
-                                                       Constant (Constant),
-                                                       PGInt4,
-                                                       QueryRunnerColumnDefault,
-                                                       fieldQueryRunnerColumn,
-                                                       pgInt4,
-                                                       queryRunnerColumnDefault)
-import           Squeal.PostgreSQL                    (FromValue (..),
-                                                       PGType (PGint4), PG, ToParam(..))
+import Database.SQLite.Simple (SQLData(SQLInteger))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import Opaleye
+  ( Column
+  , Constant(Constant)
+  , PGInt4
+  , QueryRunnerColumnDefault
+  , fieldQueryRunnerColumn
+  , pgInt4
+  , queryRunnerColumnDefault
+  )
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGint4), ToParam(..))
 
 data ContentType =
     Unknown

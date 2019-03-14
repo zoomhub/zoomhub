@@ -1,5 +1,5 @@
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -14,8 +14,8 @@ import Test.QuickCheck (Property, elements, listOf, property, suchThat, (==>))
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Instances ()
 
-import           ZoomHub.Types.ContentId   (ContentId, fromString, isValid,
-                                            unContentId, validChars)
+import ZoomHub.Types.ContentId
+  (ContentId, fromString, isValid, unContentId, validChars)
 
 instance Arbitrary ContentId where
   arbitrary = do

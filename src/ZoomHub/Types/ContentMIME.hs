@@ -1,9 +1,9 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentMIME
   ( ContentMIME
@@ -13,29 +13,31 @@ module ZoomHub.Types.ContentMIME
   , unContentMIME
   ) where
 
-import           Codec.MIME.Parse                     (parseMIMEType)
-import           Codec.MIME.Type                      (Type, showType)
-import           Data.Aeson                           (ToJSON, Value (String),
-                                                       toJSON)
+import Codec.MIME.Parse (parseMIMEType)
+import Codec.MIME.Type (Type, showType)
+import Data.Aeson (ToJSON, Value(String), toJSON)
 import Data.Maybe (fromJust)
-import           Data.Profunctor.Product.Default      (Default, def)
-import           Data.Profunctor.Product.TH           (makeAdaptorAndInstance)
-import qualified Data.Text                            as T
+import Data.Profunctor.Product.Default (Default, def)
+import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
+import qualified Data.Text as T
 import qualified Database.PostgreSQL.Simple.FromField as PGS
-import           Database.SQLite.Simple               (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
-                                                       fromField, returnError)
-import           Database.SQLite.Simple.Internal      (Field (Field))
-import           Database.SQLite.Simple.Ok            (Ok (Ok))
-import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           Opaleye                              (Column,
-                                                       Constant (Constant),
-                                                       Nullable, PGText,
-                                                       QueryRunnerColumnDefault,
-                                                       fieldQueryRunnerColumn,
-                                                       pgStrictText,
-                                                       queryRunnerColumnDefault)
-import Squeal.PostgreSQL (FromValue(..), PGType(PGtext), PG, ToParam(..))
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import Opaleye
+  ( Column
+  , Constant(Constant)
+  , Nullable
+  , PGText
+  , QueryRunnerColumnDefault
+  , fieldQueryRunnerColumn
+  , pgStrictText
+  , queryRunnerColumnDefault
+  )
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
 
 newtype ContentMIME' a = ContentMIME { unContentMIME :: a } deriving (Eq, Show)

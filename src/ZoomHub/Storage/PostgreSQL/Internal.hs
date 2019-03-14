@@ -1,18 +1,16 @@
-{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module ZoomHub.Storage.PostgreSQL.Internal where
 
 
-import           Data.Maybe                      (fromMaybe)
-import           Data.Pool                       (Pool, createPool)
-import           Data.Profunctor.Product.Default (Default)
-import           Data.Time.Clock                 (NominalDiffTime, UTCTime,
-                                                  addUTCTime)
-import           Data.Time.Units                 (Second, TimeUnit,
-                                                  toMicroseconds)
-import qualified Database.PostgreSQL.Simple      as PGS
-import           Opaleye                         (Query, Unpackspec, showSql)
+import Data.Maybe (fromMaybe)
+import Data.Pool (Pool, createPool)
+import Data.Profunctor.Product.Default (Default)
+import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime)
+import Data.Time.Units (Second, TimeUnit, toMicroseconds)
+import qualified Database.PostgreSQL.Simple as PGS
+import Opaleye (Query, Unpackspec, showSql)
 
 
 printSQL :: Default Unpackspec a a => Query a -> IO ()

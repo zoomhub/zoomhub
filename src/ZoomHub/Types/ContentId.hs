@@ -1,13 +1,13 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentId
   ( ContentId
@@ -23,36 +23,34 @@ module ZoomHub.Types.ContentId
   , validChars
   ) where
 
-import           Prelude                              hiding (fromInteger)
+import Prelude hiding (fromInteger)
 
-import           Data.Aeson                           (FromJSON, ToJSON,
-                                                       genericParseJSON,
-                                                       genericToJSON, parseJSON,
-                                                       toJSON)
-import           Data.Aeson.Casing                    (aesonPrefix, camelCase)
-import           Data.List                            (intersperse)
-import           Data.Profunctor.Product.TH           (makeAdaptorAndInstance)
-import           Data.Set                             (Set)
-import qualified Data.Set                             as Set
-import qualified Data.Text                            as T
+import Data.Aeson
+  (FromJSON, ToJSON, genericParseJSON, genericToJSON, parseJSON, toJSON)
+import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.List (intersperse)
+import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
+import Data.Set (Set)
+import qualified Data.Set as Set
+import qualified Data.Text as T
 import qualified Database.PostgreSQL.Simple.FromField as PGS
-import           Database.SQLite.Simple               (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
-                                                       fromField, returnError)
-import           Database.SQLite.Simple.Internal      (Field (Field))
-import           Database.SQLite.Simple.Ok            (Ok (Ok))
-import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           GHC.Generics                         (Generic)
-import           Opaleye                              (Column, PGText,
-                                                       QueryRunnerColumnDefault,
-                                                       fieldQueryRunnerColumn,
-                                                       pgString,
-                                                       queryRunnerColumnDefault)
-import           Servant                              (FromHttpApiData,
-                                                       parseUrlPiece)
-import           Squeal.PostgreSQL                    (FromValue (..),
-                                                       PGType (PGtext), PG,
-                                                       ToParam(..))
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import GHC.Generics (Generic)
+import Opaleye
+  ( Column
+  , PGText
+  , QueryRunnerColumnDefault
+  , fieldQueryRunnerColumn
+  , pgString
+  , queryRunnerColumnDefault
+  )
+import Servant (FromHttpApiData, parseUrlPiece)
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
 -- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:

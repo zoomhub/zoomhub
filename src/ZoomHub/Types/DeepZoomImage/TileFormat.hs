@@ -10,19 +10,17 @@ module ZoomHub.Types.DeepZoomImage.TileFormat
   , fromText
   ) where
 
-import           Data.Aeson                       (ToJSON, Value (String),
-                                                   toJSON)
-import           Data.Maybe                       (fromJust)
+import Data.Aeson (ToJSON, Value(String), toJSON)
+import Data.Maybe (fromJust)
 import Data.Text (Text)
-import qualified Data.Text                        as T
-import           Database.SQLite.Simple           (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
-import           Squeal.PostgreSQL                (FromValue (..),
-                                                   PGType (PGtext), PG, ToParam(..))
+import qualified Data.Text as T
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
 data TileFormat = JPEG | PNG deriving Eq
 

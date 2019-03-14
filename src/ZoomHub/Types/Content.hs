@@ -7,8 +7,8 @@ module ZoomHub.Types.Content
 import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Time.Clock (UTCTime)
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)

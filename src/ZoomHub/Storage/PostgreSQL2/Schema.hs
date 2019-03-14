@@ -21,17 +21,15 @@ import Squeal.PostgreSQL
   , PGType(PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
   , SchemumType(Table)
   , TableConstraint(ForeignKey, PrimaryKey)
-  , (&)
-  , (>>>)
   , as
   , bigint
   , bigserial
   , bool
   , createTable
-  , dropTable
   , currentTimestamp
   , default_
   , doublePrecision
+  , dropTable
   , foreignKey
   , int
   , int4
@@ -40,6 +38,8 @@ import Squeal.PostgreSQL
   , primaryKey
   , text
   , timestampWithTimeZone
+  , (&)
+  , (>>>)
   )
 
 type Schema =

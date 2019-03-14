@@ -17,22 +17,20 @@ module ZoomHub.Types.DeepZoomImage
   ) where
 
 
-import           Data.Aeson                              (ToJSON, genericToJSON,
-                                                          toJSON)
-import           Data.Aeson.Casing                       (aesonPrefix,
-                                                          camelCase)
-import           GHC.Generics                            (Generic)
-import           Text.Read                               (readMaybe)
-import           Text.XML.Light                          (QName (QName))
-import           Text.XML.Light.Input                    (parseXMLDoc)
-import           Text.XML.Light.Proc                     (findAttr, findElement)
+import Data.Aeson (ToJSON, genericToJSON, toJSON)
+import Data.Aeson.Casing (aesonPrefix, camelCase)
+import GHC.Generics (Generic)
+import Text.Read (readMaybe)
+import Text.XML.Light (QName(QName))
+import Text.XML.Light.Input (parseXMLDoc)
+import Text.XML.Light.Proc (findAttr, findElement)
 
-import           ZoomHub.Types.DeepZoomImage.TileFormat  (TileFormat (..))
-import qualified ZoomHub.Types.DeepZoomImage.TileFormat  as TileFormat
-import           ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap (..))
+import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat(..))
+import qualified ZoomHub.Types.DeepZoomImage.TileFormat as TileFormat
+import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap(..))
 import qualified ZoomHub.Types.DeepZoomImage.TileOverlap as TileOverlap
-import           ZoomHub.Types.DeepZoomImage.TileSize    (TileSize (..))
-import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
+import ZoomHub.Types.DeepZoomImage.TileSize (TileSize(..))
+import qualified ZoomHub.Types.DeepZoomImage.TileSize as TileSize
 
 data DeepZoomImage = DeepZoomImage
   { dziWidth       :: Integer

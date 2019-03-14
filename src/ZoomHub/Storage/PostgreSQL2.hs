@@ -10,8 +10,15 @@ module ZoomHub.Storage.PostgreSQL2
   , create
   ) where
 
+import ZoomHub.Storage.PostgreSQL2.Internal
+  ( InsertContentResult(..)
+  , contentToRow
+  , createImage
+  , insertContent
+  , rowToContent
+  , selectContentBy
+  )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
-import ZoomHub.Storage.PostgreSQL2.Internal (selectContentBy, rowToContent, insertContent, contentToRow, createImage, InsertContentResult(..))
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 
@@ -22,14 +29,14 @@ import Data.Time.Clock (getCurrentTime)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(..)
-  , (!)
-  , (.==)
   , firstRow
   , getRow
   , manipulateParams
   , param
   , runQueryParams
   , transactionally_
+  , (!)
+  , (.==)
   )
 
 -- Public API

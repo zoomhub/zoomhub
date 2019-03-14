@@ -1,6 +1,6 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
 
 module ZoomHub.Storage.PostgreSQL2Spec
   ( main
@@ -10,19 +10,13 @@ module ZoomHub.Storage.PostgreSQL2Spec
 import Control.Exception (bracket)
 import Data.Time.Clock (UTCTime)
 import qualified Generics.SOP as SOP
-import Squeal.PostgreSQL
-  ( Connection
-  , connectdb
-  , define
-  , finish
-  , runPQ
-  )
+import Squeal.PostgreSQL (Connection, connectdb, define, finish, runPQ)
 import Test.Hspec (Spec, around, describe, hspec, it, shouldBe)
 
-import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Storage.PostgreSQL2 (create, getById)
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, setup, teardown)
 import ZoomHub.Types.Content (contentDZI, contentNumViews, mkContent)
+import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentType (ContentType(Image))
 import ZoomHub.Types.ContentURI (ContentURI'(ContentURI))
 import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)

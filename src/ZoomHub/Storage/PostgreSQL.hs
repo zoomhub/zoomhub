@@ -1,11 +1,11 @@
-{-# LANGUAGE Arrows                #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE Arrows #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 {-# OPTIONS_GHC -Wno-deprecations #-} -- opaleye
 
@@ -35,72 +35,86 @@ module ZoomHub.Storage.PostgreSQL
   , runInsertContent
   ) where
 
-import           Control.Arrow                           (returnA)
-import           Control.Concurrent.Async                (async)
-import           Control.Exception                       (tryJust)
-import           Control.Monad                           (guard, when)
-import           Data.Aeson                              ((.=))
-import           Data.Int                                (Int64)
-import           Data.Monoid                             ((<>))
-import           Data.Profunctor.Product.TH              (makeAdaptorAndInstance)
-import           Data.Text                               (Text)
-import           Data.Time.Clock                         (UTCTime,
-                                                          getCurrentTime)
-import           Data.Time.Units                         (Minute)
-import qualified Database.PostgreSQL.Simple              as PGS
-import qualified Database.PostgreSQL.Simple.Errors       as PGS
-import           Opaleye                                 (Column, Nullable,
-                                                          PGBool, PGFloat8,
-                                                          PGInt4, PGInt8,
-                                                          PGText, PGTimestamptz,
-                                                          Query, QueryArr,
-                                                          Table (Table),
-                                                          arrangeUpdateSql, asc,
-                                                          constant, desc,
-                                                          leftJoin, limit,
-                                                          matchNullable,
-                                                          optional, orderBy,
-                                                          pgBool, pgUTCTime,
-                                                          queryTable, required,
-                                                          restrict, runInsert,
-                                                          runQuery, runUpdate,
-                                                          (.<=), (.===))
-import           System.Random                           (randomRIO)
+import Control.Arrow (returnA)
+import Control.Concurrent.Async (async)
+import Control.Exception (tryJust)
+import Control.Monad (guard, when)
+import Data.Aeson ((.=))
+import Data.Int (Int64)
+import Data.Monoid ((<>))
+import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
+import Data.Text (Text)
+import Data.Time.Clock (UTCTime, getCurrentTime)
+import Data.Time.Units (Minute)
+import qualified Database.PostgreSQL.Simple as PGS
+import qualified Database.PostgreSQL.Simple.Errors as PGS
+import Opaleye
+  ( Column
+  , Nullable
+  , PGBool
+  , PGFloat8
+  , PGInt4
+  , PGInt8
+  , PGText
+  , PGTimestamptz
+  , Query
+  , QueryArr
+  , Table(Table)
+  , arrangeUpdateSql
+  , asc
+  , constant
+  , desc
+  , leftJoin
+  , limit
+  , matchNullable
+  , optional
+  , orderBy
+  , pgBool
+  , pgUTCTime
+  , queryTable
+  , required
+  , restrict
+  , runInsert
+  , runQuery
+  , runUpdate
+  , (.<=)
+  , (.===)
+  )
+import System.Random (randomRIO)
 
-import           ZoomHub.Log.Logger                      (logWarning)
-import           ZoomHub.Storage.PostgreSQL.Internal     (createConnectionPool,
-                                                          subtractUTCTime,
-                                                          toNominalDiffTime)
-import           ZoomHub.Types.Content                   (Content (Content),
-                                                          contentActiveAt,
-                                                          contentCompletedAt,
-                                                          contentDZI,
-                                                          contentError,
-                                                          contentId,
-                                                          contentInitializedAt,
-                                                          contentMIME,
-                                                          contentNumViews,
-                                                          contentProgress,
-                                                          contentSize,
-                                                          contentState,
-                                                          contentType,
-                                                          contentURL, mkContent)
-import           ZoomHub.Types.ContentId                 (ContentId,
-                                                          ContentIdColumn,
-                                                          mkContentId,
-                                                          pContentId)
-import qualified ZoomHub.Types.ContentId                 as ContentId
-import           ZoomHub.Types.ContentMIME               (ContentMIME)
-import           ZoomHub.Types.ContentState              as ContentState
-import           ZoomHub.Types.ContentType               as ContentType
-import           ZoomHub.Types.ContentURI                (ContentURI, ContentURI' (ContentURI),
-                                                          ContentURIColumn,
-                                                          pContentURI)
-import qualified ZoomHub.Types.ContentURI                as ContentURI
-import           ZoomHub.Types.DeepZoomImage             (mkDeepZoomImage)
-import qualified ZoomHub.Types.DeepZoomImage.TileFormat  as TileFormat
+import ZoomHub.Log.Logger (logWarning)
+import ZoomHub.Storage.PostgreSQL.Internal
+  (createConnectionPool, subtractUTCTime, toNominalDiffTime)
+import ZoomHub.Types.Content
+  ( Content(Content)
+  , contentActiveAt
+  , contentCompletedAt
+  , contentDZI
+  , contentError
+  , contentId
+  , contentInitializedAt
+  , contentMIME
+  , contentNumViews
+  , contentProgress
+  , contentSize
+  , contentState
+  , contentType
+  , contentURL
+  , mkContent
+  )
+import ZoomHub.Types.ContentId
+  (ContentId, ContentIdColumn, mkContentId, pContentId)
+import qualified ZoomHub.Types.ContentId as ContentId
+import ZoomHub.Types.ContentMIME (ContentMIME)
+import ZoomHub.Types.ContentState as ContentState
+import ZoomHub.Types.ContentType as ContentType
+import ZoomHub.Types.ContentURI
+  (ContentURI, ContentURI'(ContentURI), ContentURIColumn, pContentURI)
+import qualified ZoomHub.Types.ContentURI as ContentURI
+import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
+import qualified ZoomHub.Types.DeepZoomImage.TileFormat as TileFormat
 import qualified ZoomHub.Types.DeepZoomImage.TileOverlap as TileOverlap
-import qualified ZoomHub.Types.DeepZoomImage.TileSize    as TileSize
+import qualified ZoomHub.Types.DeepZoomImage.TileSize as TileSize
 
 -- Public API
 

@@ -14,21 +14,19 @@ module ZoomHub.API.Types.DeepZoomImage
   , mkDeepZoomImage
   ) where
 
-import           Data.Aeson                   (ToJSON, Value (String),
-                                               genericToJSON, toJSON)
-import           Data.Aeson.Casing            (aesonPrefix, camelCase)
-import           Data.Maybe                   (fromMaybe)
-import qualified Data.Text                    as T
-import           GHC.Generics                 (Generic)
+import Data.Aeson (ToJSON, Value(String), genericToJSON, toJSON)
+import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.Maybe (fromMaybe)
+import qualified Data.Text as T
 import qualified Generics.SOP as SOP
-import           Network.URI                  (URI, parseRelativeReference,
-                                               relativeTo)
-import           System.FilePath              ((<.>), (</>))
+import GHC.Generics (Generic)
+import Network.URI (URI, parseRelativeReference, relativeTo)
+import System.FilePath ((<.>), (</>))
 
-import           ZoomHub.Types.ContentBaseURI (ContentBaseURI, contentBaseHost,
-                                               contentBasePath)
-import           ZoomHub.Types.ContentId      (ContentId, unContentId)
-import qualified ZoomHub.Types.DeepZoomImage  as Internal
+import ZoomHub.Types.ContentBaseURI
+  (ContentBaseURI, contentBaseHost, contentBasePath)
+import ZoomHub.Types.ContentId (ContentId, unContentId)
+import qualified ZoomHub.Types.DeepZoomImage as Internal
 
 data DeepZoomImage = DeepZoomImage
   { dziUrl         :: DeepZoomImageURI

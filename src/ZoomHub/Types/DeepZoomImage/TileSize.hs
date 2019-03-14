@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.DeepZoomImage.TileSize
   ( TileSize(..)
@@ -9,20 +9,18 @@ module ZoomHub.Types.DeepZoomImage.TileSize
   , fromInteger
   ) where
 
-import           Prelude                          hiding (fromInteger)
+import Prelude hiding (fromInteger)
 
-import           Data.Aeson                       (ToJSON, Value (Number),
-                                                   toJSON)
-import           Data.Int                         (Int32)
-import           Data.Maybe                       (fromJust)
-import           Database.SQLite.Simple           (SQLData (SQLInteger))
-import           Database.SQLite.Simple.FromField (FromField, ResultError (ConversionFailed),
-                                                   fromField, returnError)
-import           Database.SQLite.Simple.Internal  (Field (Field))
-import           Database.SQLite.Simple.Ok        (Ok (Ok))
-import           Database.SQLite.Simple.ToField   (ToField, toField)
-import           Squeal.PostgreSQL                (FromValue (..),
-                                                   PGType (PGint4), ToParam(..), PG)
+import Data.Aeson (ToJSON, Value(Number), toJSON)
+import Data.Int (Int32)
+import Data.Maybe (fromJust)
+import Database.SQLite.Simple (SQLData(SQLInteger))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGint4), ToParam(..))
 
 data TileSize = TileSize254 | TileSize256 | TileSize1024
   deriving (Bounded, Enum, Eq)

@@ -27,8 +27,8 @@ import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (UTCTime)
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
   ( (:::)
   , ColumnValue(Default, Set)
@@ -38,22 +38,17 @@ import Squeal.PostgreSQL
   , Manipulation
   , MonadPQ
   , NP((:*))
-  -- , NullityType(NotNull, Null)
   , NullityType(NotNull)
   , Only(..)
-  -- , PGType(PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
   , PGType(PGint8, PGtext)
   , Query
   , ReturningClause(Returning)
   , RowPG
   , TuplePG
-  , (!)
-  , (&)
-  , (.==)
   , as
+  , firstRow
   , from
   , fromOnly
-  , firstRow
   , getRow
   , insertRow
   , leftOuterJoin
@@ -63,6 +58,9 @@ import Squeal.PostgreSQL
   , select
   , table
   , where_
+  , (!)
+  , (&)
+  , (.==)
   )
 
 -- Public API

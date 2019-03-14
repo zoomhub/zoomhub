@@ -1,9 +1,9 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentState
   ( ContentState(..)
@@ -12,25 +12,26 @@ module ZoomHub.Types.ContentState
   , toColumn
   ) where
 
-import           Data.Maybe                           (fromJust)
-import           Data.Profunctor.Product.Default      (Default, def)
-import           Data.Text                            (Text)
+import Data.Maybe (fromJust)
+import Data.Profunctor.Product.Default (Default, def)
+import Data.Text (Text)
 import qualified Database.PostgreSQL.Simple.FromField as PGS
-import           Database.SQLite.Simple               (SQLData (SQLText))
-import           Database.SQLite.Simple.FromField     (FromField, ResultError (ConversionFailed),
-                                                       fromField, returnError)
-import           Database.SQLite.Simple.Internal      (Field (Field))
-import           Database.SQLite.Simple.Ok            (Ok (Ok))
-import           Database.SQLite.Simple.ToField       (ToField, toField)
-import           Opaleye                              (Column,
-                                                       Constant (Constant),
-                                                       PGText,
-                                                       QueryRunnerColumnDefault,
-                                                       fieldQueryRunnerColumn,
-                                                       pgStrictText,
-                                                       queryRunnerColumnDefault)
-import           Squeal.PostgreSQL                    (FromValue (..), ToParam(..),
-                                                       PGType (PGtext), PG)
+import Database.SQLite.Simple (SQLData(SQLText))
+import Database.SQLite.Simple.FromField
+  (FromField, ResultError(ConversionFailed), fromField, returnError)
+import Database.SQLite.Simple.Internal (Field(Field))
+import Database.SQLite.Simple.Ok (Ok(Ok))
+import Database.SQLite.Simple.ToField (ToField, toField)
+import Opaleye
+  ( Column
+  , Constant(Constant)
+  , PGText
+  , QueryRunnerColumnDefault
+  , fieldQueryRunnerColumn
+  , pgStrictText
+  , queryRunnerColumnDefault
+  )
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
 data ContentState
   = Initialized
