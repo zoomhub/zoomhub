@@ -44,6 +44,7 @@ import Squeal.PostgreSQL
   , Query
   , ReturningClause(Returning)
   , RowPG
+  , ToParam
   , TuplePG
   , as
   , firstRow
@@ -65,42 +66,20 @@ import Squeal.PostgreSQL
 
 -- Public API
 
--- Reads
-createImage :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
-createImage cid initializedAt image = do
-  let imageRow = imageToRow cid image initializedAt
-  result <- manipulateParams insertImage imageRow
-  fmap fromOnly . getRow 0 $ result
-
-getImageById :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> m (Maybe DeepZoomImage)
-getImageById cid = do
-  result <- runQueryParams (selectImageBy ((#image ! #content_id) .== param @1)) (Only cid)
-  imageRow <- firstRow result
-  pure (rowToImage <$> imageRow)
-
-selectImageBy ::
-  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGint8 ] ->
-  Query
-  Schema
-  '[ 'NotNull 'PGint8 ]
-  (RowPG ImageRow)
-selectImageBy condition = select
-  ( #image ! #content_id `as` #irContentId :*
-    #image ! #initialized_at `as` #irInitializedAt :*
-    #image ! #width `as` #irWidth :*
-    #image ! #height `as` #irHeight :*
-    #image ! #tile_size `as` #irTileSize :*
-    #image ! #tile_overlap `as` #irTileOverlap :*
-    #image ! #tile_format `as` #irTileFormat
-  )
-  ( from (table #image) & where_ condition )
+-- Reads: Content
+getBy ::
+  (MonadBaseControl IO m, MonadPQ Schema m, ToParam p 'PGtext) =>
+  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
+  p ->
+  m (Maybe Content)
+getBy condition parameter = do
+  result <- runQueryParams (selectContentBy condition) (Only parameter)
+  contentRow <- firstRow result
+  pure (rowToContent <$> contentRow)
 
 selectContentBy ::
   Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
-  Query
-  Schema
-  '[ 'NotNull 'PGtext ]
-  (RowPG ContentImageRow)
+  Query Schema '[ 'NotNull 'PGtext ] (RowPG ContentImageRow)
 selectContentBy condition = select
   ( #content ! #hash_id `as` #cirHashId :*
     #content ! #type_id `as` #cirTypeId :*
@@ -131,6 +110,34 @@ selectContentBy condition = select
          )
     & where_ condition
   )
+
+-- Reads: Image
+getImageById :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> m (Maybe DeepZoomImage)
+getImageById cid = do
+  result <- runQueryParams (selectImageBy ((#image ! #content_id) .== param @1)) (Only cid)
+  imageRow <- firstRow result
+  pure (rowToImage <$> imageRow)
+
+selectImageBy ::
+  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGint8 ] ->
+  Query Schema '[ 'NotNull 'PGint8 ] (RowPG ImageRow)
+selectImageBy condition = select
+  ( #image ! #content_id `as` #irContentId :*
+    #image ! #initialized_at `as` #irInitializedAt :*
+    #image ! #width `as` #irWidth :*
+    #image ! #height `as` #irHeight :*
+    #image ! #tile_size `as` #irTileSize :*
+    #image ! #tile_overlap `as` #irTileOverlap :*
+    #image ! #tile_format `as` #irTileFormat
+  )
+  ( from (table #image) & where_ condition )
+
+-- Writes
+createImage :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
+createImage cid initializedAt image = do
+  let imageRow = imageToRow cid image initializedAt
+  result <- manipulateParams insertImage imageRow
+  fmap fromOnly . getRow 0 $ result
 
 data ContentRow = ContentRow
   {{- crId :: Int64
