@@ -199,8 +199,7 @@ createImage cid initializedAt image = do
   fmap fromOnly . getRow 0 $ result
 
 data ContentRow = ContentRow
-  {{- crId :: Int64
-  , -}crHashId :: ContentId           -- 1
+  { crHashId :: ContentId             -- 1
   , crTypeId :: ContentType           -- 2
   , crURL :: ContentURI               -- 3
   , crState :: ContentState           -- 4
@@ -218,11 +217,6 @@ data ContentRow = ContentRow
   , crNumAbuseReports :: Int64        -- 16
   , crNumViews :: Int64               -- 17
   , crVersion :: Int32                -- 18
-  -- , irWidth :: Maybe Int64
-  -- , irHeight :: Maybe Int64
-  -- , irTileSize :: Maybe TileSize
-  -- , irTileOverlap :: Maybe TileOverlap
-  -- , irTileFormat :: Maybe TileFormat
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
