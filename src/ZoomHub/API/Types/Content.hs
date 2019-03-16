@@ -34,14 +34,14 @@ import ZoomHub.Types.ContentURI (ContentURI)
 
 -- Content
 data Content = Content
-  { contentId        :: ContentId
-  , contentUrl       :: ContentURI
-  , contentReady     :: Bool
-  , contentFailed    :: Bool
-  , contentProgress  :: Double
-  , contentShareUrl  :: ContentShareURI
+  { contentId :: ContentId
+  , contentUrl :: ContentURI
+  , contentReady :: Bool
+  , contentFailed :: Bool
+  , contentProgress :: Double
+  , contentShareUrl :: ContentShareURI
   , contentEmbedHtml :: String
-  , contentDzi       :: Maybe DeepZoomImage
+  , contentDzi :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
 -- Constructor
