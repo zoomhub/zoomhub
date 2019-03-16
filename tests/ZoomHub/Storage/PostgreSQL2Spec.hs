@@ -8,14 +8,16 @@ module ZoomHub.Storage.PostgreSQL2Spec
   ) where
 
 import Control.Exception (bracket)
+import Control.Monad (void)
 import Data.Time.Clock (UTCTime)
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL (Connection, connectdb, define, finish, runPQ)
 import Test.Hspec (Spec, around, describe, hspec, it, shouldBe)
 
-import ZoomHub.Storage.PostgreSQL2 (create, getById)
+import ZoomHub.Storage.PostgreSQL2 (create, getById, getById')
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, setup, teardown)
 import ZoomHub.Types.Content (contentDZI, contentNumViews, mkContent)
+import ZoomHub.Types.ContentId (ContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentType (ContentType(Image))
 import ZoomHub.Types.ContentURI (ContentURI'(ContentURI))
@@ -42,12 +44,11 @@ withDatabaseConnection = bracket acquire release
 
 spec :: Spec
 spec =
-  around withDatabaseConnection $
+  around withDatabaseConnection $ do
     describe "getById" $
       it "should return item by hash ID" $ \conn -> do
-        let cid = ContentId.fromString "8"
-            initializedContent = mkContent Image
-                cid
+        let initializedContent = mkContent Image
+                defaultContentId
                 (ContentURI "http://example.com/6")
                 (read "2018-10-16 00:00:00Z" :: UTCTime)
             dzi = mkDeepZoomImage 400 300 TileSize254 TileOverlap1 PNG
@@ -55,6 +56,26 @@ spec =
               { contentNumViews = 100
               , contentDZI = Just dzi
               }
-        _ <- runPQ (create initializedContentWithViews) conn
-        (result, _) <- runPQ (getById cid) conn
+        void $ runPQ (create initializedContentWithViews) conn
+        (result, _) <- runPQ (getById defaultContentId) conn
         result `shouldBe` (Just initializedContentWithViews)
+
+    describe "getById'" $
+      it "should increase number of views" $ \conn -> do
+        let initializedContent = mkContent Image
+                defaultContentId
+                (ContentURI "http://example.com/6")
+                (read "2018-10-16 00:00:00Z" :: UTCTime)
+            dzi = mkDeepZoomImage 400 300 TileSize254 TileOverlap1 PNG
+            initializedContentWithViews = initializedContent
+              { contentNumViews = 1
+              , contentDZI = Just dzi
+              }
+        void $ runPQ (create initializedContentWithViews) conn
+        void $ runPQ (getById' defaultContentId) conn
+        void $ runPQ (getById' defaultContentId) conn
+        (result, _) <- runPQ (getById defaultContentId) conn
+        result `shouldBe` (Just (initializedContentWithViews { contentNumViews = 3 }))
+
+defaultContentId :: ContentId
+defaultContentId = ContentId.fromString "8"

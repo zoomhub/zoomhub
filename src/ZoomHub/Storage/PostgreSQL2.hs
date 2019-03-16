@@ -8,12 +8,21 @@ module ZoomHub.Storage.PostgreSQL2
   ( -- ** Read operations
     getById
   , getByURL
+    -- ** Read/write operations
+  , getById'
+  , getByURL'
     -- ** Write operations
   , create
   ) where
 
 import ZoomHub.Storage.PostgreSQL2.Internal
-  (InsertContentResult(..), contentToRow, createImage, getBy, insertContent)
+  ( InsertContentResult(..)
+  , contentToRow
+  , createImage
+  , getBy
+  , getBy'
+  , insertContent
+  )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
@@ -34,6 +43,13 @@ getById cid = getBy ((#content ! #hash_id) .== param @1) cid
 
 getByURL :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentURI -> m (Maybe Content)
 getByURL url = getBy ((#content ! #url) .== param @1) url
+
+-- Reads/writes
+getById' :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentId -> m (Maybe Content)
+getById' cid = getBy' ((#content ! #hash_id) .== param @1) cid
+
+getByURL' :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentURI -> m (Maybe Content)
+getByURL' url = getBy' ((#content ! #url) .== param @1) url
 
 -- Writes
 -- TODO: Make this function total

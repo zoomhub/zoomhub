@@ -23,6 +23,8 @@ import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
+import Control.Monad (void, when)
+import Control.Monad.Base (liftBase)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
@@ -31,7 +33,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
   ( (:::)
-  , ColumnValue(Default, Set)
+  , ColumnValue(Default, Same, Set)
   , Condition
   , ConflictClause(OnConflictDoRaise)
   , Grouping(Ungrouped)
@@ -58,11 +60,13 @@ import Squeal.PostgreSQL
   , runQueryParams
   , select
   , table
+  , update_
   , where_
   , (!)
   , (&)
   , (.==)
   )
+import System.Random (randomRIO)
 
 -- Public API
 
@@ -76,6 +80,61 @@ getBy condition parameter = do
   result <- runQueryParams (selectContentBy condition) (Only parameter)
   contentRow <- firstRow result
   pure (rowToContent <$> contentRow)
+
+getBy' ::
+  (MonadBaseControl IO m, MonadPQ Schema m, ToParam p 'PGtext) =>
+  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
+  p ->
+  m (Maybe Content)
+getBy' condition parameter = do
+    mContent <- getBy condition parameter
+    case mContent of
+      Just content -> do
+        -- Sample how often we count views to reduce database load:
+        -- http://stackoverflow.com/a/4762559/125305
+        let cId = contentId content
+        let numViews = contentNumViews content
+        let numViewsSampleRate = sampleRate numViews
+        numViewsSample <- liftBase $ randomRIO (1, numViewsSampleRate)
+        when (numViewsSample == 1) $
+          -- TODO: How can we run this async?
+          void $ manipulateParams incrNumViews (numViewsSampleRate, cId)
+        return $ Just content
+      Nothing ->
+        return Nothing
+  where
+    sampleRate :: Int64 -> Int64
+    sampleRate numViews
+      | numViews < 100 = 1
+      | numViews < 1000 = 10
+      | numViews < 10000 = 100
+      | otherwise = 1000
+
+-- Writes: Content
+incrNumViews :: Manipulation Schema '[ 'NotNull 'PGint8, 'NotNull 'PGtext ] '[]
+incrNumViews =
+  update_ #content
+    ( Same `as` #id :*
+      Same `as` #hash_id :*
+      Same `as` #type_id :*
+      Same `as` #url :*
+      Same `as` #state :*
+      Same `as` #initialized_at :*
+      Same `as` #active_at :*
+      Same `as` #completed_at :*
+      Same `as` #title :*
+      Same `as` #attribution_text :*
+      Same `as` #attribution_link :*
+      Same `as` #mime :*
+      Same `as` #size :*
+      Same `as` #error :*
+      Same `as` #progress :*
+      Same `as` #abuse_level_id :*
+      Same `as` #num_abuse_reports :*
+      Set ( #num_views + param @1 ) `as` #num_views :*
+      Same `as` #version
+    )
+    ( #hash_id .== param @2 )
 
 selectContentBy ::
   Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
@@ -132,7 +191,7 @@ selectImageBy condition = select
   )
   ( from (table #image) & where_ condition )
 
--- Writes
+-- Writes: Image
 createImage :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
 createImage cid initializedAt image = do
   let imageRow = imageToRow cid image initializedAt
