@@ -93,7 +93,7 @@ test)
 
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"
-    stack test --test-arguments '-m "'"$MODULES"'"'
+    stack test --fast --test-arguments '--match "'"$MODULES"'"'
 
     dropdb "$DB_NAME"
     ;;
