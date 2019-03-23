@@ -9,6 +9,11 @@ module ZoomHub.Storage.PostgreSQL2.Schema
     , teardown
     ) where
 
+import qualified ZoomHub.Types.ContentState as ContentState
+import qualified ZoomHub.Types.ContentType as ContentType
+
+import qualified Data.String as String
+import qualified Data.Text as T
 import Squeal.PostgreSQL
   ( (:::)
   , (:=>)
@@ -34,6 +39,7 @@ import Squeal.PostgreSQL
   , int
   , int4
   , notNullable
+  , null_
   , nullable
   , primaryKey
   , text
@@ -54,18 +60,18 @@ type ContentTable =
        ] :=>
         '[ "id" ::: 'Def :=> 'NotNull 'PGint8
          , "hash_id" ::: 'NoDef :=> 'NotNull 'PGtext
-         , "type_id" ::: 'NoDef :=> 'NotNull 'PGint4
+         , "type_id" ::: 'Def :=> 'NotNull 'PGint4
          , "url" ::: 'NoDef :=> 'NotNull 'PGtext
-         , "state" ::: 'NoDef :=> 'NotNull 'PGtext
+         , "state" ::: 'Def :=> 'NotNull 'PGtext
          , "initialized_at" ::: 'Def :=> 'NotNull 'PGtimestamptz
-         , "active_at" ::: 'NoDef :=> 'Null 'PGtimestamptz
-         , "completed_at" ::: 'NoDef :=> 'Null 'PGtimestamptz
-         , "title" ::: 'NoDef :=> 'Null 'PGtext
-         , "attribution_text" ::: 'NoDef :=> 'Null 'PGtext
-         , "attribution_link" ::: 'NoDef :=> 'Null 'PGtext
-         , "mime" ::: 'NoDef :=> 'Null 'PGtext
-         , "size" ::: 'NoDef :=> 'Null 'PGint8
-         , "error" ::: 'NoDef :=> 'Null 'PGtext
+         , "active_at" ::: 'Def :=> 'Null 'PGtimestamptz
+         , "completed_at" ::: 'Def :=> 'Null 'PGtimestamptz
+         , "title" ::: 'Def :=> 'Null 'PGtext
+         , "attribution_text" ::: 'Def :=> 'Null 'PGtext
+         , "attribution_link" ::: 'Def :=> 'Null 'PGtext
+         , "mime" ::: 'Def :=> 'Null 'PGtext
+         , "size" ::: 'Def :=> 'Null 'PGint8
+         , "error" ::: 'Def :=> 'Null 'PGtext
          , "progress" ::: 'Def :=> 'NotNull 'PGfloat8
          , "abuse_level_id" ::: 'Def :=> 'NotNull 'PGint4
          , "num_abuse_reports" ::: 'Def :=> 'NotNull 'PGint8
@@ -116,23 +122,22 @@ setup =
   createTable #content
     ( bigserial `as` #id :*
       (text & notNullable) `as` #hash_id :*
-      (int4 & notNullable) `as` #type_id :*
-      (text & notNullable) `as` #url :*
-      (text & notNullable) `as` #state :*
+      (int4 & notNullable & default_ defaultContentTypeId) `as` #type_id :*
+      (text & notNullable) `as` #url :* (text & notNullable & default_ defaultContentState) `as` #state :*
       (timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #initialized_at :*
-      (timestampWithTimeZone & nullable) `as` #active_at :*
-      (timestampWithTimeZone & nullable) `as` #completed_at :*
-      (text & nullable) `as` #title :*
-      (text & nullable) `as` #attribution_text :*
-      (text & nullable) `as` #attribution_link :*
-      (text & nullable) `as` #mime :*
-      (bigint & nullable) `as` #size :*
-      (text & nullable) `as` #error :*
+      (timestampWithTimeZone & nullable & default_ null_) `as` #active_at :*
+      (timestampWithTimeZone & nullable & default_ null_) `as` #completed_at :*
+      (text & nullable & default_ null_) `as` #title :*
+      (text & nullable & default_ null_) `as` #attribution_text :*
+      (text & nullable & default_ null_) `as` #attribution_link :*
+      (text & nullable & default_ null_) `as` #mime :*
+      (bigint & nullable & default_ null_) `as` #size :*
+      (text & nullable & default_ null_) `as` #error :*
       (doublePrecision & notNullable & default_ 0) `as` #progress :*
       (int4 & notNullable & default_ 0) `as` #abuse_level_id :*
       (bigint & notNullable & default_ 0) `as` #num_abuse_reports :*
       (bigint & notNullable & default_ 0) `as` #num_views :*
-      (int & notNullable & default_ 4) `as` #version
+      (int & notNullable & default_ defaultContentVersion) `as` #version
     )
     ( primaryKey #id `as` #pk_content )
   >>>
@@ -170,6 +175,10 @@ setup =
       foreignKey #content_id #content #id
       OnDeleteCascade OnUpdateCascade `as` #fk_content_id
     )
+  where
+    defaultContentTypeId = fromIntegral . ContentType.toPGint4 $ ContentType.defaultValue
+    defaultContentState = String.fromString . T.unpack . ContentState.toText $ ContentState.defaultValue
+    defaultContentVersion = 4
 
 teardown :: Definition Schema '[]
 teardown = dropTable #flickr >>> dropTable #image >>> dropTable #content

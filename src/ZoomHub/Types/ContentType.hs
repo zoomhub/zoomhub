@@ -8,6 +8,9 @@
 module ZoomHub.Types.ContentType
   ( ContentType(..)
   , ContentTypeColumn
+    -- Squeal / Postgres
+  , defaultValue
+  , toPGint4
   ) where
 
 import Data.Int (Int32)
@@ -104,6 +107,9 @@ instance Default Constant ContentType ContentTypeColumn where
       def' WebpageThumbnail = pgInt4 14
 
 -- Squeal / PostgreSQL
+defaultValue :: ContentType
+defaultValue = Unknown
+
 fromPGint4 :: Int32 -> ContentType
 fromPGint4 0 = Unknown
 fromPGint4 1 = Image
@@ -116,17 +122,20 @@ fromPGint4 11 = PDF11
 fromPGint4 14 = WebpageThumbnail
 fromPGint4 t = error $ "Invalid ContentType: " <> show t
 
+toPGint4 :: ContentType -> Int32
+toPGint4 Unknown =  0
+toPGint4 Image =  1
+toPGint4 Webpage =  2
+toPGint4 FlickrImage =  3
+toPGint4 GigaPan =  6
+toPGint4 Zoomify =  7
+toPGint4 PDF10 = 10
+toPGint4 PDF11 = 11
+toPGint4 WebpageThumbnail = 14
+
 type instance PG ContentType = 'PGint4
 instance ToParam ContentType 'PGint4 where
-  toParam Unknown = toParam (0 :: Int32)
-  toParam Image = toParam (1 :: Int32)
-  toParam Webpage = toParam (2 :: Int32)
-  toParam FlickrImage = toParam (3 :: Int32)
-  toParam GigaPan = toParam (6 :: Int32)
-  toParam Zoomify = toParam (7 :: Int32)
-  toParam PDF10 = toParam (10 :: Int32)
-  toParam PDF11 = toParam (11 :: Int32)
-  toParam WebpageThumbnail = toParam (14 :: Int32)
+  toParam = toParam . toPGint4
 
 instance FromValue 'PGint4 ContentType where
   -- TODO: What if database value is not a valid?

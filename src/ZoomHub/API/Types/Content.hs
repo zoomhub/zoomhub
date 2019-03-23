@@ -24,7 +24,7 @@ import Network.URI (URI, parseRelativeReference, relativeTo)
 import ZoomHub.API.Types.DeepZoomImage (DeepZoomImage)
 import qualified ZoomHub.API.Types.DeepZoomImage as DZ
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
-import qualified ZoomHub.Types.Content as Internal
+import qualified ZoomHub.Types.Content.Internal as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Types.ContentState

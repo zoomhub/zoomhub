@@ -70,7 +70,7 @@ import Database.SQLite.Simple.ToRow (ToRow, toRow)
 import System.Random (randomRIO)
 
 import ZoomHub.Log.Logger (logWarning)
-import ZoomHub.Types.Content
+import ZoomHub.Types.Content.Internal
   ( Content(Content)
   , contentActiveAt
   , contentCompletedAt

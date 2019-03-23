@@ -85,7 +85,7 @@ import System.Random (randomRIO)
 import ZoomHub.Log.Logger (logWarning)
 import ZoomHub.Storage.PostgreSQL.Internal
   (createConnectionPool, subtractUTCTime, toNominalDiffTime)
-import ZoomHub.Types.Content
+import ZoomHub.Types.Content.Internal
   ( Content(Content)
   , contentActiveAt
   , contentCompletedAt
@@ -106,8 +106,10 @@ import ZoomHub.Types.ContentId
   (ContentId, ContentIdColumn, mkContentId, pContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState as ContentState
-import ZoomHub.Types.ContentType as ContentType
+import ZoomHub.Types.ContentState (ContentState, ContentStateColumn)
+import qualified ZoomHub.Types.ContentState as ContentState
+import ZoomHub.Types.ContentType (ContentType, ContentTypeColumn)
+import qualified ZoomHub.Types.ContentType as ContentType
 import ZoomHub.Types.ContentURI
   (ContentURI, ContentURI'(ContentURI), ContentURIColumn, pContentURI)
 import qualified ZoomHub.Types.ContentURI as ContentURI

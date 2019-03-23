@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -12,11 +13,11 @@
 module ZoomHub.Storage.PostgreSQL2.Internal where
 
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
-import ZoomHub.Types.Content (Content(..))
+import ZoomHub.Types.Content.Internal (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentState (ContentState)
-import ZoomHub.Types.ContentType (ContentType)
+import ZoomHub.Types.ContentType (ContentType(..))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage(..), mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
@@ -29,6 +30,7 @@ import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (UTCTime)
+-- import Data.Time.Clock (getCurrentTime)
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
@@ -36,6 +38,7 @@ import Squeal.PostgreSQL
   , ColumnValue(Default, Same, Set)
   , Condition
   , ConflictClause(OnConflictDoRaise)
+  , Expression
   , Grouping(Ungrouped)
   , Manipulation
   , MonadPQ
@@ -110,7 +113,7 @@ getBy' condition parameter = do
       | numViews < 10000 = 100
       | otherwise = 1000
 
--- Writes: Content
+
 incrNumViews :: Manipulation Schema '[ 'NotNull 'PGint8, 'NotNull 'PGtext ] '[]
 incrNumViews =
   update_ #content
@@ -337,18 +340,99 @@ imageToRow cid dzi createdAt = ImageRow
   , irTileFormat = dziTileFormat dzi
   }
 
+insertContentResultToContent :: InsertContentResult -> Content
+insertContentResultToContent result =
+  Content
+  { contentId = icrHashId result
+  , contentType = icrTypeId result
+  , contentURL = icrURL result
+  , contentState = icrState result
+  , contentInitializedAt = icrInitializedAt result
+  , contentActiveAt = icrActiveAt result
+  , contentCompletedAt = icrCompletedAt result
+  , contentMIME = icrMIME result
+  , contentSize = icrSize result
+  , contentProgress = icrProgress result
+  , contentNumViews = icrNumViews result
+  , contentError = icrError result
+  , contentDZI = Nothing
+  }
 
 data InsertContentResult =
   InsertContentResult
   { icrId :: Int64
   , icrHashId :: ContentId
+  , icrTypeId :: ContentType
+  , icrURL :: ContentURI
+  , icrState :: ContentState
+  , icrInitializedAt :: UTCTime
+  , icrActiveAt :: Maybe UTCTime
+  , icrCompletedAt :: Maybe UTCTime
+  , icrTitle :: Maybe Text
+  , icrAttributionText :: Maybe Text
+  , icrAttributionLink :: Maybe Text
+  , icrMIME :: Maybe ContentMIME
+  , icrSize :: Maybe Int64
+  , icrError :: Maybe Text
+  , icrProgress :: Double
+  , icrAbuseLevelId :: Int32
+  , icrNumAbuseReports :: Int64
+  , icrNumViews :: Int64
+  , icrVersion :: Int32
   } deriving (Show, GHC.Generic)
 instance SOP.Generic InsertContentResult
 instance SOP.HasDatatypeInfo InsertContentResult
 
-insertContent :: Manipulation Schema (TuplePG ContentRow)
-                 '[ "icrId" ::: 'NotNull 'PGint8, "icrHashId" ::: 'NotNull 'PGtext ]
+insertContent :: Manipulation Schema '[ 'NotNull 'PGtext ] (RowPG InsertContentResult)
 insertContent = insertRow #content
+  ( Default `as` #id :*
+    Set unsafeHashIdPlaceholder `as` #hash_id :*
+    Default `as` #type_id :*
+    Set (param @1) `as` #url :*
+    Default `as` #state :*
+    Default `as` #initialized_at :*
+    Default `as` #active_at :*
+    Default `as` #completed_at :*
+    Default `as` #title :*
+    Default `as` #attribution_text :*
+    Default `as` #attribution_link :*
+    Default `as` #mime :*
+    Default `as` #size :*
+    Default `as` #error :*
+    Default `as` #progress :*
+    Default `as` #abuse_level_id :*
+    Default `as` #num_abuse_reports :*
+    Default `as` #num_views :*
+    Default `as` #version
+  ) OnConflictDoRaise
+  ( Returning
+    ( #id `as` #icrId :*
+      #hash_id `as` #icrHashId :*
+      #type_id `as` #icrTypeId :*
+      #url `as` #icrURL :*
+      #state `as` #icrState :*
+      #initialized_at `as` #icrInitializedAt :*
+      #active_at `as` #icrActiveAt :*
+      #completed_at `as` #icrCompletedAt :*
+      #title `as` #icrTitle :*
+      #attribution_text `as` #icrAttributionText :*
+      #attribution_link `as` #icrAttributionLink :*
+      #mime `as` #icrMIME :*
+      #size `as` #icrSize :*
+      #error `as` #icrError :*
+      #progress `as` #icrProgress :*
+      #abuse_level_id `as` #icrAbuseLevelId :*
+      #num_abuse_reports `as` #icrNumAbuseReports :*
+      #num_views `as` #icrNumViews :*
+      #version `as` #icrVersion
+    )
+  )
+  where
+    unsafeHashIdPlaceholder :: Expression schema from grouping params (nullity 'PGtext)
+    unsafeHashIdPlaceholder = "$placeholder-overwritten-by-trigger$"
+
+unsafeInsertContent :: Manipulation Schema (TuplePG ContentRow) (RowPG InsertContentResult)
+unsafeInsertContent = insertRow #content
   ( Default `as` #id :*
     Set (param @1) `as` #hash_id :*
     Set (param @2) `as` #type_id :*
@@ -368,7 +452,30 @@ insertContent = insertRow #content
     Set (param @16) `as` #num_abuse_reports :*
     Set (param @17) `as` #num_views :*
     Set (param @18) `as` #version
-  ) OnConflictDoRaise (Returning (#id `as` #icrId :* #hash_id `as` #icrHashId))
+  )
+  OnConflictDoRaise
+  ( Returning
+    ( #id `as` #icrId :*
+      #hash_id `as` #icrHashId :*
+      #type_id `as` #icrTypeId :*
+      #url `as` #icrURL :*
+      #state `as` #icrState :*
+      #initialized_at `as` #icrInitializedAt :*
+      #active_at `as` #icrActiveAt :*
+      #completed_at `as` #icrCompletedAt :*
+      #title `as` #icrTitle :*
+      #attribution_text `as` #icrAttributionText :*
+      #attribution_link `as` #icrAttributionLink :*
+      #mime `as` #icrMIME :*
+      #size `as` #icrSize :*
+      #error `as` #icrError :*
+      #progress `as` #icrProgress :*
+      #abuse_level_id `as` #icrAbuseLevelId :*
+      #num_abuse_reports `as` #icrNumAbuseReports :*
+      #num_views `as` #icrNumViews :*
+      #version `as` #icrVersion
+    )
+  )
 
 insertImage :: Manipulation Schema (TuplePG ImageRow) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
 insertImage = insertRow #image

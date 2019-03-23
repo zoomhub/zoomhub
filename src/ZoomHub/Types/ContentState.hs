@@ -10,6 +10,9 @@ module ZoomHub.Types.ContentState
   , ContentStateColumn
   , fromString
   , toColumn
+    -- Squeal / Postgres
+  , defaultValue
+  , toText
   ) where
 
 import Data.Maybe (fromJust)
@@ -47,12 +50,15 @@ fromString "completed:success" = Just CompletedSuccess
 fromString "completed:failure" = Just CompletedFailure
 fromString _ = Nothing
 
+toText :: ContentState -> Text
+toText Initialized = "initialized"
+toText Active = "active"
+toText CompletedSuccess = "completed:success"
+toText CompletedFailure = "completed:failure"
+
 -- SQLite
 instance ToField ContentState where
-  toField Initialized      = SQLText "initialized"
-  toField Active           = SQLText "active"
-  toField CompletedSuccess = SQLText "completed:success"
-  toField CompletedFailure = SQLText "completed:failure"
+  toField = SQLText . toText
 
 instance FromField ContentState where
   fromField (Field (SQLText "initialized") _) = Ok Initialized
@@ -65,10 +71,7 @@ instance FromField ContentState where
 type ContentStateColumn = Column PGText
 
 toColumn :: ContentState -> ContentStateColumn
-toColumn Initialized      = pgStrictText "initialized"
-toColumn Active           = pgStrictText "active"
-toColumn CompletedSuccess = pgStrictText "completed:success"
-toColumn CompletedFailure = pgStrictText "completed:failure"
+toColumn = pgStrictText . toText
 
 instance PGS.FromField ContentState where
   fromField f mdata = PGS.fromField f mdata >>= parseContentState
@@ -89,13 +92,13 @@ instance Default Constant ContentState ContentStateColumn where
   def = Constant toColumn
 
 -- Squeal / PostgreSQL
+defaultValue :: ContentState
+defaultValue = Initialized
+
 instance FromValue 'PGtext ContentState where
   -- TODO: What if database value is not a valid?
   fromValue = fromJust . fromString <$> fromValue @'PGtext
 
 type instance PG ContentState = 'PGtext
 instance ToParam ContentState 'PGtext where
-  toParam Initialized = toParam ("initialized" :: Text)
-  toParam Active = toParam ("active" :: Text)
-  toParam CompletedSuccess = toParam ("completed:success" :: Text)
-  toParam CompletedFailure = toParam ("completed:failure" :: Text)
+  toParam = toParam . toText
