@@ -318,7 +318,7 @@ imageTable :: Table ImageRowReadWrite ImageRowReadWrite
 imageTable = Table "image"
   (pImage ImageRow
     { imageContentId = required "content_id"
-    , imageInitializedAt = required "initialized_at"
+    , imageInitializedAt = required "created_at"
     , imageWidth = required "width"
     , imageHeight = required "height"
     , imageTileSize = required "tile_size"

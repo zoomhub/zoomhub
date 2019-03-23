@@ -114,7 +114,7 @@ ALTER TABLE flickr OWNER TO dani;
 
 CREATE TABLE image (
     content_id bigint NOT NULL,
-    initialized_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     width bigint NOT NULL,
     height bigint NOT NULL,
     tile_size bigint NOT NULL,
@@ -159,11 +159,11 @@ SELECT pg_catalog.setval('content_id_seq', 6, false);
 -- Data for Name: image; Type: TABLE DATA; Schema: public; Owner: dani
 --
 
-INSERT INTO image (content_id, initialized_at, width, height, tile_size, tile_overlap, tile_format) VALUES (1, '2009-07-31 12:29:22.312007-07', 208, 208, 254, 1, 'jpg');
-INSERT INTO image (content_id, initialized_at, width, height, tile_size, tile_overlap, tile_format) VALUES (2, '2011-01-17 20:55:08.337606-08', 4032, 6048, 254, 1, 'jpg');
-INSERT INTO image (content_id, initialized_at, width, height, tile_size, tile_overlap, tile_format) VALUES (3, '2013-08-17 16:30:31.321688-07', 1824, 1368, 254, 1, 'jpg');
-INSERT INTO image (content_id, initialized_at, width, height, tile_size, tile_overlap, tile_format) VALUES (4, '2014-04-11 13:40:50.718786-07', 5058, 3750, 254, 1, 'jpg');
-INSERT INTO image (content_id, initialized_at, width, height, tile_size, tile_overlap, tile_format) VALUES (5, '2009-07-30 21:20:13.596581-07', 4013, 2405, 254, 1, 'jpg');
+INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (1, '2009-07-31 12:29:22.312007-07', 208, 208, 254, 1, 'jpg');
+INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (2, '2011-01-17 20:55:08.337606-08', 4032, 6048, 254, 1, 'jpg');
+INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (3, '2013-08-17 16:30:31.321688-07', 1824, 1368, 254, 1, 'jpg');
+INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (4, '2014-04-11 13:40:50.718786-07', 5058, 3750, 254, 1, 'jpg');
+INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (5, '2009-07-30 21:20:13.596581-07', 4013, 2405, 254, 1, 'jpg');
 
 
 --

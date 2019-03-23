@@ -138,7 +138,7 @@ setup =
   >>>
   createTable #image
     ( bigserial `as` #content_id :*
-      (timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #initialized_at :*
+      (timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at :*
       (bigint & notNullable) `as` #width :*
       (bigint & notNullable) `as` #height :*
       (int4 & notNullable) `as` #tile_size :*
