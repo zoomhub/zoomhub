@@ -29,7 +29,7 @@ ALTER TABLE content ADD CONSTRAINT content_url_key UNIQUE (url);
 -- state
 ALTER TABLE content ALTER COLUMN state SET NOT NULL;
 
--- initialized_at
+-- created_at
 ALTER TABLE content RENAME COLUMN initializedat TO initialized_at;
 ALTER TABLE content ALTER COLUMN initialized_at SET NOT NULL;
 
@@ -74,8 +74,8 @@ ALTER TABLE image ADD CONSTRAINT image_content_id_key UNIQUE (content_id);
 ALTER TABLE image ADD FOREIGN KEY(content_id) REFERENCES content(id);
 
 -- initialized_at
-ALTER TABLE image RENAME COLUMN initializedat TO initialized_at;
-ALTER TABLE image ALTER COLUMN initialized_at SET NOT NULL;
+ALTER TABLE image RENAME COLUMN initializedat TO created_at;
+ALTER TABLE image ALTER COLUMN created_at SET NOT NULL;
 
 -- width
 ALTER TABLE image ALTER COLUMN width SET NOT NULL;

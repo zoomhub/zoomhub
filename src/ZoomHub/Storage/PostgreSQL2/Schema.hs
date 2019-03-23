@@ -80,7 +80,7 @@ type ImageTable =
        , "fk_content_id" ::: 'ForeignKey '["content_id"] "content" '["id"]
        ] :=>
         '[ "content_id" ::: 'Def :=> 'NotNull 'PGint8
-         , "initialized_at" ::: 'Def :=> 'NotNull 'PGtimestamptz
+         , "created_at" ::: 'Def :=> 'NotNull 'PGtimestamptz
          , "width" ::: 'NoDef :=> 'NotNull 'PGint8
          , "height" ::: 'NoDef :=> 'NotNull 'PGint8
          , "tile_size" ::: 'NoDef :=> 'NotNull 'PGint4

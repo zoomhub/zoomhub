@@ -182,7 +182,7 @@ selectImageBy ::
   Query Schema '[ 'NotNull 'PGint8 ] (RowPG ImageRow)
 selectImageBy condition = select
   ( #image ! #content_id `as` #irContentId :*
-    #image ! #initialized_at `as` #irInitializedAt :*
+    #image ! #created_at `as` #irCreatedAt :*
     #image ! #width `as` #irWidth :*
     #image ! #height `as` #irHeight :*
     #image ! #tile_size `as` #irTileSize :*
@@ -255,7 +255,7 @@ instance SOP.HasDatatypeInfo ContentImageRow
 
 data ImageRow = ImageRow
   { irContentId :: Int64
-  , irInitializedAt :: UTCTime
+  , irCreatedAt :: UTCTime
   , irWidth :: Int64
   , irHeight :: Int64
   , irTileSize :: TileSize
@@ -327,9 +327,9 @@ contentToRow c = ContentRow
   -- dzi = contentDZI c
 
 imageToRow :: Int64 -> DeepZoomImage -> UTCTime -> ImageRow
-imageToRow cid dzi initializedAt = ImageRow
+imageToRow cid dzi createdAt = ImageRow
   { irContentId = cid
-  , irInitializedAt = initializedAt
+  , irCreatedAt = createdAt
   , irWidth = fromIntegral . dziWidth $ dzi
   , irHeight = fromIntegral . dziHeight $ dzi
   , irTileSize = dziTileSize dzi
@@ -373,7 +373,7 @@ insertContent = insertRow #content
 insertImage :: Manipulation Schema (TuplePG ImageRow) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
 insertImage = insertRow #image
   ( Set (param @1) `as` #content_id :*
-    Set (param @2) `as` #initialized_at :*
+    Set (param @2) `as` #created_at :*
     Set (param @3) `as` #width :*
     Set (param @4) `as` #height :*
     Set (param @5) `as` #tile_size :*
