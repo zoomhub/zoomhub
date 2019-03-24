@@ -25,7 +25,7 @@ import Squeal.PostgreSQL
   , OnUpdateClause(OnUpdateCascade)
   , PGType(PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
   , SchemumType(Table)
-  , TableConstraint(ForeignKey, PrimaryKey)
+  , TableConstraint(ForeignKey, PrimaryKey, Unique)
   , as
   , bigint
   , bigserial
@@ -44,6 +44,7 @@ import Squeal.PostgreSQL
   , primaryKey
   , text
   , timestampWithTimeZone
+  , unique
   , (&)
   , (>>>)
   )
@@ -57,6 +58,8 @@ type Schema =
 type ContentTable =
   "content" ::: 'Table
     ( '[ "pk_content" ::: 'PrimaryKey '["id"]
+       , "content_unique_hash_id" ::: 'Unique '["hash_id"]
+       , "content_unique_url" ::: 'Unique '["url"]
        ] :=>
         '[ "id" ::: 'Def :=> 'NotNull 'PGint8
          , "hash_id" ::: 'NoDef :=> 'NotNull 'PGtext
@@ -84,6 +87,7 @@ type ImageTable =
   "image" ::: 'Table
     ( '[ "pk_image" ::: 'PrimaryKey '["content_id"]
        , "fk_content_id" ::: 'ForeignKey '["content_id"] "content" '["id"]
+        , "image_unique_content_id" ::: 'Unique '["content_id"]
        ] :=>
         '[ "content_id" ::: 'Def :=> 'NotNull 'PGint8
          , "created_at" ::: 'Def :=> 'NotNull 'PGtimestamptz
@@ -99,6 +103,7 @@ type FlickrTable =
   "flickr" ::: 'Table
     ( '[ "pk_flickr" ::: 'PrimaryKey '["content_id"]
         , "fk_content_id" ::: 'ForeignKey '["content_id"] "content" '["id"]
+        , "flickr_unique_content_id" ::: 'Unique '["content_id"]
         ] :=>
         '[ "content_id" ::: 'Def :=> 'NotNull 'PGint8
          , "farm_id" ::: 'NoDef :=> 'NotNull 'PGint4
@@ -139,7 +144,10 @@ setup =
       (bigint & notNullable & default_ 0) `as` #num_views :*
       (int & notNullable & default_ defaultContentVersion) `as` #version
     )
-    ( primaryKey #id `as` #pk_content )
+    ( primaryKey #id `as` #pk_content :*
+      unique #hash_id `as` #content_unique_hash_id :*
+      unique #url `as` #content_unique_url
+    )
   >>>
   createTable #image
     ( bigserial `as` #content_id :*
@@ -151,8 +159,9 @@ setup =
       (text & notNullable) `as` #tile_format
     )
     ( primaryKey #content_id `as` #pk_image :*
-      foreignKey #content_id #content #id
-      OnDeleteCascade OnUpdateCascade `as` #fk_content_id
+      ( foreignKey #content_id #content #id
+          OnDeleteCascade OnUpdateCascade `as` #fk_content_id ) :*
+      unique #content_id `as` #image_unique_content_id
     )
   >>>
   createTable #flickr
@@ -172,8 +181,9 @@ setup =
       (text & nullable) `as` #photo_page_url
     )
     ( primaryKey #content_id `as` #pk_flickr :*
-      foreignKey #content_id #content #id
-      OnDeleteCascade OnUpdateCascade `as` #fk_content_id
+      ( foreignKey #content_id #content #id
+          OnDeleteCascade OnUpdateCascade `as` #fk_content_id ) :*
+      unique #content_id `as` #flickr_unique_content_id
     )
   where
     defaultContentTypeId = fromIntegral . ContentType.toPGint4 $ ContentType.defaultValue
