@@ -9,7 +9,6 @@ module ZoomHub.Types.ContentType
   ( ContentType(..)
   , ContentTypeColumn
     -- Squeal / Postgres
-  , defaultValue
   , toPGint4
   ) where
 
@@ -107,9 +106,6 @@ instance Default Constant ContentType ContentTypeColumn where
       def' WebpageThumbnail = pgInt4 14
 
 -- Squeal / PostgreSQL
-defaultValue :: ContentType
-defaultValue = Unknown
-
 fromPGint4 :: Int32 -> ContentType
 fromPGint4 0 = Unknown
 fromPGint4 1 = Image

@@ -186,8 +186,10 @@ setup =
       unique #content_id `as` #flickr_unique_content_id
     )
   where
-    defaultContentTypeId = fromIntegral . ContentType.toPGint4 $ ContentType.defaultValue
-    defaultContentState = String.fromString . T.unpack . ContentState.toText $ ContentState.defaultValue
+    defaultContentTypeId = fromIntegral . ContentType.toPGint4 $
+                              ContentType.Unknown
+    defaultContentState = String.fromString . T.unpack . ContentState.toText $
+                            ContentState.Initialized
     defaultContentVersion = 4
 
 teardown :: Definition Schema '[]

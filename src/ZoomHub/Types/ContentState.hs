@@ -11,7 +11,6 @@ module ZoomHub.Types.ContentState
   , fromString
   , toColumn
     -- Squeal / Postgres
-  , defaultValue
   , toText
   ) where
 
@@ -92,9 +91,6 @@ instance Default Constant ContentState ContentStateColumn where
   def = Constant toColumn
 
 -- Squeal / PostgreSQL
-defaultValue :: ContentState
-defaultValue = Initialized
-
 instance FromValue 'PGtext ContentState where
   -- TODO: What if database value is not a valid?
   fromValue = fromJust . fromString <$> fromValue @'PGtext
