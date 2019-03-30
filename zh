@@ -84,6 +84,7 @@ bootstrap|ping|setup|setup-admin-server|setup-database-server|setup-web-server"
 run)
     stack build --ghc-options='' \
                 --file-watch \
+                --fast \
                 --exec ./scripts/run-development.sh
     ;;
 test)
