@@ -9,12 +9,13 @@ module ZoomHub.Storage.PostgreSQL2Spec
 
 import Control.Exception (bracket)
 import qualified Generics.SOP as SOP
-import Squeal.PostgreSQL (Connection, connectdb, define, finish, runPQ, (>>>))
+import Squeal.PostgreSQL (Connection, connectdb, finish, runPQ)
+import Squeal.PostgreSQL.Migration (migrateDown, migrateUp)
 import Test.Hspec
   (Spec, around, describe, expectationFailure, hspec, it, shouldBe)
 
 import ZoomHub.Storage.PostgreSQL2 (getById, initialize)
-import ZoomHub.Storage.PostgreSQL2.Schema (Schema, setup, teardown)
+import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
 import ZoomHub.Types.Content (contentId)
 import ZoomHub.Types.ContentURI (ContentURI'(ContentURI))
 
@@ -27,11 +28,11 @@ withDatabaseConnection = bracket acquire release
     acquire :: IO (SOP.K Connection Schema)
     acquire = do
       conn <- connectdb "host=localhost port=5432 dbname=zoomhub_test"
-      (_, conn') <- runPQ (define (teardown >>> setup)) conn
+      (_, conn') <- runPQ (migrateUp migrations) conn
       pure conn'
     release :: SOP.K Connection Schema -> IO ()
     release conn = do
-      (_, conn') <- runPQ (define teardown) conn
+      (_, conn') <- runPQ (migrateDown migrations) conn
       finish conn'
 
 spec :: Spec
