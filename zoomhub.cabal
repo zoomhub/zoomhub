@@ -116,6 +116,7 @@ library
     , process
     , product-profunctors
     , random
+    , raw-strings-qq
     , resource-pool
     , retry
     , safe
