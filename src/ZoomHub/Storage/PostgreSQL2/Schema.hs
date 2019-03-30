@@ -171,7 +171,9 @@ initializeHashidsEncode = Migration
   , up = do
       void . manipulate . UnsafeManipulation $ createLoadHashids
       void . manipulate . UnsafeManipulation $ createHashidsEncode
+      void . manipulate . UnsafeManipulation $ "SET plv8.start_proc = 'load_hashids';"
   , down = do
+      void . manipulate . UnsafeManipulation $ "RESET plv8.start_proc;"
       void . manipulate . UnsafeManipulation $ dropHashidsEncode
       void . manipulate . UnsafeManipulation $ dropLoadHashids
   }
