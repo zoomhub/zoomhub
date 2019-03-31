@@ -27,7 +27,7 @@ init)
     stack setup
     ;;
 lint)
-    stack exec hlint src
+    stack exec hlint -- src tests
     ;;
 format)
     files=$(git ls-files | grep --invert 'vendor/' | grep '.hs$')
