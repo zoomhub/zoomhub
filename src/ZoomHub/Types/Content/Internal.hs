@@ -31,11 +31,6 @@ data Content = Content
   , contentDZI :: Maybe DeepZoomImage
   } deriving (Eq, GHC.Generic, Show)
 
-data ContentSubmission = ContentSubmission
-  { csType :: ContentType
-  , csURL :: ContentURI
-  }
-
 mkContent :: ContentType -> ContentId -> ContentURI -> UTCTime -> Content
 mkContent type_ cId uri initializedAt =
   Content

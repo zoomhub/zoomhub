@@ -13,12 +13,10 @@ module ZoomHub.Types.Content
   , contentNumViews
   , contentError
   , contentDZI
-  , ContentSubmission(..)
   ) where
 
 import ZoomHub.Types.Content.Internal
   ( Content
-  , ContentSubmission(..)
   , contentActiveAt
   , contentCompletedAt
   , contentDZI
