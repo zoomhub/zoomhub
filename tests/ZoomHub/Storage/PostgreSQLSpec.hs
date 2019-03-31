@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+-- {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Storage.PostgreSQLSpec
   ( main

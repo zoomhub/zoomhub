@@ -40,8 +40,8 @@ import ZoomHub.Config
   , NewContentStatus(NewContentAllowed)
   )
 import qualified ZoomHub.Config as Config
-import ZoomHub.Storage.PostgreSQL (ConnectInfo(..), defaultConnectInfo)
-import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
+import ZoomHub.Storage.PostgreSQL
+  (ConnectInfo(..), createConnectionPool, defaultConnectInfo, getById)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.Content (contentNumViews)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
@@ -130,6 +130,7 @@ newContentId = "deadbeef"
 newContentURL :: String
 newContentURL = "http://example.com"
 
+{-# NOINLINE config #-}
 config :: Config
 config = Config
     { baseURI = BaseURI (toURI "http://localhost:8000")
@@ -289,7 +290,7 @@ spec = with (return $ app config) $ do
           , matchHeaders = [javaScriptUTF8]
           }
 
-  describe "View by URL (GET /:url)" $ do
+  describe "View by URL (GET /:url)" $
     it "should return correct redirect existing content" $
         let (existingId, existingURL) = existingContent in
         get ("/" <> BC.pack existingURL) `shouldRespondWith`
@@ -325,5 +326,5 @@ spec = with (return $ app config) $ do
         liftIO $ do
           let pool = Config.dbConnPool config
           maybeContent <- withResource pool (getById $ fromString "4rcn")
-          let numViews = fromMaybe 0 (contentNumViews <$> maybeContent)
+          let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
