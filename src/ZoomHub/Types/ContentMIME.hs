@@ -11,6 +11,7 @@ module ZoomHub.Types.ContentMIME
   , ContentMIMEColumn
   , pContentMIME
   , unContentMIME
+  , fromText
   ) where
 
 import Codec.MIME.Parse (parseMIMEType)
@@ -45,6 +46,10 @@ type ContentMIME = ContentMIME' Type
 
 toText :: ContentMIME -> T.Text
 toText = showType . unContentMIME
+
+fromText :: T.Text -> Maybe ContentMIME
+fromText t = ContentMIME <$> parseMIMEType t
+
 
 -- SQLite
 instance ToField ContentMIME where

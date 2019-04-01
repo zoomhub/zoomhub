@@ -13,16 +13,28 @@ module ZoomHub.Storage.PostgreSQL2
   , getByURL'
     -- ** Write operations
   , initialize
+  , markAsSuccess
   ) where
 
 import ZoomHub.Storage.PostgreSQL2.Internal
-  (getBy, getBy', insertContent, insertContentResultToContent)
+  ( getBy
+  , getBy'
+  , imageToInsertRow
+  , insertContent
+  , insertContentResultToContent
+  , insertImage
+  , markContentAsSuccess
+  )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
+import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentURI (ContentURI)
+import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
+import Control.Monad (void)
 import Control.Monad.Trans.Control (MonadBaseControl)
+import Data.Int (Int64)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(..)
@@ -60,3 +72,16 @@ initialize uri =
     result <- manipulateParams insertContent (Only uri)
     mRow <- firstRow result
     return $ insertContentResultToContent <$> mRow
+
+-- TODO: Return updated content
+markAsSuccess
+  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  => ContentId
+  -> DeepZoomImage
+  -> Maybe ContentMIME
+  -> Maybe Int64
+  -> m ()
+markAsSuccess cId dzi mMIME mSize =
+  transactionally_ $ do
+    void $ manipulateParams markContentAsSuccess (cId, mMIME, mSize)
+    void $ manipulateParams insertImage (imageToInsertRow cId dzi)

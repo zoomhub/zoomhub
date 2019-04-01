@@ -16,8 +16,10 @@ import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content.Internal (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState (ContentState)
+import ZoomHub.Types.ContentState (ContentState(CompletedSuccess))
+import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentType (ContentType(..))
+import qualified ZoomHub.Types.ContentType as ContentType
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage(..), mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
@@ -34,8 +36,7 @@ import Data.Time (UTCTime)
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
-  ( (:::)
-  , ColumnValue(Default, Same, Set)
+  ( ColumnValue(Default, Same, Set)
   , Condition
   , ConflictClause(OnConflictDoRaise)
   , Expression
@@ -43,7 +44,7 @@ import Squeal.PostgreSQL
   , Manipulation
   , MonadPQ
   , NP((:*))
-  , NullityType(NotNull)
+  , NullityType(NotNull, Null)
   , Only(..)
   , PGType(PGint8, PGtext)
   , Query
@@ -52,13 +53,14 @@ import Squeal.PostgreSQL
   , ToParam
   , TuplePG
   , as
+  , currentTimestamp
   , firstRow
   , from
-  , fromOnly
-  , getRow
+  , insertQuery_
   , insertRow
   , leftOuterJoin
   , manipulateParams
+  , null_
   , param
   , runQueryParams
   , select
@@ -195,11 +197,11 @@ selectImageBy condition = select
   ( from (table #image) & where_ condition )
 
 -- Writes: Image
-createImage :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
-createImage cid initializedAt image = do
-  let imageRow = imageToRow cid image initializedAt
-  result <- manipulateParams insertImage imageRow
-  fmap fromOnly . getRow 0 $ result
+-- createImage :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
+-- createImage cid initializedAt image = do
+--   let imageRow = imageToRow cid image initializedAt
+--   result <- manipulateParams insertImage imageRow
+--   fmap fromOnly . getRow 0 $ result
 
 data ContentRow = ContentRow
   { crHashId :: ContentId             -- 1
@@ -329,16 +331,16 @@ contentToRow c = ContentRow
   -- where
   -- dzi = contentDZI c
 
-imageToRow :: Int64 -> DeepZoomImage -> UTCTime -> ImageRow
-imageToRow cid dzi createdAt = ImageRow
-  { irContentId = cid
-  , irCreatedAt = createdAt
-  , irWidth = fromIntegral . dziWidth $ dzi
-  , irHeight = fromIntegral . dziHeight $ dzi
-  , irTileSize = dziTileSize dzi
-  , irTileOverlap = dziTileOverlap dzi
-  , irTileFormat = dziTileFormat dzi
-  }
+-- imageToRow :: Int64 -> DeepZoomImage -> UTCTime -> ImageRow
+-- imageToRow cid dzi createdAt = ImageRow
+--   { irContentId = cid
+--   , irCreatedAt = createdAt
+--   , irWidth = fromIntegral . dziWidth $ dzi
+--   , irHeight = fromIntegral . dziHeight $ dzi
+--   , irTileSize = dziTileSize dzi
+--   , irTileOverlap = dziTileOverlap dzi
+--   , irTileFormat = dziTileFormat dzi
+--   }
 
 insertContentResultToContent :: InsertContentResult -> Content
 insertContentResultToContent result =
@@ -431,59 +433,124 @@ insertContent = insertRow #content
     unsafeHashIdPlaceholder :: Expression schema from grouping params (nullity 'PGtext)
     unsafeHashIdPlaceholder = "$placeholder-overwritten-by-trigger$"
 
-unsafeInsertContent :: Manipulation Schema (TuplePG ContentRow) (RowPG InsertContentResult)
-unsafeInsertContent = insertRow #content
-  ( Default `as` #id :*
-    Set (param @1) `as` #hash_id :*
-    Set (param @2) `as` #type_id :*
-    Set (param @3) `as` #url :*
-    Set (param @4) `as` #state :*
-    Set (param @5) `as` #initialized_at :*
-    Set (param @6) `as` #active_at :*
-    Set (param @7) `as` #completed_at :*
-    Set (param @8) `as` #title :*
-    Set (param @9) `as` #attribution_text :*
-    Set (param @10) `as` #attribution_link :*
-    Set (param @11) `as` #mime :*
-    Set (param @12) `as` #size :*
-    Set (param @13) `as` #error :*
-    Set (param @14) `as` #progress :*
-    Set (param @15) `as` #abuse_level_id :*
-    Set (param @16) `as` #num_abuse_reports :*
-    Set (param @17) `as` #num_views :*
-    Set (param @18) `as` #version
+markContentAsSuccess ::
+  Manipulation Schema
+  '[ 'NotNull 'PGtext, 'Null 'PGtext, 'Null 'PGint8 ]
+  '[]
+markContentAsSuccess = update_ #content
+  ( Same `as` #id :*
+    Same `as` #hash_id :*
+    Set (ContentType.toExpression Image) `as` #type_id :*
+    Same `as` #url :*
+    Set (ContentState.toExpression CompletedSuccess) `as` #state :*
+    Same `as` #initialized_at :*
+    Same `as` #active_at :*
+    Set currentTimestamp `as` #completed_at :*
+    Same `as` #title :*
+    Same `as` #attribution_text :*
+    Same `as` #attribution_link :*
+    Set (param @2) `as` #mime :*
+    Set (param @3) `as` #size :*
+    Set null_ `as` #error :* -- reset any previous errors
+    Set 1.0 `as` #progress :*
+    Same `as` #abuse_level_id :*
+    Same `as` #num_abuse_reports :*
+    Same `as` #num_views :*
+    Same `as` #version
   )
-  OnConflictDoRaise
-  ( Returning
-    ( #id `as` #icrId :*
-      #hash_id `as` #icrHashId :*
-      #type_id `as` #icrTypeId :*
-      #url `as` #icrURL :*
-      #state `as` #icrState :*
-      #initialized_at `as` #icrInitializedAt :*
-      #active_at `as` #icrActiveAt :*
-      #completed_at `as` #icrCompletedAt :*
-      #title `as` #icrTitle :*
-      #attribution_text `as` #icrAttributionText :*
-      #attribution_link `as` #icrAttributionLink :*
-      #mime `as` #icrMIME :*
-      #size `as` #icrSize :*
-      #error `as` #icrError :*
-      #progress `as` #icrProgress :*
-      #abuse_level_id `as` #icrAbuseLevelId :*
-      #num_abuse_reports `as` #icrNumAbuseReports :*
-      #num_views `as` #icrNumViews :*
-      #version `as` #icrVersion
-    )
-  )
+  (#hash_id .== param @1)
+  -- TODO: Return updated content
 
-insertImage :: Manipulation Schema (TuplePG ImageRow) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
-insertImage = insertRow #image
-  ( Set (param @1) `as` #content_id :*
-    Set (param @2) `as` #created_at :*
-    Set (param @3) `as` #width :*
-    Set (param @4) `as` #height :*
-    Set (param @5) `as` #tile_size :*
-    Set (param @6) `as` #tile_overlap :*
-    Set (param @7) `as` #tile_format
-  ) OnConflictDoRaise (Returning (#content_id `as` #fromOnly))
+-- unsafeInsertContent :: Manipulation Schema (TuplePG ContentRow) (RowPG InsertContentResult)
+-- unsafeInsertContent = insertRow #content
+--   ( Default `as` #id :*
+--     Set (param @1) `as` #hash_id :*
+--     Set (param @2) `as` #type_id :*
+--     Set (param @3) `as` #url :*
+--     Set (param @4) `as` #state :*
+--     Set (param @5) `as` #initialized_at :*
+--     Set (param @6) `as` #active_at :*
+--     Set (param @7) `as` #completed_at :*
+--     Set (param @8) `as` #title :*
+--     Set (param @9) `as` #attribution_text :*
+--     Set (param @10) `as` #attribution_link :*
+--     Set (param @11) `as` #mime :*
+--     Set (param @12) `as` #size :*
+--     Set (param @13) `as` #error :*
+--     Set (param @14) `as` #progress :*
+--     Set (param @15) `as` #abuse_level_id :*
+--     Set (param @16) `as` #num_abuse_reports :*
+--     Set (param @17) `as` #num_views :*
+--     Set (param @18) `as` #version
+--   )
+--   OnConflictDoRaise
+--   ( Returning
+--     ( #id `as` #icrId :*
+--       #hash_id `as` #icrHashId :*
+--       #type_id `as` #icrTypeId :*
+--       #url `as` #icrURL :*
+--       #state `as` #icrState :*
+--       #initialized_at `as` #icrInitializedAt :*
+--       #active_at `as` #icrActiveAt :*
+--       #completed_at `as` #icrCompletedAt :*
+--       #title `as` #icrTitle :*
+--       #attribution_text `as` #icrAttributionText :*
+--       #attribution_link `as` #icrAttributionLink :*
+--       #mime `as` #icrMIME :*
+--       #size `as` #icrSize :*
+--       #error `as` #icrError :*
+--       #progress `as` #icrProgress :*
+--       #abuse_level_id `as` #icrAbuseLevelId :*
+--       #num_abuse_reports `as` #icrNumAbuseReports :*
+--       #num_views `as` #icrNumViews :*
+--       #version `as` #icrVersion
+--     )
+--   )
+
+-- insertImage :: Manipulation Schema (TuplePG ImageRow) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
+-- insertImage = insertRow #image
+--   ( Set (param @1) `as` #content_id :*
+--     Set (param @2) `as` #created_at :*
+--     Set (param @3) `as` #width :*
+--     Set (param @4) `as` #height :*
+--     Set (param @5) `as` #tile_size :*
+--     Set (param @6) `as` #tile_overlap :*
+--     Set (param @7) `as` #tile_format
+--   ) OnConflictDoRaise (Returning (#content_id `as` #fromOnly))
+
+imageToInsertRow :: ContentId -> DeepZoomImage -> InsertImageRow
+imageToInsertRow cid dzi = InsertImageRow
+  { iirContentId = cid
+  , iirWidth = fromIntegral . dziWidth $ dzi
+  , iirHeight = fromIntegral . dziHeight $ dzi
+  , iirTileSize = dziTileSize dzi
+  , iirTileOverlap = dziTileOverlap dzi
+  , iirTileFormat = dziTileFormat dzi
+  }
+
+data InsertImageRow = InsertImageRow
+  { iirContentId :: ContentId
+  , iirWidth :: Int64
+  , iirHeight :: Int64
+  , iirTileSize :: TileSize
+  , iirTileOverlap :: TileOverlap
+  , iirTileFormat :: TileFormat
+  } deriving (Show, GHC.Generic)
+instance SOP.Generic InsertImageRow
+instance SOP.HasDatatypeInfo InsertImageRow
+
+-- TODO: Return inserted image
+insertImage :: Manipulation Schema (TuplePG InsertImageRow) '[]
+insertImage = insertQuery_ #image $
+  select
+    ( #content ! #id `as` #content_id :*
+      currentTimestamp `as` #created_at :*
+      param @2 `as` #width :*
+      param @3 `as` #height :*
+      param @4 `as` #tile_size :*
+      param @5 `as` #tile_overlap :*
+      param @6 `as` #tile_format
+    )
+    ( from (table #content)
+    & where_ (#content ! #hash_id .== param @1)
+    )

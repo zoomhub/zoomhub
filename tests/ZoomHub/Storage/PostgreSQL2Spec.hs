@@ -25,7 +25,7 @@ import Test.Hspec
 
 import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
 import ZoomHub.Storage.PostgreSQL2
-  (getById, getById', getByURL, getByURL', initialize)
+  (getById, getById', getByURL, getByURL', initialize, markAsSuccess)
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
 import ZoomHub.Types.Content
   ( contentActiveAt
@@ -43,9 +43,14 @@ import ZoomHub.Types.Content
   , contentURL
   )
 import qualified ZoomHub.Types.ContentId as ContentId
-import ZoomHub.Types.ContentState (ContentState(Initialized))
-import ZoomHub.Types.ContentType (ContentType(Unknown))
+import qualified ZoomHub.Types.ContentMIME as ContentMIME
+import ZoomHub.Types.ContentState (ContentState(..))
+import ZoomHub.Types.ContentType (ContentType(..))
 import ZoomHub.Types.ContentURI (ContentURI, ContentURI'(ContentURI))
+import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
+import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat(JPEG))
+import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap(TileOverlap1))
+import ZoomHub.Types.DeepZoomImage.TileSize (TileSize(TileSize254))
 
 main :: IO ()
 main = hspec spec
@@ -86,6 +91,38 @@ spec =
             contentNumViews content `shouldBe` 0
             contentError content `shouldBe` Nothing
             contentDZI content `shouldBe` Nothing
+          Nothing ->
+            expectationFailure "expected content to be initialized"
+
+    describe "markAsSuccess" $
+      it "should mark content as successful" $ \conn -> do
+        (mContent, _) <- runPQ (initialize testURL) conn
+        case mContent of
+          Just content -> do
+            currentTime <- getCurrentTime
+
+            let cId = contentId content
+            let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
+            let mMIME = ContentMIME.fromText "image/jpeg"
+            let mSize = Just 1234
+            void $ runPQ (markAsSuccess cId dzi mMIME mSize) conn
+            (result, _) <- runPQ (getById cId) conn
+
+            case result >>= contentCompletedAt of
+              Just completedAt ->
+                completedAt `shouldSatisfy` isWithinSecondsOf currentTime 3
+              Nothing ->
+                expectationFailure "expected `contentCompletedAt` to be set"
+
+            result `shouldBe` Just content
+              { contentState = CompletedSuccess
+              , contentType = Image
+              , contentDZI = Just dzi
+              , contentCompletedAt = result >>= contentCompletedAt
+              , contentProgress = 1.0
+              , contentMIME = mMIME
+              , contentSize = mSize
+              }
           Nothing ->
             expectationFailure "expected content to be initialized"
 
