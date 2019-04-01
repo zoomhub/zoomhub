@@ -24,7 +24,8 @@ import Test.Hspec
   )
 
 import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
-import ZoomHub.Storage.PostgreSQL2 (getById, getById', initialize)
+import ZoomHub.Storage.PostgreSQL2
+  (getById, getById', getByURL, getByURL', initialize)
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
 import ZoomHub.Types.Content
   ( contentActiveAt
@@ -44,7 +45,7 @@ import ZoomHub.Types.Content
 import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentState (ContentState(Initialized))
 import ZoomHub.Types.ContentType (ContentType(Unknown))
-import ZoomHub.Types.ContentURI (ContentURI'(ContentURI))
+import ZoomHub.Types.ContentURI (ContentURI, ContentURI'(ContentURI))
 
 main :: IO ()
 main = hspec spec
@@ -67,14 +68,13 @@ spec =
   around withDatabaseConnection $ do
     describe "initialize" $
       it "should return initialized content" $ \conn -> do
-        let url = ContentURI "https://example.com/1"
         currentTime <- getCurrentTime
-        (mContent, _) <- runPQ (initialize url) conn
+        (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
             contentId content `shouldBe` ContentId.fromString "X75"
             contentType content `shouldBe` Unknown
-            contentURL content `shouldBe` url
+            contentURL content `shouldBe` testURL
             contentState content `shouldBe` Initialized
             contentInitializedAt content `shouldSatisfy`
               isWithinSecondsOf currentTime 3
@@ -91,7 +91,7 @@ spec =
 
     describe "getById" $
       it "should return item by hash ID" $ \conn -> do
-        (mContent, _) <- runPQ (initialize $ ContentURI "https://example.com/1") conn
+        (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
             (result, _) <- runPQ (getById $ contentId content) conn
@@ -101,7 +101,7 @@ spec =
 
     describe "getById'" $
       it "should increase number of views" $ \conn -> do
-        (mContent, _) <- runPQ (initialize $ ContentURI "https://example.com/1") conn
+        (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
             let cId = contentId content
@@ -113,7 +113,34 @@ spec =
           Nothing ->
             expectationFailure "expected content to be initialized"
 
+    describe "getByURL" $
+      it "should return item by URL" $ \conn -> do
+        (mContent, _) <- runPQ (initialize testURL) conn
+        case mContent of
+          Just content -> do
+            (result, _) <- runPQ (getByURL testURL) conn
+            result `shouldBe` Just content
+          Nothing ->
+            expectationFailure "expected content to be initialized"
+
+    describe "getByURL'" $
+      it "should increase number of views" $ \conn -> do
+        (mContent, _) <- runPQ (initialize testURL) conn
+        case mContent of
+          Just content -> do
+            let url = contentURL content
+            void $ runPQ (getByURL' url) conn
+            void $ runPQ (getByURL' url) conn
+            void $ runPQ (getByURL' url) conn
+            (result, _) <- runPQ (getByURL url) conn
+            result `shouldBe` Just (content{ contentNumViews = 3 })
+          Nothing ->
+            expectationFailure "expected content to be initialized"
+
     where
+    testURL :: ContentURI
+    testURL = ContentURI "https://example.com/1"
+
     isWithinSecondsOf :: UTCTime -> NominalDiffTime -> UTCTime -> Bool
     isWithinSecondsOf pivot interval t =
       let upperBound = addUTCTime interval pivot
