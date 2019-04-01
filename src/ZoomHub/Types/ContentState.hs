@@ -11,12 +11,15 @@ module ZoomHub.Types.ContentState
   , fromString
   , toColumn
     -- Squeal / Postgres
-  , toText
+  , toExpression
   ) where
 
 import Data.Maybe (fromJust)
 import Data.Profunctor.Product.Default (Default, def)
+import Data.String (IsString)
+import qualified Data.String as String
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Database.PostgreSQL.Simple.FromField as PGS
 import Database.SQLite.Simple (SQLData(SQLText))
 import Database.SQLite.Simple.FromField
@@ -98,3 +101,6 @@ instance FromValue 'PGtext ContentState where
 type instance PG ContentState = 'PGtext
 instance ToParam ContentState 'PGtext where
   toParam = toParam . toText
+
+toExpression :: IsString a => ContentState -> a
+toExpression = String.fromString . T.unpack . toText

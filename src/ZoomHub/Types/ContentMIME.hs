@@ -84,7 +84,6 @@ type instance PG ContentMIME = 'PGtext
 instance ToParam ContentMIME 'PGtext where
   toParam = toParam . toText
 
-
 instance FromValue 'PGtext ContentMIME where
   -- TODO: What if database value is not a valid MIME type?
   fromValue = ContentMIME . fromJust . parseMIMEType <$> fromValue @'PGtext

@@ -15,8 +15,6 @@ import qualified ZoomHub.Types.ContentType as ContentType
 
 import Control.Monad (void)
 import Data.String (IsString)
-import qualified Data.String as String
-import qualified Data.Text as T
 import Squeal.PostgreSQL
   ( (:::)
   , (:=>)
@@ -343,10 +341,8 @@ initialSchema = Migration
           unique #content_id `as` #flickr_unique_content_id
         )
       where
-        defaultContentTypeId = fromIntegral . ContentType.toPGint4 $
-                                  ContentType.Unknown
-        defaultContentState = String.fromString . T.unpack . ContentState.toText $
-                                ContentState.Initialized
+        defaultContentTypeId = ContentType.toExpression ContentType.Unknown
+        defaultContentState = ContentState.toExpression ContentState.Initialized
         defaultContentVersion = 4
 
     teardown :: Definition Schema' '[]

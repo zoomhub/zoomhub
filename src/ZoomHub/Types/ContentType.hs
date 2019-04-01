@@ -9,7 +9,7 @@ module ZoomHub.Types.ContentType
   ( ContentType(..)
   , ContentTypeColumn
     -- Squeal / Postgres
-  , toPGint4
+  , toExpression
   ) where
 
 import Data.Int (Int32)
@@ -136,3 +136,6 @@ instance ToParam ContentType 'PGint4 where
 instance FromValue 'PGint4 ContentType where
   -- TODO: What if database value is not a valid?
   fromValue = fromPGint4 <$> fromValue @'PGint4
+
+toExpression :: Num a => ContentType -> a
+toExpression = fromIntegral . toPGint4
