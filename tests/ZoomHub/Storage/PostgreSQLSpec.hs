@@ -5,14 +5,44 @@ module ZoomHub.Storage.PostgreSQLSpec
   , spec
   ) where
 
+-- import Control.Exception (bracket)
+-- import Data.Time.Clock (UTCTime, getCurrentTime)
+-- import Data.Time.Units (Minute)
+-- import qualified Database.PostgreSQL.Simple as PGS
+-- import Test.Hspec (Spec, around, describe, hspec, it, shouldReturn)
 import Test.Hspec (Spec, hspec)
+
+-- import ZoomHub.Storage.PostgreSQL
+--   ( ConnectInfo(..)
+--   , defaultConnectInfo
+--   , getExpiredActive
+--   , getNextUnprocessed
+--   , runInsertContent
+--   )
+-- import ZoomHub.Storage.PostgreSQL.Internal (subtractUTCTime, toNominalDiffTime)
+-- import ZoomHub.Types.Content
+--   (contentActiveAt, contentNumViews, contentState)
+-- import qualified ZoomHub.Types.ContentId as ContentId
+-- import qualified ZoomHub.Types.ContentState as ContentState
+-- import ZoomHub.Types.ContentType (ContentType(Image))
+-- import ZoomHub.Types.ContentURI (ContentURI'(ContentURI))
 
 
 main :: IO ()
 main = hspec spec
 
+-- openConnection :: IO PGS.Connection
+-- openConnection = PGS.connect connInfo
+--   where
+--     connInfo = defaultConnectInfo
+--                 { connectDatabase = "zoomhub_test"
+--                 }
 
+-- closeConnection :: PGS.Connection -> IO ()
+-- closeConnection = PGS.close
 
+-- withDatabaseConnection :: (PGS.Connection -> IO ()) -> IO ()
+-- withDatabaseConnection = bracket openConnection closeConnection
 
 spec :: Spec
 spec = return ()
