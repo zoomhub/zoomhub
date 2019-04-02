@@ -73,15 +73,21 @@ initialize uri =
     mRow <- firstRow result
     return $ insertContentResultToContent <$> mRow
 
--- TODO: Return updated content
 markAsSuccess
   :: (MonadBaseControl IO m, MonadPQ Schema m)
   => ContentId
   -> DeepZoomImage
   -> Maybe ContentMIME
   -> Maybe Int64
-  -> m ()
+  -> m (Maybe Content)
 markAsSuccess cId dzi mMIME mSize =
   transactionally_ $ do
-    void $ manipulateParams markContentAsSuccess (cId, mMIME, mSize)
+    contentResult <- manipulateParams markContentAsSuccess (cId, mMIME, mSize)
     void $ manipulateParams insertImage (imageToInsertRow cId dzi)
+    mContentRow <- firstRow contentResult
+    return $ case mContentRow of
+      Just contentRow -> do
+        let content = insertContentResultToContent contentRow
+        Just content { contentDZI = Just dzi }
+      Nothing ->
+        Nothing

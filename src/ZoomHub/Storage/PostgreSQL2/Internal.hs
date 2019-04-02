@@ -65,6 +65,7 @@ import Squeal.PostgreSQL
   , runQueryParams
   , select
   , table
+  , update
   , update_
   , where_
   , (!)
@@ -436,8 +437,8 @@ insertContent = insertRow #content
 markContentAsSuccess ::
   Manipulation Schema
   '[ 'NotNull 'PGtext, 'Null 'PGtext, 'Null 'PGint8 ]
-  '[]
-markContentAsSuccess = update_ #content
+  (RowPG InsertContentResult)
+markContentAsSuccess = update #content
   ( Same `as` #id :*
     Same `as` #hash_id :*
     Set (ContentType.toExpression Image) `as` #type_id :*
@@ -458,8 +459,29 @@ markContentAsSuccess = update_ #content
     Same `as` #num_views :*
     Same `as` #version
   )
-  (#hash_id .== param @1)
-  -- TODO: Return updated content
+  ( #hash_id .== param @1 )
+  ( Returning
+    ( #id `as` #icrId :*
+      #hash_id `as` #icrHashId :*
+      #type_id `as` #icrTypeId :*
+      #url `as` #icrURL :*
+      #state `as` #icrState :*
+      #initialized_at `as` #icrInitializedAt :*
+      #active_at `as` #icrActiveAt :*
+      #completed_at `as` #icrCompletedAt :*
+      #title `as` #icrTitle :*
+      #attribution_text `as` #icrAttributionText :*
+      #attribution_link `as` #icrAttributionLink :*
+      #mime `as` #icrMIME :*
+      #size `as` #icrSize :*
+      #error `as` #icrError :*
+      #progress `as` #icrProgress :*
+      #abuse_level_id `as` #icrAbuseLevelId :*
+      #num_abuse_reports `as` #icrNumAbuseReports :*
+      #num_views `as` #icrNumViews :*
+      #version `as` #icrVersion
+    )
+  )
 
 -- unsafeInsertContent :: Manipulation Schema (TuplePG ContentRow) (RowPG InsertContentResult)
 -- unsafeInsertContent = insertRow #content
@@ -539,7 +561,6 @@ data InsertImageRow = InsertImageRow
 instance SOP.Generic InsertImageRow
 instance SOP.HasDatatypeInfo InsertImageRow
 
--- TODO: Return inserted image
 insertImage :: Manipulation Schema (TuplePG InsertImageRow) '[]
 insertImage = insertQuery_ #image $
   select
