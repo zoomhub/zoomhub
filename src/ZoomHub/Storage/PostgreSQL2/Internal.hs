@@ -116,26 +116,6 @@ getBy' condition parameter = do
       | numViews < 10000 = 100
       | otherwise = 1000
 
--- -- Writes: Content
--- unsafeCreateContent
---   :: (MonadBaseControl IO m, MonadPQ Schema m)
---   => Content
---   -> m (Maybe Content)
--- unsafeCreateContent content =
---   transactionally_ $ do
---     result <- manipulateParams unsafeInsertContent (contentToRow content)
---     mRow <- firstRow result
---     case mRow of
---       Just row -> do
---         case contentDZI content of
---           Just dzi -> do
---             initializedAt <- liftBase getCurrentTime
---             void $ createImage (crId row) initializedAt dzi
---           Nothing ->
---             return ()
---         return . Just $ content
---       Nothing ->
---         return Nothing
 
 incrNumViews :: Manipulation Schema '[ 'NotNull 'PGint8, 'NotNull 'PGtext ] '[]
 incrNumViews =
