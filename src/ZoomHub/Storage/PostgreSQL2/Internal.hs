@@ -204,57 +204,34 @@ selectImageBy condition = select
 --   result <- manipulateParams insertImage imageRow
 --   fmap fromOnly . getRow 0 $ result
 
-data ContentRow = ContentRow
-  { crHashId :: ContentId             -- 1
-  , crTypeId :: ContentType           -- 2
-  , crURL :: ContentURI               -- 3
-  , crState :: ContentState           -- 4
-  , crInitializedAt :: UTCTime        -- 5
-  , crActiveAt :: Maybe UTCTime       -- 6
-  , crCompletedAt :: Maybe UTCTime    -- 7
-  , crTitle :: Maybe Text             -- 8
-  , crAttributionText :: Maybe Text   -- 9
-  , crAttributionLink :: Maybe Text   -- 10
-  , crMIME :: Maybe ContentMIME       -- 11
-  , crSize :: Maybe Int64             -- 12
-  , crError :: Maybe Text             -- 13
-  , crProgress :: Double              -- 14
-  , crAbuseLevelId :: Int32           -- 15
-  , crNumAbuseReports :: Int64        -- 16
-  , crNumViews :: Int64               -- 17
-  , crVersion :: Int32                -- 18
-  } deriving (Show, GHC.Generic)
-instance SOP.Generic ContentRow
-instance SOP.HasDatatypeInfo ContentRow
-
 -- TODO: How can we avoid this duplication between `ContentRow`,
 -- `ContentImageRow`, and `ImageRow`?
 data ContentImageRow = ContentImageRow
   { -- content
-    cirHashId :: ContentId              -- 1
-  , cirTypeId :: ContentType            -- 2
-  , cirURL :: ContentURI                -- 3
-  , cirState :: ContentState            -- 4
-  , cirInitializedAt :: UTCTime         -- 5
-  , cirActiveAt :: Maybe UTCTime        -- 6
-  , cirCompletedAt :: Maybe UTCTime     -- 7
-  , cirTitle :: Maybe Text              -- 8
-  , cirAttributionText :: Maybe Text    -- 9
-  , cirAttributionLink :: Maybe Text    -- 10
-  , cirMIME :: Maybe ContentMIME        -- 11
-  , cirSize :: Maybe Int64              -- 12
-  , cirError :: Maybe Text              -- 13
-  , cirProgress :: Double               -- 14
-  , cirAbuseLevelId :: Int32            -- 15
-  , cirNumAbuseReports :: Int64         -- 16
-  , cirNumViews :: Int64                -- 17
-  , cirVersion :: Int32                 -- 18
+    cirHashId :: ContentId
+  , cirTypeId :: ContentType
+  , cirURL :: ContentURI
+  , cirState :: ContentState
+  , cirInitializedAt :: UTCTime
+  , cirActiveAt :: Maybe UTCTime
+  , cirCompletedAt :: Maybe UTCTime
+  , cirTitle :: Maybe Text
+  , cirAttributionText :: Maybe Text
+  , cirAttributionLink :: Maybe Text
+  , cirMIME :: Maybe ContentMIME
+  , cirSize :: Maybe Int64
+  , cirError :: Maybe Text
+  , cirProgress :: Double
+  , cirAbuseLevelId :: Int32
+  , cirNumAbuseReports :: Int64
+  , cirNumViews :: Int64
+  , cirVersion :: Int32
     -- image
-  , cirWidth :: Maybe Int64             -- 19
-  , cirHeight :: Maybe Int64            -- 20
-  , cirTileSize :: Maybe TileSize       -- 21
-  , cirTileOverlap :: Maybe TileOverlap -- 22
-  , cirTileFormat :: Maybe TileFormat   -- 23
+  , cirWidth :: Maybe Int64
+  , cirHeight :: Maybe Int64
+  , cirTileSize :: Maybe TileSize
+  , cirTileOverlap :: Maybe TileOverlap
+  , cirTileFormat :: Maybe TileFormat
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentImageRow
 instance SOP.HasDatatypeInfo ContentImageRow
@@ -303,90 +280,49 @@ rowToImage ir = mkDeepZoomImage
   (irTileOverlap ir)
   (irTileFormat ir)
 
-contentToRow :: Content -> ContentRow
-contentToRow c = ContentRow
-  { crHashId = contentId c
-  , crTypeId = contentType c
-  , crURL = contentURL c
-  , crState = contentState c
-  , crInitializedAt = contentInitializedAt c
-  , crActiveAt = contentActiveAt c
-  , crCompletedAt = contentCompletedAt c
-  , crTitle = Nothing
-  , crAttributionText = Nothing
-  , crAttributionLink = Nothing
-  , crMIME = contentMIME c
-  , crSize = contentSize c
-  , crError = contentError c
-  , crProgress = contentProgress c
-  , crAbuseLevelId = 0
-  , crNumAbuseReports = 0
-  , crNumViews = contentNumViews c
-  , crVersion = 4
-  -- , cirWidth = (fromIntegral . dziWidth) <$> dzi
-  -- , cirHeight = (fromIntegral . dziHeight) <$> dzi
-  -- , cirTileSize = dziTileSize <$> dzi
-  -- , cirTileOverlap = dziTileOverlap <$> dzi
-  -- , cirTileFormat = dziTileFormat <$> dzi
-  }
-  -- where
-  -- dzi = contentDZI c
-
--- imageToRow :: Int64 -> DeepZoomImage -> UTCTime -> ImageRow
--- imageToRow cid dzi createdAt = ImageRow
---   { irContentId = cid
---   , irCreatedAt = createdAt
---   , irWidth = fromIntegral . dziWidth $ dzi
---   , irHeight = fromIntegral . dziHeight $ dzi
---   , irTileSize = dziTileSize dzi
---   , irTileOverlap = dziTileOverlap dzi
---   , irTileFormat = dziTileFormat dzi
---   }
-
-insertContentResultToContent :: InsertContentResult -> Content
+insertContentResultToContent :: ContentRow -> Content
 insertContentResultToContent result =
   Content
-  { contentId = icrHashId result
-  , contentType = icrTypeId result
-  , contentURL = icrURL result
-  , contentState = icrState result
-  , contentInitializedAt = icrInitializedAt result
-  , contentActiveAt = icrActiveAt result
-  , contentCompletedAt = icrCompletedAt result
-  , contentMIME = icrMIME result
-  , contentSize = icrSize result
-  , contentProgress = icrProgress result
-  , contentNumViews = icrNumViews result
-  , contentError = icrError result
+  { contentId = crHashId result
+  , contentType = crTypeId result
+  , contentURL = crURL result
+  , contentState = crState result
+  , contentInitializedAt = crInitializedAt result
+  , contentActiveAt = crActiveAt result
+  , contentCompletedAt = crCompletedAt result
+  , contentMIME = crMIME result
+  , contentSize = crSize result
+  , contentProgress = crProgress result
+  , contentNumViews = crNumViews result
+  , contentError = crError result
   , contentDZI = Nothing
   }
 
-data InsertContentResult =
-  InsertContentResult
-  { icrId :: Int64
-  , icrHashId :: ContentId
-  , icrTypeId :: ContentType
-  , icrURL :: ContentURI
-  , icrState :: ContentState
-  , icrInitializedAt :: UTCTime
-  , icrActiveAt :: Maybe UTCTime
-  , icrCompletedAt :: Maybe UTCTime
-  , icrTitle :: Maybe Text
-  , icrAttributionText :: Maybe Text
-  , icrAttributionLink :: Maybe Text
-  , icrMIME :: Maybe ContentMIME
-  , icrSize :: Maybe Int64
-  , icrError :: Maybe Text
-  , icrProgress :: Double
-  , icrAbuseLevelId :: Int32
-  , icrNumAbuseReports :: Int64
-  , icrNumViews :: Int64
-  , icrVersion :: Int32
+data ContentRow =
+  ContentRow
+  { crHashId :: ContentId
+  , crTypeId :: ContentType
+  , crURL :: ContentURI
+  , crState :: ContentState
+  , crInitializedAt :: UTCTime
+  , crActiveAt :: Maybe UTCTime
+  , crCompletedAt :: Maybe UTCTime
+  , crTitle :: Maybe Text
+  , crAttributionText :: Maybe Text
+  , crAttributionLink :: Maybe Text
+  , crMIME :: Maybe ContentMIME
+  , crSize :: Maybe Int64
+  , crError :: Maybe Text
+  , crProgress :: Double
+  , crAbuseLevelId :: Int32
+  , crNumAbuseReports :: Int64
+  , crNumViews :: Int64
+  , crVersion :: Int32
   } deriving (Show, GHC.Generic)
-instance SOP.Generic InsertContentResult
-instance SOP.HasDatatypeInfo InsertContentResult
+instance SOP.Generic ContentRow
+instance SOP.HasDatatypeInfo ContentRow
 
-insertContent :: Manipulation Schema '[ 'NotNull 'PGtext ] (RowPG InsertContentResult)
+insertContent :: Manipulation Schema '[ 'NotNull 'PGtext ] (RowPG ContentRow)
 insertContent = insertRow #content
   ( Default `as` #id :*
     Set unsafeHashIdPlaceholder `as` #hash_id :*
@@ -409,25 +345,24 @@ insertContent = insertRow #content
     Default `as` #version
   ) OnConflictDoRaise
   ( Returning
-    ( #id `as` #icrId :*
-      #hash_id `as` #icrHashId :*
-      #type_id `as` #icrTypeId :*
-      #url `as` #icrURL :*
-      #state `as` #icrState :*
-      #initialized_at `as` #icrInitializedAt :*
-      #active_at `as` #icrActiveAt :*
-      #completed_at `as` #icrCompletedAt :*
-      #title `as` #icrTitle :*
-      #attribution_text `as` #icrAttributionText :*
-      #attribution_link `as` #icrAttributionLink :*
-      #mime `as` #icrMIME :*
-      #size `as` #icrSize :*
-      #error `as` #icrError :*
-      #progress `as` #icrProgress :*
-      #abuse_level_id `as` #icrAbuseLevelId :*
-      #num_abuse_reports `as` #icrNumAbuseReports :*
-      #num_views `as` #icrNumViews :*
-      #version `as` #icrVersion
+    ( #hash_id `as` #crHashId :*
+      #type_id `as` #crTypeId :*
+      #url `as` #crURL :*
+      #state `as` #crState :*
+      #initialized_at `as` #crInitializedAt :*
+      #active_at `as` #crActiveAt :*
+      #completed_at `as` #crCompletedAt :*
+      #title `as` #crTitle :*
+      #attribution_text `as` #crAttributionText :*
+      #attribution_link `as` #crAttributionLink :*
+      #mime `as` #crMIME :*
+      #size `as` #crSize :*
+      #error `as` #crError :*
+      #progress `as` #crProgress :*
+      #abuse_level_id `as` #crAbuseLevelId :*
+      #num_abuse_reports `as` #crNumAbuseReports :*
+      #num_views `as` #crNumViews :*
+      #version `as` #crVersion
     )
   )
   where
@@ -437,7 +372,7 @@ insertContent = insertRow #content
 markContentAsSuccess ::
   Manipulation Schema
   '[ 'NotNull 'PGtext, 'Null 'PGtext, 'Null 'PGint8 ]
-  (RowPG InsertContentResult)
+  (RowPG ContentRow)
 markContentAsSuccess = update #content
   ( Same `as` #id :*
     Same `as` #hash_id :*
@@ -461,84 +396,26 @@ markContentAsSuccess = update #content
   )
   ( #hash_id .== param @1 )
   ( Returning
-    ( #id `as` #icrId :*
-      #hash_id `as` #icrHashId :*
-      #type_id `as` #icrTypeId :*
-      #url `as` #icrURL :*
-      #state `as` #icrState :*
-      #initialized_at `as` #icrInitializedAt :*
-      #active_at `as` #icrActiveAt :*
-      #completed_at `as` #icrCompletedAt :*
-      #title `as` #icrTitle :*
-      #attribution_text `as` #icrAttributionText :*
-      #attribution_link `as` #icrAttributionLink :*
-      #mime `as` #icrMIME :*
-      #size `as` #icrSize :*
-      #error `as` #icrError :*
-      #progress `as` #icrProgress :*
-      #abuse_level_id `as` #icrAbuseLevelId :*
-      #num_abuse_reports `as` #icrNumAbuseReports :*
-      #num_views `as` #icrNumViews :*
-      #version `as` #icrVersion
+    ( #hash_id `as` #crHashId :*
+      #type_id `as` #crTypeId :*
+      #url `as` #crURL :*
+      #state `as` #crState :*
+      #initialized_at `as` #crInitializedAt :*
+      #active_at `as` #crActiveAt :*
+      #completed_at `as` #crCompletedAt :*
+      #title `as` #crTitle :*
+      #attribution_text `as` #crAttributionText :*
+      #attribution_link `as` #crAttributionLink :*
+      #mime `as` #crMIME :*
+      #size `as` #crSize :*
+      #error `as` #crError :*
+      #progress `as` #crProgress :*
+      #abuse_level_id `as` #crAbuseLevelId :*
+      #num_abuse_reports `as` #crNumAbuseReports :*
+      #num_views `as` #crNumViews :*
+      #version `as` #crVersion
     )
   )
-
--- unsafeInsertContent :: Manipulation Schema (TuplePG ContentRow) (RowPG InsertContentResult)
--- unsafeInsertContent = insertRow #content
---   ( Default `as` #id :*
---     Set (param @1) `as` #hash_id :*
---     Set (param @2) `as` #type_id :*
---     Set (param @3) `as` #url :*
---     Set (param @4) `as` #state :*
---     Set (param @5) `as` #initialized_at :*
---     Set (param @6) `as` #active_at :*
---     Set (param @7) `as` #completed_at :*
---     Set (param @8) `as` #title :*
---     Set (param @9) `as` #attribution_text :*
---     Set (param @10) `as` #attribution_link :*
---     Set (param @11) `as` #mime :*
---     Set (param @12) `as` #size :*
---     Set (param @13) `as` #error :*
---     Set (param @14) `as` #progress :*
---     Set (param @15) `as` #abuse_level_id :*
---     Set (param @16) `as` #num_abuse_reports :*
---     Set (param @17) `as` #num_views :*
---     Set (param @18) `as` #version
---   )
---   OnConflictDoRaise
---   ( Returning
---     ( #id `as` #icrId :*
---       #hash_id `as` #icrHashId :*
---       #type_id `as` #icrTypeId :*
---       #url `as` #icrURL :*
---       #state `as` #icrState :*
---       #initialized_at `as` #icrInitializedAt :*
---       #active_at `as` #icrActiveAt :*
---       #completed_at `as` #icrCompletedAt :*
---       #title `as` #icrTitle :*
---       #attribution_text `as` #icrAttributionText :*
---       #attribution_link `as` #icrAttributionLink :*
---       #mime `as` #icrMIME :*
---       #size `as` #icrSize :*
---       #error `as` #icrError :*
---       #progress `as` #icrProgress :*
---       #abuse_level_id `as` #icrAbuseLevelId :*
---       #num_abuse_reports `as` #icrNumAbuseReports :*
---       #num_views `as` #icrNumViews :*
---       #version `as` #icrVersion
---     )
---   )
-
--- insertImage :: Manipulation Schema (TuplePG ImageRow) '[ "fromOnly" ::: 'NotNull 'PGint8 ]
--- insertImage = insertRow #image
---   ( Set (param @1) `as` #content_id :*
---     Set (param @2) `as` #created_at :*
---     Set (param @3) `as` #width :*
---     Set (param @4) `as` #height :*
---     Set (param @5) `as` #tile_size :*
---     Set (param @6) `as` #tile_overlap :*
---     Set (param @7) `as` #tile_format
---   ) OnConflictDoRaise (Returning (#content_id `as` #fromOnly))
 
 imageToInsertRow :: ContentId -> DeepZoomImage -> InsertImageRow
 imageToInsertRow cid dzi = InsertImageRow
