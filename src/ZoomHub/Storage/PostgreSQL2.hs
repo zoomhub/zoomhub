@@ -14,6 +14,7 @@ module ZoomHub.Storage.PostgreSQL2
     -- ** Write operations
   , initialize
   , markAsActive
+  , markAsFailure
   , markAsSuccess
   ) where
 
@@ -25,6 +26,7 @@ import ZoomHub.Storage.PostgreSQL2.Internal
   , insertContentResultToContent
   , insertImage
   , markContentAsActive
+  , markContentAsFailure
   , markContentAsSuccess
   )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
@@ -37,6 +39,7 @@ import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 import Control.Monad (void)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int64)
+import Data.Text (Text)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(..)
@@ -82,6 +85,17 @@ markAsActive
 markAsActive cId =
   transactionally_ $ do
     contentResult <- manipulateParams markContentAsActive (Only cId)
+    mContentRow <- firstRow contentResult
+    return $ insertContentResultToContent <$> mContentRow
+
+markAsFailure
+  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  => ContentId
+  -> Maybe Text
+  -> m (Maybe Content)
+markAsFailure cId mErrorMessage =
+  transactionally_ $ do
+    contentResult <- manipulateParams markContentAsFailure (cId, mErrorMessage)
     mContentRow <- firstRow contentResult
     return $ insertContentResultToContent <$> mContentRow
 

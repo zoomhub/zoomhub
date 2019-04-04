@@ -31,6 +31,7 @@ import ZoomHub.Storage.PostgreSQL2
   , getByURL'
   , initialize
   , markAsActive
+  , markAsFailure
   , markAsSuccess
   )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
@@ -155,6 +156,34 @@ spec =
               , contentProgress = 1.0
               , contentMIME = mMIME
               , contentSize = mSize
+              }
+          Nothing ->
+            expectationFailure "expected content to be initialized"
+
+    describe "markAsFailure" $
+      it "should mark content as failure" $ \conn -> do
+        (mContent, _) <- runPQ (initialize testURL) conn
+        case mContent of
+          Just content -> do
+            currentTime <- getCurrentTime
+
+            let cId = contentId content
+                errorMessage = Just "test error message"
+            void $ runPQ (markAsFailure cId errorMessage) conn
+            (result, _) <- runPQ (getById cId) conn
+
+            case result >>= contentCompletedAt of
+              Just t ->
+                t `shouldSatisfy` isWithinSecondsOf currentTime 3
+              Nothing ->
+                expectationFailure "expected `contentCompletedAt` to be set"
+
+            result `shouldBe` Just content
+              { contentState = CompletedFailure
+              , contentType = Unknown
+              , contentCompletedAt = result >>= contentCompletedAt
+              , contentError = errorMessage
+              , contentProgress = 1.0
               }
           Nothing ->
             expectationFailure "expected content to be initialized"
