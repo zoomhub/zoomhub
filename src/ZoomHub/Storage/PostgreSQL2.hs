@@ -8,6 +8,7 @@ module ZoomHub.Storage.PostgreSQL2
   ( -- ** Read operations
     getById
   , getByURL
+  , getExpiredActive
     -- ** Read operations (with view tracking)
   , getById'
   , getByURL'
@@ -19,15 +20,17 @@ module ZoomHub.Storage.PostgreSQL2
   ) where
 
 import ZoomHub.Storage.PostgreSQL2.Internal
-  ( getBy
+  ( contentImageRowToContent
+  , contentRowToContent
+  , getBy
   , getBy'
   , imageToInsertRow
   , insertContent
-  , insertContentResultToContent
   , insertImage
   , markContentAsActive
   , markContentAsFailure
   , markContentAsSuccess
+  , selectContentBy
   )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
@@ -37,17 +40,23 @@ import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
 import Control.Monad (void)
+import Control.Monad.Base (liftBase)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int64)
 import Data.Text (Text)
+import Data.Time.Clock (NominalDiffTime, addUTCTime, getCurrentTime)
+import Data.Time.Units (Second, TimeUnit, toMicroseconds)
 import Squeal.PostgreSQL
   ( MonadPQ
-  , Only(..)
+  , Only(Only)
   , firstRow
+  , getRows
   , manipulateParams
   , param
+  , runQueryParams
   , transactionally_
   , (!)
+  , (.<)
   , (.==)
   )
 
@@ -59,6 +68,20 @@ getById = getBy ((#content ! #hash_id) .== param @1)
 
 getByURL :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentURI -> m (Maybe Content)
 getByURL = getBy ((#content ! #url) .== param @1)
+
+getExpiredActive ::
+  (MonadBaseControl IO m, MonadPQ Schema m, TimeUnit t) => t -> m [Content]
+getExpiredActive ttl = do
+  currentTime <- liftBase getCurrentTime
+  let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
+  let condition = (#content ! #active_at) .< param @1
+  result <- runQueryParams (selectContentBy condition) (Only earliestAllowed)
+  contentRows <- getRows result
+  return $ contentImageRowToContent <$> contentRows
+  where
+  toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
+  toNominalDiffTime duration = fromIntegral $
+    toMicroseconds duration `div` toMicroseconds (1 :: Second)
 
 -- Reads/writes
 getById' :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentId -> m (Maybe Content)
@@ -76,7 +99,7 @@ initialize uri =
   transactionally_ $ do
     result <- manipulateParams insertContent (Only uri)
     mRow <- firstRow result
-    return $ insertContentResultToContent <$> mRow
+    return $ contentRowToContent <$> mRow
 
 markAsActive
   :: (MonadBaseControl IO m, MonadPQ Schema m)
@@ -86,7 +109,7 @@ markAsActive cId =
   transactionally_ $ do
     contentResult <- manipulateParams markContentAsActive (Only cId)
     mContentRow <- firstRow contentResult
-    return $ insertContentResultToContent <$> mContentRow
+    return $ contentRowToContent <$> mContentRow
 
 markAsFailure
   :: (MonadBaseControl IO m, MonadPQ Schema m)
@@ -97,7 +120,7 @@ markAsFailure cId mErrorMessage =
   transactionally_ $ do
     contentResult <- manipulateParams markContentAsFailure (cId, mErrorMessage)
     mContentRow <- firstRow contentResult
-    return $ insertContentResultToContent <$> mContentRow
+    return $ contentRowToContent <$> mContentRow
 
 markAsSuccess
   :: (MonadBaseControl IO m, MonadPQ Schema m)
@@ -113,7 +136,7 @@ markAsSuccess cId dzi mMIME mSize =
     mContentRow <- firstRow contentResult
     return $ case mContentRow of
       Just contentRow -> do
-        let content = insertContentResultToContent contentRow
+        let content = contentRowToContent contentRow
         Just content { contentDZI = Just dzi }
       Nothing ->
         Nothing

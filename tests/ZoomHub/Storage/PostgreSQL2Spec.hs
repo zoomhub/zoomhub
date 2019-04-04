@@ -9,6 +9,10 @@ module ZoomHub.Storage.PostgreSQL2Spec
 
 import Control.Exception (bracket)
 import Control.Monad (void)
+import Data.Function ((&))
+import qualified Data.Text as T
+import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
+import Data.Time.Units (Minute)
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL (Connection, connectdb, finish, runPQ)
 import Squeal.PostgreSQL.Migration (migrateDown, migrateUp)
@@ -23,17 +27,18 @@ import Test.Hspec
   , shouldSatisfy
   )
 
-import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
 import ZoomHub.Storage.PostgreSQL2
   ( getById
   , getById'
   , getByURL
   , getByURL'
+  , getExpiredActive
   , initialize
   , markAsActive
   , markAsFailure
   , markAsSuccess
   )
+import qualified ZoomHub.Storage.PostgreSQL2.Internal as I
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
 import ZoomHub.Types.Content
   ( contentActiveAt
@@ -50,6 +55,7 @@ import ZoomHub.Types.Content
   , contentType
   , contentURL
   )
+import qualified ZoomHub.Types.Content.Internal as I
 import qualified ZoomHub.Types.ContentId as ContentId
 import qualified ZoomHub.Types.ContentMIME as ContentMIME
 import ZoomHub.Types.ContentState (ContentState(..))
@@ -85,6 +91,7 @@ spec =
         (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
+            -- HACK: Hard-coded content ID set by database trigger
             contentId content `shouldBe` ContentId.fromString "X75"
             contentType content `shouldBe` Unknown
             contentURL content `shouldBe` testURL
@@ -236,7 +243,43 @@ spec =
           Nothing ->
             expectationFailure "expected content to be initialized"
 
+    describe "getExpiredActive" $
+      it "should return active content that has expired" $ \conn -> do
+        currentTime <- getCurrentTime
+        let minutes n = n * 60
+            -- HACK: Hard-coded content IDs set by database trigger
+            c1 = mkContentActive "X75" currentTime (15 & minutes)
+            c2 = mkContentActive "yOJ" currentTime (45 & minutes)
+            c3 = mkContentActive "yJL" currentTime (60 & minutes)
+
+        void $ runPQ (I.unsafeCreateContent c1) conn
+        void $ runPQ (I.unsafeCreateContent c2) conn
+        void $ runPQ (I.unsafeCreateContent c3) conn
+
+        (results, _) <- runPQ (getExpiredActive (30 :: Minute)) conn
+        results `shouldBe` [c2, c3]
+
     where
+    mkContentActive :: String -> UTCTime -> NominalDiffTime -> I.Content
+    mkContentActive id_ currentTime age =
+      I.Content
+        { contentId = ContentId.fromString id_
+        , contentType = Image
+        , contentURL = ContentURI $ "https://example.com/" <> T.pack id_
+        , contentState = Active
+        , contentInitializedAt = addUTCTime (-1) activeAt
+        , contentActiveAt = Just activeAt
+        , contentCompletedAt = Nothing
+        , contentMIME = Nothing
+        , contentSize = Nothing
+        , contentProgress = 0.0
+        , contentNumViews = 0
+        , contentError = Nothing
+        , contentDZI = Nothing
+        }
+      where
+      activeAt = addUTCTime (-age) currentTime
+
     testURL :: ContentURI
     testURL = ContentURI "https://example.com/1"
 

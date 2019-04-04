@@ -32,7 +32,6 @@ import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (UTCTime)
--- import Data.Time.Clock (getCurrentTime)
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
@@ -65,6 +64,7 @@ import Squeal.PostgreSQL
   , runQueryParams
   , select
   , table
+  , transactionally_
   , update
   , update_
   , where_
@@ -73,8 +73,6 @@ import Squeal.PostgreSQL
   , (.==)
   )
 import System.Random (randomRIO)
-
--- Public API
 
 -- Reads: Content
 getBy ::
@@ -85,7 +83,7 @@ getBy ::
 getBy condition parameter = do
   result <- runQueryParams (selectContentBy condition) (Only parameter)
   contentRow <- firstRow result
-  pure (rowToContent <$> contentRow)
+  pure (contentImageRowToContent <$> contentRow)
 
 getBy' ::
   (MonadBaseControl IO m, MonadPQ Schema m, ToParam p 'PGtext) =>
@@ -116,7 +114,6 @@ getBy' condition parameter = do
       | numViews < 10000 = 100
       | otherwise = 1000
 
-
 incrNumViews :: Manipulation Schema '[ 'NotNull 'PGint8, 'NotNull 'PGtext ] '[]
 incrNumViews =
   update_ #content
@@ -142,9 +139,9 @@ incrNumViews =
     )
     ( #hash_id .== param @2 )
 
-selectContentBy ::
-  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
-  Query Schema '[ 'NotNull 'PGtext ] (RowPG ContentImageRow)
+selectContentBy
+  :: Condition Schema _ 'Ungrouped '[ 'NotNull a ]
+  -> Query Schema '[ 'NotNull a ] (RowPG ContentImageRow)
 selectContentBy condition = select
   ( #content ! #hash_id `as` #cirHashId :*
     #content ! #type_id `as` #cirTypeId :*
@@ -248,8 +245,8 @@ data ImageRow = ImageRow
 instance SOP.Generic ImageRow
 instance SOP.HasDatatypeInfo ImageRow
 
-rowToContent :: ContentImageRow -> Content
-rowToContent cr = Content
+contentImageRowToContent :: ContentImageRow -> Content
+contentImageRowToContent cr = Content
     { contentId = cirHashId cr
     , contentType = cirTypeId cr
     , contentURL = cirURL cr
@@ -280,8 +277,8 @@ rowToImage ir = mkDeepZoomImage
   (irTileOverlap ir)
   (irTileFormat ir)
 
-insertContentResultToContent :: ContentRow -> Content
-insertContentResultToContent result =
+contentRowToContent :: ContentRow -> Content
+contentRowToContent result =
   Content
   { contentId = crHashId result
   , contentType = crTypeId result
@@ -300,24 +297,24 @@ insertContentResultToContent result =
 
 data ContentRow =
   ContentRow
-  { crHashId :: ContentId
-  , crTypeId :: ContentType
-  , crURL :: ContentURI
-  , crState :: ContentState
-  , crInitializedAt :: UTCTime
-  , crActiveAt :: Maybe UTCTime
-  , crCompletedAt :: Maybe UTCTime
-  , crTitle :: Maybe Text
-  , crAttributionText :: Maybe Text
-  , crAttributionLink :: Maybe Text
-  , crMIME :: Maybe ContentMIME
-  , crSize :: Maybe Int64
-  , crError :: Maybe Text
-  , crProgress :: Double
-  , crAbuseLevelId :: Int32
-  , crNumAbuseReports :: Int64
-  , crNumViews :: Int64
-  , crVersion :: Int32
+  { crHashId :: ContentId           -- 1
+  , crTypeId :: ContentType         -- 2
+  , crURL :: ContentURI             -- 3
+  , crState :: ContentState         -- 4
+  , crInitializedAt :: UTCTime      -- 5
+  , crActiveAt :: Maybe UTCTime     -- 6
+  , crCompletedAt :: Maybe UTCTime  -- 7
+  , crTitle :: Maybe Text           -- 8
+  , crAttributionText :: Maybe Text -- 9
+  , crAttributionLink :: Maybe Text -- 10
+  , crMIME :: Maybe ContentMIME     -- 11
+  , crSize :: Maybe Int64           -- 12
+  , crError :: Maybe Text           -- 13
+  , crProgress :: Double            -- 14
+  , crAbuseLevelId :: Int32         -- 15
+  , crNumAbuseReports :: Int64      -- 16
+  , crNumViews :: Int64             -- 17
+  , crVersion :: Int32              -- 18
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
@@ -548,3 +545,80 @@ insertImage = insertQuery_ #image $
     ( from (table #content)
     & where_ (#content ! #hash_id .== param @1)
     )
+
+-- Unsafe
+unsafeCreateContent
+  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  => Content
+  -> m (Maybe Content)
+unsafeCreateContent content =
+  transactionally_ $ do
+    result <- manipulateParams unsafeInsertContent (contentToRow content)
+    contentRow <- firstRow result
+    pure $ contentRowToContent <$> contentRow
+
+unsafeInsertContent :: Manipulation Schema (TuplePG ContentRow) (RowPG ContentRow)
+unsafeInsertContent = insertRow #content
+  ( Default `as` #id :*
+    Set (param @1) `as` #hash_id :*
+    Set (param @2) `as` #type_id :*
+    Set (param @3) `as` #url :*
+    Set (param @4) `as` #state :*
+    Set (param @5) `as` #initialized_at :*
+    Set (param @6) `as` #active_at :*
+    Set (param @7) `as` #completed_at :*
+    Set (param @8) `as` #title :*
+    Set (param @9) `as` #attribution_text :*
+    Set (param @10) `as` #attribution_link :*
+    Set (param @11) `as` #mime :*
+    Set (param @12) `as` #size :*
+    Set (param @13) `as` #error :*
+    Set (param @14) `as` #progress :*
+    Set (param @15) `as` #abuse_level_id :*
+    Set (param @16) `as` #num_abuse_reports :*
+    Set (param @17) `as` #num_views :*
+    Set (param @18) `as` #version
+  ) OnConflictDoRaise
+  ( Returning
+    ( #hash_id `as` #crHashId :*
+      #type_id `as` #crTypeId :*
+      #url `as` #crURL :*
+      #state `as` #crState :*
+      #initialized_at `as` #crInitializedAt :*
+      #active_at `as` #crActiveAt :*
+      #completed_at `as` #crCompletedAt :*
+      #title `as` #crTitle :*
+      #attribution_text `as` #crAttributionText :*
+      #attribution_link `as` #crAttributionLink :*
+      #mime `as` #crMIME :*
+      #size `as` #crSize :*
+      #error `as` #crError :*
+      #progress `as` #crProgress :*
+      #abuse_level_id `as` #crAbuseLevelId :*
+      #num_abuse_reports `as` #crNumAbuseReports :*
+      #num_views `as` #crNumViews :*
+      #version `as` #crVersion
+    )
+  )
+
+contentToRow :: Content -> ContentRow
+contentToRow c = ContentRow
+  { crHashId = contentId c
+  , crTypeId = contentType c
+  , crURL = contentURL c
+  , crState = contentState c
+  , crInitializedAt = contentInitializedAt c
+  , crActiveAt = contentActiveAt c
+  , crCompletedAt = contentCompletedAt c
+  , crTitle = Nothing
+  , crAttributionText = Nothing
+  , crAttributionLink = Nothing
+  , crMIME = contentMIME c
+  , crSize = contentSize c
+  , crError = contentError c
+  , crProgress = contentProgress c
+  , crAbuseLevelId = 0 -- TODO: Replace hard-coded value
+  , crNumAbuseReports = 0
+  , crNumViews = contentNumViews c
+  , crVersion = 4 -- TODO: Replace hard-coded value
+  }
