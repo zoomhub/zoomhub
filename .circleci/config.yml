@@ -43,13 +43,13 @@ jobs:
         name: Install pgloader
         command: sudo apt-get install pgloader -y
     - run:
-        name: Install plv8 PostgreSQL extension
+        name: Build and install plv8 PostgreSQL extension
         command: |
-          sudo pip install pgxnclient
-          sudo apt-get install libpq-dev libv8-dev postgresql-server-dev-9.5
-          sudo pgxn install 'plv8=1.4.8'
-          sudo service postgresql stop 9.4
-          sudo service postgresql restart 9.5
+          wget https://github.com/plv8/plv8/archive/v2.3.8.tar.gz
+          tar -xvzf v2.3.8.tar.gz
+          cd plv8-2.3.8
+          make
+          sudo make install
 
     # Dependencies
     #   This would typically go in either a build or a build-and-test job when
