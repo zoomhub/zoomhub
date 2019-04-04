@@ -45,13 +45,12 @@ jobs:
     - run:
         name: Build and install plv8 PostgreSQL extension
         command: |
-          sudo apt-get install --yes clang
           # From: https://gist.github.com/benjie/588376004859b3699a6a181379e87f77
           sudo apt-get install --yes python-pip python-dev
           sudo pip install pgxnclient
           sudo apt-get install --yes postgresql-server-dev-all postgresql-common
           sudo apt-get install --yes libpq-dev libv8-dev
-          sudo pgxn install 'plv8=1.4.4'
+          sudo pgxn install 'plv8=2.3.11'
           sudo service postgresql stop 9.4
           sudo service postgresql restart 9.5
 
