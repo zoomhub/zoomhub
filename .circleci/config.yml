@@ -93,7 +93,10 @@ jobs:
         command: pgloader ./data/zoomhub-development.sqlite3 postgresql://zoomhub@localhost:5432/zoomhub-test-db
     - run:
         name: Run tests
-        command: PGUSER='zoomhub' PGDATABASE='zoomhub-test-db' stack test --no-terminal --coverage
+        command: |
+          PGUSER='zoomhub' PGDATABASE='zoomhub-test-db' stack test \
+            --fast --no-terminal --coverage \
+            --test-arguments '--match "ZoomHub.Storage.PostgreSQL2"'
     - run:
         name: Copy coverage reports
         command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
