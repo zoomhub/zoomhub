@@ -48,16 +48,13 @@ jobs:
     - run:
         name: Build and install plv8 PostgreSQL extension
         command: |
-          sudo apt-get install --yes build-essential
-          sudo apt-get install --yes g++
-          sudo apt-get install --yes postgresql-server-dev-all
-          sudo apt-get install --yes postgresql-common
-
-          wget https://github.com/plv8/plv8/archive/v1.5.1.tar.gz
-          tar -xvzf v1.5.1.tar.gz
-          cd plv8-1.5.1
-          make
-          sudo make install
+          # From: https://gist.github.com/benjie/588376004859b3699a6a181379e87f77
+          sudo apt-get install --yes python-pip python-dev
+          sudo apt-get install --yes libpq-dev libv8-dev postgresql-server-dev-9.5
+          sudo pip install pgxnclient
+          sudo pgxn install 'plv8=1.4.4'
+          sudo service postgresql stop 9.4
+          sudo service postgresql restart 9.5
 
     # Dependencies
     #   This would typically go in either a build or a build-and-test job when
