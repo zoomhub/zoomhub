@@ -49,9 +49,9 @@ jobs:
           sudo apt-get install --yes postgresql-server-dev-all
           sudo apt-get install --yes postgresql-common
 
-          wget https://github.com/plv8/plv8/archive/v2.3.9.tar.gz
-          tar -xvzf v2.3.9.tar.gz
-          cd plv8-2.3.9
+          wget https://github.com/plv8/plv8/archive/v1.5.1.tar.gz
+          tar -xvzf v1.5.1.tar.gz
+          cd plv8-1.5.1
           make
           sudo make install
 
