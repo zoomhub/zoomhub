@@ -9,13 +9,16 @@ module ZoomHub.Storage.PostgreSQL2Spec
 
 import Control.Exception (bracket)
 import Control.Monad (void)
+import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
+import Data.Maybe (maybe)
 import qualified Data.Text as T
 import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
 import Data.Time.Units (Minute)
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL (Connection, connectdb, finish, runPQ)
 import Squeal.PostgreSQL.Migration (migrateDown, migrateUp)
+import System.Environment (lookupEnv)
 import Test.Hspec
   ( Spec
   , around
@@ -74,7 +77,11 @@ withDatabaseConnection = bracket acquire release
   where
     acquire :: IO (SOP.K Connection Schema)
     acquire = do
-      conn <- connectdb "host=localhost port=5432 dbname=zoomhub_test"
+      pgUser <- maybe "zoomhub" BC.pack <$> lookupEnv "PGUSER"
+      pgDatabase <- maybe "zoomhub_development" BC.pack <$> lookupEnv "PGDATABASE"
+
+      conn <- connectdb $
+        "host=localhost port=5432 dbname=" <> pgDatabase <> " user=" <> pgUser
       (_, conn') <- runPQ (migrateUp migrations) conn
       pure conn'
     release :: SOP.K Connection Schema -> IO ()
