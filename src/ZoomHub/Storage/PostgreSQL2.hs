@@ -8,7 +8,7 @@ module ZoomHub.Storage.PostgreSQL2
   ( -- ** Read operations
     getById
   , getByURL
-    -- ** Read/write operations
+    -- ** Read operations (with view tracking)
   , getById'
   , getByURL'
     -- ** Write operations
