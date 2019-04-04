@@ -25,6 +25,10 @@ jobs:
     <<: *defaults
     docker:
       - image: fpco/stack-build
+      - image: clkao/postgres-plv8:9.6-2.0
+        environment:
+          POSTGRES_USER: zoomhub
+          POSTGRES_DB: zoomhub-test-db
     steps:
     - checkout
 
@@ -38,15 +42,6 @@ jobs:
     - run:
         name: Install pgloader
         command: sudo apt-get install --yes pgloader
-    - run:
-        name: Build and install plv8 PostgreSQL extension
-        command: |
-          sudo apt-get update
-          sudo pip install pgxnclient
-          sudo apt-get install --yes libpq-dev libv8-dev postgresql-server-dev-9.5
-          sudo pgxn install 'plv8=1.4.4'
-          sudo service postgresql stop 9.4
-          sudo service postgresql restart 9.5
 
     # Dependencies
     #   This would typically go in either a build or a build-and-test job when
@@ -95,10 +90,10 @@ jobs:
     # Test
     - run:
         name: Prepare database for test
-        command: pgloader ./data/zoomhub-development.sqlite3 postgresql://circleci-db-user@localhost:5432/circleci-test-db
+        command: pgloader ./data/zoomhub-development.sqlite3 postgresql://zoomhub@localhost:5432/zoomhub-test-db
     - run:
         name: Run tests
-        command: PGUSER='circleci-db-user' PGDATABASE='circleci-test-db' stack test --no-terminal --coverage
+        command: PGUSER='zoomhub' PGDATABASE='zoomhub-test-db' stack test --no-terminal --coverage
     - run:
         name: Copy coverage reports
         command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
