@@ -38,10 +38,10 @@ jobs:
     - run:
         name: Initialize artifact storage
         command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
-    - run: sudo apt-get update
-    - run:
-        name: Install pgloader
-        command: sudo apt-get install --yes pgloader
+    # - run: sudo apt-get update
+    # - run:
+    #     name: Install pgloader
+    #     command: sudo apt-get install --yes pgloader
 
     # Dependencies
     #   This would typically go in either a build or a build-and-test job when
@@ -88,9 +88,9 @@ jobs:
         - .stack-work
 
     # Test
-    - run:
-        name: Prepare database for test
-        command: pgloader ./data/zoomhub-development.sqlite3 postgresql://zoomhub@localhost:5432/zoomhub-test-db
+    # - run:
+    #     name: Prepare database for test
+    #     command: pgloader ./data/zoomhub-development.sqlite3 postgresql://zoomhub@localhost:5432/zoomhub-test-db
     - run:
         name: Run tests
         command: |
