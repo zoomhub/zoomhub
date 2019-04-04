@@ -45,6 +45,7 @@ jobs:
     - run:
         name: Build and install plv8 PostgreSQL extension
         command: |
+          sudo apt-get install --yes clang
           # From: https://gist.github.com/benjie/588376004859b3699a6a181379e87f77
           sudo apt-get install --yes python-pip python-dev
           sudo pip install pgxnclient
