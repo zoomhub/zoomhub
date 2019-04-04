@@ -25,7 +25,14 @@ import Test.Hspec
 
 import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
 import ZoomHub.Storage.PostgreSQL2
-  (getById, getById', getByURL, getByURL', initialize, markAsSuccess)
+  ( getById
+  , getById'
+  , getByURL
+  , getByURL'
+  , initialize
+  , markAsActive
+  , markAsSuccess
+  )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
 import ZoomHub.Types.Content
   ( contentActiveAt
@@ -91,6 +98,32 @@ spec =
             contentNumViews content `shouldBe` 0
             contentError content `shouldBe` Nothing
             contentDZI content `shouldBe` Nothing
+          Nothing ->
+            expectationFailure "expected content to be initialized"
+
+    describe "markAsActive" $
+      it "should mark content as active" $ \conn -> do
+        (mContent, _) <- runPQ (initialize testURL) conn
+        case mContent of
+          Just content -> do
+            currentTime <- getCurrentTime
+
+            let cId = contentId content
+            void $ runPQ (markAsActive cId) conn
+            (result, _) <- runPQ (getById cId) conn
+
+            case result >>= contentActiveAt of
+              Just activeAt ->
+                activeAt `shouldSatisfy` isWithinSecondsOf currentTime 3
+              Nothing ->
+                expectationFailure "expected `contentActiveAt` to be set"
+
+            result `shouldBe` Just content
+              { contentState = Active
+              , contentType = Unknown
+              , contentActiveAt = result >>= contentActiveAt
+              , contentProgress = 0.0
+              }
           Nothing ->
             expectationFailure "expected content to be initialized"
 

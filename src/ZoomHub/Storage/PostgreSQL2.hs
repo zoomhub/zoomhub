@@ -13,6 +13,7 @@ module ZoomHub.Storage.PostgreSQL2
   , getByURL'
     -- ** Write operations
   , initialize
+  , markAsActive
   , markAsSuccess
   ) where
 
@@ -23,6 +24,7 @@ import ZoomHub.Storage.PostgreSQL2.Internal
   , insertContent
   , insertContentResultToContent
   , insertImage
+  , markContentAsActive
   , markContentAsSuccess
   )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
@@ -72,6 +74,16 @@ initialize uri =
     result <- manipulateParams insertContent (Only uri)
     mRow <- firstRow result
     return $ insertContentResultToContent <$> mRow
+
+markAsActive
+  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  => ContentId
+  -> m (Maybe Content)
+markAsActive cId =
+  transactionally_ $ do
+    contentResult <- manipulateParams markContentAsActive (Only cId)
+    mContentRow <- firstRow contentResult
+    return $ insertContentResultToContent <$> mContentRow
 
 markAsSuccess
   :: (MonadBaseControl IO m, MonadPQ Schema m)

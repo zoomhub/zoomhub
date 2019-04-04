@@ -16,7 +16,7 @@ import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content.Internal (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState (ContentState(CompletedSuccess))
+import ZoomHub.Types.ContentState (ContentState(..))
 import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentType (ContentType(..))
 import qualified ZoomHub.Types.ContentType as ContentType
@@ -368,6 +368,54 @@ insertContent = insertRow #content
   where
     unsafeHashIdPlaceholder :: Expression schema from grouping params (nullity 'PGtext)
     unsafeHashIdPlaceholder = "$placeholder-overwritten-by-trigger$"
+
+markContentAsActive ::
+  Manipulation Schema
+  '[ 'NotNull 'PGtext ]
+  (RowPG ContentRow)
+markContentAsActive = update #content
+  ( Same `as` #id :*
+    Same `as` #hash_id :*
+    Set (ContentType.toExpression Unknown) `as` #type_id :*
+    Same `as` #url :*
+    Set (ContentState.toExpression Active) `as` #state :*
+    Same `as` #initialized_at :*
+    Set currentTimestamp `as` #active_at :*
+    Set null_ `as` #completed_at :*
+    Set null_ `as` #title :*
+    Set null_ `as` #attribution_text :*
+    Set null_ `as` #attribution_link :*
+    Set null_ `as` #mime :*
+    Set null_ `as` #size :*
+    Set null_ `as` #error :*
+    Set 0.0 `as` #progress :*
+    Same `as` #abuse_level_id :*
+    Same `as` #num_abuse_reports :*
+    Same `as` #num_views :*
+    Same `as` #version
+  )
+  ( #hash_id .== param @1 )
+  ( Returning
+    ( #hash_id `as` #crHashId :*
+      #type_id `as` #crTypeId :*
+      #url `as` #crURL :*
+      #state `as` #crState :*
+      #initialized_at `as` #crInitializedAt :*
+      #active_at `as` #crActiveAt :*
+      #completed_at `as` #crCompletedAt :*
+      #title `as` #crTitle :*
+      #attribution_text `as` #crAttributionText :*
+      #attribution_link `as` #crAttributionLink :*
+      #mime `as` #crMIME :*
+      #size `as` #crSize :*
+      #error `as` #crError :*
+      #progress `as` #crProgress :*
+      #abuse_level_id `as` #crAbuseLevelId :*
+      #num_abuse_reports `as` #crNumAbuseReports :*
+      #num_views `as` #crNumViews :*
+      #version `as` #crVersion
+    )
+  )
 
 markContentAsSuccess ::
   Manipulation Schema
