@@ -24,9 +24,6 @@ jobs:
   build:
     <<: *defaults
     docker:
-      # Default CircleCI Docker container image
-      # https://circleci.com/docs/2.0/executor-types/
-      - image: buildpack-deps:trusty
       - image: fpco/stack-build
       - image: circleci/postgres:9.6.12
         environment:
