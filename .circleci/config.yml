@@ -46,6 +46,7 @@ jobs:
         name: Build and install plv8 PostgreSQL extension
         command: |
           sudo apt-get install --yes build-essential
+          sudo apt-get install --yes g++
           sudo apt-get install --yes postgresql-server-dev-all
           sudo apt-get install --yes postgresql-common
 
