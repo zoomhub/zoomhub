@@ -366,7 +366,349 @@ insertHashidsSecret = Migration
 -- subsequent code in VS Code :(
 createLoadHashids :: IsString a => a
 createLoadHashids = [r|
-    CREATE FUNCTION load_hashids() RETURNS VOID AS $$
-      !function(t,e){if("function"==typeof define&&define.amd)define(["module","exports"],e);else if("undefined"!=typeof exports)e(module,exports);else{var s={exports:{}};e(s,s.exports),t.Hashids=s.exports}}(this,function(t,e){"use strict";function s(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}Object.defineProperty(e,"__esModule",{value:!0});var h=function(){function t(t,e){for(var s=0;s<e.length;s++){var h=e[s];h.enumerable=h.enumerable||!1,h.configurable=!0,"value"in h&&(h.writable=!0),Object.defineProperty(t,h.key,h)}}return function(e,s,h){return s&&t(e.prototype,s),h&&t(e,h),e}}(),r=function(){function t(){var e=arguments.length<=0||void 0===arguments[0]?"":arguments[0],h=arguments.length<=1||void 0===arguments[1]?0:arguments[1],r=arguments.length<=2||void 0===arguments[2]?"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890":arguments[2];s(this,t);var a=16,n=3.5,i=12,l="error: alphabet must contain at least X unique characters",u="error: alphabet cannot contain spaces",p="",o=void 0,f=void 0;this.escapeRegExp=function(t){return t.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,"\\$&")},this.parseInt=function(t,e){return/^(\-|\+)?([0-9]+|Infinity)$/.test(t)?parseInt(t,e):NaN},this.seps="cfhistuCFHISTU",this.minLength=parseInt(h,10)>0?h:0,this.salt="string"==typeof e?e:"","string"==typeof r&&(this.alphabet=r);for(var g=0;g!==this.alphabet.length;g++)p.indexOf(this.alphabet.charAt(g))===-1&&(p+=this.alphabet.charAt(g));if(this.alphabet=p,this.alphabet.length<a)throw l.replace("X",a);if(this.alphabet.search(" ")!==-1)throw u;for(var c=0;c!==this.seps.length;c++){var b=this.alphabet.indexOf(this.seps.charAt(c));b===-1?this.seps=this.seps.substr(0,c)+" "+this.seps.substr(c+1):this.alphabet=this.alphabet.substr(0,b)+" "+this.alphabet.substr(b+1)}this.alphabet=this.alphabet.replace(/ /g,""),this.seps=this.seps.replace(/ /g,""),this.seps=this._shuffle(this.seps,this.salt),(!this.seps.length||this.alphabet.length/this.seps.length>n)&&(o=Math.ceil(this.alphabet.length/n),o>this.seps.length&&(f=o-this.seps.length,this.seps+=this.alphabet.substr(0,f),this.alphabet=this.alphabet.substr(f))),this.alphabet=this._shuffle(this.alphabet,this.salt);var d=Math.ceil(this.alphabet.length/i);this.alphabet.length<3?(this.guards=this.seps.substr(0,d),this.seps=this.seps.substr(d)):(this.guards=this.alphabet.substr(0,d),this.alphabet=this.alphabet.substr(d))}return h(t,[{key:"encode",value:function(){for(var t=arguments.length,e=Array(t),s=0;s<t;s++)e[s]=arguments[s];var h="";if(!e.length)return h;if(e[0]&&e[0].constructor===Array&&(e=e[0],!e.length))return h;for(var r=0;r!==e.length;r++)if(e[r]=this.parseInt(e[r],10),!(e[r]>=0))return h;return this._encode(e)}},{key:"decode",value:function(t){var e=[];return t&&t.length&&"string"==typeof t?this._decode(t,this.alphabet):e}},{key:"encodeHex",value:function(t){if(t=t.toString(),!/^[0-9a-fA-F]+$/.test(t))return"";for(var e=t.match(/[\w\W]{1,12}/g),s=0;s!==e.length;s++)e[s]=parseInt("1"+e[s],16);return this.encode.apply(this,e)}},{key:"decodeHex",value:function(t){for(var e=[],s=this.decode(t),h=0;h!==s.length;h++)e+=s[h].toString(16).substr(1);return e}},{key:"_encode",value:function(t){for(var e=void 0,s=this.alphabet,h=0,r=0;r!==t.length;r++)h+=t[r]%(r+100);e=s.charAt(h%s.length);for(var a=e,n=0;n!==t.length;n++){var i=t[n],l=a+this.salt+s;s=this._shuffle(s,l.substr(0,s.length));var u=this._toAlphabet(i,s);if(e+=u,n+1<t.length){i%=u.charCodeAt(0)+n;var p=i%this.seps.length;e+=this.seps.charAt(p)}}if(e.length<this.minLength){var o=(h+e[0].charCodeAt(0))%this.guards.length,f=this.guards[o];e=f+e,e.length<this.minLength&&(o=(h+e[2].charCodeAt(0))%this.guards.length,f=this.guards[o],e+=f)}for(var g=parseInt(s.length/2,10);e.length<this.minLength;){s=this._shuffle(s,s),e=s.substr(g)+e+s.substr(0,g);var c=e.length-this.minLength;c>0&&(e=e.substr(c/2,this.minLength))}return e}},{key:"_decode",value:function(t,e){var s=[],h=0,r=new RegExp("["+this.escapeRegExp(this.guards)+"]","g"),a=t.replace(r," "),n=a.split(" ");if(3!==n.length&&2!==n.length||(h=1),a=n[h],"undefined"!=typeof a[0]){var i=a[0];a=a.substr(1),r=new RegExp("["+this.escapeRegExp(this.seps)+"]","g"),a=a.replace(r," "),n=a.split(" ");for(var l=0;l!==n.length;l++){var u=n[l],p=i+this.salt+e;e=this._shuffle(e,p.substr(0,e.length)),s.push(this._fromAlphabet(u,e))}this._encode(s)!==t&&(s=[])}return s}},{key:"_shuffle",value:function(t,e){var s=void 0;if(!e.length)return t;for(var h=t.length-1,r=0,a=0,n=0;h>0;h--,r++){r%=e.length,a+=s=e.charAt(r).charCodeAt(0),n=(s+r+a)%h;var i=t[n];t=t.substr(0,n)+t.charAt(h)+t.substr(n+1),t=t.substr(0,h)+i+t.substr(h+1)}return t}},{key:"_toAlphabet",value:function(t,e){var s="";do s=e.charAt(t%e.length)+s,t=parseInt(t/e.length,10);while(t);return s}},{key:"_fromAlphabet",value:function(t,e){for(var s=0,h=0;h<t.length;h++){var r=e.indexOf(t[h]);s+=r*Math.pow(e.length,t.length-h-1)}return s}}]),t}();e.default=r,t.exports=e.default});
-    $$ LANGUAGE plv8 IMMUTABLE STRICT;
+    CREATE FUNCTION load_hashids() RETURNS VOID
+    AS
+    $FUNCTION$
+    // Source: https://raw.githubusercontent.com/ivanakimov/hashids.js/1.2.1/dist/index.js
+    (function (global, factory) {
+      if (typeof define === "function" && define.amd) {
+        define(["exports"], factory);
+      } else if (typeof exports !== "undefined") {
+        factory(exports);
+      } else {
+        var mod = {
+          exports: {}
+        };
+        factory(mod.exports);
+        global.Hashids = mod.exports;
+      }
+    })(this, function (_exports) {
+      "use strict";
+
+      Object.defineProperty(_exports, "__esModule", {
+        value: true
+      });
+      _exports.default = void 0;
+
+      function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+      function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+      function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+      var Hashids =
+      /*#__PURE__*/
+      function () {
+        function Hashids() {
+          var salt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+          var minLength = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+          var alphabet = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+
+          _classCallCheck(this, Hashids);
+
+          var minAlphabetLength = 16;
+          var sepDiv = 3.5;
+          var guardDiv = 12;
+          var errorAlphabetLength = 'error: alphabet must contain at least X unique characters';
+          var errorAlphabetSpace = 'error: alphabet cannot contain spaces';
+          var uniqueAlphabet = '',
+              sepsLength,
+              diff;
+          /* funcs */
+
+          this.escapeRegExp = function (s) {
+            return s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+          };
+
+          this.parseInt = function (v, radix) {
+            return /^(-|\+)?([0-9]+|Infinity)$/.test(v) ? parseInt(v, radix) : NaN;
+          };
+          /* alphabet vars */
+
+
+          this.seps = 'cfhistuCFHISTU';
+          this.minLength = parseInt(minLength, 10) > 0 ? minLength : 0;
+          this.salt = typeof salt === 'string' ? salt : '';
+
+          if (typeof alphabet === 'string') {
+            this.alphabet = alphabet;
+          }
+
+          for (var i = 0; i !== this.alphabet.length; i++) {
+            if (uniqueAlphabet.indexOf(this.alphabet.charAt(i)) === -1) {
+              uniqueAlphabet += this.alphabet.charAt(i);
+            }
+          }
+
+          this.alphabet = uniqueAlphabet;
+
+          if (this.alphabet.length < minAlphabetLength) {
+            throw errorAlphabetLength.replace('X', minAlphabetLength);
+          }
+
+          if (this.alphabet.search(' ') !== -1) {
+            throw errorAlphabetSpace;
+          }
+          /*
+            `this.seps` should contain only characters present in `this.alphabet`
+            `this.alphabet` should not contains `this.seps`
+          */
+
+
+          for (var _i = 0; _i !== this.seps.length; _i++) {
+            var j = this.alphabet.indexOf(this.seps.charAt(_i));
+
+            if (j === -1) {
+              this.seps = this.seps.substr(0, _i) + ' ' + this.seps.substr(_i + 1);
+            } else {
+              this.alphabet = this.alphabet.substr(0, j) + ' ' + this.alphabet.substr(j + 1);
+            }
+          }
+
+          this.alphabet = this.alphabet.replace(/ /g, '');
+          this.seps = this.seps.replace(/ /g, '');
+          this.seps = this._shuffle(this.seps, this.salt);
+
+          if (!this.seps.length || this.alphabet.length / this.seps.length > sepDiv) {
+            sepsLength = Math.ceil(this.alphabet.length / sepDiv);
+
+            if (sepsLength > this.seps.length) {
+              diff = sepsLength - this.seps.length;
+              this.seps += this.alphabet.substr(0, diff);
+              this.alphabet = this.alphabet.substr(diff);
+            }
+          }
+
+          this.alphabet = this._shuffle(this.alphabet, this.salt);
+          var guardCount = Math.ceil(this.alphabet.length / guardDiv);
+
+          if (this.alphabet.length < 3) {
+            this.guards = this.seps.substr(0, guardCount);
+            this.seps = this.seps.substr(guardCount);
+          } else {
+            this.guards = this.alphabet.substr(0, guardCount);
+            this.alphabet = this.alphabet.substr(guardCount);
+          }
+        }
+
+        _createClass(Hashids, [{
+          key: "encode",
+          value: function encode() {
+            for (var _len = arguments.length, numbers = new Array(_len), _key = 0; _key < _len; _key++) {
+              numbers[_key] = arguments[_key];
+            }
+
+            var ret = '';
+
+            if (!numbers.length) {
+              return ret;
+            }
+
+            if (numbers[0] && numbers[0].constructor === Array) {
+              numbers = numbers[0];
+
+              if (!numbers.length) {
+                return ret;
+              }
+            }
+
+            for (var i = 0; i !== numbers.length; i++) {
+              numbers[i] = this.parseInt(numbers[i], 10);
+
+              if (numbers[i] >= 0) {
+                continue;
+              } else {
+                return ret;
+              }
+            }
+
+            return this._encode(numbers);
+          }
+        }, {
+          key: "decode",
+          value: function decode(id) {
+            var ret = [];
+
+            if (!id || !id.length || typeof id !== 'string') {
+              return ret;
+            }
+
+            return this._decode(id, this.alphabet);
+          }
+        }, {
+          key: "encodeHex",
+          value: function encodeHex(hex) {
+            hex = hex.toString();
+
+            if (!/^[0-9a-fA-F]+$/.test(hex)) {
+              return '';
+            }
+
+            var numbers = hex.match(/[\w\W]{1,12}/g);
+
+            for (var i = 0; i !== numbers.length; i++) {
+              numbers[i] = parseInt('1' + numbers[i], 16);
+            }
+
+            return this.encode.apply(this, numbers);
+          }
+        }, {
+          key: "decodeHex",
+          value: function decodeHex(id) {
+            var ret = [];
+            var numbers = this.decode(id);
+
+            for (var i = 0; i !== numbers.length; i++) {
+              ret += numbers[i].toString(16).substr(1);
+            }
+
+            return ret;
+          }
+        }, {
+          key: "_encode",
+          value: function _encode(numbers) {
+            var ret,
+                alphabet = this.alphabet,
+                numbersIdInt = 0;
+
+            for (var i = 0; i !== numbers.length; i++) {
+              numbersIdInt += numbers[i] % (i + 100);
+            }
+
+            ret = alphabet.charAt(numbersIdInt % alphabet.length);
+            var lottery = ret;
+
+            for (var _i2 = 0; _i2 !== numbers.length; _i2++) {
+              var number = numbers[_i2];
+              var buffer = lottery + this.salt + alphabet;
+              alphabet = this._shuffle(alphabet, buffer.substr(0, alphabet.length));
+
+              var last = this._toAlphabet(number, alphabet);
+
+              ret += last;
+
+              if (_i2 + 1 < numbers.length) {
+                number %= last.charCodeAt(0) + _i2;
+                var sepsIndex = number % this.seps.length;
+                ret += this.seps.charAt(sepsIndex);
+              }
+            }
+
+            if (ret.length < this.minLength) {
+              var guardIndex = (numbersIdInt + ret[0].charCodeAt(0)) % this.guards.length;
+              var guard = this.guards[guardIndex];
+              ret = guard + ret;
+
+              if (ret.length < this.minLength) {
+                guardIndex = (numbersIdInt + ret[2].charCodeAt(0)) % this.guards.length;
+                guard = this.guards[guardIndex];
+                ret += guard;
+              }
+            }
+
+            var halfLength = parseInt(alphabet.length / 2, 10);
+
+            while (ret.length < this.minLength) {
+              alphabet = this._shuffle(alphabet, alphabet);
+              ret = alphabet.substr(halfLength) + ret + alphabet.substr(0, halfLength);
+              var excess = ret.length - this.minLength;
+
+              if (excess > 0) {
+                ret = ret.substr(excess / 2, this.minLength);
+              }
+            }
+
+            return ret;
+          }
+        }, {
+          key: "_decode",
+          value: function _decode(id, alphabet) {
+            var ret = [],
+                i = 0,
+                r = new RegExp("[".concat(this.escapeRegExp(this.guards), "]"), 'g'),
+                idBreakdown = id.replace(r, ' '),
+                idArray = idBreakdown.split(' ');
+
+            if (idArray.length === 3 || idArray.length === 2) {
+              i = 1;
+            }
+
+            idBreakdown = idArray[i];
+
+            if (typeof idBreakdown[0] !== 'undefined') {
+              var lottery = idBreakdown[0];
+              idBreakdown = idBreakdown.substr(1);
+              r = new RegExp("[".concat(this.escapeRegExp(this.seps), "]"), 'g');
+              idBreakdown = idBreakdown.replace(r, ' ');
+              idArray = idBreakdown.split(' ');
+
+              for (var j = 0; j !== idArray.length; j++) {
+                var subId = idArray[j];
+                var buffer = lottery + this.salt + alphabet;
+                alphabet = this._shuffle(alphabet, buffer.substr(0, alphabet.length));
+                ret.push(this._fromAlphabet(subId, alphabet));
+              }
+
+              if (this.encode(ret) !== id) {
+                ret = [];
+              }
+            }
+
+            return ret;
+          }
+        }, {
+          key: "_shuffle",
+          value: function _shuffle(alphabet, salt) {
+            var integer;
+
+            if (!salt.length) {
+              return alphabet;
+            }
+
+            alphabet = alphabet.split("");
+
+            for (var i = alphabet.length - 1, v = 0, p = 0, j = 0; i > 0; i--, v++) {
+              v %= salt.length;
+              p += integer = salt.charCodeAt(v);
+              j = (integer + v + p) % i;
+              var tmp = alphabet[j];
+              alphabet[j] = alphabet[i];
+              alphabet[i] = tmp;
+            }
+
+            alphabet = alphabet.join("");
+            return alphabet;
+          }
+        }, {
+          key: "_toAlphabet",
+          value: function _toAlphabet(input, alphabet) {
+            var id = '';
+
+            do {
+              id = alphabet.charAt(input % alphabet.length) + id;
+              input = parseInt(input / alphabet.length, 10);
+            } while (input);
+
+            return id;
+          }
+        }, {
+          key: "_fromAlphabet",
+          value: function _fromAlphabet(input, alphabet) {
+            return input.split("").map(function (item) {
+              return alphabet.indexOf(item);
+            }).reduce(function (carry, item) {
+              return carry * alphabet.length + item;
+            }, 0);
+          }
+        }]);
+
+        return Hashids;
+      }();
+
+      _exports.default = Hashids;
+    });
+
+    // HACK: Lift Hashids onto global object:
+    this.Hashids = this.Hashids.default;
+    $FUNCTION$ LANGUAGE PLV8 IMMUTABLE STRICT;
   |]
