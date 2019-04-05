@@ -85,12 +85,9 @@ library
     , blaze-builder
     , bytestring
     , case-insensitive
-    , cassava
     , containers
-    , cryptonite
     , data-default
     , directory
-    , either
     , enclosed-exceptions
     , envy
     , exceptions
@@ -126,14 +123,12 @@ library
     , split
     , sqlite-simple
     , squeal-postgresql
-    , stm
     , string-conversions
     , temporary
     , text
     , time
     , time-units
     , timeit
-    , transformers
     , transformers-base
     , unix
     , unordered-containers
@@ -171,24 +166,19 @@ test-suite tests
       aeson
     , base
     , bytestring
-    , data-default
     , generics-sop
     , hspec == 2.*
     , hspec-wai
     , http-types
-    , monad-control
     , network-uri
     , postgresql-simple
     , QuickCheck
     , quickcheck-instances
     , resource-pool
     , servant-server
-    , sqlite-simple
     , squeal-postgresql
     , text
     , time
     , time-units
-    , transformers
-    , transformers-base
     , wai
     , zoomhub
