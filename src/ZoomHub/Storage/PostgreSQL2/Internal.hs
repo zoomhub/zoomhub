@@ -49,6 +49,7 @@ import Squeal.PostgreSQL
   , Query
   , ReturningClause(Returning)
   , RowPG
+  , TableExpression
   , ToParam
   , TuplePG
   , as
@@ -71,10 +72,6 @@ import Squeal.PostgreSQL
   , (!)
   , (&)
   , (.==)
-  , orderBy
-  , limit
-  , SortExpression(Asc, Desc)
-  , TableExpression
   )
 import System.Random (randomRIO)
 

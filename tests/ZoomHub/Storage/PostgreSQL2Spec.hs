@@ -11,6 +11,7 @@ import Control.Exception (bracket)
 import Control.Monad (void)
 import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
+import Data.Int (Int64)
 import Data.Maybe (maybe)
 import qualified Data.Text as T
 import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
@@ -22,6 +23,7 @@ import System.Environment (lookupEnv)
 import Test.Hspec
   ( Spec
   , around
+  , context
   , describe
   , expectationFailure
   , hspec
@@ -36,6 +38,7 @@ import ZoomHub.Storage.PostgreSQL2
   , getByURL
   , getByURL'
   , getExpiredActive
+  , getNextUnprocessed
   , initialize
   , markAsActive
   , markAsFailure
@@ -250,14 +253,48 @@ spec =
           Nothing ->
             expectationFailure "expected content to be initialized"
 
+    describe "getNextUnprocessed" $ do
+      context "when two content were initialized at the same time" $
+        it "should return the one that is more popular (more views)" $ \conn -> do
+          currentTime <- getCurrentTime
+          let minutes n = n * 60
+              -- HACK: Hard-coded content IDs set by database trigger
+              u1 = mkUnprocessedContent "X75" currentTime (15 & minutes) 100
+              u2 = mkUnprocessedContent "yOJ" currentTime (15 & minutes) 200
+              u3 = mkUnprocessedContent "yJL" currentTime (5 & minutes) 300
+              u4 = mkActiveContent "foo" currentTime (45 & minutes)
+
+          void $ runPQ (I.unsafeCreateContent u1) conn
+          void $ runPQ (I.unsafeCreateContent u2) conn
+          void $ runPQ (I.unsafeCreateContent u3) conn
+          void $ runPQ (I.unsafeCreateContent u4) conn
+
+          (results, _) <- runPQ getNextUnprocessed conn
+          results `shouldBe` Just u2
+
+      context "when there is no initialized content" $
+        it "should return nothing" $ \conn -> do
+          currentTime <- getCurrentTime
+
+          let c1 = mkActiveContent "X75" currentTime 0
+          void $ runPQ (I.unsafeCreateContent c1) conn
+
+          (results, _) <- runPQ getNextUnprocessed conn
+          results `shouldBe` Nothing
+
+      context "when there is no content" $
+        it "should return nothing" $ \conn -> do
+          (results, _) <- runPQ getNextUnprocessed conn
+          results `shouldBe` Nothing
+
     describe "getExpiredActive" $
       it "should return active content that has expired" $ \conn -> do
         currentTime <- getCurrentTime
         let minutes n = n * 60
             -- HACK: Hard-coded content IDs set by database trigger
-            c1 = mkContentActive "X75" currentTime (15 & minutes)
-            c2 = mkContentActive "yOJ" currentTime (45 & minutes)
-            c3 = mkContentActive "yJL" currentTime (60 & minutes)
+            c1 = mkActiveContent "X75" currentTime (15 & minutes)
+            c2 = mkActiveContent "yOJ" currentTime (45 & minutes)
+            c3 = mkActiveContent "yJL" currentTime (60 & minutes)
 
         void $ runPQ (I.unsafeCreateContent c1) conn
         void $ runPQ (I.unsafeCreateContent c2) conn
@@ -267,8 +304,26 @@ spec =
         results `shouldBe` [c2, c3]
 
     where
-    mkContentActive :: String -> UTCTime -> NominalDiffTime -> I.Content
-    mkContentActive id_ currentTime age =
+    mkUnprocessedContent :: String -> UTCTime -> NominalDiffTime -> Int64 -> I.Content
+    mkUnprocessedContent id_ currentTime age numViews =
+      I.Content
+        { contentId = ContentId.fromString id_
+        , contentType = Unknown
+        , contentURL = ContentURI $ "https://example.com/" <> T.pack id_
+        , contentState = Initialized
+        , contentInitializedAt = addUTCTime (-age) currentTime
+        , contentActiveAt = Nothing
+        , contentCompletedAt = Nothing
+        , contentMIME = Nothing
+        , contentSize = Nothing
+        , contentProgress = 0.0
+        , contentNumViews = numViews
+        , contentError = Nothing
+        , contentDZI = Nothing
+        }
+
+    mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
+    mkActiveContent id_ currentTime age =
       I.Content
         { contentId = ContentId.fromString id_
         , contentType = Image

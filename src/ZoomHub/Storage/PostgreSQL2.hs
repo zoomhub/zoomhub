@@ -8,6 +8,7 @@ module ZoomHub.Storage.PostgreSQL2
   ( -- ** Read operations
     getById
   , getByURL
+  , getNextUnprocessed
   , getExpiredActive
     -- ** Read operations (with view tracking)
   , getById'
@@ -36,6 +37,7 @@ import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
+import ZoomHub.Types.ContentState (ContentState(Initialized))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
@@ -49,17 +51,20 @@ import Data.Time.Units (Second, TimeUnit, toMicroseconds)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(Only)
+  , SortExpression(Asc, Desc)
   , firstRow
   , getRows
+  , limit
   , manipulateParams
+  , orderBy
   , param
   , runQueryParams
   , transactionally_
+  , where_
   , (!)
+  , (&)
   , (.<)
   , (.==)
-  , where_
-  , (&)
   )
 
 -- Public API
@@ -70,6 +75,19 @@ getById = getBy ((#content ! #hash_id) .== param @1)
 
 getByURL :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentURI -> m (Maybe Content)
 getByURL = getBy ((#content ! #url) .== param @1)
+
+getNextUnprocessed :: (MonadBaseControl IO m, MonadPQ Schema m) => m (Maybe Content)
+getNextUnprocessed = do
+  result <- runQueryParams
+    (selectContentBy $
+      \t -> t
+        & where_ ((#content ! #state) .== param @1)
+        & orderBy [#content ! #initialized_at & Asc]
+        & orderBy [#content ! #num_views & Desc]
+        & limit 1
+    ) (Only Initialized)
+  contentRow <- firstRow result
+  pure (contentImageRowToContent <$> contentRow)
 
 getExpiredActive ::
   (MonadBaseControl IO m, MonadPQ Schema m, TimeUnit t) => t -> m [Content]
