@@ -185,14 +185,13 @@ getImageById :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> m (Maybe D
 getImageById cid = do
   result <- runQueryParams (selectImageBy ((#image ! #content_id) .== param @1)) (Only cid)
   imageRow <- firstRow result
-  pure (rowToImage <$> imageRow)
+  pure (imageRowToImage <$> imageRow)
 
 selectImageBy ::
   Condition Schema _ 'Ungrouped '[ 'NotNull 'PGint8 ] ->
   Query Schema '[ 'NotNull 'PGint8 ] (RowPG ImageRow)
 selectImageBy condition = select
-  ( #image ! #content_id `as` #irContentId :*
-    #image ! #created_at `as` #irCreatedAt :*
+  ( #image ! #created_at `as` #irCreatedAt :*
     #image ! #width `as` #irWidth :*
     #image ! #height `as` #irHeight :*
     #image ! #tile_size `as` #irTileSize :*
@@ -241,8 +240,7 @@ instance SOP.Generic ContentImageRow
 instance SOP.HasDatatypeInfo ContentImageRow
 
 data ImageRow = ImageRow
-  { irContentId :: Int64
-  , irCreatedAt :: UTCTime
+  { irCreatedAt :: UTCTime
   , irWidth :: Int64
   , irHeight :: Int64
   , irTileSize :: TileSize
@@ -276,8 +274,8 @@ contentImageRowToContent cr = Content
       cirTileOverlap cr <*>
       cirTileFormat cr
 
-rowToImage :: ImageRow -> DeepZoomImage
-rowToImage ir = mkDeepZoomImage
+imageRowToImage :: ImageRow -> DeepZoomImage
+imageRowToImage ir = mkDeepZoomImage
   (fromIntegral . irWidth $ ir)
   (fromIntegral . irHeight $ ir)
   (irTileSize ir)
