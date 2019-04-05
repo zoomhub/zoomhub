@@ -50,17 +50,32 @@ jobs:
     #   This would typically go in either a build or a build-and-test job when
     #   using workflows
     # Restore the dependency cache
-    # - restore_cache:
-    #     keys:
-    #     - zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
-    #     # This branch if available
-    #     - zh-stack-cache-v1-dep-{{ .Branch }}-
-    #     # Default branch if not
-    #     - zh-stack-cache-v1-dep-master-
-    #     # Any branch if there are none on the default branch -
-    #     # this should be unnecessary if you have your default branch
-    #     # configured correctly
-    #     - zh-stack-cache-v1-dep-
+    - restore_cache:
+        keys:
+        - zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+        # This branch if available
+        - zh-stack-cache-v1-dep-{{ .Branch }}-
+        # Default branch if not
+        - zh-stack-cache-v1-dep-master-
+        # Any branch if there are none on the default branch -
+        # this should be unnecessary if you have your default branch
+        # configured correctly
+        - zh-stack-cache-v1-dep-
+
+    # Test
+    # - run:
+    #     name: Prepare database for test
+    #     command: pgloader ./data/zoomhub-development.sqlite3 postgresql://zoomhub@localhost:5432/zoomhub-test-db
+    - run:
+        name: Run tests
+        command: |
+          PGUSER='postgres' PGDATABASE='zoomhub-test-db' stack test \
+            --fast --no-terminal \
+            --test-arguments '--match "ZoomHub.Storage.PostgreSQL2"'
+    # - run:
+    #     name: Copy coverage reports
+    #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
+
     # - run:
     #     name: Build binary
     #     command: stack build --install-ghc --pedantic --ghc-options="-O2"
@@ -84,25 +99,11 @@ jobs:
     #       - deploy.sh
 
     # Save dependency cache
-    # - save_cache:
-    #     key: zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
-    #     paths:
-    #     - ~/.stack
-    #     - .stack-work
-
-    # Test
-    # - run:
-    #     name: Prepare database for test
-    #     command: pgloader ./data/zoomhub-development.sqlite3 postgresql://zoomhub@localhost:5432/zoomhub-test-db
-    - run:
-        name: Run tests
-        command: |
-          PGUSER='postgres' PGDATABASE='zoomhub-test-db' stack test \
-            --fast --no-terminal \
-            --test-arguments '--match "ZoomHub.Storage.PostgreSQL2"'
-    # - run:
-    #     name: Copy coverage reports
-    #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
+    - save_cache:
+        key: zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+        paths:
+        - ~/.stack
+        - .stack-work
 
     # # Save test results
     # - store_test_results:
