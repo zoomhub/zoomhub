@@ -58,6 +58,8 @@ import Squeal.PostgreSQL
   , (!)
   , (.<)
   , (.==)
+  , where_
+  , (&)
   )
 
 -- Public API
@@ -74,8 +76,11 @@ getExpiredActive ::
 getExpiredActive ttl = do
   currentTime <- liftBase getCurrentTime
   let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
-  let condition = (#content ! #active_at) .< param @1
-  result <- runQueryParams (selectContentBy condition) (Only earliestAllowed)
+  result <- runQueryParams
+    (selectContentBy
+      (\t -> t & where_ ((#content ! #active_at) .< param @1))
+    )
+    (Only earliestAllowed)
   contentRows <- getRows result
   return $ contentImageRowToContent <$> contentRows
   where

@@ -71,17 +71,22 @@ import Squeal.PostgreSQL
   , (!)
   , (&)
   , (.==)
+  , orderBy
+  , limit
+  , SortExpression(Asc, Desc)
+  , TableExpression
   )
 import System.Random (randomRIO)
 
 -- Reads: Content
 getBy ::
-  (MonadBaseControl IO m, MonadPQ Schema m, ToParam p 'PGtext) =>
-  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
+  (MonadBaseControl IO m, MonadPQ Schema m, ToParam p a) =>
+  Condition Schema _ 'Ungrouped '[ 'NotNull a ] ->
   p ->
   m (Maybe Content)
 getBy condition parameter = do
-  result <- runQueryParams (selectContentBy condition) (Only parameter)
+  result <- runQueryParams
+    (selectContentBy (\t -> t & where_ condition)) (Only parameter)
   contentRow <- firstRow result
   pure (contentImageRowToContent <$> contentRow)
 
@@ -140,9 +145,11 @@ incrNumViews =
     ( #hash_id .== param @2 )
 
 selectContentBy
-  :: Condition Schema _ 'Ungrouped '[ 'NotNull a ]
+  :: ( TableExpression Schema '[ 'NotNull a ] _ 'Ungrouped ->
+       TableExpression Schema '[ 'NotNull a ] _ 'Ungrouped
+     )
   -> Query Schema '[ 'NotNull a ] (RowPG ContentImageRow)
-selectContentBy condition = select
+selectContentBy clauses = select
   ( #content ! #hash_id `as` #cirHashId :*
     #content ! #type_id `as` #cirTypeId :*
     #content ! #url `as` #cirURL :*
@@ -167,10 +174,10 @@ selectContentBy condition = select
     #image ! #tile_overlap `as` #cirTileOverlap :*
     #image ! #tile_format `as` #cirTileFormat
   )
-  ( from (table #content
+  ( from ( table #content
          & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
          )
-    & where_ condition
+  & clauses
   )
 
 -- Reads: Image
