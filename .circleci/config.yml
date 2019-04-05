@@ -24,10 +24,13 @@ jobs:
   build:
     <<: *defaults
     docker:
+      # Default CircleCI Docker container image
+      # https://circleci.com/docs/2.0/executor-types/
+      # - image: buildpack-deps:trusty
       - image: fpco/stack-build
-      - image: clkao/postgres-plv8:9.6-2.0
+      - image: clkao/postgres-plv8:9.6-1.4
         environment:
-          POSTGRES_USER: zoomhub
+          POSTGRES_USER: postgres
           POSTGRES_DB: zoomhub-test-db
     steps:
     - checkout
@@ -61,24 +64,24 @@ jobs:
     - run:
         name: Build binary
         command: stack build --install-ghc --pedantic --ghc-options="-O2"
-    - run:
-        name: Create Keter package
-        command: ./ops/keter-bundle.sh
-    - run:
-        name: Copy Keter package to artifacts
-        command: cp zoomhub.keter $CIRCLE_ARTIFACTS
-    - run:
-        name: Copy Keter package to workspace
-        command: cp zoomhub.keter workspace
-    - run:
-        name: Copy deploy script to workspace
-        command: cp ./ops/deploy.sh workspace
+    # - run:
+    #     name: Create Keter package
+    #     command: ./ops/keter-bundle.sh
+    # - run:
+    #     name: Copy Keter package to artifacts
+    #     command: cp zoomhub.keter $CIRCLE_ARTIFACTS
+    # - run:
+    #     name: Copy Keter package to workspace
+    #     command: cp zoomhub.keter workspace
+    # - run:
+    #     name: Copy deploy script to workspace
+    #     command: cp ./ops/deploy.sh workspace
 
-    - persist_to_workspace:
-        root: workspace
-        paths:
-          - zoomhub.keter
-          - deploy.sh
+    # - persist_to_workspace:
+    #     root: workspace
+    #     paths:
+    #       - zoomhub.keter
+    #       - deploy.sh
 
     # Save dependency cache
     - save_cache:
@@ -94,7 +97,7 @@ jobs:
     - run:
         name: Run tests
         command: |
-          PGUSER='zoomhub' PGDATABASE='zoomhub-test-db' stack test \
+          PGUSER='postgres' PGDATABASE='zoomhub-test-db' stack test \
             --fast --no-terminal --coverage \
             --test-arguments '--match "ZoomHub.Storage.PostgreSQL2"'
     - run:
