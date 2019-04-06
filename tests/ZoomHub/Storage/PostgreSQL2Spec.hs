@@ -17,7 +17,15 @@ import qualified Data.Text as T
 import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
 import Data.Time.Units (Minute)
 import qualified Generics.SOP as SOP
-import Squeal.PostgreSQL (Connection, connectdb, finish, runPQ)
+import Squeal.PostgreSQL
+  ( Connection
+  , Manipulation(UnsafeManipulation)
+  , connectdb
+  , finish
+  , manipulate
+  , pqThen
+  , runPQ
+  )
 import Squeal.PostgreSQL.Migration (migrateDown, migrateUp)
 import System.Environment (lookupEnv)
 import Test.Hspec
@@ -85,7 +93,10 @@ withDatabaseConnection = bracket acquire release
 
       conn <- connectdb $
         "host=localhost port=5432 dbname=" <> pgDatabase <> " user=" <> pgUser
-      (_, conn') <- runPQ (migrateUp migrations) conn
+      (_, conn') <- runPQ
+        ( manipulate (UnsafeManipulation "SET client_min_messages TO WARNING;")
+        & pqThen (migrateUp migrations)
+        ) conn
       pure conn'
     release :: SOP.K Connection Schema -> IO ()
     release conn = do
