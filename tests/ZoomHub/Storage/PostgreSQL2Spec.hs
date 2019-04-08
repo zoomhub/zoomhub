@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Storage.PostgreSQL2Spec
@@ -14,7 +15,14 @@ import Data.Function ((&))
 import Data.Int (Int64)
 import Data.Maybe (maybe)
 import qualified Data.Text as T
-import Data.Time.Clock (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
+import Data.Time.Clock
+  ( NominalDiffTime
+  , UTCTime(..)
+  , addUTCTime
+  , diffTimeToPicoseconds
+  , getCurrentTime
+  , picosecondsToDiffTime
+  )
 import Data.Time.Units (Minute)
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL
@@ -108,7 +116,7 @@ spec =
   around withDatabaseConnection $ do
     describe "initialize" $
       it "should return initialized content" $ \conn -> do
-        currentTime <- getCurrentTime
+        currentTime <- safeGetCurrentTime
         (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
@@ -135,7 +143,7 @@ spec =
         (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
-            currentTime <- getCurrentTime
+            currentTime <- safeGetCurrentTime
 
             let cId = contentId content
             void $ runPQ (markAsActive cId) conn
@@ -161,7 +169,7 @@ spec =
         (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
-            currentTime <- getCurrentTime
+            currentTime <- safeGetCurrentTime
 
             let cId = contentId content
             let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
@@ -193,7 +201,7 @@ spec =
         (mContent, _) <- runPQ (initialize testURL) conn
         case mContent of
           Just content -> do
-            currentTime <- getCurrentTime
+            currentTime <- safeGetCurrentTime
 
             let cId = contentId content
                 errorMessage = Just "test error message"
@@ -267,7 +275,7 @@ spec =
     describe "getNextUnprocessed" $ do
       context "when two content were initialized at the same time" $
         it "should return the one that is more popular (more views)" $ \conn -> do
-          currentTime <- getCurrentTime
+          currentTime <- safeGetCurrentTime
           let minutes n = n * 60
               -- HACK: Hard-coded content IDs set by database trigger
               u1 = mkUnprocessedContent "X75" currentTime (15 & minutes) 100
@@ -285,7 +293,7 @@ spec =
 
       context "when there is no initialized content" $
         it "should return nothing" $ \conn -> do
-          currentTime <- getCurrentTime
+          currentTime <- safeGetCurrentTime
 
           let c1 = mkActiveContent "X75" currentTime 0
           void $ runPQ (I.unsafeCreateContent c1) conn
@@ -300,7 +308,7 @@ spec =
 
     describe "getExpiredActive" $
       it "should return active content that has expired" $ \conn -> do
-        currentTime <- getCurrentTime
+        currentTime <- safeGetCurrentTime
         let minutes n = n * 60
             -- HACK: Hard-coded content IDs set by database trigger
             c1 = mkActiveContent "X75" currentTime (15 & minutes)
@@ -361,3 +369,10 @@ spec =
       let upperBound = addUTCTime interval pivot
           lowerBound = addUTCTime (-interval) pivot
       in lowerBound <= t && t <= upperBound
+
+    safeGetCurrentTime :: IO UTCTime
+    safeGetCurrentTime = do
+      ct@UTCTime{ utctDayTime } <- getCurrentTime
+      let newDayTime = picosecondsToDiffTime $
+                        (diffTimeToPicoseconds utctDayTime `div` 1000000) * 1000000
+      return $ ct{ utctDayTime = newDayTime }
