@@ -61,6 +61,7 @@ import ZoomHub.Storage.PostgreSQL2
   , markAsActive
   , markAsFailure
   , markAsSuccess
+  , resetAsInitialized
   )
 import qualified ZoomHub.Storage.PostgreSQL2.Internal as I
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
@@ -223,6 +224,21 @@ spec =
               , contentError = errorMessage
               , contentProgress = 1.0
               }
+          Nothing ->
+            expectationFailure "expected content to be initialized"
+
+    describe "resetAsInitialized" $
+      it "should reset content as initialized" $ \conn -> do
+        (mContent, _) <- runPQ (initialize testURL) conn
+        case mContent of
+          Just content -> do
+            let cId = contentId content
+                errorMessage = Just "test error message"
+            void $ runPQ (markAsFailure cId errorMessage) conn
+            void $ runPQ (resetAsInitialized cId) conn
+            (result, _) <- runPQ (getById cId) conn
+
+            result `shouldBe` Just content
           Nothing ->
             expectationFailure "expected content to be initialized"
 

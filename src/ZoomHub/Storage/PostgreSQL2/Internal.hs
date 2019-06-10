@@ -514,6 +514,54 @@ markContentAsSuccess = update #content
     )
   )
 
+resetContentAsInitialized ::
+  Manipulation Schema
+  '[ 'NotNull 'PGtext ]
+  (RowPG ContentRow)
+resetContentAsInitialized = update #content
+  ( Same `as` #id :*
+    Same `as` #hash_id :*
+    Set (ContentType.toExpression Unknown) `as` #type_id :*
+    Same `as` #url :*
+    Set (ContentState.toExpression Initialized) `as` #state :*
+    Same `as` #initialized_at :*
+    Set null_ `as` #active_at :*
+    Set null_ `as` #completed_at :*
+    Same `as` #title :*
+    Same `as` #attribution_text :*
+    Same `as` #attribution_link :*
+    Set null_ `as` #mime :*
+    Set null_ `as` #size :*
+    Set null_ `as` #error :* -- reset any previous errors
+    Set 0.0 `as` #progress :*
+    Same `as` #abuse_level_id :*
+    Same `as` #num_abuse_reports :*
+    Same `as` #num_views :*
+    Same `as` #version
+  )
+  ( #hash_id .== param @1 )
+  ( Returning
+    ( #hash_id `as` #crHashId :*
+      #type_id `as` #crTypeId :*
+      #url `as` #crURL :*
+      #state `as` #crState :*
+      #initialized_at `as` #crInitializedAt :*
+      #active_at `as` #crActiveAt :*
+      #completed_at `as` #crCompletedAt :*
+      #title `as` #crTitle :*
+      #attribution_text `as` #crAttributionText :*
+      #attribution_link `as` #crAttributionLink :*
+      #mime `as` #crMIME :*
+      #size `as` #crSize :*
+      #error `as` #crError :*
+      #progress `as` #crProgress :*
+      #abuse_level_id `as` #crAbuseLevelId :*
+      #num_abuse_reports `as` #crNumAbuseReports :*
+      #num_views `as` #crNumViews :*
+      #version `as` #crVersion
+    )
+  )
+
 imageToInsertRow :: ContentId -> DeepZoomImage -> InsertImageRow
 imageToInsertRow cid dzi = InsertImageRow
   { iirContentId = cid

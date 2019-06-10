@@ -20,6 +20,7 @@ module ZoomHub.Storage.PostgreSQL2
   , markAsActive
   , markAsFailure
   , markAsSuccess
+  , resetAsInitialized
   ) where
 
 import ZoomHub.Storage.PostgreSQL2.Internal
@@ -33,6 +34,7 @@ import ZoomHub.Storage.PostgreSQL2.Internal
   , markContentAsActive
   , markContentAsFailure
   , markContentAsSuccess
+  , resetContentAsInitialized
   , selectContentBy
   )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
@@ -165,3 +167,13 @@ markAsSuccess cId dzi mMIME mSize =
         Just content { contentDZI = Just dzi }
       Nothing ->
         Nothing
+
+resetAsInitialized
+  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  => ContentId
+  -> m (Maybe Content)
+resetAsInitialized cId =
+  transactionally_ $ do
+    contentResult <- manipulateParams resetContentAsInitialized (Only cId)
+    mContentRow <- firstRow contentResult
+    return $ contentRowToContent <$> mContentRow
