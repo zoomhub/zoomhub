@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -O0 #-}
+
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
