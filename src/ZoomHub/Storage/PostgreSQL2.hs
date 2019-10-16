@@ -21,6 +21,7 @@ module ZoomHub.Storage.PostgreSQL2
   , markAsFailure
   , markAsSuccess
   , resetAsInitialized
+  , dequeueNextUnprocessed
   ) where
 
 import ZoomHub.Storage.PostgreSQL2.Internal
@@ -177,3 +178,14 @@ resetAsInitialized cId =
     contentResult <- manipulateParams resetContentAsInitialized (Only cId)
     mContentRow <- firstRow contentResult
     return $ contentRowToContent <$> mContentRow
+
+dequeueNextUnprocessed
+  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  => m (Maybe Content)
+dequeueNextUnprocessed = do
+  mNext <- getNextUnprocessed
+  case mNext of
+    Just next ->
+      markAsActive $ contentId next
+    Nothing ->
+      pure Nothing

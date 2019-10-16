@@ -62,6 +62,7 @@ import ZoomHub.Storage.PostgreSQL2
   , markAsFailure
   , markAsSuccess
   , resetAsInitialized
+  , dequeueNextUnprocessed
   )
 import qualified ZoomHub.Storage.PostgreSQL2.Internal as I
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
@@ -241,6 +242,51 @@ spec =
             result `shouldBe` Just content
           Nothing ->
             expectationFailure "expected content to be initialized"
+
+    describe "dequeueNextUnprocessed" $ do
+      context "when two content were initialized at the same time" $
+        it "should return the one that is more popular (more views) and mark active" $ \conn -> do
+          currentTime <- safeGetCurrentTime
+          let minutes n = n * 60
+              -- HACK: Hard-coded content IDs set by database trigger
+              u1 = mkUnprocessedContent "X75" currentTime (15 & minutes) 100
+              u2 = mkUnprocessedContent "yOJ" currentTime (15 & minutes) 200
+              u3 = mkUnprocessedContent "yJL" currentTime (5 & minutes) 300
+              u4 = mkActiveContent "foo" currentTime (45 & minutes)
+
+          void $ runPQ (I.unsafeCreateContent u1) conn
+          void $ runPQ (I.unsafeCreateContent u2) conn
+          void $ runPQ (I.unsafeCreateContent u3) conn
+          void $ runPQ (I.unsafeCreateContent u4) conn
+
+          (result, _) <- runPQ dequeueNextUnprocessed conn
+
+          case result >>= contentActiveAt of
+            Just activeAt ->
+              activeAt `shouldSatisfy` isWithinSecondsOf currentTime 3
+            Nothing ->
+              expectationFailure "expected `contentActiveAt` to be set"
+
+          let dequeued = u2
+                         { contentState = Active
+                         , contentActiveAt = result >>= contentActiveAt
+                         }
+          result `shouldBe` Just dequeued
+
+      context "when there is no initialized content" $
+        it "should return nothing" $ \conn -> do
+          currentTime <- safeGetCurrentTime
+
+          let c1 = mkActiveContent "X75" currentTime 0
+          void $ runPQ (I.unsafeCreateContent c1) conn
+
+          (result, _) <- runPQ dequeueNextUnprocessed conn
+          result `shouldBe` Nothing
+
+      context "when there is no content" $
+        it "should return nothing" $ \conn -> do
+          (result, _) <- runPQ dequeueNextUnprocessed conn
+          result `shouldBe` Nothing
 
     describe "getById" $
       it "should return item by hash ID" $ \conn -> do
