@@ -12,7 +12,10 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
-module ZoomHub.Storage.PostgreSQL2.Internal where
+module ZoomHub.Storage.PostgreSQL2.Internal
+  ( module ZoomHub.Storage.PostgreSQL2.Internal
+  , destroyAllResources
+  ) where
 
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content.Internal (Content(..))
@@ -30,11 +33,17 @@ import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
 import Control.Monad (void, when)
 import Control.Monad.Base (liftBase)
+import Control.Monad.Base (MonadBase)
 import Control.Monad.Trans.Control (MonadBaseControl)
+import qualified Data.ByteString.Char8 as BC
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (UTCTime)
+import Data.Time (NominalDiffTime)
+import Data.Time.Units (Second, TimeUnit, toMicroseconds)
+import Database.PostgreSQL.Simple (ConnectInfo(..))
 import qualified Generics.SOP as SOP
+import Generics.SOP.BasicFunctors (K)
 import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
   ( ColumnValue(Default, Same, Set)
@@ -75,7 +84,34 @@ import Squeal.PostgreSQL
   , (&)
   , (.==)
   )
+import Squeal.PostgreSQL.Pool (Pool, destroyAllResources)
+import qualified Squeal.PostgreSQL.Pool as P
+import qualified Squeal.PostgreSQL.PQ as PQ
 import System.Random (randomRIO)
+
+-- Connection
+type Connection = K PQ.Connection Schema
+
+createConnectionPool ::
+  (TimeUnit a, MonadBase IO io) =>
+  ConnectInfo -> Integer -> a -> Integer -> io (Pool Connection)
+createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
+  P.createConnectionPool (connectionString connInfo)
+    (fromIntegral numStripes) (toNominalDiffTime idleTime)
+    (fromIntegral maxResourcesPerStripe)
+
+  where
+    connectionString :: ConnectInfo -> BC.ByteString
+    connectionString info = BC.intercalate " "
+      [ pair "host" (connectHost info)
+      , pair "port" (show $ connectPort info)
+      , pair "user" (connectUser info)
+      , pair "password" (connectPassword info)
+      , pair "dbname" (connectDatabase info)
+      ]
+
+    pair :: BC.ByteString -> String -> BC.ByteString
+    pair key value = key <> "=" <> BC.pack value
 
 -- Reads: Content
 getBy ::
@@ -674,3 +710,7 @@ contentToRow c = ContentRow
   , crNumViews = contentNumViews c
   , crVersion = 4 -- TODO: Replace hard-coded value
   }
+
+toNominalDiffTime :: TimeUnit a => a -> NominalDiffTime
+toNominalDiffTime duration = fromIntegral $
+  toMicroseconds duration `div` toMicroseconds (1 :: Second)

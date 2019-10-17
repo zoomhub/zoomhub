@@ -40,8 +40,6 @@ library
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
-    , ZoomHub.Storage.PostgreSQL
-    , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL2
     , ZoomHub.Storage.PostgreSQL2.Internal
     , ZoomHub.Storage.PostgreSQL2.Schema
@@ -157,7 +155,6 @@ test-suite tests
   type:             exitcode-stdio-1.0
   other-modules:
     ZoomHub.APISpec
-    ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Storage.PostgreSQL2Spec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
@@ -172,6 +169,7 @@ test-suite tests
     , http-types
     , network-uri
     , postgresql-simple
+    , process
     , QuickCheck
     , quickcheck-instances
     , resource-pool

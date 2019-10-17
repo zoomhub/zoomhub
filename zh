@@ -90,7 +90,8 @@ run)
 test)
     dropdb --if-exists "$DB_NAME"
     createdb "$DB_NAME"
-    psql --quiet "$DB_NAME" < ./data/zoomhub_test-pg-backup-2017-03-04.sql
+    psql --output /dev/null --quiet "$DB_NAME" < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
+    psql --output /dev/null --quiet "$DB_NAME" < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"

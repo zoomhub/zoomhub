@@ -8,7 +8,6 @@ import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
 import Control.Monad (forM_, guard, unless, when)
 import Data.Aeson ((.=))
-import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
 import Data.Maybe (fromJust, fromMaybe)
@@ -36,7 +35,6 @@ import System.FilePath ((</>))
 import System.IO.Error (isDoesNotExistError)
 import System.Random (randomRIO)
 import Text.Read (readMaybe)
-import Web.Hashids (encode, hashidsSimple)
 
 import ZoomHub.API (app)
 import ZoomHub.Config
@@ -52,13 +50,14 @@ import ZoomHub.Config
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Rackspace.CloudFiles (unContainer)
-import ZoomHub.Storage.PostgreSQL (createConnectionPool)
+import ZoomHub.Storage.PostgreSQL2 (createConnectionPool)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath), unDatabasePath)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath(TempPath), unTempPath)
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
+
 
 -- Environment variables
 baseURIEnvName :: String
@@ -69,9 +68,6 @@ dbPathEnvName = "DB_PATH"
 
 existingContentStatusEnvName :: String
 existingContentStatusEnvName = "PROCESS_EXISTING_CONTENT"
-
-hashidsSaltEnvName :: String
-hashidsSaltEnvName = "HASHIDS_SALT"
 
 newContentStatusEnvName :: String
 newContentStatusEnvName = "PROCESS_NEW_CONTENT"
@@ -108,8 +104,6 @@ main = do
   numCapabilities <- getNumCapabilities
 
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
-
-      maybeHashidsSalt = BC.pack <$> lookup hashidsSaltEnvName env
 
       maybeExistingContentStatus = toExistingContentStatus <$>
         lookup existingContentStatusEnvName env
@@ -172,13 +166,10 @@ main = do
   ensureTempPathExists tempPath
   ensureDBExists dbPath
 
-  case (maybeHashidsSalt, maybeRaxConfig) of
-    (Just hashidsSalt, Right rackspace) -> do
+  case maybeRaxConfig of
+    Right rackspace -> do
 
-      let encodeContext = hashidsSimple hashidsSalt
-          encodeId integerId =
-            BC.unpack $ encode encodeContext (fromIntegral integerId)
-          maybeContentBaseHost = parseAbsoluteURI $
+      let maybeContentBaseHost = parseAbsoluteURI $
             "http://" ++ unContainer (raxContainer rackspace) ++ ".zoomhub.net"
           contentBasePath = raxContainerPath rackspace
           maybeContentBaseURI = maybeContentBaseHost >>=
@@ -234,12 +225,9 @@ main = do
             setPort (fromIntegral port) $
             setOnException serverExceptionHandler defaultSettings
       runSettings waiSettings (app config)
-    (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++ "`\
-      \ environment variable.\n\
-      \This secret salt enables ZoomHub to encode integer IDs as short,\
-      \ non-sequential string IDs which make it harder to guess valid\
-      \ content IDs."
-    (_, Left message) -> error $ "Failed to read Rackspace config: " ++ message
+
+    Left message ->
+      error $ "Failed to read Rackspace config: " ++ message
   where
     toBaseURI :: String -> BaseURI
     toBaseURI uriString =

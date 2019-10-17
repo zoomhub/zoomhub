@@ -10,11 +10,14 @@ import qualified Data.ByteString.Char8 as BC
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Time.Units (Second)
+import Database.PostgreSQL.Simple (ConnectInfo(..), defaultConnectInfo)
 import Network.HTTP.Types (methodGet)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
+import Squeal.PostgreSQL.Pool (runPoolPQ)
+import System.Environment (lookupEnv)
 import System.IO.Unsafe (unsafePerformIO)
-import Test.Hspec (Spec, context, describe, hspec, it, shouldBe)
+import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
   ( MatchHeader
   , ResponseMatcher
@@ -30,9 +33,6 @@ import Test.Hspec.Wai
   , (<:>)
   )
 
-import Data.Pool (withResource)
-import System.Environment (lookupEnv)
-
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config(..)
@@ -40,8 +40,8 @@ import ZoomHub.Config
   , NewContentStatus(NewContentAllowed)
   )
 import qualified ZoomHub.Config as Config
-import ZoomHub.Storage.PostgreSQL
-  (ConnectInfo(..), createConnectionPool, defaultConnectInfo, getById)
+import ZoomHub.Storage.PostgreSQL2 (createConnectionPool, getById)
+import ZoomHub.Storage.PostgreSQL2.Internal (destroyAllResources)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.Content (contentNumViews)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
@@ -62,7 +62,7 @@ toURI s =
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( fromString "4rcn"
+  ( fromString "yQ4"
   , "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
 
@@ -125,7 +125,7 @@ nullLogger :: Middleware
 nullLogger = id
 
 newContentId :: String
-newContentId = "deadbeef"
+newContentId = "ykx"
 
 newContentURL :: String
 newContentURL = "http://example.com"
@@ -144,7 +144,6 @@ config = Config
     , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
     , dbConnPoolNumStripes = dbConnPoolNumStripes'
     , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
-    , encodeId = const newContentId
     , error404 = "404"
     , existingContentStatus = IgnoreExistingContent
     , logger = nullLogger
@@ -176,8 +175,11 @@ config = Config
     dbConnPoolMaxResourcesPerStripe' = (numCapabilities * 2) + numSpindles
     dbConnPoolNumStripes' = 1
 
+closeDatabaseConnection :: Config -> IO ()
+closeDatabaseConnection = destroyAllResources . dbConnPool
+
 spec :: Spec
-spec = with (return $ app config) $ do
+spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $ do
   describe "RESTful" $ do
     describe "List (GET /v1/content)" $
         it "should be interpreted as a ‘get by URL’, with no URL given" $
@@ -214,10 +216,10 @@ spec = with (return $ app config) $ do
 
         get ("/v1/content/" <> BC.pack newContentId) `shouldRespondWith`
           "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
-          \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/deadbeef\
+          \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/ykx\
           \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
-          \:\"http://localhost:8000/deadbeef\",\"id\"\
-          \:\"deadbeef\",\"ready\":false,\"failed\":false}"
+          \:\"http://localhost:8000/ykx\",\"id\"\
+          \:\"ykx\",\"ready\":false,\"failed\":false}"
           { matchStatus = 200
           , matchHeaders = [applicationJSON]
           }
@@ -229,15 +231,15 @@ spec = with (return $ app config) $ do
 
     describe "Get by ID (GET /v1/content/:id)" $ do
       it "should return correct data for existing content" $
-        get "/v1/content/4rcn" `shouldRespondWith`
+        get "/v1/content/yQ4" `shouldRespondWith`
           "{\"dzi\":{\"height\":3750,\"url\":\
-            \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
+            \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
             \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
             \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
             \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
-            \\"<script src=\\\"http://localhost:8000/4rcn.js?width=auto&\
+            \\"<script src=\\\"http://localhost:8000/yQ4.js?width=auto&\
             \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:8000\
-            \/4rcn\",\"id\":\"4rcn\",\"ready\":true,\"failed\":false}"
+            \/yQ4\",\"id\":\"yQ4\",\"ready\":true,\"failed\":false}"
           { matchStatus = 200
           , matchHeaders = [applicationJSON]
           }
@@ -274,17 +276,17 @@ spec = with (return $ app config) $ do
 
     describe "GET /v1/content/:id?callback=…" $
       it "should accept `callback` query parameter" $
-        get "/v1/content/4rcn?callback=handleContent" `shouldRespondWith`
+        get "/v1/content/yQ4?callback=handleContent" `shouldRespondWith`
           "/**/ typeof handleContent === 'function' && \
           \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
           \{\"dzi\":{\"height\":3750,\"url\":\
-          \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
+          \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
           \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
           \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
           \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
-          \src=\\\"http://localhost:8000/4rcn.js?width=auto&height=400px\\\">\
-          \</script>\",\"shareUrl\":\"http://localhost:8000/4rcn\",\"id\":\
-          \\"4rcn\",\"ready\":true,\"failed\":false},\
+          \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
+          \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
+          \\"yQ4\",\"ready\":true,\"failed\":false},\
           \\"redirectLocation\":null});"
           { matchStatus = 200
           , matchHeaders = [javaScriptUTF8]
@@ -299,7 +301,7 @@ spec = with (return $ app config) $ do
   describe "CORS" $
     it "should allow all origins" $
       let getWithHeader path headers = request methodGet path headers "" in
-      getWithHeader "/v1/content/4rcn" [("Origin", "http://example.com")]
+      getWithHeader "/v1/content/yQ4" [("Origin", "http://example.com")]
         `shouldRespondWith` 200 {
           matchHeaders =
             [ "Access-Control-Allow-Origin" <:> "*"
@@ -321,10 +323,10 @@ spec = with (return $ app config) $ do
       it "should increase `numViews`" $ do
         -- TODO: How can we avoid this dummy `Test.Hspec.Wai` request to satisfy
         -- type checker?
-        get "/v1/content/4rcn" `shouldRespondWith` 200
+        get "/v1/content/yQ4" `shouldRespondWith` 200
 
         liftIO $ do
           let pool = Config.dbConnPool config
-          maybeContent <- withResource pool (getById $ fromString "4rcn")
+          maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5

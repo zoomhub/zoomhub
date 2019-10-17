@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -11,9 +12,7 @@ import Control.Monad.IO.Class (liftIO)
 
 import qualified Data.ByteString.Char8 as BC
 import Data.Maybe (fromJust, fromMaybe)
-import Data.Pool (Pool, withResource)
 import Data.Proxy (Proxy(Proxy))
-import qualified Database.PostgreSQL.Simple as PGS
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
@@ -33,6 +32,7 @@ import Servant
   , serve
   )
 import Servant.HTML.Lucid (HTML)
+import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
 import System.Random (randomRIO)
 
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
@@ -53,7 +53,8 @@ import ZoomHub.Config (Config, NewContentStatus(NewContentAllowed))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
-import ZoomHub.Storage.PostgreSQL as PG
+import ZoomHub.Storage.PostgreSQL2 as PG
+import ZoomHub.Storage.PostgreSQL2 (Connection)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -138,7 +139,7 @@ server config =
     -- API: RESTful
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbConnPool encodeId newContentStatus
+    :<|> restContentByURL baseURI dbConnPool newContentStatus
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -153,7 +154,6 @@ server config =
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dbConnPool = Config.dbConnPool config
-    encodeId = Config.encodeId config
     newContentStatus = Config.newContentStatus config
     publicPath = Config.publicPath config
     staticBaseURI = Config.staticBaseURI config
@@ -176,12 +176,12 @@ version = return
 -- API: JSONP
 jsonpContentById :: BaseURI ->
                     ContentBaseURI ->
-                    Pool PGS.Connection ->
+                    Pool Connection ->
                     ContentId ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
-  maybeContent <- liftIO $ withResource dbConnPool (PG.getById' contentId)
+  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing      -> throwError $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
@@ -191,12 +191,12 @@ jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
 
 jsonpContentByURL :: BaseURI ->
                      ContentBaseURI ->
-                     Pool PGS.Connection ->
+                     Pool Connection ->
                      ContentURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
-  maybeContent <- liftIO $ withResource dbConnPool (PG.getByURL' url)
+  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case maybeContent of
     Nothing      -> throwError . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
@@ -227,11 +227,11 @@ jsonpInvalidRequest maybeURL callback =
 -- API: RESTful
 restContentById :: BaseURI ->
                    ContentBaseURI ->
-                   Pool PGS.Connection ->
+                   Pool Connection ->
                    ContentId ->
                    Handler Content
 restContentById baseURI contentBaseURI dbConnPool contentId = do
-  maybeContent <- liftIO $ withResource dbConnPool (PG.getById' contentId)
+  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing      -> throwError . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
@@ -241,21 +241,25 @@ restInvalidContentId contentId =
   throwError . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL :: BaseURI ->
-                    Pool PGS.Connection ->
-                    (Integer -> String) ->
+                    Pool Connection ->
                     NewContentStatus ->
                     ContentURI ->
                     Handler Content
-restContentByURL baseURI dbConnPool encodeId newContentStatus url = do
-  maybeContent <- liftIO $ withResource dbConnPool (PG.getByURL' url)
+restContentByURL baseURI dbConnPool newContentStatus url = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case maybeContent of
-    Nothing      -> do
-      newContent <- case newContentStatus of
+    Nothing -> do
+      mNewContent <- case newContentStatus of
         NewContentAllowed ->
-          liftIO $ withResource dbConnPool (PG.create encodeId url)
+          liftIO $ runPoolPQ (PG.initialize url) dbConnPool
         _ -> noNewContentErrorAPI
-      redirectToAPI baseURI (Internal.contentId newContent)
-    Just content -> redirectToAPI baseURI (Internal.contentId content)
+      case mNewContent of
+        Just newContent ->
+          redirectToAPI baseURI (Internal.contentId newContent)
+        Nothing ->
+          throwError . API.error503 $ failedToCreateContentErrorMessage
+    Just content ->
+      redirectToAPI baseURI (Internal.contentId content)
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
@@ -266,7 +270,7 @@ restInvalidRequest maybeURL = case maybeURL of
 webEmbed :: BaseURI ->
             ContentBaseURI ->
             StaticBaseURI ->
-            Pool PGS.Connection ->
+            Pool Connection ->
             String ->
             EmbedId ->
             Maybe String ->
@@ -275,7 +279,7 @@ webEmbed :: BaseURI ->
             Handler Embed
 webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript embedId
          maybeId width height = do
-  maybeContent <- liftIO $ withResource dbConnPool (PG.getById' contentId)
+  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing      -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
@@ -292,11 +296,11 @@ webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript embedId
 -- Web: View
 webContentById :: BaseURI ->
                   ContentBaseURI ->
-                  Pool PGS.Connection ->
+                  Pool Connection ->
                   ContentId ->
                   Handler ViewContent
 webContentById baseURI contentBaseURI dbConnPool contentId = do
-  maybeContent <- liftIO $ withResource dbConnPool (PG.getById contentId)
+  maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
   case maybeContent of
     Nothing -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c  -> do
@@ -305,11 +309,11 @@ webContentById baseURI contentBaseURI dbConnPool contentId = do
 
 -- TODO: Add support for submission, i.e. create content in the background:
 webContentByURL :: BaseURI ->
-                   Pool PGS.Connection ->
+                   Pool Connection ->
                    ContentURI ->
                    Handler ViewContent
 webContentByURL baseURI dbConnPool contentURI = do
-  maybeContent <- liftIO $ withResource dbConnPool (PG.getByURL contentURI)
+  maybeContent <- liftIO $ runPoolPQ (PG.getByURL contentURI) dbConnPool
   case maybeContent of
     Nothing -> noNewContentErrorWeb
     Just c  -> redirectToView baseURI (Internal.contentId c)
@@ -337,6 +341,10 @@ noNewContentError err =
 
 noNewContentErrorMessage :: String
 noNewContentErrorMessage = "We are currently not processing new content."
+
+failedToCreateContentErrorMessage :: String
+failedToCreateContentErrorMessage =
+  "Sorry, we failed to process your submission at this time. Please try again later."
 
 apiMissingIdOrURLMessage :: String
 apiMissingIdOrURLMessage = unwords

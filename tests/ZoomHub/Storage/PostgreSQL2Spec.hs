@@ -15,7 +15,7 @@ import Control.Monad (void)
 import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
 import Data.Int (Int64)
-import Data.Maybe (maybe)
+import Data.Maybe (fromMaybe, maybe)
 import qualified Data.Text as T
 import Data.Time.Clock
   ( NominalDiffTime
@@ -38,9 +38,11 @@ import Squeal.PostgreSQL
   )
 import Squeal.PostgreSQL.Migration (migrateDown, migrateUp)
 import System.Environment (lookupEnv)
+import System.Process (readProcess)
 import Test.Hspec
   ( Spec
   , around
+  , beforeAll_
   , context
   , describe
   , expectationFailure
@@ -51,7 +53,8 @@ import Test.Hspec
   )
 
 import ZoomHub.Storage.PostgreSQL2
-  ( getById
+  ( dequeueNextUnprocessed
+  , getById
   , getById'
   , getByURL
   , getByURL'
@@ -62,7 +65,6 @@ import ZoomHub.Storage.PostgreSQL2
   , markAsFailure
   , markAsSuccess
   , resetAsInitialized
-  , dequeueNextUnprocessed
   )
 import qualified ZoomHub.Storage.PostgreSQL2.Internal as I
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
@@ -95,6 +97,14 @@ import ZoomHub.Types.DeepZoomImage.TileSize (TileSize(TileSize254))
 main :: IO ()
 main = hspec spec
 
+setupDatabase :: IO ()
+setupDatabase = do
+  pgUser <- fromMaybe "zoomhub" <$> lookupEnv "PGUSER"
+  pgDatabase <- fromMaybe "zoomhub_development" <$> lookupEnv "PGDATABASE"
+
+  void $ readProcess "dropdb" ["--if-exists", pgDatabase] []
+  void $ readProcess "createdb" ["--owner", pgUser, pgDatabase] []
+
 withDatabaseConnection :: (SOP.K Connection Schema -> IO a) -> IO a
 withDatabaseConnection = bracket acquire release
   where
@@ -117,7 +127,7 @@ withDatabaseConnection = bracket acquire release
 
 spec :: Spec
 spec =
-  around withDatabaseConnection $ do
+  beforeAll_ setupDatabase $ around withDatabaseConnection $ do
     describe "initialize" $
       it "should return initialized content" $ \conn -> do
         currentTime <- safeGetCurrentTime

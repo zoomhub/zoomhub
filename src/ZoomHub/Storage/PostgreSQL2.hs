@@ -7,8 +7,11 @@
 {-# LANGUAGE TypeApplications #-}
 
 module ZoomHub.Storage.PostgreSQL2
-  ( -- ** Read operations
-    getById
+  ( Schema
+  , Connection
+  , createConnectionPool
+    -- ** Read operations
+  , getById
   , getByURL
   , getNextUnprocessed
   , getExpiredActive
@@ -25,8 +28,10 @@ module ZoomHub.Storage.PostgreSQL2
   ) where
 
 import ZoomHub.Storage.PostgreSQL2.Internal
-  ( contentImageRowToContent
+  ( Connection
+  , contentImageRowToContent
   , contentRowToContent
+  , createConnectionPool
   , getBy
   , getBy'
   , imageToInsertRow
@@ -37,6 +42,7 @@ import ZoomHub.Storage.PostgreSQL2.Internal
   , markContentAsSuccess
   , resetContentAsInitialized
   , selectContentBy
+  , toNominalDiffTime
   )
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
@@ -51,8 +57,8 @@ import Control.Monad.Base (liftBase)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int64)
 import Data.Text (Text)
-import Data.Time.Clock (NominalDiffTime, addUTCTime, getCurrentTime)
-import Data.Time.Units (Second, TimeUnit, toMicroseconds)
+import Data.Time.Clock (addUTCTime, getCurrentTime)
+import Data.Time.Units (TimeUnit, toMicroseconds)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(Only)
@@ -106,10 +112,6 @@ getExpiredActive ttl = do
     (Only earliestAllowed)
   contentRows <- getRows result
   return $ contentImageRowToContent <$> contentRows
-  where
-  toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
-  toNominalDiffTime duration = fromIntegral $
-    toMicroseconds duration `div` toMicroseconds (1 :: Second)
 
 -- Reads/writes
 getById' :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentId -> m (Maybe Content)

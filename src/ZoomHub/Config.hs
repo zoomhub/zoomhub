@@ -18,7 +18,6 @@ module ZoomHub.Config
 
 import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
 import qualified Data.ByteString.Lazy as BL
-import Data.Pool (Pool)
 import qualified Data.Text as T
 import Data.Time.Units (Second)
 import qualified Database.PostgreSQL.Simple as PGS
@@ -27,6 +26,7 @@ import GHC.Generics (Generic)
 import Network.URI (URI, parseRelativeReference)
 import Network.URI.Instances ()
 import Network.Wai (Middleware)
+import Squeal.PostgreSQL.Pool (Pool)
 import System.Envy
   ( DefConfig
   , FromEnv
@@ -39,6 +39,7 @@ import System.Envy
   )
 
 import ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
+import ZoomHub.Storage.PostgreSQL2 (Connection)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.DatabasePath (DatabasePath)
@@ -53,12 +54,11 @@ data Config = Config
   { baseURI                         :: BaseURI
   , contentBaseURI                  :: ContentBaseURI
   , dbConnInfo                      :: PGS.ConnectInfo
-  , dbConnPool                      :: Pool PGS.Connection
+  , dbConnPool                      :: Pool Connection
   , dbConnPoolIdleTime              :: Second
   , dbConnPoolMaxResourcesPerStripe :: Integer
   , dbConnPoolNumStripes            :: Integer
   , dbPath                          :: DatabasePath
-  , encodeId                        :: Integer -> String
   , error404                        :: BL.ByteString
   , existingContentStatus           :: ExistingContentStatus
   , logger                          :: Middleware
