@@ -1,4 +1,4 @@
-{-# GHC_OPTIONS -O0 #-}
+{-# OPTIONS_GHC -O0 #-}
 
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
