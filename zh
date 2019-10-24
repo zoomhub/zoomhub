@@ -122,8 +122,7 @@ db)
       pg_dump "$DEVELOPMENT_DB_NAME"
       ;;
     *)
-        echo "Unknown command: $0 $@. Try $0 $1 \
-dump"
+        echo "Unknown command: $0 $@. Try $0 $1 dump"
         exit 1
     esac
     ;;
