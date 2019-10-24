@@ -58,7 +58,7 @@ import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
-import Data.Time.Units (TimeUnit, toMicroseconds)
+import Data.Time.Units (TimeUnit)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(Only)
