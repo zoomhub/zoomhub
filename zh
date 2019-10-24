@@ -18,7 +18,8 @@ print_hosts () {
     separator
 }
 
-DB_NAME='zoomhub_test'
+DEVELOPMENT_DB_NAME='zoomhub_development'
+TEST_DB_NAME='zoomhub_test'
 
 # Commands
 case "$1" in
@@ -82,29 +83,43 @@ bootstrap|ping|setup|setup-admin-server|setup-database-server|setup-web-server"
     esac
     ;;
 run)
+    dropdb --if-exists "$DEVELOPMENT_DB_NAME"
+    createdb "$DEVELOPMENT_DB_NAME"
+
+    # NOTE: Preserves existing content IDs:
+    DISABLE_PG_TRIGGERS='SET session_replication_role = replica;'
+
+    psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
+      < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
+    psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
+      <<< $(echo "$DISABLE_PG_TRIGGERS" && cat ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql)
+
     stack build --ghc-options='' \
                 --file-watch \
                 --fast \
                 --exec ./scripts/run-development.sh
     ;;
 test)
-    dropdb --if-exists "$DB_NAME"
-    createdb "$DB_NAME"
-    psql --output /dev/null --quiet "$DB_NAME" < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
-    psql --output /dev/null --quiet "$DB_NAME" < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
+    dropdb --if-exists "$TEST_DB_NAME"
+    createdb "$TEST_DB_NAME"
+
+    psql --output /dev/null --quiet "$TEST_DB_NAME" \
+      < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
+    psql --output /dev/null --quiet "$TEST_DB_NAME" \
+      < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"
-    PGUSER="$(whoami)" PGDATABASE="$DB_NAME" \
+    PGUSER="$(whoami)" PGDATABASE="$TEST_DB_NAME" \
       stack test --fast --test-arguments '--match "'"$MODULES"'"'
 
-    dropdb "$DB_NAME"
+    dropdb "$TEST_DB_NAME"
     ;;
 
 db)
     case "$2" in
     dump)
-      pg_dump "$DB_NAME"
+      pg_dump "$DEVELOPMENT_DB_NAME"
       ;;
     *)
         echo "Unknown command: $0 $@. Try $0 $1 \
