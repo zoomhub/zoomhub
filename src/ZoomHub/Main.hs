@@ -216,7 +216,7 @@ main = do
               ]
             threadDelay (fromIntegral $ toMicroseconds delay)
             processExistingContent config (show index)
-        _ -> return ()
+        IgnoreExistingContent -> return ()
 
       -- Web server
       logInfo "Start web server"
