@@ -36,10 +36,10 @@ jobs:
     - checkout
 
     - run:
-      name: "Setup custom environment variables"
-      command: |
-        echo 'export PGUSER="zoomhub"' >> $BASH_ENV
-        echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
+        name: "Setup custom environment variables"
+        command: |
+          echo 'export PGUSER="zoomhub"' >> $BASH_ENV
+          echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
 
     - run:
         name: Initialize workspace
@@ -48,7 +48,7 @@ jobs:
         name: Initialize artifact storage
         command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
     - run:
-        name: Install psql for debugging
+        name: Install psql for preloading data
         command: sudo apt-get update && sudo apt-get install --yes postgresql-client
 
     # - run: sudo apt-get update
@@ -79,9 +79,17 @@ jobs:
     - run:
         name: Run tests
         command: |
-          PGUSER='zoomhub' PGDATABASE='zoomhub_test' stack test \
-            --fast --no-terminal \
-            --test-arguments '--match "ZoomHub.Storage.PostgreSQL2"'
+          dropdb --username "$PGUSER" --echo --if-exists "$PGDATABASE"
+          createdb "$PGDATABASE"
+
+          psql --output /dev/null --quiet "$PGDATABASE" \
+            < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
+          psql --output /dev/null "$PGDATABASE" \
+            < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
+
+          PGUSER="$PGUSER" PGDATABASE="$PGDATABASE" \
+            stack test --fast --no-terminal
+
     # - run:
     #     name: Copy coverage reports
     #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
