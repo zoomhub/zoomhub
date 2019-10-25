@@ -97,21 +97,28 @@ import ZoomHub.Types.DeepZoomImage.TileSize (TileSize(TileSize254))
 main :: IO ()
 main = hspec spec
 
+defaultDatabaseUser :: String
+defaultDatabaseUser = "zoomhub"
+
+defaultDatabaseName :: String
+defaultDatabaseName = "zoomhub_test"
+
 setupDatabase :: IO ()
 setupDatabase = do
-  pgUser <- fromMaybe "zoomhub" <$> lookupEnv "PGUSER"
-  pgDatabase <- fromMaybe "zoomhub_development" <$> lookupEnv "PGDATABASE"
+  return ()
+  -- pgUser <- fromMaybe defaultDatabaseUser <$> lookupEnv "PGUSER"
+  -- pgDatabase <- fromMaybe defaultDatabaseName <$> lookupEnv "PGDATABASE"
 
-  void $ readProcess "dropdb" ["--if-exists", pgDatabase] []
-  void $ readProcess "createdb" ["--owner", pgUser, pgDatabase] []
+  -- void $ readProcess "dropdb" ["--if-exists", pgDatabase] []
+  -- void $ readProcess "createdb" ["--owner", pgUser, pgDatabase] []
 
 withDatabaseConnection :: (SOP.K Connection Schema -> IO a) -> IO a
 withDatabaseConnection = bracket acquire release
   where
     acquire :: IO (SOP.K Connection Schema)
     acquire = do
-      pgUser <- maybe "zoomhub" BC.pack <$> lookupEnv "PGUSER"
-      pgDatabase <- maybe "zoomhub_development" BC.pack <$> lookupEnv "PGDATABASE"
+      pgUser <- maybe (BC.pack defaultDatabaseUser) BC.pack <$> lookupEnv "PGUSER"
+      pgDatabase <- maybe (BC.pack defaultDatabaseName) BC.pack <$> lookupEnv "PGDATABASE"
 
       conn <- connectdb $
         "host=localhost port=5432 dbname=" <> pgDatabase <> " user=" <> pgUser
