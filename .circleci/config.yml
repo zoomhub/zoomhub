@@ -32,6 +32,7 @@ jobs:
         environment:
           POSTGRES_USER: zoomhub
           POSTGRES_DB: zoomhub_test
+
     steps:
     - checkout
 
@@ -40,6 +41,7 @@ jobs:
         command: |
           echo 'export PGUSER="zoomhub"' >> $BASH_ENV
           echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
+          echo 'export PGDATABASE_URL="postgres://zoomhub@localhost:5432/zoomhub_test"' >> $BASH_ENV
 
     - run:
         name: Initialize workspace
@@ -85,9 +87,9 @@ jobs:
           # dropdb --username "$PGUSER" --echo --if-exists "$PGDATABASE"
           # createdb "$PGDATABASE"
 
-          psql --username="$PGUSER" --dbname="$PGDATABASE" \
+          psql --dbname="$PGDATABASE_URL" \
             < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
-          psql --username="$PGUSER" --dbname="$PGDATABASE" \
+          psql --dbname="$PGDATABASE_URL" \
             < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
           PGUSER="$PGUSER" PGDATABASE="$PGDATABASE" \
