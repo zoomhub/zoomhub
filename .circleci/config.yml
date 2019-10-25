@@ -79,6 +79,8 @@ jobs:
     - run:
         name: Run tests
         command: |
+          echo "PGUSER: $PGUSER"
+          echo "PGDATABASE: $PGDATABASE"
           dropdb --username "$PGUSER" --echo --if-exists "$PGDATABASE"
           createdb "$PGDATABASE"
 
