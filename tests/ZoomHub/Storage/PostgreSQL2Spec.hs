@@ -105,12 +105,11 @@ defaultDatabaseName = "zoomhub_test"
 
 setupDatabase :: IO ()
 setupDatabase = do
-  return ()
-  -- pgUser <- fromMaybe defaultDatabaseUser <$> lookupEnv "PGUSER"
-  -- pgDatabase <- fromMaybe defaultDatabaseName <$> lookupEnv "PGDATABASE"
+  pgUser <- fromMaybe defaultDatabaseUser <$> lookupEnv "PGUSER"
+  pgDatabase <- fromMaybe defaultDatabaseName <$> lookupEnv "PGDATABASE"
 
-  -- void $ readProcess "dropdb" ["--if-exists", pgDatabase] []
-  -- void $ readProcess "createdb" ["--owner", pgUser, pgDatabase] []
+  void $ readProcess "dropdb" ["--username", pgUser, "--echo", "--if-exists", pgDatabase] []
+  void $ readProcess "createdb" ["--owner", pgUser, pgDatabase] []
 
 withDatabaseConnection :: (SOP.K Connection Schema -> IO a) -> IO a
 withDatabaseConnection = bracket acquire release
