@@ -28,10 +28,10 @@ jobs:
       # https://circleci.com/docs/2.0/executor-types/
       # - image: buildpack-deps:trusty
       - image: fpco/stack-build
-      - image: "clkao/postgres-plv8:9.6-2.0"
+      - image: "circleci/postgres:9.6-alpine"
         environment:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: zoomhub-test-db
+          POSTGRES_USER: zoomhub
+          POSTGRES_DB: zoomhub_test
     steps:
     - checkout
 
@@ -73,7 +73,7 @@ jobs:
     - run:
         name: Run tests
         command: |
-          PGUSER='postgres' PGDATABASE='zoomhub-test-db' stack test \
+          PGUSER='zoomhub' PGDATABASE='zoomhub_test' stack test \
             --fast --no-terminal \
             --test-arguments '--match "ZoomHub.Storage.PostgreSQL2"'
     # - run:
