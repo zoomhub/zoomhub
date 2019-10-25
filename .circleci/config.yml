@@ -28,7 +28,7 @@ jobs:
       # https://circleci.com/docs/2.0/executor-types/
       # - image: buildpack-deps:trusty
       - image: fpco/stack-build
-      - image: "circleci/postgres:9.6-alpine"
+      - image: "circleci/postgres:9.6.5-alpine-ram"
         environment:
           POSTGRES_USER: zoomhub
           POSTGRES_DB: zoomhub_test
