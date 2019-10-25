@@ -39,9 +39,10 @@ jobs:
     - run:
         name: "Setup custom environment variables"
         command: |
+          echo 'export PGHOST="localhost"' >> $BASH_ENV
+          echo 'export PGPORT="5432"' >> $BASH_ENV
           echo 'export PGUSER="zoomhub"' >> $BASH_ENV
           echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
-          echo 'export PGDATABASE_URL="postgres://zoomhub@localhost:5432/zoomhub_test"' >> $BASH_ENV
 
     - run:
         name: Initialize workspace
@@ -81,19 +82,10 @@ jobs:
     - run:
         name: Run tests
         command: |
-          echo "PGUSER: $PGUSER"
-          echo "PGDATABASE: $PGDATABASE"
+          psql $PGDATABASE < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
+          psql $PGDATABASE < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
-          # dropdb --username "$PGUSER" --echo --if-exists "$PGDATABASE"
-          # createdb "$PGDATABASE"
-
-          psql --dbname="$PGDATABASE_URL" \
-            < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
-          psql --dbname="$PGDATABASE_URL" \
-            < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
-
-          PGUSER="$PGUSER" PGDATABASE="$PGDATABASE" \
-            stack test --fast --no-terminal
+          stack test --fast --no-terminal
 
     # - run:
     #     name: Copy coverage reports
