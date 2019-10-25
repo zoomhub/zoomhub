@@ -7,15 +7,12 @@ module ZoomHub.APISpec
 
 import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
-import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Time.Units (Second)
-import Database.PostgreSQL.Simple (ConnectInfo(..), defaultConnectInfo)
 import Network.HTTP.Types (methodGet)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Pool (runPoolPQ)
-import System.Environment (lookupEnv)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
@@ -41,6 +38,7 @@ import ZoomHub.Config
   )
 import qualified ZoomHub.Config as Config
 import ZoomHub.Storage.PostgreSQL2 (createConnectionPool, getById)
+import qualified ZoomHub.Storage.PostgreSQL2 as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL2.Internal (destroyAllResources)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.Content (contentNumViews)
@@ -160,14 +158,8 @@ config = Config
     numSpindles = 1
     -- TODO: How can we avoid `unsafePerformIO`?
     numCapabilities = fromIntegral $ unsafePerformIO getNumCapabilities
-    dbConnUser = fromMaybe (connectUser defaultConnectInfo)
-      (unsafePerformIO $ lookupEnv "PGUSER")
-    dbConnName = fromMaybe "zoomhub_test"
-      (unsafePerformIO $ lookupEnv "PGDATABASE")
-    dbConnInfo' = defaultConnectInfo
-                    { connectDatabase = dbConnName
-                    , connectUser = dbConnUser
-                    }
+    -- TODO: How can we avoid `unsafePerformIO`?
+    dbConnInfo' = unsafePerformIO $ ConnectInfo.fromEnv "zoomhub_test"
     -- TODO: How can we avoid `unsafePerformIO`?
     dbConnPool' = unsafePerformIO $ createConnectionPool dbConnInfo'
       dbConnPoolNumStripes' dbConnPoolIdleTime' dbConnPoolMaxResourcesPerStripe'

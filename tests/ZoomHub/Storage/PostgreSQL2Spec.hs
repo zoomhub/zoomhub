@@ -15,7 +15,6 @@ import Control.Monad (void)
 import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
 import Data.Int (Int64)
-import Data.Maybe (fromMaybe, maybe)
 import qualified Data.Text as T
 import Data.Time.Clock
   ( NominalDiffTime
@@ -66,6 +65,8 @@ import ZoomHub.Storage.PostgreSQL2
   , markAsSuccess
   , resetAsInitialized
   )
+import qualified ZoomHub.Storage.PostgreSQL2 as ConnectInfo
+  (ConnectInfo(..), fromEnv)
 import qualified ZoomHub.Storage.PostgreSQL2.Internal as I
 import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
 import ZoomHub.Types.Content
@@ -105,11 +106,28 @@ defaultDatabaseName = "zoomhub_test"
 
 setupDatabase :: IO ()
 setupDatabase = do
-  pgUser <- fromMaybe defaultDatabaseUser <$> lookupEnv "PGUSER"
-  pgDatabase <- fromMaybe defaultDatabaseName <$> lookupEnv "PGDATABASE"
+  connectInfo <- ConnectInfo.fromEnv defaultDatabaseName
 
-  void $ readProcess "dropdb" ["--username", pgUser, "--echo", "--if-exists", pgDatabase] []
-  void $ readProcess "createdb" ["--owner", pgUser, pgDatabase] []
+  let pgHost = ConnectInfo.connectHost connectInfo
+      pgPort = ConnectInfo.connectPort connectInfo
+      pgUser = ConnectInfo.connectUser connectInfo
+      pgDatabase = ConnectInfo.connectDatabase connectInfo
+
+  void $ readProcess "dropdb"
+    [ "--host", pgHost
+    , "--port", show pgPort
+    , "--username", pgUser
+    , "--echo"
+    , "--if-exists", pgDatabase
+    ] []
+  void $ readProcess "createdb"
+    [ "--host", pgHost
+    , "--port", show pgPort
+    , "--username", pgUser
+    , "--echo"
+    , "--owner", pgUser,
+    pgDatabase
+    ] []
 
 withDatabaseConnection :: (SOP.K Connection Schema -> IO a) -> IO a
 withDatabaseConnection = bracket acquire release

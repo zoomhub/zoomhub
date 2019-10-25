@@ -10,6 +10,11 @@ module ZoomHub.Storage.PostgreSQL2
   ( Schema
   , Connection
   , createConnectionPool
+    -- ** Connection
+  , ConnectInfo(..)
+  , defaultConnectInfo
+  , fromEnv
+  , postgreSQLConnectionString
     -- ** Read operations
   , getById
   , getByURL
@@ -56,9 +61,12 @@ import Control.Monad (void)
 import Control.Monad.Base (liftBase)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int64)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
+import Database.PostgreSQL.Simple
+  (ConnectInfo(..), defaultConnectInfo, postgreSQLConnectionString)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(Only)
@@ -77,6 +85,8 @@ import Squeal.PostgreSQL
   , (.<)
   , (.==)
   )
+import System.Environment (getEnvironment)
+import Text.Read (readMaybe)
 
 -- Public API
 
@@ -191,3 +201,20 @@ dequeueNextUnprocessed = do
       markAsActive $ contentId next
     Nothing ->
       pure Nothing
+
+fromEnv :: String -> IO ConnectInfo
+fromEnv dbName = do
+  env <- getEnvironment
+
+  let defaultDBHost = connectHost defaultConnectInfo
+      defaultDBPort = connectPort defaultConnectInfo
+      defaultDBUser = connectUser defaultConnectInfo
+      defaultDBPassword = connectPassword defaultConnectInfo
+
+  return $ ConnectInfo
+    { connectHost = fromMaybe defaultDBHost (lookup "PGHOST" env)
+    , connectPort = fromMaybe defaultDBPort (lookup "PGPORT" env >>= readMaybe)
+    , connectUser = fromMaybe defaultDBUser (lookup "PGUSER" env)
+    , connectPassword = fromMaybe defaultDBPassword (lookup "PGPASSWORD" env)
+    , connectDatabase = fromMaybe dbName (lookup "PGDATABASE" env)
+    }

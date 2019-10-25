@@ -13,7 +13,6 @@ import Data.Default (def)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
-import Database.PostgreSQL.Simple (ConnectInfo(..), defaultConnectInfo)
 import GHC.Conc (getNumProcessors)
 import Network.BSD (getHostName)
 import Network.URI (parseAbsoluteURI)
@@ -51,6 +50,7 @@ import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Rackspace.CloudFiles (unContainer)
 import ZoomHub.Storage.PostgreSQL2 (createConnectionPool)
+import qualified ZoomHub.Storage.PostgreSQL2 as ConnectInfo (fromEnv)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath), unDatabasePath)
@@ -125,19 +125,6 @@ main = do
         currentDirectory </> "data" </> "zoomhub-development.sqlite3"
       dbPath = maybe defaultDBPath DatabasePath (lookup dbPathEnvName env)
 
-      defaultDBHost = connectHost defaultConnectInfo
-      defaultDBPort = connectPort defaultConnectInfo
-      defaultDBUser = connectUser defaultConnectInfo
-      defaultDBPassword = connectPassword defaultConnectInfo
-      defaultDBName = "zoomhub_development"
-      dbConnInfo = ConnectInfo {
-        connectHost = fromMaybe defaultDBHost (lookup "PGHOST" env)
-      , connectPort = fromMaybe defaultDBPort (lookup "PGPORT" env >>= readMaybe)
-      , connectUser = fromMaybe defaultDBUser (lookup "PGUSER" env)
-      , connectPassword = fromMaybe defaultDBPassword (lookup "PGPASSWORD" env)
-      , connectDatabase = fromMaybe defaultDBName (lookup "PGDATABASE" env)
-      }
-
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
 
@@ -152,6 +139,8 @@ main = do
       staticBaseURI = StaticBaseURI . fromJust .
         parseAbsoluteURI $ "http://static.zoomhub.net"
 
+      defaultDBName = "zoomhub_development"
+
       -- Database connection pool:
       -- https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing#the-formula
       numSpindles = 1
@@ -160,6 +149,7 @@ main = do
       dbConnPoolMaxResourcesPerStripe = fromIntegral $
         (numCapabilities * 2) + numSpindles
 
+  dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <- createConnectionPool dbConnInfo dbConnPoolNumStripes
     dbConnPoolIdleTime dbConnPoolMaxResourcesPerStripe
 
