@@ -85,9 +85,9 @@ jobs:
           # dropdb --username "$PGUSER" --echo --if-exists "$PGDATABASE"
           # createdb "$PGDATABASE"
 
-          psql --output /dev/null --quiet "$PGDATABASE" \
+          psql --username="$PGUSER" --dbname="$PGDATABASE" \
             < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
-          psql --output /dev/null "$PGDATABASE" \
+          psql --username="$PGUSER" --dbname="$PGDATABASE" \
             < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
           PGUSER="$PGUSER" PGDATABASE="$PGDATABASE" \
