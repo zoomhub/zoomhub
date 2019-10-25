@@ -49,7 +49,7 @@ jobs:
         command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
     - run:
         name: Install psql for preloading data
-        command: sudo apt-get update && sudo apt-get install --yes postgresql-client
+        command: sudo apt-get update && sudo apt-get install --yes postgresql-client-9.6
 
     # - run: sudo apt-get update
     # - run:
