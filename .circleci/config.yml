@@ -36,6 +36,12 @@ jobs:
     - checkout
 
     - run:
+      name: "Setup custom environment variables"
+      command: |
+        echo 'export PGUSER="zoomhub"' >> $BASH_ENV
+        echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
+
+    - run:
         name: Initialize workspace
         command: mkdir -p workspace
     - run:
