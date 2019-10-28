@@ -79,21 +79,22 @@ processExistingContent config workerId = forever $ do
                 Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError
               errorOp e =
                 runPoolPQ (markAsFailure (contentId content) (jsonToText e)) dbConnPool
-              handler e = logT "Process content: failure"
-                            [ "id" .= contentId content
-                            , "url" .= contentURL content
-                            , "apiURL" .= apiURL content
-                            , "wwwURL" .= wwwURL content
-                            , "error" .= toJSONError e
-                            , "worker" .= workerId
-                            ] $ errorOp e
-          logT "Process content: success"
-            [ "id" .= contentId content
-            , "url" .= contentURL content
-            , "apiURL" .= apiURL content
-            , "wwwURL" .= wwwURL content
-            , "worker" .= workerId
-            ] $ void (processOp `catchAny` handler)
+              action = logT "Process content: success"
+                        [ "id" .= contentId content
+                        , "url" .= contentURL content
+                        , "apiURL" .= apiURL content
+                        , "wwwURL" .= wwwURL content
+                        , "worker" .= workerId
+                        ] $ processOp
+              errorHandler e = logT "Process content: failure"
+                                [ "id" .= contentId content
+                                , "url" .= contentURL content
+                                , "apiURL" .= apiURL content
+                                , "wwwURL" .= wwwURL content
+                                , "error" .= toJSONError e
+                                , "worker" .= workerId
+                                ] $ errorOp e
+          void $ action `catchAny` errorHandler
         Nothing -> return ()
 
     dbConnPool = Config.dbConnPool config
