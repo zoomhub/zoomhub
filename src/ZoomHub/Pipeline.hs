@@ -2,6 +2,7 @@
 
 module ZoomHub.Pipeline
   ( process
+  , ProcessResult(..)
   )
   where
 
@@ -11,6 +12,7 @@ import Control.Concurrent.Async (forConcurrently)
 import Control.Lens ((^.))
 import Control.Monad (when)
 import Data.Aeson ((.=))
+import Data.Int (Int64)
 import Data.List (stripPrefix)
 import Data.List.Split (chunksOf)
 import Data.Monoid ((<>))
@@ -28,8 +30,7 @@ import ZoomHub.Config
 import ZoomHub.Log.Logger (logDebugT, logError, logInfo, logInfoT)
 import ZoomHub.Rackspace.CloudFiles
   (ObjectName, getMetadata, mkCredentials, parseObjectName, putContent)
-import ZoomHub.Types.Content
-  (Content, contentDZI, contentId, contentMIME, contentSize, contentURL)
+import ZoomHub.Types.Content (Content, contentId, contentURL)
 import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME, ContentMIME'(ContentMIME))
 import ZoomHub.Types.ContentURI (ContentURI)
@@ -44,8 +45,14 @@ import ZoomHub.Types.DeepZoomImage
 import ZoomHub.Types.TempPath (TempPath, unTempPath)
 import ZoomHub.Utils (lenientDecodeUtf8)
 
+data ProcessResult =
+  ProcessResult
+  { prMIME :: Maybe ContentMIME
+  , prSize :: Int64
+  , prDZI :: DeepZoomImage
+  }
 
-process :: String -> RackspaceConfig -> TempPath -> Content -> IO Content
+process :: String -> RackspaceConfig -> TempPath -> Content -> IO ProcessResult
 process workerId raxConfig tempPath content =
   withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
     let rawPathPrefix = tmpDir </> rawContentId
@@ -87,17 +94,17 @@ process workerId raxConfig tempPath content =
       , "worker" .= workerId
       ] $ uploadDZI workerId raxConfig tmpDir dziPath dzi
 
-    return content
-      { contentMIME = maybeMIME
-      , contentSize = Just (fromIntegral rawSize)
-      , contentDZI = Just dzi
+    return ProcessResult
+      { prMIME = maybeMIME
+      , prSize = fromIntegral rawSize
+      , prDZI = dzi
       }
   where
     rawContentId = unContentId (contentId content)
     template = rawContentId ++ "-"
 
-    getFileSize :: FilePath -> IO Integer
-    getFileSize path = toInteger . fileSize <$> getFileStatus path
+    getFileSize :: FilePath -> IO Int64
+    getFileSize path = fromIntegral . toInteger . fileSize <$> getFileStatus path
 
 downloadURL :: ContentURI -> FilePath -> IO (Maybe MIME.Type)
 downloadURL url dest = do

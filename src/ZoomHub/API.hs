@@ -49,7 +49,7 @@ import ZoomHub.API.Types.NonRESTfulResponse
   , mkNonRESTful404
   , mkNonRESTful503
   )
-import ZoomHub.Config (Config, NewContentStatus(NewContentAllowed))
+import ZoomHub.Config (Config, NewContentStatus(..))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
@@ -252,7 +252,8 @@ restContentByURL baseURI dbConnPool newContentStatus url = do
       mNewContent <- case newContentStatus of
         NewContentAllowed ->
           liftIO $ runPoolPQ (PG.initialize url) dbConnPool
-        _ -> noNewContentErrorAPI
+        NewContentDisallowed ->
+          noNewContentErrorAPI
       case mNewContent of
         Just newContent ->
           redirectToAPI baseURI (Internal.contentId newContent)

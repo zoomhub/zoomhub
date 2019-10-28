@@ -1,4 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module ZoomHub.Worker
@@ -9,7 +11,8 @@ module ZoomHub.Worker
 import Control.Concurrent (threadDelay)
 import Control.Exception (SomeException, fromException)
 import Control.Exception.Enclosed (catchAny)
-import Control.Monad (forever, void)
+import Control.Monad (forM_, forever, void)
+import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (Value(String), encode, toJSON, (.=))
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
@@ -18,19 +21,19 @@ import Data.Time.Units (Minute, Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
 import Network.HTTP.Client (HttpException)
 import Network.HTTP.Client.Instances ()
+import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
 
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import ZoomHub.Log.Logger (logException, logInfo, logInfoT)
-import ZoomHub.Pipeline (process)
-import ZoomHub.Storage.SQLite
+import ZoomHub.Pipeline (ProcessResult(..), process)
+import ZoomHub.Storage.PostgreSQL2
   ( dequeueNextUnprocessed
   , getExpiredActive
   , markAsFailure
   , markAsSuccess
   , resetAsInitialized
-  , withConnection
   )
 import ZoomHub.Types.Content (contentId, contentURL)
 import ZoomHub.Types.ContentId (unContentId)
@@ -62,18 +65,20 @@ processExistingContent config workerId = forever $ do
       ( "sleepDuration" .= sleepDuration ) : extraLogMeta
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
-    go = withConnection dbPath $ \dbConn -> do
+    go = do
       maybeContent <-
         logT "Get next unprocessed content and mark as active" [] $
-          dequeueNextUnprocessed dbConn
+          liftIO $ runPoolPQ dequeueNextUnprocessed dbConnPool
 
       case maybeContent of
         Just content -> do
-          let processOp = process workerId raxConfig tempPath content >>=
-                          markAsSuccess dbConn
+          let processOp = do
+                ProcessResult{..} <- process workerId raxConfig tempPath content
+                runPoolPQ (markAsSuccess (contentId content) prDZI prMIME (Just prSize)) dbConnPool
               jsonToText =
                 Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError
-              errorOp e = markAsFailure dbConn content (jsonToText e)
+              errorOp e =
+                runPoolPQ (markAsFailure (contentId content) (jsonToText e)) dbConnPool
               handler e = logT "Process content: failure"
                             [ "id" .= contentId content
                             , "url" .= contentURL content
@@ -91,7 +96,7 @@ processExistingContent config workerId = forever $ do
             ] $ void (processOp `catchAny` handler)
         Nothing -> return ()
 
-    dbPath = Config.dbPath config
+    dbConnPool = Config.dbConnPool config
     raxConfig = Config.rackspace config
     tempPath = Config.tempPath config
 
@@ -107,17 +112,17 @@ processExistingContent config workerId = forever $ do
       ]
 
 processExpiredActiveContent :: Config -> IO ()
-processExpiredActiveContent config = forever $
-  withConnection (Config.dbPath config) $ \dbConn -> do
-    cs <- getExpiredActive dbConn
+processExpiredActiveContent config = forever $ do
+    cs <- runPoolPQ (getExpiredActive processExpiredActiveContentInterval) dbConnPool
     logInfoT "Reset expired active content"
       [ "ids" .= map contentId cs ]
-      (resetAsInitialized dbConn cs)
+      (forM_ cs $ \content -> runPoolPQ (resetAsInitialized (contentId content)) dbConnPool)
 
     logInfo "Wait for next expired active content"
       [ "sleepDuration" .= sleepDuration ]
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
+    dbConnPool = Config.dbConnPool config
     sleepDuration = processExpiredActiveContentInterval
 
 toJSONError :: SomeException -> Value
