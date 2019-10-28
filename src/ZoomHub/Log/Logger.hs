@@ -133,7 +133,7 @@ prettyEncodeConfig = defConfig
   }
 
 keyCompare :: Text -> Text -> Ordering
-keyCompare = keyOrder keyOrdering `mappend` comparing T.length
+keyCompare = keyOrder keyOrdering `mappend` comparing id
 
 keyOrdering :: [Text]
 keyOrdering =
