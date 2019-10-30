@@ -5,7 +5,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ZoomHub.Storage.PostgreSQL2Spec
+module ZoomHub.Storage.PostgreSQLSpec
   ( main
   , spec
   ) where
@@ -51,7 +51,7 @@ import Test.Hspec
   , shouldSatisfy
   )
 
-import ZoomHub.Storage.PostgreSQL2
+import ZoomHub.Storage.PostgreSQL
   ( dequeueNextUnprocessed
   , getById
   , getById'
@@ -65,10 +65,10 @@ import ZoomHub.Storage.PostgreSQL2
   , markAsSuccess
   , resetAsInitialized
   )
-import qualified ZoomHub.Storage.PostgreSQL2 as ConnectInfo
+import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo
   (ConnectInfo(..), fromEnv)
-import qualified ZoomHub.Storage.PostgreSQL2.Internal as I
-import ZoomHub.Storage.PostgreSQL2.Schema (Schema, migrations)
+import qualified ZoomHub.Storage.PostgreSQL.Internal as I
+import ZoomHub.Storage.PostgreSQL.Schema (Schema, migrations)
 import ZoomHub.Types.Content
   ( contentActiveAt
   , contentCompletedAt

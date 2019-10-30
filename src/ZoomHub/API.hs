@@ -53,8 +53,8 @@ import ZoomHub.Config (Config, NewContentStatus(..))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
-import ZoomHub.Storage.PostgreSQL2 as PG
-import ZoomHub.Storage.PostgreSQL2 (Connection)
+import ZoomHub.Storage.PostgreSQL as PG
+import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)

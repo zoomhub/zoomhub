@@ -6,7 +6,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeOperators #-}
 
-module ZoomHub.Storage.PostgreSQL2.Schema
+module ZoomHub.Storage.PostgreSQL.Schema
     ( Schema
     -- * Migrations
     , migrations

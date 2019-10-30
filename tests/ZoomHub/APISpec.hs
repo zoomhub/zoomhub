@@ -37,9 +37,9 @@ import ZoomHub.Config
   , NewContentStatus(NewContentAllowed)
   )
 import qualified ZoomHub.Config as Config
-import ZoomHub.Storage.PostgreSQL2 (createConnectionPool, getById)
-import qualified ZoomHub.Storage.PostgreSQL2 as ConnectInfo (fromEnv)
-import ZoomHub.Storage.PostgreSQL2.Internal (destroyAllResources)
+import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
+import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
+import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.Content (contentNumViews)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)

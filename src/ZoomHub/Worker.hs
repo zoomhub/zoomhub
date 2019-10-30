@@ -28,7 +28,7 @@ import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import ZoomHub.Log.Logger (logException, logInfo, logInfoT)
 import ZoomHub.Pipeline (ProcessResult(..), process)
-import ZoomHub.Storage.PostgreSQL2
+import ZoomHub.Storage.PostgreSQL
   ( dequeueNextUnprocessed
   , getExpiredActive
   , markAsFailure

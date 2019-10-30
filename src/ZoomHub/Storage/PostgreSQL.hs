@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 
-module ZoomHub.Storage.PostgreSQL2
+module ZoomHub.Storage.PostgreSQL
   ( Schema
   , Connection
   , createConnectionPool
@@ -32,7 +32,7 @@ module ZoomHub.Storage.PostgreSQL2
   , dequeueNextUnprocessed
   ) where
 
-import ZoomHub.Storage.PostgreSQL2.Internal
+import ZoomHub.Storage.PostgreSQL.Internal
   ( Connection
   , contentImageRowToContent
   , contentRowToContent
@@ -49,7 +49,7 @@ import ZoomHub.Storage.PostgreSQL2.Internal
   , selectContentBy
   , toNominalDiffTime
   )
-import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
+import ZoomHub.Storage.PostgreSQL.Schema (Schema)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)

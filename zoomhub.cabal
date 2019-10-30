@@ -40,10 +40,9 @@ library
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
-    , ZoomHub.Storage.PostgreSQL2
-    , ZoomHub.Storage.PostgreSQL2.Internal
-    , ZoomHub.Storage.PostgreSQL2.Schema
-    , ZoomHub.Storage.SQLite
+    , ZoomHub.Storage.PostgreSQL
+    , ZoomHub.Storage.PostgreSQL.Internal
+    , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
     , ZoomHub.Types.Content.Internal
@@ -155,7 +154,7 @@ test-suite tests
   type:             exitcode-stdio-1.0
   other-modules:
     ZoomHub.APISpec
-    ZoomHub.Storage.PostgreSQL2Spec
+    ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
     ZoomHub.Types.DeepZoomImageSpec

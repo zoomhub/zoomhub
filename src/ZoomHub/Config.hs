@@ -39,7 +39,7 @@ import System.Envy
   )
 
 import ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
-import ZoomHub.Storage.PostgreSQL2 (Connection)
+import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.DatabasePath (DatabasePath)

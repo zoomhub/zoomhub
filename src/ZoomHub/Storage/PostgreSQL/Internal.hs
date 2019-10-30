@@ -12,12 +12,12 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
-module ZoomHub.Storage.PostgreSQL2.Internal
-  ( module ZoomHub.Storage.PostgreSQL2.Internal
+module ZoomHub.Storage.PostgreSQL.Internal
+  ( module ZoomHub.Storage.PostgreSQL.Internal
   , destroyAllResources
   ) where
 
-import ZoomHub.Storage.PostgreSQL2.Schema (Schema)
+import ZoomHub.Storage.PostgreSQL.Schema (Schema)
 import ZoomHub.Types.Content.Internal (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
