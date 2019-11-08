@@ -42,7 +42,7 @@ ops)
         echo 'Enter `root` SSH password:'
         ansible-playbook --inventory-file "$hosts" \
             ops/user.yml --user root --ask-pass \
-            --extra-vars "sudoers=y username=admin"
+            --extra-vars "sudoers=y username=admin ansible_become_pass='' variable_hosts=${4:-all}"
         ;;
     ping)
         print_hosts
@@ -52,6 +52,14 @@ ops)
         ansible-playbook -v --inventory-file ops/admin \
             --ask-sudo --ask-vault-pass \
             ops/admin.yml
+        ;;
+    setup-database-server)
+        print_hosts
+
+        ansible-galaxy install geerlingguy.postgresql
+        ansible-playbook -v --inventory-file "$hosts" \
+            --ask-vault-pass \
+            ops/database.yml
         ;;
     setup-web-server)
         print_hosts
@@ -63,7 +71,7 @@ ops)
         ;;
     *)
         echo "Unknown command: $0 $@. Try $0 $1 \
-bootstrap|ping|setup-admin-server|setup-web-server"
+bootstrap|ping|setup-admin-server|setup-database-server|setup-web-server"
         exit 1
     esac
     ;;

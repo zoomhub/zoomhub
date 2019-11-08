@@ -1,0 +1,9 @@
+---
+# https://www.digitalocean.com/community/tutorials/how-to-secure-postgresql-against-automated-attacks
+- name: Allow incoming web server (private IP) traffic to PostgreSQL
+  ufw:
+    rule: allow
+    proto: tcp
+    from_ip: '{{web_server_private_ip}}'
+    to: any
+    to_port: 5432

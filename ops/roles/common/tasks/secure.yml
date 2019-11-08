@@ -1,6 +1,7 @@
 ---
 - name: Install fail2ban
-  apt: pkg=fail2ban state=installed
+  apt:
+    pkg: fail2ban
 
 - name: Disallow password authentication
   lineinfile: dest=/etc/ssh/sshd_config
@@ -20,7 +21,8 @@
   shell: rm -f /etc/sudoers.d/*
 
 - name: Install ufw (Uncomplicated Firewall)
-  apt: pkg=ufw state=installed
+  apt:
+    pkg: ufw
 
 - name: Setup ufw 22/tcp
   shell: ufw allow 22/tcp

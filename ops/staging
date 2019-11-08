@@ -1,2 +1,5 @@
 [web]
 staging.zoomhub.net rackspace_cloudfiles_container=cache-staging rackspace_cloudfiles_container_path=content
+
+[database]
+db-staging.zoomhub.net ansible_become_pass='{{vault_zh_staging_db_1_pg_iad_become_pass}}' postgres_database_name='zoomhub_staging' postgres_user_web_name='zoomhub_web' postgres_user_web_password='{{vault_postgresql_staging_web_password}}' web_server_private_ip='{{vault_staging_web_server_private_ip}}' database_server_private_ip='{{vault_staging_database_server_private_ip}}'

@@ -1,6 +1,6 @@
 ---
 - name: Install VIPS
-  apt: pkg={{ item }} state=installed
-  with_items:
+  apt:
+    pkg:
     - libvips
     - libvips-tools

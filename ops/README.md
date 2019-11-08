@@ -26,6 +26,11 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 Run `./zh ops setup-web-server [production|staging]` and follow the steps to
 set up a web server.
 
+## Database server
+
+Run `./zh ops setup-database-server [production|staging]` and follow the steps
+to set up a database server.
+
 ## Admin server
 
 Run `./zh ops setup-admin-server` and follow the steps to set up an admin server.
