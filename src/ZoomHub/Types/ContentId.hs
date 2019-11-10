@@ -12,13 +12,10 @@
 module ZoomHub.Types.ContentId
   ( ContentId
   , ContentId'
-  , ContentIdColumn
   , fromInteger
   , fromString
   , isValid
   , mkContentId
-  , pContentId
-  , toColumn
   , unContentId
   , validChars
   ) where
@@ -29,11 +26,9 @@ import Data.Aeson
   (FromJSON, ToJSON, genericParseJSON, genericToJSON, parseJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import Data.List (intersperse)
-import Data.Profunctor.Product.TH (makeAdaptorAndInstance)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import qualified Database.PostgreSQL.Simple.FromField as PGS
 import Database.SQLite.Simple (SQLData(SQLText))
 import Database.SQLite.Simple.FromField
   (FromField, ResultError(ConversionFailed), fromField, returnError)
@@ -41,14 +36,6 @@ import Database.SQLite.Simple.Internal (Field(Field))
 import Database.SQLite.Simple.Ok (Ok(Ok))
 import Database.SQLite.Simple.ToField (ToField, toField)
 import GHC.Generics (Generic)
-import Opaleye
-  ( Column
-  , PGText
-  , QueryRunnerColumnDefault
-  , fieldQueryRunnerColumn
-  , pgString
-  , queryRunnerColumnDefault
-  )
 import Servant (FromHttpApiData, parseUrlPiece)
 import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
@@ -108,23 +95,6 @@ instance FromField ContentId where
       Right r  -> Ok r
       Left _ -> returnError ConversionFailed f "Invalid content ID"
   fromField f = returnError ConversionFailed f "Invalid content ID"
-
--- PostgreSQL
-type ContentIdColumn = ContentId' (Column PGText)
-$(makeAdaptorAndInstance "pContentId" ''ContentId')
-
-toColumn :: ContentId -> ContentIdColumn
-toColumn = fmap pgString
-
-instance PGS.FromField ContentId where
-  fromField f mdata = PGS.fromField f mdata >>= parseContentId
-    where
-      parseContentId t = case parseUrlPiece t of
-        Right r -> return r
-        Left _  -> PGS.returnError PGS.ConversionFailed f "Invalid content ID"
-
-instance QueryRunnerColumnDefault PGText ContentId where
-  queryRunnerColumnDefault = fieldQueryRunnerColumn
 
 -- Squeal / PostgreSQL
 type instance PG ContentId = 'PGtext

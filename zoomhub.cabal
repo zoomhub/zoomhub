@@ -105,7 +105,6 @@ library
     , mtl
     , network
     , network-uri
-    , opaleye
     , postgresql-simple
     , process
     , product-profunctors
