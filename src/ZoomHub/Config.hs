@@ -42,7 +42,6 @@ import ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
 import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
-import ZoomHub.Types.DatabasePath (DatabasePath)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import ZoomHub.Types.TempPath (TempPath)
 
@@ -58,7 +57,6 @@ data Config = Config
   , dbConnPoolIdleTime              :: Second
   , dbConnPoolMaxResourcesPerStripe :: Integer
   , dbConnPoolNumStripes            :: Integer
-  , dbPath                          :: DatabasePath
   , error404                        :: BL.ByteString
   , existingContentStatus           :: ExistingContentStatus
   , logger                          :: Middleware
@@ -80,7 +78,6 @@ instance ToJSON Config where
     , "dbConnPoolIdleTime" .= dbConnPoolIdleTime
     , "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
     , "dbConnPoolNumStripes" .= dbConnPoolNumStripes
-    , "dbPath" .= dbPath
     , "existingContentStatus" .= existingContentStatus
     , "newContentStatus" .= newContentStatus
     , "port" .= port

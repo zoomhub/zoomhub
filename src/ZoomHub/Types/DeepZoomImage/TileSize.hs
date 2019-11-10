@@ -14,12 +14,6 @@ import Prelude hiding (fromInteger)
 import Data.Aeson (ToJSON, Value(Number), toJSON)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
-import Database.SQLite.Simple (SQLData(SQLInteger))
-import Database.SQLite.Simple.FromField
-  (FromField, ResultError(ConversionFailed), fromField, returnError)
-import Database.SQLite.Simple.Internal (Field(Field))
-import Database.SQLite.Simple.Ok (Ok(Ok))
-import Database.SQLite.Simple.ToField (ToField, toField)
 import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGint4), ToParam(..))
 
 data TileSize = TileSize254 | TileSize256 | TileSize1024
@@ -42,24 +36,11 @@ instance Show TileSize where
   show TileSize256 = "256"
   show TileSize1024 = "1024"
 
--- Tile size: JSON
+-- JSON
 instance ToJSON TileSize where
   toJSON TileSize254 = Number 254
   toJSON TileSize256 = Number 256
   toJSON TileSize1024 = Number 1024
-
--- Tile size: SQLite
-instance ToField TileSize where
-  toField TileSize254 = SQLInteger 254
-  toField TileSize256 = SQLInteger 256
-  toField TileSize1024 = SQLInteger 1024
-
-instance FromField TileSize where
-  fromField (Field (SQLInteger 254) _) = Ok TileSize254
-  fromField (Field (SQLInteger 256) _) = Ok TileSize256
-  fromField (Field (SQLInteger 1024) _) = Ok TileSize1024
-  fromField f =
-    returnError ConversionFailed f "invalid Deep Zoom image tile size"
 
 -- PostgreSQL / Squeal
 type instance PG TileSize = 'PGint4

@@ -44,7 +44,6 @@ import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.Content (contentNumViews)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, fromString, unContentId)
-import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath))
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath(TempPath))
 
@@ -141,7 +140,6 @@ config = Config
     , dbConnPoolIdleTime = dbConnPoolIdleTime'
     , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
     , dbConnPoolNumStripes = dbConnPoolNumStripes'
-    , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
     , error404 = "404"
     , existingContentStatus = IgnoreExistingContent
     , logger = nullLogger

@@ -6,7 +6,7 @@ module ZoomHub.Main (main) where
 import Control.Concurrent (getNumCapabilities, threadDelay)
 import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
-import Control.Monad (forM_, guard, unless, when)
+import Control.Monad (forM_, guard, when)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
@@ -26,8 +26,7 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Middleware.RequestLogger
   (OutputFormat(CustomOutputFormatWithDetails), mkRequestLogger, outputFormat)
-import System.Directory
-  (createDirectoryIfMissing, doesFileExist, getCurrentDirectory)
+import System.Directory (createDirectoryIfMissing, getCurrentDirectory)
 import System.Environment (getEnvironment)
 import System.Envy (decodeEnv)
 import System.FilePath ((</>))
@@ -53,7 +52,6 @@ import ZoomHub.Storage.PostgreSQL (createConnectionPool)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath), unDatabasePath)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath(TempPath), unTempPath)
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
@@ -62,9 +60,6 @@ import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 -- Environment variables
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
-
-dbPathEnvName :: String
-dbPathEnvName = "DB_PATH"
 
 existingContentStatusEnvName :: String
 existingContentStatusEnvName = "PROCESS_EXISTING_CONTENT"
@@ -121,10 +116,6 @@ main = do
       numProcessingWorkers =
         fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
 
-      defaultDBPath = DatabasePath $
-        currentDirectory </> "data" </> "zoomhub-development.sqlite3"
-      dbPath = maybe defaultDBPath DatabasePath (lookup dbPathEnvName env)
-
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
 
@@ -154,7 +145,6 @@ main = do
     dbConnPoolIdleTime dbConnPoolMaxResourcesPerStripe
 
   ensureTempPathExists tempPath
-  ensureDBExists dbPath
 
   case maybeRaxConfig of
     Right rackspace -> do
@@ -225,13 +215,6 @@ main = do
         Just uri -> BaseURI uri
         Nothing  -> error $ "'" ++ uriString ++ "' is not a valid URL. Please\
         \ set `" ++ baseURIEnvName ++ "` to override usage of hostname."
-
-    ensureDBExists :: DatabasePath -> IO ()
-    ensureDBExists dbPath = do
-      exists <- doesFileExist (unDatabasePath dbPath)
-      unless exists $
-        error $ "Couldn’t find a database at " ++ unDatabasePath dbPath ++
-          ". Please check `" ++ dbPathEnvName ++ "`."
 
     ensureTempPathExists :: TempPath -> IO ()
     ensureTempPathExists tempPath =

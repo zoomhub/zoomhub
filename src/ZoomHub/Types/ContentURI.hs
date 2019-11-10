@@ -17,12 +17,6 @@ module ZoomHub.Types.ContentURI
 import Data.Aeson (ToJSON, Value(String), toJSON)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Database.SQLite.Simple (SQLData(SQLText))
-import Database.SQLite.Simple.FromField
-  (FromField, ResultError(ConversionFailed), fromField, returnError)
-import Database.SQLite.Simple.Internal (Field(Field))
-import Database.SQLite.Simple.Ok (Ok(Ok))
-import Database.SQLite.Simple.ToField (ToField, toField)
 import Servant (FromHttpApiData, parseUrlPiece)
 import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
@@ -44,17 +38,6 @@ instance FromHttpApiData ContentURI where
 -- JSON
 instance ToJSON ContentURI where
   toJSON = String . unContentURI
-
--- SQLite
-instance ToField ContentURI where
-  toField = SQLText . unContentURI
-
-instance FromField ContentURI where
-  fromField field@(Field (SQLText t) _) =
-    case parseUrlPiece t of
-      Right r -> Ok r
-      Left e  -> returnError ConversionFailed field (T.unpack e)
-  fromField field = returnError ConversionFailed field "Invalid content URI"
 
 -- Squeal / PostgreSQL
 type instance PG ContentURI = 'PGtext

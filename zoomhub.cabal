@@ -52,7 +52,6 @@ library
     , ZoomHub.Types.ContentState
     , ZoomHub.Types.ContentType
     , ZoomHub.Types.ContentURI
-    , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
     , ZoomHub.Types.DeepZoomImage.TileFormat
     , ZoomHub.Types.DeepZoomImage.TileOverlap
@@ -117,7 +116,6 @@ library
     , servant-lucid
     , servant-server
     , split
-    , sqlite-simple
     , squeal-postgresql
     , string-conversions
     , temporary

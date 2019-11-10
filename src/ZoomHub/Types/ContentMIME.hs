@@ -17,12 +17,6 @@ import Codec.MIME.Type (Type, showType)
 import Data.Aeson (ToJSON, Value(String), toJSON)
 import Data.Maybe (fromJust)
 import qualified Data.Text as T
-import Database.SQLite.Simple (SQLData(SQLText))
-import Database.SQLite.Simple.FromField
-  (FromField, ResultError(ConversionFailed), fromField, returnError)
-import Database.SQLite.Simple.Internal (Field(Field))
-import Database.SQLite.Simple.Ok (Ok(Ok))
-import Database.SQLite.Simple.ToField (ToField, toField)
 import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
 
@@ -34,19 +28,6 @@ toText = showType . unContentMIME
 
 fromText :: T.Text -> Maybe ContentMIME
 fromText t = ContentMIME <$> parseMIMEType t
-
-
--- SQLite
-instance ToField ContentMIME where
-  toField = SQLText . toText
-
-instance FromField ContentMIME where
-  fromField f@(Field (SQLText t) _) =
-    case parseMIMEType t of
-      Just r  -> Ok (ContentMIME r)
-      Nothing -> returnError ConversionFailed f
-        ("invalid content MIME type: " ++ T.unpack t)
-  fromField f = returnError ConversionFailed f "invalid MIME type"
 
 -- JSON
 instance ToJSON ContentMIME where
