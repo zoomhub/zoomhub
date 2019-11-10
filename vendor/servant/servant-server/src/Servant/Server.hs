@@ -1,8 +1,8 @@
-{-# LANGUAGE ConstraintKinds   #-}
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes       #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -49,7 +49,7 @@ module Servant.Server
   -- , mkAuthHandler
 
     -- * Default error type
-  , ServantErr(..)
+  , ServerError(..)
     -- ** 3XX
   , err300
   , err301
@@ -92,10 +92,14 @@ module Servant.Server
 
   ) where
 
-import           Data.Proxy                    (Proxy (..))
-import           Data.Tagged                   (Tagged (..))
-import           Data.Text                     (Text)
-import           Network.Wai                   (Application)
+import           Data.Proxy
+                 (Proxy (..))
+import           Data.Tagged
+                 (Tagged (..))
+import           Data.Text
+                 (Text)
+import           Network.Wai
+                 (Application)
 import           Servant.Server.Internal
 
 

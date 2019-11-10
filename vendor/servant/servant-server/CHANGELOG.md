@@ -1,6 +1,82 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.16.2
+------
+
+* `singleton-bool-0.1.5` (`SBool` is re-exported)
+    - Add `discreteBool :: Dec (a :~: b)` (GHC-7.8+)
+    - Add `Show`, `Eq`, `Ord` `SBool b` instances.
+* dependencies update
+
+0.16.1
+------
+
+* Use `http-api-data-0.4.1` (a part of its API is re-exported)
+  [#1181](https://github.com/haskell-servant/servant/pull/1181)
+
+0.16
+----
+
+- Rename `ServantError` to `ClientError`, `ServantErr` to `ServerError`
+  [#1131](https://github.com/haskell-servant/servant/pull/1131)
+- *servant-server* Reorder HTTP failure code priorities
+  [#1103](https://github.com/haskell-servant/servant/pull/1103)
+- *servant-server* Re-organise internal modules
+  [#1139](https://github.com/haskell-servant/servant/pull/1139)
+- Allow `network-3.0`
+  [#1107](https://github.com/haskell-servant/servant/pull/1107)
+
+0.15
+----
+
+- Streaming refactoring.
+  [#991](https://github.com/haskell-servant/servant/pull/991)
+  [#1076](https://github.com/haskell-servant/servant/pull/1076)
+  [#1077](https://github.com/haskell-servant/servant/pull/1077)
+
+  The streaming functionality (`Servant.API.Stream`) is refactored to use
+  `servant`'s own `SourceIO` type (see `Servant.Types.SourceT` documentation),
+  which replaces both `StreamGenerator` and `ResultStream` types.
+
+  New conversion type-classes are `ToSourceIO` and `FromSourceIO`
+  (replacing `ToStreamGenerator` and `BuildFromStream`).
+  There are instances for *conduit*, *pipes* and *machines* in new packages:
+  [servant-conduit](https://hackage.haskell.org/package/servant-conduit)
+  [servant-pipes](https://hackage.haskell.org/package/servant-pipes) and
+  [servant-machines](https://hackage.haskell.org/package/servant-machines)
+  respectively.
+
+  Writing new framing strategies is simpler. Check existing strategies for examples.
+
+  This change shouldn't affect you, if you don't use streaming endpoints.
+
+- Drop support for GHC older than 8.0
+  [#1008](https://github.com/haskell-servant/servant/pull/1008)
+  [#1009](https://github.com/haskell-servant/servant/pull/1009)
+
+- *servant* NewlineFraming encodes newline after each element (i.e last)
+  [#1079](https://github.com/haskell-servant/servant/pull/1079)
+  [#1011](https://github.com/haskell-servant/servant/issues/1011)
+
+- *servant* Add `lookupResponseHeader :: ... => Headers headers r -> ResponseHeader h a`
+  [#1064](https://github.com/haskell-servant/servant/pull/1064)
+
+- *servant-server* Add `MonadMask Handler`
+  [#1068](https://github.com/haskell-servant/servant/pull/1068)
+
+- *servant* Export `GetHeaders'`
+  [#1052](https://github.com/haskell-servant/servant/pull/1052)
+
+- *servant* Add `Bitraversable` and other `Bi-` instances for `:<|>`
+  [#1032](https://github.com/haskell-servant/servant/pull/1032)
+
+- *servant* Add `PutCreated` method type alias
+  [#1024](https://github.com/haskell-servant/servant/pull/1024)
+
+- *servant* Add `ToSourceIO (NonEmpty a)` instance
+  [#988](https://github.com/haskell-servant/servant/pull/988)
+
 0.14.1
 ------
 
