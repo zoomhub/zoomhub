@@ -14,7 +14,7 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
-import Network.BSD (getHostName)
+import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
 import Network.Wai (Request)
 import Network.Wai.Handler.Warp

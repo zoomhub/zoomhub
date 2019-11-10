@@ -91,6 +91,7 @@ library
     , filepath
     , generics-sop
     , hashids
+    , hostname
     , http-api-data
     , http-client
     , http-media
