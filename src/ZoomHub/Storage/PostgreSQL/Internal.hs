@@ -46,8 +46,7 @@ import qualified Generics.SOP as SOP
 import Generics.SOP.BasicFunctors (K)
 import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
-  ( ColumnValue(Default, Same, Set)
-  , Condition
+  ( Condition
   , ConflictClause(OnConflictDoRaise)
   , Expression
   , Grouping(Ungrouped)

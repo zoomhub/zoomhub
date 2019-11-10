@@ -22,8 +22,9 @@ import Servant.Server.Internal
   , hoistServerWithContext
   , route
   )
-import Servant.Server.Internal.RoutingApplication (addCapture, delayedFail)
-import Servant.Server.Internal.ServantErr (err400)
+import Servant.Server.Internal.Delayed (addCapture)
+import Servant.Server.Internal.DelayedIO (delayedFail)
+import Servant.Server.Internal.ServerError (err400)
 import Web.HttpApiData (parseUrlPieceMaybe)
 
 

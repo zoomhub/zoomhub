@@ -25,8 +25,8 @@ import Servant
   , JSON
   , QueryParam
   , Raw
-  , ServantErr
   , Server
+  , ServerError
   , err301
   , errHeaders
   , serve
@@ -336,7 +336,7 @@ noNewContentErrorWeb = noNewContentError Web.error503
 noNewContentErrorAPI :: Handler a
 noNewContentErrorAPI = noNewContentError API.error503
 
-noNewContentError :: (String -> ServantErr) -> Handler a
+noNewContentError :: (String -> ServerError) -> Handler a
 noNewContentError err =
   throwError . err $ noNewContentErrorMessage
 

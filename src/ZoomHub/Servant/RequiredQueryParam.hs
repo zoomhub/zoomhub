@@ -21,9 +21,9 @@ import Servant (FromHttpApiData)
 import Servant.API ((:>))
 import Servant.Server.Internal
   (HasServer, ServerT, hoistServerWithContext, route)
-import Servant.Server.Internal.RoutingApplication
-  (DelayedIO, addParameterCheck, delayedFail, withRequest)
-import Servant.Server.Internal.ServantErr (err400)
+import Servant.Server.Internal.Delayed (addParameterCheck)
+import Servant.Server.Internal.DelayedIO (DelayedIO, delayedFail, withRequest)
+import Servant.Server.Internal.ServerError (err400)
 import Web.HttpApiData (parseQueryParam)
 
 

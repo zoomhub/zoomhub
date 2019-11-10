@@ -8,18 +8,18 @@ module ZoomHub.Web.Errors
   where
 
 import qualified Data.ByteString.Lazy.UTF8 as BU
-import Servant (ServantErr, err400, err404, err503, errBody, errHeaders)
+import Servant (ServerError, err400, err404, err503, errBody, errHeaders)
 
-error400 :: String -> ServantErr
+error400 :: String -> ServerError
 error400 = mkError err400
 
-error404 :: String -> ServantErr
+error404 :: String -> ServerError
 error404 = mkError err404
 
-error503 :: String -> ServantErr
+error503 :: String -> ServerError
 error503 = mkError err503
 
-mkError :: ServantErr -> String -> ServantErr
+mkError :: ServerError -> String -> ServerError
 mkError errorType message = errorType
   { errHeaders = [("Content-Type", "text/html; charset=utf-8")]
   , errBody = BU.fromString message
