@@ -68,7 +68,7 @@ import ZoomHub.Storage.PostgreSQL
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo
   (ConnectInfo(..), fromEnv)
 import qualified ZoomHub.Storage.PostgreSQL.Internal as I
-import ZoomHub.Storage.PostgreSQL.Schema (Schema, migrations)
+import ZoomHub.Storage.PostgreSQL.Schema (Schemas, migrations)
 import ZoomHub.Types.Content
   ( contentActiveAt
   , contentCompletedAt
@@ -129,10 +129,10 @@ setupDatabase = do
     pgDatabase
     ] []
 
-withDatabaseConnection :: (SOP.K Connection Schema -> IO a) -> IO a
+withDatabaseConnection :: (SOP.K Connection Schemas -> IO a) -> IO a
 withDatabaseConnection = bracket acquire release
   where
-    acquire :: IO (SOP.K Connection Schema)
+    acquire :: IO (SOP.K Connection Schemas)
     acquire = do
       pgUser <- maybe (BC.pack defaultDatabaseUser) BC.pack <$> lookupEnv "PGUSER"
       pgDatabase <- maybe (BC.pack defaultDatabaseName) BC.pack <$> lookupEnv "PGDATABASE"
@@ -144,7 +144,7 @@ withDatabaseConnection = bracket acquire release
         & pqThen (migrateUp migrations)
         ) conn
       pure conn'
-    release :: SOP.K Connection Schema -> IO ()
+    release :: SOP.K Connection Schemas -> IO ()
     release conn = do
       (_, conn') <- runPQ (migrateDown migrations) conn
       finish conn'

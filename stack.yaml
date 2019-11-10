@@ -10,8 +10,7 @@ packages:
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
 - mime-0.4.0.2
-- records-sop-0.1.0.1
-- squeal-postgresql-0.4.0.0
+- squeal-postgresql-0.5.1.0
 - time-units-1.0.0
 - ./vendor/servant/servant-server
 

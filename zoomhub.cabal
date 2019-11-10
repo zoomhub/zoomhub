@@ -125,6 +125,7 @@ library
     , timeit
     , transformers-base
     , unix
+    , unliftio
     , unordered-containers
     , utf8-string
     , wai

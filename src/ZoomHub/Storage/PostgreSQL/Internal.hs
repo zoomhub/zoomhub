@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -O0 #-}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -17,7 +18,7 @@ module ZoomHub.Storage.PostgreSQL.Internal
   , destroyAllResources
   ) where
 
-import ZoomHub.Storage.PostgreSQL.Schema (Schema)
+import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content.Internal (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
@@ -32,9 +33,6 @@ import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
 import Control.Monad (void, when)
-import Control.Monad.Base (liftBase)
-import Control.Monad.Base (MonadBase)
-import Control.Monad.Trans.Control (MonadBaseControl)
 import qualified Data.ByteString.Char8 as BC
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
@@ -48,32 +46,31 @@ import qualified GHC.Generics as GHC
 import Squeal.PostgreSQL
   ( Condition
   , ConflictClause(OnConflictDoRaise)
-  , Expression
   , Grouping(Ungrouped)
-  , Manipulation
+  , Manipulation_
   , MonadPQ
   , NP((:*))
-  , NullityType(NotNull, Null)
+  , NullityType(NotNull)
   , Only(..)
+  , Optional(Default, Set)
   , PGType(PGint8, PGtext)
+  , PQ
   , Query
-  , ReturningClause(Returning)
+  , Query_
   , RowPG
   , TableExpression
   , ToParam
-  , TuplePG
   , as
   , currentTimestamp
   , firstRow
   , from
-  , insertQuery_
-  , insertRow
+  , insertInto_
   , leftOuterJoin
   , manipulateParams
   , null_
   , param
   , runQueryParams
-  , select
+  , select_
   , table
   , transactionally_
   , update
@@ -83,16 +80,18 @@ import Squeal.PostgreSQL
   , (&)
   , (.==)
   )
+import Squeal.PostgreSQL.Manipulation
 import Squeal.PostgreSQL.Pool (Pool, destroyAllResources)
 import qualified Squeal.PostgreSQL.Pool as P
 import qualified Squeal.PostgreSQL.PQ as PQ
 import System.Random (randomRIO)
+import UnliftIO (MonadUnliftIO(..), liftIO)
 
 -- Connection
-type Connection = K PQ.Connection Schema
+type Connection = K PQ.Connection Schemas
 
 createConnectionPool ::
-  (TimeUnit a, MonadBase IO io) =>
+  (TimeUnit a, MonadUnliftIO io) =>
   ConnectInfo -> Integer -> a -> Integer -> io (Pool Connection)
 createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
   P.createConnectionPool (connectionString connInfo)
@@ -114,8 +113,8 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
 
 -- Reads: Content
 getBy ::
-  (MonadBaseControl IO m, MonadPQ Schema m, ToParam p a) =>
-  Condition Schema _ 'Ungrouped '[ 'NotNull a ] ->
+  (MonadUnliftIO m, MonadPQ Schemas m, ToParam p a) =>
+  Condition '[] '[] 'Ungrouped Schemas '[ 'NotNull a ] _ ->
   p ->
   m (Maybe Content)
 getBy condition parameter = do
@@ -125,8 +124,8 @@ getBy condition parameter = do
   pure (contentImageRowToContent <$> contentRow)
 
 getBy' ::
-  (MonadBaseControl IO m, MonadPQ Schema m, ToParam p 'PGtext) =>
-  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGtext ] ->
+  (MonadUnliftIO m, MonadPQ Schemas m, ToParam p 'PGtext) =>
+  Condition '[] '[] 'Ungrouped Schemas '[ 'NotNull 'PGtext ] _ ->
   p ->
   m (Maybe Content)
 getBy' condition parameter = do
@@ -138,7 +137,7 @@ getBy' condition parameter = do
         let cId = contentId content
         let numViews = contentNumViews content
         let numViewsSampleRate = sampleRate numViews
-        numViewsSample <- liftBase $ randomRIO (1, numViewsSampleRate)
+        numViewsSample <- liftIO $ randomRIO (1, numViewsSampleRate)
         when (numViewsSample == 1) $
           -- TODO: How can we run this async?
           void $ manipulateParams incrNumViews (numViewsSampleRate, cId)
@@ -153,37 +152,18 @@ getBy' condition parameter = do
       | numViews < 10000 = 100
       | otherwise = 1000
 
-incrNumViews :: Manipulation Schema '[ 'NotNull 'PGint8, 'NotNull 'PGtext ] '[]
+incrNumViews :: Manipulation_ Schemas (Int64, Text) ()
 incrNumViews =
   update_ #content
-    ( Same `as` #id :*
-      Same `as` #hash_id :*
-      Same `as` #type_id :*
-      Same `as` #url :*
-      Same `as` #state :*
-      Same `as` #initialized_at :*
-      Same `as` #active_at :*
-      Same `as` #completed_at :*
-      Same `as` #title :*
-      Same `as` #attribution_text :*
-      Same `as` #attribution_link :*
-      Same `as` #mime :*
-      Same `as` #size :*
-      Same `as` #error :*
-      Same `as` #progress :*
-      Same `as` #abuse_level_id :*
-      Same `as` #num_abuse_reports :*
-      Set ( #num_views + param @1 ) `as` #num_views :*
-      Same `as` #version
-    )
+    ( Set ( #num_views + (param @1) ) `as` #num_views )
     ( #hash_id .== param @2 )
 
 selectContentBy
-  :: ( TableExpression Schema '[ 'NotNull a ] _ 'Ungrouped ->
-       TableExpression Schema '[ 'NotNull a ] _ 'Ungrouped
+  :: ( TableExpression '[] '[] 'Ungrouped Schemas '[ 'NotNull a ] _ ->
+       TableExpression '[] '[] 'Ungrouped Schemas '[ 'NotNull a ] _
      )
-  -> Query Schema '[ 'NotNull a ] (RowPG ContentImageRow)
-selectContentBy clauses = select
+  -> Query '[] '[] Schemas '[ 'NotNull a ] (RowPG ContentImageRow)
+selectContentBy clauses = select_
   ( #content ! #hash_id `as` #cirHashId :*
     #content ! #type_id `as` #cirTypeId :*
     #content ! #url `as` #cirURL :*
@@ -215,16 +195,16 @@ selectContentBy clauses = select
   )
 
 -- Reads: Image
-getImageById :: (MonadBaseControl IO m, MonadPQ Schema m) => Int64 -> m (Maybe DeepZoomImage)
-getImageById cid = do
-  result <- runQueryParams (selectImageBy ((#image ! #content_id) .== param @1)) (Only cid)
+getImageById :: Int64 -> PQ Schemas Schemas IO (Maybe DeepZoomImage)
+getImageById cId = do
+  result <- runQueryParams (selectImageBy ((#image ! #content_id) .== param @1)) (Only cId)
   imageRow <- firstRow result
   pure (imageRowToImage <$> imageRow)
 
 selectImageBy ::
-  Condition Schema _ 'Ungrouped '[ 'NotNull 'PGint8 ] ->
-  Query Schema '[ 'NotNull 'PGint8 ] (RowPG ImageRow)
-selectImageBy condition = select
+  Condition '[] '[] 'Ungrouped Schemas '[ 'NotNull 'PGint8 ] _ ->
+  Query_ Schemas (Only Int64) ImageRow
+selectImageBy condition = select_
   ( #image ! #created_at `as` #irCreatedAt :*
     #image ! #width `as` #irWidth :*
     #image ! #height `as` #irHeight :*
@@ -358,29 +338,31 @@ data ContentRow =
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
 
-insertContent :: Manipulation Schema '[ 'NotNull 'PGtext ] (RowPG ContentRow)
-insertContent = insertRow #content
-  ( Default `as` #id :*
-    Set unsafeHashIdPlaceholder `as` #hash_id :*
-    Default `as` #type_id :*
-    Set (param @1) `as` #url :*
-    Default `as` #state :*
-    Default `as` #initialized_at :*
-    Default `as` #active_at :*
-    Default `as` #completed_at :*
-    Default `as` #title :*
-    Default `as` #attribution_text :*
-    Default `as` #attribution_link :*
-    Default `as` #mime :*
-    Default `as` #size :*
-    Default `as` #error :*
-    Default `as` #progress :*
-    Default `as` #abuse_level_id :*
-    Default `as` #num_abuse_reports :*
-    Default `as` #num_views :*
-    Default `as` #version
+insertContent :: Manipulation_ Schemas (Only Text) ContentRow
+insertContent = insertInto #content
+  ( Values_
+    ( Default `as` #id :*
+      Set "$placeholder-overwritten-by-trigger$" `as` #hash_id :*
+      Default `as` #type_id :*
+      Set (param @1) `as` #url :*
+      Default `as` #state :*
+      Default `as` #initialized_at :*
+      Default `as` #active_at :*
+      Default `as` #completed_at :*
+      Default `as` #title :*
+      Default `as` #attribution_text :*
+      Default `as` #attribution_link :*
+      Default `as` #mime :*
+      Default `as` #size :*
+      Default `as` #error :*
+      Default `as` #progress :*
+      Default `as` #abuse_level_id :*
+      Default `as` #num_abuse_reports :*
+      Default `as` #num_views :*
+      Default `as` #version
+    )
   ) OnConflictDoRaise
-  ( Returning
+  ( Returning_
     ( #hash_id `as` #crHashId :*
       #type_id `as` #crTypeId :*
       #url `as` #crURL :*
@@ -401,21 +383,11 @@ insertContent = insertRow #content
       #version `as` #crVersion
     )
   )
-  where
-    unsafeHashIdPlaceholder :: Expression schema from grouping params (nullity 'PGtext)
-    unsafeHashIdPlaceholder = "$placeholder-overwritten-by-trigger$"
 
-markContentAsActive ::
-  Manipulation Schema
-  '[ 'NotNull 'PGtext ]
-  (RowPG ContentRow)
+markContentAsActive :: Manipulation_ Schemas (Only Text) ContentRow
 markContentAsActive = update #content
-  ( Same `as` #id :*
-    Same `as` #hash_id :*
-    Set (ContentType.toExpression Unknown) `as` #type_id :*
-    Same `as` #url :*
+  ( Set (ContentType.toExpression Unknown) `as` #type_id :*
     Set (ContentState.toExpression Active) `as` #state :*
-    Same `as` #initialized_at :*
     Set currentTimestamp `as` #active_at :*
     Set null_ `as` #completed_at :*
     Set null_ `as` #title :*
@@ -424,14 +396,10 @@ markContentAsActive = update #content
     Set null_ `as` #mime :*
     Set null_ `as` #size :*
     Set null_ `as` #error :*
-    Set 0.0 `as` #progress :*
-    Same `as` #abuse_level_id :*
-    Same `as` #num_abuse_reports :*
-    Same `as` #num_views :*
-    Same `as` #version
+    Set 0.0 `as` #progress
   )
   ( #hash_id .== param @1 )
-  ( Returning
+  ( Returning_
     ( #hash_id `as` #crHashId :*
       #type_id `as` #crTypeId :*
       #url `as` #crURL :*
@@ -453,18 +421,10 @@ markContentAsActive = update #content
     )
   )
 
-markContentAsFailure ::
-  Manipulation Schema
-  '[ 'NotNull 'PGtext, 'Null 'PGtext ]
-  (RowPG ContentRow)
+markContentAsFailure :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
 markContentAsFailure = update #content
-  ( Same `as` #id :*
-    Same `as` #hash_id :*
-    Set (ContentType.toExpression Unknown) `as` #type_id :*
-    Same `as` #url :*
+  ( Set (ContentType.toExpression Unknown) `as` #type_id :*
     Set (ContentState.toExpression CompletedFailure) `as` #state :*
-    Same `as` #initialized_at :*
-    Same `as` #active_at :*
     Set currentTimestamp `as` #completed_at :*
     Set null_ `as` #title :*
     Set null_ `as` #attribution_text :*
@@ -472,14 +432,10 @@ markContentAsFailure = update #content
     Set null_ `as` #mime :*
     Set null_ `as` #size :*
     Set (param @2) `as` #error :*
-    Set 1.0 `as` #progress :*
-    Same `as` #abuse_level_id :*
-    Same `as` #num_abuse_reports :*
-    Same `as` #num_views :*
-    Same `as` #version
+    Set 1.0 `as` #progress
   )
   ( #hash_id .== param @1 )
-  ( Returning
+  ( Returning_
     ( #hash_id `as` #crHashId :*
       #type_id `as` #crTypeId :*
       #url `as` #crURL :*
@@ -502,32 +458,20 @@ markContentAsFailure = update #content
   )
 
 markContentAsSuccess ::
-  Manipulation Schema
-  '[ 'NotNull 'PGtext, 'Null 'PGtext, 'Null 'PGint8 ]
-  (RowPG ContentRow)
+  Manipulation_ Schemas
+  (Text, Maybe Text, Maybe Int64)
+  ContentRow
 markContentAsSuccess = update #content
-  ( Same `as` #id :*
-    Same `as` #hash_id :*
-    Set (ContentType.toExpression Image) `as` #type_id :*
-    Same `as` #url :*
+  ( Set (ContentType.toExpression Image) `as` #type_id :*
     Set (ContentState.toExpression CompletedSuccess) `as` #state :*
-    Same `as` #initialized_at :*
-    Same `as` #active_at :*
     Set currentTimestamp `as` #completed_at :*
-    Same `as` #title :*
-    Same `as` #attribution_text :*
-    Same `as` #attribution_link :*
     Set (param @2) `as` #mime :*
     Set (param @3) `as` #size :*
     Set null_ `as` #error :* -- reset any previous errors
-    Set 1.0 `as` #progress :*
-    Same `as` #abuse_level_id :*
-    Same `as` #num_abuse_reports :*
-    Same `as` #num_views :*
-    Same `as` #version
+    Set 1.0 `as` #progress
   )
   ( #hash_id .== param @1 )
-  ( Returning
+  ( Returning_
     ( #hash_id `as` #crHashId :*
       #type_id `as` #crTypeId :*
       #url `as` #crURL :*
@@ -549,33 +493,19 @@ markContentAsSuccess = update #content
     )
   )
 
-resetContentAsInitialized ::
-  Manipulation Schema
-  '[ 'NotNull 'PGtext ]
-  (RowPG ContentRow)
+resetContentAsInitialized :: Manipulation_ Schemas (Only Text) ContentRow
 resetContentAsInitialized = update #content
-  ( Same `as` #id :*
-    Same `as` #hash_id :*
-    Set (ContentType.toExpression Unknown) `as` #type_id :*
-    Same `as` #url :*
+  ( Set (ContentType.toExpression Unknown) `as` #type_id :*
     Set (ContentState.toExpression Initialized) `as` #state :*
-    Same `as` #initialized_at :*
     Set null_ `as` #active_at :*
     Set null_ `as` #completed_at :*
-    Same `as` #title :*
-    Same `as` #attribution_text :*
-    Same `as` #attribution_link :*
     Set null_ `as` #mime :*
     Set null_ `as` #size :*
     Set null_ `as` #error :* -- reset any previous errors
-    Set 0.0 `as` #progress :*
-    Same `as` #abuse_level_id :*
-    Same `as` #num_abuse_reports :*
-    Same `as` #num_views :*
-    Same `as` #version
+    Set 0.0 `as` #progress
   )
   ( #hash_id .== param @1 )
-  ( Returning
+  ( Returning_
     ( #hash_id `as` #crHashId :*
       #type_id `as` #crTypeId :*
       #url `as` #crURL :*
@@ -618,24 +548,27 @@ data InsertImageRow = InsertImageRow
 instance SOP.Generic InsertImageRow
 instance SOP.HasDatatypeInfo InsertImageRow
 
-insertImage :: Manipulation Schema (TuplePG InsertImageRow) '[]
-insertImage = insertQuery_ #image $
-  select
-    ( #content ! #id `as` #content_id :*
-      currentTimestamp `as` #created_at :*
-      param @2 `as` #width :*
-      param @3 `as` #height :*
-      param @4 `as` #tile_size :*
-      param @5 `as` #tile_overlap :*
-      param @6 `as` #tile_format
+insertImage :: Manipulation_ Schemas InsertImageRow ()
+insertImage = insertInto_ #image
+  ( Subquery
+    ( select_
+        ( #content ! #id `as` #content_id :*
+          currentTimestamp `as` #created_at :*
+          param @2 `as` #width :*
+          param @3 `as` #height :*
+          param @4 `as` #tile_size :*
+          param @5 `as` #tile_overlap :*
+          param @6 `as` #tile_format
+        )
+        ( from (table #content)
+        & where_ (#content ! #hash_id .== param @1)
+        )
     )
-    ( from (table #content)
-    & where_ (#content ! #hash_id .== param @1)
-    )
+  )
 
 -- Unsafe
 unsafeCreateContent
-  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  :: (MonadUnliftIO m, MonadPQ Schemas m)
   => Content
   -> m (Maybe Content)
 unsafeCreateContent content =
@@ -644,29 +577,31 @@ unsafeCreateContent content =
     contentRow <- firstRow result
     pure $ contentRowToContent <$> contentRow
 
-unsafeInsertContent :: Manipulation Schema (TuplePG ContentRow) (RowPG ContentRow)
-unsafeInsertContent = insertRow #content
-  ( Default `as` #id :*
-    Set (param @1) `as` #hash_id :*
-    Set (param @2) `as` #type_id :*
-    Set (param @3) `as` #url :*
-    Set (param @4) `as` #state :*
-    Set (param @5) `as` #initialized_at :*
-    Set (param @6) `as` #active_at :*
-    Set (param @7) `as` #completed_at :*
-    Set (param @8) `as` #title :*
-    Set (param @9) `as` #attribution_text :*
-    Set (param @10) `as` #attribution_link :*
-    Set (param @11) `as` #mime :*
-    Set (param @12) `as` #size :*
-    Set (param @13) `as` #error :*
-    Set (param @14) `as` #progress :*
-    Set (param @15) `as` #abuse_level_id :*
-    Set (param @16) `as` #num_abuse_reports :*
-    Set (param @17) `as` #num_views :*
-    Set (param @18) `as` #version
+unsafeInsertContent :: Manipulation_ Schemas ContentRow ContentRow
+unsafeInsertContent = insertInto #content
+  ( Values_
+    ( Default `as` #id :*
+      Set (param @1) `as` #hash_id :*
+      Set (param @2) `as` #type_id :*
+      Set (param @3) `as` #url :*
+      Set (param @4) `as` #state :*
+      Set (param @5) `as` #initialized_at :*
+      Set (param @6) `as` #active_at :*
+      Set (param @7) `as` #completed_at :*
+      Set (param @8) `as` #title :*
+      Set (param @9) `as` #attribution_text :*
+      Set (param @10) `as` #attribution_link :*
+      Set (param @11) `as` #mime :*
+      Set (param @12) `as` #size :*
+      Set (param @13) `as` #error :*
+      Set (param @14) `as` #progress :*
+      Set (param @15) `as` #abuse_level_id :*
+      Set (param @16) `as` #num_abuse_reports :*
+      Set (param @17) `as` #num_views :*
+      Set (param @18) `as` #version
+    )
   ) OnConflictDoRaise
-  ( Returning
+  ( Returning_
     ( #hash_id `as` #crHashId :*
       #type_id `as` #crTypeId :*
       #url `as` #crURL :*

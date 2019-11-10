@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeOperators #-}
 
 module ZoomHub.Storage.PostgreSQL.Schema
-    ( Schema
+    ( Schemas
     -- * Migrations
     , migrations
     ) where
@@ -22,16 +22,19 @@ import Squeal.PostgreSQL
   , (:=>)
   , AlignedList((:>>), Done)
   , ColumnConstraint(Def, NoDef)
-  , ColumnValue(Default, Set)
   , Definition
   , Manipulation(UnsafeManipulation)
   , NP((:*))
   , NullityType(NotNull, Null)
   , OnDeleteClause(OnDeleteCascade)
   , OnUpdateClause(OnUpdateCascade)
+  , Optional(Default, Set)
   , PGType(PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
+  , PQ
+  , Public
   , SchemumType(Table)
   , TableConstraint(ForeignKey, PrimaryKey, Unique)
+  , Terminally
   , as
   , bigint
   , bigserial
@@ -39,12 +42,11 @@ import Squeal.PostgreSQL
   , createTable
   , currentTimestamp
   , default_
-  , define
   , deleteFrom_
   , doublePrecision
   , dropTable
   , foreignKey
-  , insertRow_
+  , insertInto_
   , int
   , int4
   , manipulate
@@ -52,6 +54,7 @@ import Squeal.PostgreSQL
   , null_
   , nullable
   , primaryKey
+  , terminally
   , text
   , timestampWithTimeZone
   , unique
@@ -59,17 +62,17 @@ import Squeal.PostgreSQL
   , (.==)
   , (>>>)
   )
-import Squeal.PostgreSQL.Migration (Migration(..), MigrationsTable)
+import Squeal.PostgreSQL.Manipulation
+import Squeal.PostgreSQL.Migration (Migration(..), pureMigration)
 import Text.RawString.QQ (r)
 
-type Schema' =
+type Schema =
     '[ ConfigTable
      , ContentTable
      , ImageTable
      , FlickrTable
      ]
-
-type Schema = ("schema_migrations" ::: 'Table MigrationsTable) : Schema'
+type Schemas = Public Schema
 
 type ConfigTable =
   "config" ::: 'Table
@@ -149,27 +152,27 @@ type FlickrTable =
          ]
     )
 
-migrations :: AlignedList (Migration IO) '[] Schema'
+migrations :: AlignedList (Migration (Terminally PQ IO)) (Public '[]) Schemas
 migrations =
       installPLpgSQLExtension
   :>> initializeHashidsEncode
-  :>> initialSchema
+  :>> (pureMigration initialSchema)
   :>> insertHashidsSecret
   :>> createContentHashIdTrigger
   :>> Done
 
-installPLpgSQLExtension :: Migration IO '[] '[]
+installPLpgSQLExtension :: Migration (Terminally PQ IO) (Public '[]) (Public '[])
 installPLpgSQLExtension = Migration
   { name = "Install V8 extension"
-  , up = void . manipulate . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;"
-  , down = void . manipulate . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
+  , up = terminally . manipulate . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;"
+  , down = terminally . manipulate . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
   }
 
-initializeHashidsEncode :: Migration IO '[] '[]
+initializeHashidsEncode :: Migration (Terminally PQ IO) (Public '[]) (Public '[])
 initializeHashidsEncode = Migration
   { name = "Initialize Hashids encode function"
-  , up = forM_ createHashidsFunctions $ manipulate . UnsafeManipulation
-  , down = void . manipulate . UnsafeManipulation $ dropHashidsEncode
+  , up = terminally . forM_ createHashidsFunctions $ manipulate . UnsafeManipulation
+  , down = terminally . manipulate . UnsafeManipulation $ dropHashidsEncode
   }
   where
   dropHashidsEncode :: IsString a => a
@@ -177,13 +180,13 @@ initializeHashidsEncode = Migration
       DROP SCHEMA hashids CASCADE;
     |]
 
-createContentHashIdTrigger :: Migration IO Schema' Schema'
+createContentHashIdTrigger :: Migration (Terminally PQ IO) Schemas Schemas
 createContentHashIdTrigger = Migration
   { name = "Create content hash_id trigger"
-  , up = do
+  , up = terminally $ do
       void . manipulate . UnsafeManipulation $ createContentBeforeInsert
       void . manipulate . UnsafeManipulation $ createTriggerContentBeforeInsert
-  , down = do
+  , down = terminally $ do
       void . manipulate . UnsafeManipulation $ dropTriggerContentBeforeInsert
       void . manipulate . UnsafeManipulation $ dropContentBeforeInsert
   }
@@ -249,14 +252,14 @@ createContentHashIdTrigger = Migration
       DROP TRIGGER content_before_insert ON content;
     |]
 
-initialSchema :: Migration IO '[] Schema'
+initialSchema :: Migration Definition (Public '[]) Schemas
 initialSchema = Migration
   { name = "Initial setup"
-  , up = void . define $ setup
-  , down = void . define $ teardown
+  , up = setup
+  , down = teardown
   }
   where
-    setup :: Definition '[] Schema'
+    setup :: Definition (Public '[]) Schemas
     setup =
       createTable #config
         ( bigserial `as` #id :*
@@ -333,20 +336,19 @@ initialSchema = Migration
         defaultContentState = ContentState.toExpression ContentState.Initialized
         defaultContentVersion = 4
 
-    teardown :: Definition Schema' '[]
-    teardown = dropTable #flickr
-      >>> dropTable #image >>> dropTable #content >>> dropTable #config
+    teardown :: Definition Schemas (Public '[])
+    teardown =
+      dropTable #flickr >>>
+      dropTable #image >>>
+      dropTable #content >>>
+      dropTable #config
 
-insertHashidsSecret :: Migration IO Schema' Schema'
+insertHashidsSecret :: Migration (Terminally PQ IO) Schemas Schemas
 insertHashidsSecret = Migration
   { name = "Insert Hashids secret"
-  , up = void . manipulate $
-      insertRow_ #config
-        ( Default `as` #id :*
-          Set "hashids_salt" `as` #key :*
-          Set "secret-salt" `as` #value
-        )
-  , down = void . manipulate $
+  , up = terminally . manipulate $
+      insertInto_ #config (Values_ ( Default `as` #id :* Set "hashids_salt" `as` #key :* Set "secret-salt" `as` #value ))
+  , down = terminally . manipulate $
       deleteFrom_ #config (#key .== "hashids_salt")
   }
 

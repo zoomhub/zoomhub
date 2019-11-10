@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 module ZoomHub.Storage.PostgreSQL
-  ( Schema
+  ( Schemas
   , Connection
   , createConnectionPool
     -- ** Connection
@@ -49,7 +49,7 @@ import ZoomHub.Storage.PostgreSQL.Internal
   , selectContentBy
   , toNominalDiffTime
   )
-import ZoomHub.Storage.PostgreSQL.Schema (Schema)
+import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
@@ -58,8 +58,6 @@ import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
 import Control.Monad (void)
-import Control.Monad.Base (liftBase)
-import Control.Monad.Trans.Control (MonadBaseControl)
 import Data.Int (Int64)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -87,17 +85,18 @@ import Squeal.PostgreSQL
   )
 import System.Environment (getEnvironment)
 import Text.Read (readMaybe)
+import UnliftIO (MonadUnliftIO, liftIO)
 
 -- Public API
 
 -- Reads
-getById :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentId -> m (Maybe Content)
+getById :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
 getById = getBy ((#content ! #hash_id) .== param @1)
 
-getByURL :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentURI -> m (Maybe Content)
+getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
 getByURL = getBy ((#content ! #url) .== param @1)
 
-getNextUnprocessed :: (MonadBaseControl IO m, MonadPQ Schema m) => m (Maybe Content)
+getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = do
   result <- runQueryParams
     (selectContentBy $
@@ -111,9 +110,9 @@ getNextUnprocessed = do
   pure (contentImageRowToContent <$> contentRow)
 
 getExpiredActive ::
-  (MonadBaseControl IO m, MonadPQ Schema m, TimeUnit t) => t -> m [Content]
+  (MonadUnliftIO m, MonadPQ Schemas m, TimeUnit t) => t -> m [Content]
 getExpiredActive ttl = do
-  currentTime <- liftBase getCurrentTime
+  currentTime <- liftIO getCurrentTime
   let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
   result <- runQueryParams
     (selectContentBy
@@ -124,15 +123,15 @@ getExpiredActive ttl = do
   return $ contentImageRowToContent <$> contentRows
 
 -- Reads/writes
-getById' :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentId -> m (Maybe Content)
+getById' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
 getById' = getBy' ((#content ! #hash_id) .== param @1)
 
-getByURL' :: (MonadBaseControl IO m, MonadPQ Schema m) => ContentURI -> m (Maybe Content)
+getByURL' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
 getByURL' = getBy' ((#content ! #url) .== param @1)
 
 -- Writes
 initialize
-  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  :: (MonadUnliftIO m, MonadPQ Schemas m)
   => ContentURI
   -> m (Maybe Content)
 initialize uri =
@@ -142,7 +141,7 @@ initialize uri =
     return $ contentRowToContent <$> mRow
 
 markAsActive
-  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  :: (MonadUnliftIO m, MonadPQ Schemas m)
   => ContentId
   -> m (Maybe Content)
 markAsActive cId =
@@ -152,7 +151,7 @@ markAsActive cId =
     return $ contentRowToContent <$> mContentRow
 
 markAsFailure
-  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  :: (MonadUnliftIO m, MonadPQ Schemas m)
   => ContentId
   -> Maybe Text
   -> m (Maybe Content)
@@ -163,7 +162,7 @@ markAsFailure cId mErrorMessage =
     return $ contentRowToContent <$> mContentRow
 
 markAsSuccess
-  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  :: (MonadUnliftIO m, MonadPQ Schemas m)
   => ContentId
   -> DeepZoomImage
   -> Maybe ContentMIME
@@ -182,7 +181,7 @@ markAsSuccess cId dzi mMIME mSize =
         Nothing
 
 resetAsInitialized
-  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  :: (MonadUnliftIO m, MonadPQ Schemas m)
   => ContentId
   -> m (Maybe Content)
 resetAsInitialized cId =
@@ -192,7 +191,7 @@ resetAsInitialized cId =
     return $ contentRowToContent <$> mContentRow
 
 dequeueNextUnprocessed
-  :: (MonadBaseControl IO m, MonadPQ Schema m)
+  :: (MonadUnliftIO m, MonadPQ Schemas m)
   => m (Maybe Content)
 dequeueNextUnprocessed = do
   mNext <- getNextUnprocessed
