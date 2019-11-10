@@ -7,6 +7,7 @@ module Servant.Server.Internal.Router where
 import           Prelude ()
 import           Prelude.Compat
 
+import qualified Data.ByteString                            as B
 import           Data.Function
                  (on)
 import           Data.Map
@@ -14,9 +15,13 @@ import           Data.Map
 import qualified Data.Map                                   as M
 import           Data.Text
                  (Text)
+import           Data.Text.Encoding
+                 (decodeUtf8With)
+import           Data.Text.Encoding.Error
+                 (lenientDecode)
 import qualified Data.Text                                  as T
 import           Network.Wai
-                 (Response, pathInfo)
+                 (Response, pathInfo, rawPathInfo)
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.ServerError
@@ -37,6 +42,9 @@ data Router' env a =
       --   for the empty path, to be tried in order
   | CaptureRouter (Router' (Text, env) a)
       -- ^ first path component is passed to the child router in its
+      --   environment and removed afterwards
+  | RawCaptureRouter (Router' (Text, env) a)
+      -- ^ all path components are passed as one to the child router in its
       --   environment and removed afterwards
   | CaptureAllRouter (Router' ([Text], env) a)
       -- ^ all path components are passed to the child router in its
@@ -168,6 +176,11 @@ runRouterEnv router env request respond =
           -> let request' = request { pathInfo = rest }
              in  runRouterEnv router' env request' respond
         _ -> respond $ Fail err404
+    RawCaptureRouter router' ->
+      let rawWithLeadingSlash = lenientDecodeUtf8 (rawPathInfo request)
+          raw = T.tail rawWithLeadingSlash
+          request' = request { pathInfo = [] }
+      in runRouterEnv router' (raw, env) request' respond
     CaptureRouter router' ->
       case pathInfo request of
         []   -> respond $ Fail err404
@@ -184,6 +197,9 @@ runRouterEnv router env request respond =
       app env request respond
     Choice r1 r2 ->
       runChoice [runRouterEnv r1, runRouterEnv r2] env request respond
+    where
+      lenientDecodeUtf8 :: B.ByteString -> Text
+      lenientDecodeUtf8 = decodeUtf8With lenientDecode
 
 -- | Try a list of routing applications in order.
 -- We stop as soon as one fails fatally or succeeds.
