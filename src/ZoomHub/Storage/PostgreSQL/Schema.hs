@@ -181,11 +181,11 @@ initializeHashidsEncode = Migration
 createContentHashIdTrigger :: Migration Definition Schemas Schemas
 createContentHashIdTrigger = Migration
   { name = "Create content hash_id trigger"
-  , up = concatDefinitions $
+  , up = concatDefinitions
           [ manipDefinition . UnsafeManipulation $ createContentBeforeInsert
           , manipDefinition . UnsafeManipulation $ createTriggerContentBeforeInsert
           ]
-  , down = concatDefinitions $
+  , down = concatDefinitions
             [ manipDefinition . UnsafeManipulation $ dropTriggerContentBeforeInsert
             , manipDefinition . UnsafeManipulation $ dropContentBeforeInsert
             ]
