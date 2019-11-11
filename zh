@@ -102,7 +102,9 @@ test)
     dropdb --if-exists "$TEST_DB_NAME"
     createdb "$TEST_DB_NAME"
 
-    stack build --fast --exec "migrate-database $TEST_DB_NAME migrate"
+    stack build --ghc-options='-Wall' \
+                --fast \
+                --exec "migrate-database $TEST_DB_NAME migrate"
 
     psql --output /dev/null --quiet "$TEST_DB_NAME" \
       < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
@@ -110,7 +112,9 @@ test)
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"
     PGUSER="$(whoami)" PGDATABASE="$TEST_DB_NAME" \
-      stack test --fast --test-arguments '--match "'"$MODULES"'"'
+      stack test --ghc-options='-Wall' \
+                 --fast \
+                 --test-arguments '--match "'"$MODULES"'"'
     ;;
 db)
     case "$2" in
