@@ -85,7 +85,7 @@ processExistingContent config workerId = forever $ do
                         , "apiURL" .= apiURL content
                         , "wwwURL" .= wwwURL content
                         , "worker" .= workerId
-                        ] $ processOp
+                        ] processOp
               errorHandler e = logT "Process content: failure"
                                 [ "id" .= contentId content
                                 , "url" .= contentURL content

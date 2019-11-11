@@ -104,11 +104,11 @@ instance DefConfig RackspaceConfig where
     , raxContainer =
         case parseContainer "cache-development" of
           Just container -> container
-          _ -> error $ "Failed to parse `raxContainer`."
+          _ -> error "Failed to parse `raxContainer`."
     , raxContainerPath =
         case parseRelativeReference "content" of
           Just containerPath -> containerPath
-          _ -> error $ "Failed to parse `raxContainerPath`."
+          _ -> error "Failed to parse `raxContainerPath`."
     }
 
 instance FromEnv RackspaceConfig where

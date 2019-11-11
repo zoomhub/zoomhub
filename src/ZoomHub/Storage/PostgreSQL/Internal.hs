@@ -34,8 +34,7 @@ import Control.Monad (void, when)
 import qualified Data.ByteString.Char8 as BC
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
-import Data.Time (UTCTime)
-import Data.Time (NominalDiffTime)
+import Data.Time (NominalDiffTime, UTCTime)
 import Data.Time.Units (Second, TimeUnit, toMicroseconds)
 import Database.PostgreSQL.Simple (ConnectInfo(..))
 import qualified Generics.SOP as SOP
@@ -154,7 +153,7 @@ getBy' condition parameter = do
 incrNumViews :: Manipulation_ Schemas (Int64, Text) ()
 incrNumViews =
   update_ #content
-    ( Set ( #num_views + (param @1) ) `as` #num_views )
+    ( Set ( #num_views + param @1 ) `as` #num_views )
     ( #hash_id .== param @2 )
 
 selectContentBy

@@ -11,8 +11,7 @@ module ZoomHub.Storage.PostgreSQLSpec
   ) where
 
 import Control.Exception (bracket)
-import Control.Monad (void)
-import Control.Monad (forM_)
+import Control.Monad (forM_, void)
 import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
 import Data.Int (Int64)
