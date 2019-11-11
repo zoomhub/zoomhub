@@ -12,6 +12,7 @@ module ZoomHub.Storage.PostgreSQLSpec
 
 import Control.Exception (bracket)
 import Control.Monad (void)
+import Control.Monad (forM_)
 import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
 import Data.Int (Int64)
@@ -412,10 +413,10 @@ spec =
             c1 = mkActiveContent "X75" currentTime (15 & minutes)
             c2 = mkActiveContent "yOJ" currentTime (45 & minutes)
             c3 = mkActiveContent "yJL" currentTime (60 & minutes)
+            c4 = mkSucceededContent "foo" currentTime (90 & minutes)
 
-        void $ runPQ (I.unsafeCreateContent c1) conn
-        void $ runPQ (I.unsafeCreateContent c2) conn
-        void $ runPQ (I.unsafeCreateContent c3) conn
+        void . forM_ [c1, c2, c3, c4] $ \c ->
+          runPQ (I.unsafeCreateContent c) conn
 
         (results, _) <- runPQ (getExpiredActive (30 :: Minute)) conn
         results `shouldBe` [c2, c3]
@@ -443,7 +444,7 @@ spec =
     mkActiveContent id_ currentTime age =
       I.Content
         { contentId = ContentId.fromString id_
-        , contentType = Image
+        , contentType = Unknown
         , contentURL = ContentURI $ "https://example.com/" <> T.pack id_
         , contentState = Active
         , contentInitializedAt = addUTCTime (-1) activeAt
@@ -455,6 +456,30 @@ spec =
         , contentNumViews = 0
         , contentError = Nothing
         , contentDZI = Nothing
+        }
+      where
+      activeAt = addUTCTime (-age) currentTime
+
+    mkSucceededContent :: String -> UTCTime -> NominalDiffTime -> I.Content
+    mkSucceededContent id_ currentTime age =
+      let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
+          mMIME = ContentMIME.fromText "image/jpeg"
+          mSize = Just 1234
+      in
+      I.Content
+        { contentId = ContentId.fromString id_
+        , contentType = Image
+        , contentURL = ContentURI $ "https://example.com/" <> T.pack id_
+        , contentState = CompletedSuccess
+        , contentInitializedAt = addUTCTime (-1) activeAt
+        , contentActiveAt = Just activeAt
+        , contentCompletedAt = Just (addUTCTime 1 activeAt)
+        , contentMIME = mMIME
+        , contentSize = mSize
+        , contentProgress = 1.0
+        , contentNumViews = 0
+        , contentError = Nothing
+        , contentDZI = Just dzi
         }
       where
       activeAt = addUTCTime (-age) currentTime

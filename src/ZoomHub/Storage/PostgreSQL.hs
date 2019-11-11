@@ -53,7 +53,7 @@ import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState (ContentState(Initialized))
+import ZoomHub.Types.ContentState (ContentState(Active, Initialized))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
@@ -72,6 +72,7 @@ import Squeal.PostgreSQL
   , firstRow
   , getRows
   , limit
+  , literal
   , manipulateParams
   , orderBy
   , param
@@ -80,6 +81,7 @@ import Squeal.PostgreSQL
   , where_
   , (!)
   , (&)
+  , (.&&)
   , (.<)
   , (.==)
   )
@@ -116,7 +118,12 @@ getExpiredActive ttl = do
   let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
   result <- runQueryParams
     (selectContentBy
-      (\t -> t & where_ ((#content ! #active_at) .< param @1))
+      (\table -> table
+        & where_ (
+            ((#content ! #active_at) .< param @1) .&&
+            ((#content ! #state) .== literal Active)
+          )
+      )
     )
     (Only earliestAllowed)
   contentRows <- getRows result
