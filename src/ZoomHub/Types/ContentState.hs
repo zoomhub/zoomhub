@@ -8,8 +8,6 @@
 module ZoomHub.Types.ContentState
   ( ContentState(..)
   , fromString
-    -- Squeal / Postgres
-  , toExpression
   ) where
 
 import Data.Maybe (fromJust)
@@ -17,7 +15,8 @@ import Data.String (IsString)
 import qualified Data.String as String
 import Data.Text (Text)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
+import Squeal.PostgreSQL
+  (FromValue(..), Literal(..), PG, PGType(PGtext), ToParam(..))
 
 data ContentState
   = Initialized
@@ -50,3 +49,6 @@ instance ToParam ContentState 'PGtext where
 
 toExpression :: IsString a => ContentState -> a
 toExpression = String.fromString . T.unpack . toText
+
+instance Literal ContentState where
+  literal = toExpression

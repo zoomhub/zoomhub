@@ -23,9 +23,7 @@ import ZoomHub.Types.Content.Internal (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentState (ContentState(..))
-import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentType (ContentType(..))
-import qualified ZoomHub.Types.ContentType as ContentType
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage(..), mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
@@ -66,6 +64,7 @@ import Squeal.PostgreSQL
   , from
   , insertInto_
   , leftOuterJoin
+  , literal
   , manipulateParams
   , null_
   , param
@@ -386,8 +385,8 @@ insertContent = insertInto #content
 
 markContentAsActive :: Manipulation_ Schemas (Only Text) ContentRow
 markContentAsActive = update #content
-  ( Set (ContentType.toExpression Unknown) `as` #type_id :*
-    Set (ContentState.toExpression Active) `as` #state :*
+  ( Set (literal Unknown) `as` #type_id :*
+    Set (literal Active) `as` #state :*
     Set currentTimestamp `as` #active_at :*
     Set null_ `as` #completed_at :*
     Set null_ `as` #title :*
@@ -423,8 +422,8 @@ markContentAsActive = update #content
 
 markContentAsFailure :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
 markContentAsFailure = update #content
-  ( Set (ContentType.toExpression Unknown) `as` #type_id :*
-    Set (ContentState.toExpression CompletedFailure) `as` #state :*
+  ( Set (literal Unknown) `as` #type_id :*
+    Set (literal CompletedFailure) `as` #state :*
     Set currentTimestamp `as` #completed_at :*
     Set null_ `as` #title :*
     Set null_ `as` #attribution_text :*
@@ -462,8 +461,8 @@ markContentAsSuccess ::
   (Text, Maybe Text, Maybe Int64)
   ContentRow
 markContentAsSuccess = update #content
-  ( Set (ContentType.toExpression Image) `as` #type_id :*
-    Set (ContentState.toExpression CompletedSuccess) `as` #state :*
+  ( Set (literal Image) `as` #type_id :*
+    Set (literal CompletedSuccess) `as` #state :*
     Set currentTimestamp `as` #completed_at :*
     Set (param @2) `as` #mime :*
     Set (param @3) `as` #size :*
@@ -495,8 +494,8 @@ markContentAsSuccess = update #content
 
 resetContentAsInitialized :: Manipulation_ Schemas (Only Text) ContentRow
 resetContentAsInitialized = update #content
-  ( Set (ContentType.toExpression Unknown) `as` #type_id :*
-    Set (ContentState.toExpression Initialized) `as` #state :*
+  ( Set (literal Unknown) `as` #type_id :*
+    Set (literal Initialized) `as` #state :*
     Set null_ `as` #active_at :*
     Set null_ `as` #completed_at :*
     Set null_ `as` #mime :*

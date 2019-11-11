@@ -49,6 +49,7 @@ import Squeal.PostgreSQL
   , insertInto_
   , int
   , int4
+  , literal
   , manipulate
   , notNullable
   , null_
@@ -332,8 +333,8 @@ initialSchema = Migration
           unique #content_id `as` #flickr_unique_content_id
         )
       where
-        defaultContentTypeId = ContentType.toExpression ContentType.Unknown
-        defaultContentState = ContentState.toExpression ContentState.Initialized
+        defaultContentTypeId = literal ContentType.Unknown
+        defaultContentState = literal ContentState.Initialized
         defaultContentVersion = 4
 
     teardown :: Definition Schemas (Public '[])
