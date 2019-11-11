@@ -54,11 +54,6 @@ jobs:
         name: Install psql for preloading data
         command: sudo apt-get update && sudo apt-get install --yes postgresql-client
 
-    # - run: sudo apt-get update
-    # - run:
-    #     name: Install pgloader
-    #     command: sudo apt-get install --yes pgloader
-
     # Dependencies
     #   This would typically go in either a build or a build-and-test job when
     #   using workflows
@@ -76,9 +71,6 @@ jobs:
         - zh-stack-cache-v1-dep-
 
     # Test
-    # - run:
-    #     name: Prepare database for test
-    #     command: pgloader ./data/zoomhub-development.sqlite3 postgresql://zoomhub@localhost:5432/zoomhub-test-db
     - run:
         name: Run tests
         command: |
