@@ -170,8 +170,8 @@ test-suite tests
     ZoomHub.Types.ContentURISpec
     ZoomHub.Types.DeepZoomImageSpec
   build-depends:
-      aeson
-    , base
+      base
+    , aeson
     , bytestring
     , generics-sop
     , hspec == 2.*
