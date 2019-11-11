@@ -15,7 +15,7 @@ module ZoomHub.Storage.PostgreSQL.Schema
 import qualified ZoomHub.Types.ContentState as ContentState
 import qualified ZoomHub.Types.ContentType as ContentType
 
-import Control.Monad (forM_, void)
+import qualified Control.Category as Category
 import Data.String (IsString)
 import Squeal.PostgreSQL
   ( (:::)
@@ -30,11 +30,9 @@ import Squeal.PostgreSQL
   , OnUpdateClause(OnUpdateCascade)
   , Optional(Default, Set)
   , PGType(PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz)
-  , PQ
   , Public
   , SchemumType(Table)
   , TableConstraint(ForeignKey, PrimaryKey, Unique)
-  , Terminally
   , as
   , bigint
   , bigserial
@@ -50,12 +48,11 @@ import Squeal.PostgreSQL
   , int
   , int4
   , literal
-  , manipulate
+  , manipDefinition
   , notNullable
   , null_
   , nullable
   , primaryKey
-  , terminally
   , text
   , timestampWithTimeZone
   , unique
@@ -64,7 +61,7 @@ import Squeal.PostgreSQL
   , (>>>)
   )
 import Squeal.PostgreSQL.Manipulation
-import Squeal.PostgreSQL.Migration (Migration(..), pureMigration)
+import Squeal.PostgreSQL.Migration (Migration(..))
 import Text.RawString.QQ (r)
 
 type Schema =
@@ -153,27 +150,27 @@ type FlickrTable =
          ]
     )
 
-migrations :: AlignedList (Migration (Terminally PQ IO)) (Public '[]) Schemas
+migrations :: AlignedList (Migration Definition) (Public '[]) Schemas
 migrations =
       installPLpgSQLExtension
   :>> initializeHashidsEncode
-  :>> (pureMigration initialSchema)
+  :>> initialSchema
   :>> insertHashidsSecret
   :>> createContentHashIdTrigger
   :>> Done
 
-installPLpgSQLExtension :: Migration (Terminally PQ IO) (Public '[]) (Public '[])
+installPLpgSQLExtension :: Migration Definition (Public '[]) (Public '[])
 installPLpgSQLExtension = Migration
   { name = "Install V8 extension"
-  , up = terminally . manipulate . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;"
-  , down = terminally . manipulate . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
+  , up = manipDefinition . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;"
+  , down = manipDefinition . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
   }
 
-initializeHashidsEncode :: Migration (Terminally PQ IO) (Public '[]) (Public '[])
+initializeHashidsEncode :: Migration Definition (Public '[]) (Public '[])
 initializeHashidsEncode = Migration
   { name = "Initialize Hashids encode function"
-  , up = terminally . forM_ createHashidsFunctions $ manipulate . UnsafeManipulation
-  , down = terminally . manipulate . UnsafeManipulation $ dropHashidsEncode
+  , up = concatDefinitions $ manipDefinition . UnsafeManipulation <$> createHashidsFunctions
+  , down = manipDefinition . UnsafeManipulation $ dropHashidsEncode
   }
   where
   dropHashidsEncode :: IsString a => a
@@ -181,15 +178,17 @@ initializeHashidsEncode = Migration
       DROP SCHEMA hashids CASCADE;
     |]
 
-createContentHashIdTrigger :: Migration (Terminally PQ IO) Schemas Schemas
+createContentHashIdTrigger :: Migration Definition Schemas Schemas
 createContentHashIdTrigger = Migration
   { name = "Create content hash_id trigger"
-  , up = terminally $ do
-      void . manipulate . UnsafeManipulation $ createContentBeforeInsert
-      void . manipulate . UnsafeManipulation $ createTriggerContentBeforeInsert
-  , down = terminally $ do
-      void . manipulate . UnsafeManipulation $ dropTriggerContentBeforeInsert
-      void . manipulate . UnsafeManipulation $ dropContentBeforeInsert
+  , up = concatDefinitions $
+          [ manipDefinition . UnsafeManipulation $ createContentBeforeInsert
+          , manipDefinition . UnsafeManipulation $ createTriggerContentBeforeInsert
+          ]
+  , down = concatDefinitions $
+            [ manipDefinition . UnsafeManipulation $ dropTriggerContentBeforeInsert
+            , manipDefinition . UnsafeManipulation $ dropContentBeforeInsert
+            ]
   }
   where
   createContentBeforeInsert :: IsString a => a
@@ -344,14 +343,19 @@ initialSchema = Migration
       dropTable #content >>>
       dropTable #config
 
-insertHashidsSecret :: Migration (Terminally PQ IO) Schemas Schemas
+insertHashidsSecret :: Migration Definition Schemas Schemas
 insertHashidsSecret = Migration
   { name = "Insert Hashids secret"
-  , up = terminally . manipulate $
+  , up = manipDefinition $
       insertInto_ #config (Values_ ( Default `as` #id :* Set "hashids_salt" `as` #key :* Set "secret-salt" `as` #value ))
-  , down = terminally . manipulate $
+  , down = manipDefinition $
       deleteFrom_ #config (#key .== "hashids_salt")
   }
+
+-- NOTE: Could we add a `Monoid Definition` so we could use `mconcat` instead
+-- of categories? This may be more beginner friendly.
+concatDefinitions :: [Definition schemas schemas] -> Definition schemas schemas
+concatDefinitions = foldr (>>>) Category.id
 
 -- NOTE: List these values at the bottom as it messes up syntax highlighting of
 -- subsequent code in VS Code :(
