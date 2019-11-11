@@ -146,6 +146,17 @@ executable zoomhub
       base
     , zoomhub
 
+executable migrate-database
+  default-language: Haskell2010
+  ghc-options:      -Wall -main-is MigrateDatabase
+  main-is:          MigrateDatabase.hs
+  hs-source-dirs:   app
+  build-depends:
+      base
+    , zoomhub
+    , bytestring
+    , squeal-postgresql
+
 test-suite tests
   default-language: Haskell2010
   ghc-options:      -Wall
