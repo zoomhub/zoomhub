@@ -86,11 +86,10 @@ run)
     dropdb --if-exists "$DEVELOPMENT_DB_NAME"
     createdb "$DEVELOPMENT_DB_NAME"
 
+    stack build --fast --exec "migrate-database $DEVELOPMENT_DB_NAME migrate"
+
     # NOTE: Preserves existing content IDs:
     DISABLE_PG_TRIGGERS='SET session_replication_role = replica;'
-
-    psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
-      < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
     psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
       <<< $(echo "$DISABLE_PG_TRIGGERS" && cat ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql)
 
@@ -103,8 +102,8 @@ test)
     dropdb --if-exists "$TEST_DB_NAME"
     createdb "$TEST_DB_NAME"
 
-    psql --output /dev/null --quiet "$TEST_DB_NAME" \
-      < ./data/zoomhub_test-pg-dump-2019-10-16-1-schema.sql
+    stack build --fast --exec "migrate-database $TEST_DB_NAME migrate"
+
     psql --output /dev/null --quiet "$TEST_DB_NAME" \
       < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
@@ -112,10 +111,7 @@ test)
     MODULES="$2"
     PGUSER="$(whoami)" PGDATABASE="$TEST_DB_NAME" \
       stack test --fast --test-arguments '--match "'"$MODULES"'"'
-
-    dropdb "$TEST_DB_NAME"
     ;;
-
 db)
     case "$2" in
     dump)

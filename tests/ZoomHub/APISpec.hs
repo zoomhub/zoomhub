@@ -122,7 +122,7 @@ nullLogger :: Middleware
 nullLogger = id
 
 newContentId :: String
-newContentId = "ykx"
+newContentId = "9xe"
 
 newContentURL :: String
 newContentURL = "http://example.com"
@@ -206,10 +206,10 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
 
         get ("/v1/content/" <> BC.pack newContentId) `shouldRespondWith`
           "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
-          \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/ykx\
+          \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/9xe\
           \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
-          \:\"http://localhost:8000/ykx\",\"id\"\
-          \:\"ykx\",\"ready\":false,\"failed\":false}"
+          \:\"http://localhost:8000/9xe\",\"id\"\
+          \:\"9xe\",\"ready\":false,\"failed\":false}"
           { matchStatus = 200
           , matchHeaders = [applicationJSON]
           }

@@ -9,3 +9,27 @@ INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overla
 INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (3, '2013-08-17 16:30:31.321688-07', 1824, 1368, 254, 1, 'jpg');
 INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (4, '2014-04-11 13:40:50.718786-07', 5058, 3750, 254, 1, 'jpg');
 INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overlap, tile_format) VALUES (5, '2009-07-30 21:20:13.596581-07', 4013, 2405, 254, 1, 'jpg');
+
+-- NOTE: Adding explicit IDs does not update the serial counters for each table:
+-- https://stackoverflow.com/a/244265/125305
+
+BEGIN;
+-- protect against concurrent inserts while you update the counter
+LOCK TABLE content IN EXCLUSIVE MODE;
+-- Update the sequence
+SELECT setval('content_id_seq', COALESCE((SELECT MAX(id) + 1 FROM content), 1), false);
+COMMIT;
+
+BEGIN;
+-- protect against concurrent inserts while you update the counter
+LOCK TABLE image IN EXCLUSIVE MODE;
+-- Update the sequence
+SELECT setval('image_content_id_seq', COALESCE((SELECT MAX(content_id) + 1 FROM image), 1), false);
+COMMIT;
+
+BEGIN;
+-- protect against concurrent inserts while you update the counter
+LOCK TABLE flickr IN EXCLUSIVE MODE;
+-- Update the sequence
+SELECT setval('flickr_content_id_seq', COALESCE((SELECT MAX(content_id) + 1 FROM flickr), 1), false);
+COMMIT;
