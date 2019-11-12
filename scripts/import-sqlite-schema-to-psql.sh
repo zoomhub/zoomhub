@@ -39,26 +39,13 @@ IMAGE_COLUMNS_PG='content_id,created_at,width,height,tile_size,tile_overlap,tile
 FLICKR_COLUMNS_SQLITE='contentId,farmId,serverId,photoId,secret,sizeId,isPublic,licenseId,originalExtension,originalSecret,ownerNSID,ownerRealName,ownerUsername,photoPageURL'
 FLICKR_COLUMNS_PG='content_id,farm_id,server_id,photo_id,secret,size_id,is_public,license_id,original_extension,original_secret,owner_nsid,owner_real_name,owner_username,photo_page_url'
 
-INSERT_SQL=$(
-  sqlite3 "$SQLITE_DB" '.mode insert content' "SELECT $CONTENT_COLUMNS_SQLITE FROM content $LIMIT" |
-  (cat && sqlite3 "$SQLITE_DB" '.mode insert image' "SELECT $IMAGE_COLUMNS_SQLITE FROM image $LIMIT") |
-  (cat && sqlite3 "$SQLITE_DB" '.mode insert flickr' "SELECT $(echo $FLICKR_COLUMNS_SQLITE | sed "s/isPublic/(isPublic || '') AS isPublic/") FROM flickr $LIMIT") |
-  (echo 'SET session_replication_role = replica;' && cat) |
-  (echo 'SET client_min_messages TO WARNING;' && cat) |
-  sed "s/INSERT INTO content($CONTENT_COLUMNS_SQLITE)/INSERT INTO content($CONTENT_COLUMNS_PG)/g;" |
-  sed "s/INSERT INTO image($IMAGE_COLUMNS_SQLITE)/INSERT INTO image($IMAGE_COLUMNS_PG)/g;" |
-  sed "s/INSERT INTO flickr($FLICKR_COLUMNS_SQLITE)/INSERT INTO flickr($FLICKR_COLUMNS_PG)/g;" |
-  (cat && echo "$SET_COUNTERS_SQL")
-)
-
-if [ "$DRY_RUN" = "--no-dry-run" ]; then
-  psql --quiet --single-transaction "$DB_NAME" <<< "$INSERT_SQL"
-else
-  echo ''
-  echo '--------------------------------------------------------------------------------'
-  echo ''
-  echo "$INSERT_SQL"
-fi
-
-# psql "$DB_NAME" -c 'select * from content;'
-# psql "$DB_NAME"
+sqlite3 "$SQLITE_DB" '.mode insert content' "SELECT $CONTENT_COLUMNS_SQLITE FROM content $LIMIT" | \
+  (cat && sqlite3 "$SQLITE_DB" '.mode insert image' "SELECT $IMAGE_COLUMNS_SQLITE FROM image $LIMIT") | \
+  (cat && sqlite3 "$SQLITE_DB" '.mode insert flickr' "SELECT $(echo $FLICKR_COLUMNS_SQLITE | sed "s/isPublic/(isPublic || '') AS isPublic/") FROM flickr $LIMIT") | \
+  (echo 'SET session_replication_role = replica;' && cat) | \
+  (echo 'SET client_min_messages TO WARNING;' && cat) | \
+  sed "s/INSERT INTO content($CONTENT_COLUMNS_SQLITE)/INSERT INTO content($CONTENT_COLUMNS_PG)/g;" | \
+  sed "s/INSERT INTO image($IMAGE_COLUMNS_SQLITE)/INSERT INTO image($IMAGE_COLUMNS_PG)/g;" | \
+  sed "s/INSERT INTO flickr($FLICKR_COLUMNS_SQLITE)/INSERT INTO flickr($FLICKR_COLUMNS_PG)/g;" | \
+  (cat && echo "$SET_COUNTERS_SQL") | \
+  psql --quiet --single-transaction "$DB_NAME"
