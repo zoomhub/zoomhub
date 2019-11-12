@@ -2,6 +2,7 @@
 
 module MigrateDatabase (main) where
 
+import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
 import ZoomHub.Storage.PostgreSQL.Schema (migrations)
 
 import qualified Data.ByteString.Char8 as BC
@@ -15,7 +16,9 @@ main = do
   args <- getArgs
   case args of
     (database:rest) -> do
-      let program = defaultMain ("host=localhost port=5432 dbname=" <> BC.pack database) migrations
+      connectInfo <- ConnectInfo.fromEnv database
+      let program = defaultMain
+                      (ConnectInfo.connectionString connectInfo) migrations
       withArgs rest program
     _ ->
-      die "Missing argument <database>"
+      die "Missing argument DATABASE"

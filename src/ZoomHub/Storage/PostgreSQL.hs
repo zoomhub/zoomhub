@@ -7,14 +7,11 @@
 {-# LANGUAGE TypeApplications #-}
 
 module ZoomHub.Storage.PostgreSQL
-  ( Schemas
+  ( -- ** Schema
+    Schemas
+    -- ** Connection
   , Connection
   , createConnectionPool
-    -- ** Connection
-  , ConnectInfo(..)
-  , defaultConnectInfo
-  , fromEnv
-  , postgreSQLConnectionString
     -- ** Read operations
   , getById
   , getByURL
@@ -30,8 +27,11 @@ module ZoomHub.Storage.PostgreSQL
   , markAsSuccess
   , resetAsInitialized
   , dequeueNextUnprocessed
+  , module ZoomHub.Storage.PostgreSQL.ConnectInfo
   ) where
 
+import ZoomHub.Storage.PostgreSQL.ConnectInfo
+  (ConnectInfo, connectionString, defaultConnectInfo, fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal
   ( Connection
   , contentImageRowToContent
@@ -59,12 +59,9 @@ import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
 import Control.Monad (void)
 import Data.Int (Int64)
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
-import Database.PostgreSQL.Simple
-  (ConnectInfo(..), defaultConnectInfo, postgreSQLConnectionString)
 import Squeal.PostgreSQL
   ( MonadPQ
   , Only(Only)
@@ -85,8 +82,6 @@ import Squeal.PostgreSQL
   , (.<)
   , (.==)
   )
-import System.Environment (getEnvironment)
-import Text.Read (readMaybe)
 import UnliftIO (MonadUnliftIO, liftIO)
 
 -- Public API
@@ -207,20 +202,3 @@ dequeueNextUnprocessed = do
       markAsActive $ contentId next
     Nothing ->
       pure Nothing
-
-fromEnv :: String -> IO ConnectInfo
-fromEnv dbName = do
-  env <- getEnvironment
-
-  let defaultDBHost = connectHost defaultConnectInfo
-      defaultDBPort = connectPort defaultConnectInfo
-      defaultDBUser = connectUser defaultConnectInfo
-      defaultDBPassword = connectPassword defaultConnectInfo
-
-  return $ ConnectInfo
-    { connectHost = fromMaybe defaultDBHost (lookup "PGHOST" env)
-    , connectPort = fromMaybe defaultDBPort (lookup "PGPORT" env >>= readMaybe)
-    , connectUser = fromMaybe defaultDBUser (lookup "PGUSER" env)
-    , connectPassword = fromMaybe defaultDBPassword (lookup "PGPASSWORD" env)
-    , connectDatabase = fromMaybe dbName (lookup "PGDATABASE" env)
-    }

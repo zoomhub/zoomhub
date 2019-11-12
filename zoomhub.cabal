@@ -41,6 +41,7 @@ library
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.PostgreSQL
+    , ZoomHub.Storage.PostgreSQL.ConnectInfo
     , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Types.BaseURI

@@ -18,6 +18,7 @@ module ZoomHub.Storage.PostgreSQL.Internal
   , destroyAllResources
   ) where
 
+import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content.Internal (Content(..))
 import ZoomHub.Types.ContentId (ContentId)
@@ -31,7 +32,6 @@ import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
 import Control.Monad (void, when)
-import qualified Data.ByteString.Char8 as BC
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime, UTCTime)
@@ -92,22 +92,9 @@ createConnectionPool ::
   (TimeUnit a, MonadUnliftIO io) =>
   ConnectInfo -> Integer -> a -> Integer -> io (Pool Connection)
 createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
-  P.createConnectionPool (connectionString connInfo)
+  P.createConnectionPool (ConnectInfo.connectionString connInfo)
     (fromIntegral numStripes) (toNominalDiffTime idleTime)
     (fromIntegral maxResourcesPerStripe)
-
-  where
-    connectionString :: ConnectInfo -> BC.ByteString
-    connectionString info = BC.intercalate " "
-      [ pair "host" (connectHost info)
-      , pair "port" (show $ connectPort info)
-      , pair "user" (connectUser info)
-      , pair "password" (connectPassword info)
-      , pair "dbname" (connectDatabase info)
-      ]
-
-    pair :: BC.ByteString -> String -> BC.ByteString
-    pair key value = key <> "=" <> BC.pack value
 
 -- Reads: Content
 getBy ::
