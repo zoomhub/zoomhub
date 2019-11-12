@@ -17,6 +17,6 @@ BASE_URI='http://localhost:8000' \
 HASHIDS_SALT='DEVELOPMENT-ONLY' \
 PGUSER=$(whoami) \
 PGDATABASE='zoomhub_development' \
-  stack exec zoomhub &
+  stack exec zoomhub | jq &
 
 echo $! > zoomhub.pid
