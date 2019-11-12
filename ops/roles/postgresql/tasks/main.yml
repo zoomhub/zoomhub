@@ -25,3 +25,9 @@
     role: '{{postgres_user_web_name}}'
     objs: ALL_IN_SCHEMA
     privs: SELECT,INSERT,UPDATE,DELETE
+
+# # TODO: Enable whenever PostgreSQL configuration changes:
+# - name: Restart PostgreSQL
+#   service:
+#     name: postgresql
+#     state: restarted
