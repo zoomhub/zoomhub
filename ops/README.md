@@ -5,7 +5,8 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 ### Prerequisites
 
 -   Install [Ansible]: `brew install ansible`.
-    We have tested our setup with Ansible 1.9.4.
+    We have tested our setup with Ansible 2.9.0.
+-   Run `./zh ops setup`.
 
 ## Initial Server Setup
 
