@@ -8,7 +8,6 @@ admin_user: admin
 
 # ZoomHub App Configuration
 zoomhub_data_path: "/mnt/datavolume/zoomhub/data"
-zoomhub_db_path: "/mnt/datavolume/zoomhub/data/zoomhub.sqlite3"
 zoomhub_hashids_salt: "{{ vault_zoomhub_hashids_salt }}"
 
 # Rackspace
