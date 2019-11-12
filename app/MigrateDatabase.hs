@@ -5,20 +5,22 @@ module MigrateDatabase (main) where
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
 import ZoomHub.Storage.PostgreSQL.Schema (migrations)
 
-import qualified Data.ByteString.Char8 as BC
 import Squeal.PostgreSQL.Migration (defaultMain)
-import System.Environment (getArgs, withArgs)
+import System.Environment (getArgs, lookupEnv, withArgs)
 import System.Exit (die)
 
 
 main :: IO ()
 main = do
   args <- getArgs
-  case args of
-    (database:rest) -> do
+  mHashidsSecret <- lookupEnv "HASHIDS_SALT"
+  case (args, mHashidsSecret) of
+    ((database:rest), Just hashidsSecret) -> do
       connectInfo <- ConnectInfo.fromEnv database
-      let program = defaultMain
-                      (ConnectInfo.connectionString connectInfo) migrations
+      let program = defaultMain (ConnectInfo.connectionString connectInfo)
+                      (migrations hashidsSecret)
       withArgs rest program
+    (_, Nothing) ->
+      die "Missing environment variable HASHIDS_SALT"
     _ ->
       die "Missing argument DATABASE"

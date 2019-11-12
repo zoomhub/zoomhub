@@ -150,12 +150,12 @@ type FlickrTable =
          ]
     )
 
-migrations :: AlignedList (Migration Definition) (Public '[]) Schemas
-migrations =
+migrations :: String -> AlignedList (Migration Definition) (Public '[]) Schemas
+migrations hashidsSecret =
       installPLpgSQLExtension
   :>> initializeHashidsEncode
   :>> initialSchema
-  :>> insertHashidsSecret
+  :>> insertHashidsSecret hashidsSecret
   :>> createContentHashIdTrigger
   :>> Done
 
@@ -269,11 +269,17 @@ initialSchema = Migration
       dropTable #content >>>
       dropTable #config
 
-insertHashidsSecret :: Migration Definition Schemas Schemas
-insertHashidsSecret = Migration
+insertHashidsSecret :: String -> Migration Definition Schemas Schemas
+insertHashidsSecret secret = Migration
   { name = "2019-11-11-4: Insert Hashids secret"
   , up = manipDefinition $
-      insertInto_ #config (Values_ ( Default `as` #id :* Set "hashids_salt" `as` #key :* Set "secret-salt" `as` #value ))
+      insertInto_ #config
+        ( Values_
+          ( Default `as` #id :*
+            Set "hashids_salt" `as` #key :*
+            Set (literal secret) `as` #value
+          )
+        )
   , down = manipDefinition $
       deleteFrom_ #config (#key .== "hashids_salt")
   }

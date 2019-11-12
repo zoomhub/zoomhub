@@ -65,8 +65,7 @@ import ZoomHub.Storage.PostgreSQL
   , markAsSuccess
   , resetAsInitialized
   )
-import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo
-  (ConnectInfo(..), fromEnv)
+import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
 import qualified ZoomHub.Storage.PostgreSQL.Internal as I
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas, migrations)
 import ZoomHub.Types.Content
@@ -103,6 +102,9 @@ defaultDatabaseUser = "zoomhub"
 
 defaultDatabaseName :: String
 defaultDatabaseName = "zoomhub_test"
+
+hashidsSecret :: String
+hashidsSecret = "secret-salt"
 
 setupDatabase :: IO ()
 setupDatabase = do
@@ -141,12 +143,12 @@ withDatabaseConnection = bracket acquire release
         "host=localhost port=5432 dbname=" <> pgDatabase <> " user=" <> pgUser
       (_, conn') <- runPQ
         ( manipulate (UnsafeManipulation "SET client_min_messages TO WARNING;")
-        & pqThen (migrateUp migrations)
+        & pqThen (migrateUp (migrations hashidsSecret))
         ) conn
       pure conn'
     release :: SOP.K Connection Schemas -> IO ()
     release conn = do
-      (_, conn') <- runPQ (migrateDown migrations) conn
+      (_, conn') <- runPQ (migrateDown (migrations hashidsSecret)) conn
       finish conn'
 
 spec :: Spec
