@@ -161,14 +161,14 @@ migrations =
 
 installPLpgSQLExtension :: Migration Definition (Public '[]) (Public '[])
 installPLpgSQLExtension = Migration
-  { name = "Install V8 extension"
+  { name = "2019-11-11-1: Install V8 extension"
   , up = manipDefinition . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;"
   , down = manipDefinition . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
   }
 
 initializeHashidsEncode :: Migration Definition (Public '[]) (Public '[])
 initializeHashidsEncode = Migration
-  { name = "Initialize Hashids encode function"
+  { name = "2019-11-11-2: Initialize Hashids encode function"
   , up = concatDefinitions $ manipDefinition . UnsafeManipulation <$> createHashidsFunctions
   , down = manipDefinition . UnsafeManipulation $ dropHashidsEncode
   }
@@ -178,83 +178,9 @@ initializeHashidsEncode = Migration
       DROP SCHEMA hashids CASCADE;
     |]
 
-createContentHashIdTrigger :: Migration Definition Schemas Schemas
-createContentHashIdTrigger = Migration
-  { name = "Create content hash_id trigger"
-  , up = concatDefinitions
-          [ manipDefinition . UnsafeManipulation $ createContentBeforeInsert
-          , manipDefinition . UnsafeManipulation $ createTriggerContentBeforeInsert
-          ]
-  , down = concatDefinitions
-            [ manipDefinition . UnsafeManipulation $ dropTriggerContentBeforeInsert
-            , manipDefinition . UnsafeManipulation $ dropContentBeforeInsert
-            ]
-  }
-  where
-  createContentBeforeInsert :: IsString a => a
-  createContentBeforeInsert = [r|
-      CREATE FUNCTION content_before_insert() RETURNS trigger AS $$
-          DECLARE
-            iterations INT := 0;
-            max_iterations INT := 100;
-            current_id INT := NEW.id;
-            select_by_hash_id_query TEXT = 'SELECT id FROM ' || quote_ident(TG_TABLE_NAME) || ' WHERE hash_id=';
-            found TEXT;
-            new_hash_id TEXT;
-            hashids_min_length INT := 3;
-            hashids_secret_salt TEXT;
-          BEGIN
-              hashids_secret_salt := (SELECT value FROM config WHERE key='hashids_salt') ;
-
-              LOOP
-                new_hash_id := hashids.encode(
-                  number := current_id,
-                  min_length := hashids_min_length,
-                  salt := hashids_secret_salt
-                );
-                EXECUTE select_by_hash_id_query || quote_literal(new_hash_id) INTO found;
-
-                IF found IS NULL THEN
-                  EXIT;
-                END IF;
-
-                IF iterations > max_iterations THEN
-                  RAISE EXCEPTION
-                    'Too many iterations to find new hash ID. Max: %, current: %.',
-                    max_iterations, iterations
-                  USING HINT = 'Check content table for hash ID collisions';
-                END IF;
-
-                iterations := iterations + 1;
-                current_id := current_id + 1;
-              END LOOP;
-
-              NEW.title = NEW.title || '-' || iterations;
-              NEW.hash_id := new_hash_id;
-              RETURN NEW;
-          END;
-      $$ LANGUAGE plpgsql;
-    |]
-
-  dropContentBeforeInsert :: IsString a => a
-  dropContentBeforeInsert = [r|
-      DROP FUNCTION content_before_insert();
-    |]
-
-  createTriggerContentBeforeInsert :: IsString a => a
-  createTriggerContentBeforeInsert = [r|
-      CREATE TRIGGER content_before_insert BEFORE INSERT ON content
-        FOR EACH ROW EXECUTE PROCEDURE content_before_insert();
-    |]
-
-  dropTriggerContentBeforeInsert :: IsString a => a
-  dropTriggerContentBeforeInsert = [r|
-      DROP TRIGGER content_before_insert ON content;
-    |]
-
 initialSchema :: Migration Definition (Public '[]) Schemas
 initialSchema = Migration
-  { name = "Initial setup"
+  { name = "2019-11-11-3: Initial setup"
   , up = setup
   , down = teardown
   }
@@ -345,12 +271,86 @@ initialSchema = Migration
 
 insertHashidsSecret :: Migration Definition Schemas Schemas
 insertHashidsSecret = Migration
-  { name = "Insert Hashids secret"
+  { name = "2019-11-11-4: Insert Hashids secret"
   , up = manipDefinition $
       insertInto_ #config (Values_ ( Default `as` #id :* Set "hashids_salt" `as` #key :* Set "secret-salt" `as` #value ))
   , down = manipDefinition $
       deleteFrom_ #config (#key .== "hashids_salt")
   }
+
+createContentHashIdTrigger :: Migration Definition Schemas Schemas
+createContentHashIdTrigger = Migration
+  { name = "2019-11-11-5: Create content hash_id trigger"
+  , up = concatDefinitions
+          [ manipDefinition . UnsafeManipulation $ createContentBeforeInsert
+          , manipDefinition . UnsafeManipulation $ createTriggerContentBeforeInsert
+          ]
+  , down = concatDefinitions
+            [ manipDefinition . UnsafeManipulation $ dropTriggerContentBeforeInsert
+            , manipDefinition . UnsafeManipulation $ dropContentBeforeInsert
+            ]
+  }
+  where
+  createContentBeforeInsert :: IsString a => a
+  createContentBeforeInsert = [r|
+      CREATE FUNCTION content_before_insert() RETURNS trigger AS $$
+          DECLARE
+            iterations INT := 0;
+            max_iterations INT := 100;
+            current_id INT := NEW.id;
+            select_by_hash_id_query TEXT = 'SELECT id FROM ' || quote_ident(TG_TABLE_NAME) || ' WHERE hash_id=';
+            found TEXT;
+            new_hash_id TEXT;
+            hashids_min_length INT := 3;
+            hashids_secret_salt TEXT;
+          BEGIN
+              hashids_secret_salt := (SELECT value FROM config WHERE key='hashids_salt') ;
+
+              LOOP
+                new_hash_id := hashids.encode(
+                  number := current_id,
+                  min_length := hashids_min_length,
+                  salt := hashids_secret_salt
+                );
+                EXECUTE select_by_hash_id_query || quote_literal(new_hash_id) INTO found;
+
+                IF found IS NULL THEN
+                  EXIT;
+                END IF;
+
+                IF iterations > max_iterations THEN
+                  RAISE EXCEPTION
+                    'Too many iterations to find new hash ID. Max: %, current: %.',
+                    max_iterations, iterations
+                  USING HINT = 'Check content table for hash ID collisions';
+                END IF;
+
+                iterations := iterations + 1;
+                current_id := current_id + 1;
+              END LOOP;
+
+              NEW.title = NEW.title || '-' || iterations;
+              NEW.hash_id := new_hash_id;
+              RETURN NEW;
+          END;
+      $$ LANGUAGE plpgsql;
+    |]
+
+  dropContentBeforeInsert :: IsString a => a
+  dropContentBeforeInsert = [r|
+      DROP FUNCTION content_before_insert();
+    |]
+
+  createTriggerContentBeforeInsert :: IsString a => a
+  createTriggerContentBeforeInsert = [r|
+      CREATE TRIGGER content_before_insert BEFORE INSERT ON content
+        FOR EACH ROW EXECUTE PROCEDURE content_before_insert();
+    |]
+
+  dropTriggerContentBeforeInsert :: IsString a => a
+  dropTriggerContentBeforeInsert = [r|
+      DROP TRIGGER content_before_insert ON content;
+    |]
 
 -- NOTE: Could we add a `Monoid Definition` so we could use `mconcat` instead
 -- of categories? This may be more beginner friendly.
