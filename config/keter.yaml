@@ -16,7 +16,11 @@ stanzas:
       - zoom.it
       - zoomhub.net
     forward-env:
-      - HASHIDS_SALT
+      - PGDATABASE
+      - PGHOST
+      - PGPORT
+      - PGUSER
+      - PGPASSWORD
       - PROCESS_EXISTING_CONTENT
       - PROCESS_NEW_CONTENT
       - RACKSPACE_API_KEY

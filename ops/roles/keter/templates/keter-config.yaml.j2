@@ -14,7 +14,11 @@ listeners:
 setuid: {{ admin_user }}
 
 env:
-  HASHIDS_SALT: "{{ zoomhub_hashids_salt }}"
+  PGDATABASE: "{{ postgres_database_name }}"
+  PGHOST: "{{ database_server_private_ip }}"
+  PGUSER: "{{ postgres_user_web_name }}"
+  PGPASSWORD: "{{ postgres_user_web_password }}"
+  PGPORT: "5432"
   PROCESS_EXISTING_CONTENT: "0"
   PROCESS_NEW_CONTENT: "0"
   PROCESSING_WORKERS: "8"
