@@ -5,7 +5,8 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 ### Prerequisites
 
 -   Install [Ansible]: `brew install ansible`.
-    We have tested our setup with Ansible 1.9.4.
+    We have tested our setup with Ansible 2.9.0.
+-   Run `./zh ops setup`.
 
 ## Initial Server Setup
 
@@ -25,6 +26,18 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 
 Run `./zh ops setup-web-server [production|staging]` and follow the steps to
 set up a web server.
+
+## Database server
+
+Run `./zh ops setup-database-server [production|staging]` and follow the steps
+to set up a database server.
+
+### Debug database from local machine
+
+```
+ssh -L 3333:<db-server-private-ip>:5432 <user>@<jumpbox>
+psql --host=localhost --port=3333 --username=<db-user> --dbname=<db-name>
+```
 
 ## Admin server
 

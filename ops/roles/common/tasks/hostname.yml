@@ -1,3 +1,11 @@
 ---
+# https://askubuntu.com/a/1113481
+- name: Install policykit-1
+  become: yes
+  apt:
+    name: policykit-1
+
 - name: Set hostname
-  hostname: name={{ inventory_hostname }}
+  become: yes
+  hostname:
+    name: "{{inventory_hostname}}"

@@ -1,12 +1,15 @@
 ---
 - name: Update APT package cache
-  apt: update_cache=yes
+  apt:
+    update_cache: yes
 
 - name: Upgrade APT to the latest packages
-  apt: upgrade=safe
+  apt:
+    upgrade: safe
 
 - name: Install unattended-upgrades
-  apt: pkg=unattended-upgrades state=present
+  apt:
+    pkg: unattended-upgrades
 
 - name: Adjust APT update intervals
   template: src=apt/10periodic dest=/etc/apt/apt.conf.d/10periodic
