@@ -74,9 +74,10 @@ jobs:
     - run:
         name: Run tests
         command: |
-          stack build --no-terminal \
-                      --fast \
-                      --exec "migrate-database $PGDATABASE migrate"
+          HASHIDS_SALT='secret-salt'\
+            stack build --no-terminal \
+                        --fast \
+                        --exec "migrate-database $PGDATABASE migrate"
 
           psql $PGDATABASE < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
