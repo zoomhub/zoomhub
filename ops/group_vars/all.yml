@@ -30,3 +30,7 @@ splunk_password: "{{ vault_splunk_password }}"
 
 splunk_forwarder_username: "{{ vault_splunk_forwarder_username }}"
 splunk_forwarder_password: "{{ vault_splunk_forwarder_password }}"
+
+# Database
+postgres_user_admin_name: 'zoomhub_admin'
+postgres_user_web_name: 'zoomhub_web'

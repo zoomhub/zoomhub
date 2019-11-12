@@ -10,15 +10,19 @@
       - {type: local, database: all, user: all, auth_method: peer}
       - {type: host, database: all, user: all, address: '127.0.0.1/32', auth_method: md5}
       - {type: host, database: all, user: all, address: '::1/128', auth_method: md5}
+      - {type: host, database: '{{postgres_database_name}}', user: '{{postgres_user_admin_name}}', address: '{{web_server_private_ip}}/32', auth_method: md5}
       - {type: host, database: '{{postgres_database_name}}', user: '{{postgres_user_web_name}}', address: '{{web_server_private_ip}}/32', auth_method: md5}
     postgresql_databases:
       - name: '{{postgres_database_name}}'
-    postgresql_users:
-      - name: '{{postgres_user_web_name}}'
-        password: '{{postgres_user_web_password}}'
     postgresql_global_config_options:
       - option: listen_addresses
         value: 'localhost,{{database_server_private_ip}}'
+    postgresql_users:
+      - name: '{{postgres_user_admin_name}}'
+        password: '{{postgres_user_admin_password}}'
+        role_attr_flags: 'SUPERUSER'
+      - name: '{{postgres_user_web_name}}'
+        password: '{{postgres_user_web_password}}'
   roles:
     - role: common
       become: yes
