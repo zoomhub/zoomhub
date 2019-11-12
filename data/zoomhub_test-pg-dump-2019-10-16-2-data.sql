@@ -13,23 +13,6 @@ INSERT INTO image (content_id, created_at, width, height, tile_size, tile_overla
 -- NOTE: Adding explicit IDs does not update the serial counters for each table:
 -- https://stackoverflow.com/a/244265/125305
 
-BEGIN;
--- protect against concurrent inserts while you update the counter
-LOCK TABLE content IN EXCLUSIVE MODE;
--- Update the sequence
 SELECT setval('content_id_seq', COALESCE((SELECT MAX(id) + 1 FROM content), 1), false);
-COMMIT;
-
-BEGIN;
--- protect against concurrent inserts while you update the counter
-LOCK TABLE image IN EXCLUSIVE MODE;
--- Update the sequence
 SELECT setval('image_content_id_seq', COALESCE((SELECT MAX(content_id) + 1 FROM image), 1), false);
-COMMIT;
-
-BEGIN;
--- protect against concurrent inserts while you update the counter
-LOCK TABLE flickr IN EXCLUSIVE MODE;
--- Update the sequence
 SELECT setval('flickr_content_id_seq', COALESCE((SELECT MAX(content_id) + 1 FROM flickr), 1), false);
-COMMIT;
