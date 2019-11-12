@@ -82,31 +82,31 @@ jobs:
 
           stack test --fast --no-terminal
 
-    # - run:
-    #     name: Copy coverage reports
-    #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
+    - run:
+        name: Copy coverage reports
+        command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
 
-    # - run:
-    #     name: Build binary
-    #     command: stack build --install-ghc --pedantic --ghc-options="-O2"
-    # - run:
-    #     name: Create Keter package
-    #     command: ./ops/keter-bundle.sh
-    # - run:
-    #     name: Copy Keter package to artifacts
-    #     command: cp zoomhub.keter $CIRCLE_ARTIFACTS
-    # - run:
-    #     name: Copy Keter package to workspace
-    #     command: cp zoomhub.keter workspace
-    # - run:
-    #     name: Copy deploy script to workspace
-    #     command: cp ./ops/deploy.sh workspace
+    - run:
+        name: Build binary
+        command: stack build --install-ghc --pedantic --ghc-options="-O2"
+    - run:
+        name: Create Keter package
+        command: ./ops/keter-bundle.sh
+    - run:
+        name: Copy Keter package to artifacts
+        command: cp zoomhub.keter $CIRCLE_ARTIFACTS
+    - run:
+        name: Copy Keter package to workspace
+        command: cp zoomhub.keter workspace
+    - run:
+        name: Copy deploy script to workspace
+        command: cp ./ops/deploy.sh workspace
 
-    # - persist_to_workspace:
-    #     root: workspace
-    #     paths:
-    #       - zoomhub.keter
-    #       - deploy.sh
+    - persist_to_workspace:
+        root: workspace
+        paths:
+          - zoomhub.keter
+          - deploy.sh
 
     # Save dependency cache
     - save_cache:
@@ -115,15 +115,15 @@ jobs:
         - ~/.stack
         - .stack-work
 
-    # # Save test results
-    # - store_test_results:
-    #     path: /tmp/circleci-test-results
+    # Save test results
+    - store_test_results:
+        path: /tmp/circleci-test-results
 
-    # # Save artifacts
-    # - store_artifacts:
-    #     path: /tmp/circleci-artifacts
-    # - store_artifacts:
-    #     path: /tmp/circleci-test-results
+    # Save artifacts
+    - store_artifacts:
+        path: /tmp/circleci-artifacts
+    - store_artifacts:
+        path: /tmp/circleci-test-results
 
   deploy-staging:
     <<: *defaults
