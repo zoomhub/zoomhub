@@ -6,4 +6,4 @@
     proto: tcp
     from_ip: '{{web_server_private_ip}}'
     to: any
-    to_port: 5432
+    to_port: '5432'
