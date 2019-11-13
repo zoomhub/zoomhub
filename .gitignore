@@ -17,6 +17,7 @@ npm-debug.log
 
 # Ops
 /ops/vars.yml
+/ops/.vault_pass.txt
 
 # PID
 /zoomhub.pid

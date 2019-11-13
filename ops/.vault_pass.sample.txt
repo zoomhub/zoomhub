@@ -1,0 +1,1 @@
+Replace this text with your Ansible Vault password and rename the file to `.vault_pass.txt`
