@@ -46,3 +46,8 @@
   service:
     name: keter
     state: restarted
+
+- name: Ensure `keter` runs on boot
+  systemd:
+    name: keter
+    enabled: yes
