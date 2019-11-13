@@ -1,7 +1,7 @@
 version: 2
 
 defaults: &defaults
-    parallelism: 4
+    parallelism: 1
     working_directory: ~/zoomhub/zoomhub
     environment:
         CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
