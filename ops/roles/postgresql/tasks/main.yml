@@ -23,6 +23,8 @@
   postgresql_privs:
     db: '{{postgres_database_name}}'
     role: '{{postgres_user_web_name}}'
+    type: table
+    schema: public
     objs: ALL_IN_SCHEMA
     privs: SELECT,INSERT,UPDATE,DELETE
 
