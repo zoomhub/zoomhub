@@ -10,3 +10,7 @@
     owner="{{ admin_user }}"
     group="{{ admin_user }}"
     state=directory
+
+- name: Install PostgreSQL library support
+  apt:
+    pkg: libpq-dev
