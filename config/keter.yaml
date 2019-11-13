@@ -3,8 +3,7 @@ stanzas:
     exec: ../zoomhub
     hosts:
       - 104.239.163.79 # staging
-      - 162.242.235.90 # production 1
-      - 162.242.218.98 # production 2
+      - 162.242.218.98 # production
       - api.zoom.it
       - api.zoomhub.net
       - openzoom.net
