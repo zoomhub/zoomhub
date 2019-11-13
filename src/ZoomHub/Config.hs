@@ -4,16 +4,15 @@
 
 module ZoomHub.Config
   ( Config(..)
-  , ExistingContentStatus(..)
-  , NewContentStatus(..)
   , RackspaceConfig
   , defaultPort
   , raxApiKey
   , raxContainer
   , raxContainerPath
   , raxUsername
-  , toExistingContentStatus
-  , toNewContentStatus
+    -- * Process content status
+  , ProcessContent(..)
+  , parseProcessContent
   ) where
 
 import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
@@ -58,11 +57,10 @@ data Config = Config
   , dbConnPoolMaxResourcesPerStripe :: Integer
   , dbConnPoolNumStripes            :: Integer
   , error404                        :: BL.ByteString
-  , existingContentStatus           :: ExistingContentStatus
   , logger                          :: Middleware
-  , newContentStatus                :: NewContentStatus
   , openSeadragonScript             :: String
   , port                            :: Integer
+  , processContent                  :: ProcessContent
   , publicPath                      :: FilePath
   , rackspace                       :: RackspaceConfig
   , staticBaseURI                   :: StaticBaseURI
@@ -78,8 +76,7 @@ instance ToJSON Config where
     , "dbConnPoolIdleTime" .= dbConnPoolIdleTime
     , "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
     , "dbConnPoolNumStripes" .= dbConnPoolNumStripes
-    , "existingContentStatus" .= existingContentStatus
-    , "newContentStatus" .= newContentStatus
+    , "processContent" .= processContent
     , "port" .= port
     , "publicPath" .= publicPath
     , "staticBaseURI" .= staticBaseURI
@@ -117,26 +114,17 @@ instance FromEnv RackspaceConfig where
     , customPrefix="RACKSPACE"
     }
 
--- ExistingContentStatus
-data ExistingContentStatus = ProcessExistingContent | IgnoreExistingContent
+-- ProcessContent
+data ProcessContent
+  = ProcessNoContent
+  | ProcessExistingContent
+  | ProcessExistingAndNewContent
   deriving (Eq, Show)
 
-toExistingContentStatus :: String -> ExistingContentStatus
-toExistingContentStatus "1"    = ProcessExistingContent
-toExistingContentStatus "true" = ProcessExistingContent
-toExistingContentStatus _      = IgnoreExistingContent
+parseProcessContent :: String -> ProcessContent
+parseProcessContent "ProcessExistingContent" = ProcessExistingContent
+parseProcessContent "ProcessExistingAndNewContent" = ProcessExistingAndNewContent
+parseProcessContent _ = ProcessNoContent
 
-instance ToJSON ExistingContentStatus where
-  toJSON = String . T.pack . show
-
--- NewContentStatus
-data NewContentStatus = NewContentAllowed | NewContentDisallowed
-  deriving (Eq, Show)
-
-toNewContentStatus :: String -> NewContentStatus
-toNewContentStatus "1"    = NewContentAllowed
-toNewContentStatus "true" = NewContentAllowed
-toNewContentStatus _      = NewContentDisallowed
-
-instance ToJSON NewContentStatus where
+instance ToJSON ProcessContent where
   toJSON = String . T.pack . show

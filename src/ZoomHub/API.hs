@@ -49,7 +49,7 @@ import ZoomHub.API.Types.NonRESTfulResponse
   , mkNonRESTful404
   , mkNonRESTful503
   )
-import ZoomHub.Config (Config, NewContentStatus(..))
+import ZoomHub.Config (Config, ProcessContent(..))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
@@ -139,7 +139,7 @@ server config =
     -- API: RESTful
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbConnPool newContentStatus
+    :<|> restContentByURL baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -154,7 +154,7 @@ server config =
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dbConnPool = Config.dbConnPool config
-    newContentStatus = Config.newContentStatus config
+    processContent = Config.processContent config
     publicPath = Config.publicPath config
     staticBaseURI = Config.staticBaseURI config
     viewerScript = Config.openSeadragonScript config
@@ -242,17 +242,17 @@ restInvalidContentId contentId =
 
 restContentByURL :: BaseURI ->
                     Pool Connection ->
-                    NewContentStatus ->
+                    ProcessContent ->
                     ContentURI ->
                     Handler Content
-restContentByURL baseURI dbConnPool newContentStatus url = do
+restContentByURL baseURI dbConnPool processContent url = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case maybeContent of
     Nothing -> do
-      mNewContent <- case newContentStatus of
-        NewContentAllowed ->
+      mNewContent <- case processContent of
+        ProcessExistingAndNewContent ->
           liftIO $ runPoolPQ (PG.initialize url) dbConnPool
-        NewContentDisallowed ->
+        _ ->
           noNewContentErrorAPI
       case mNewContent of
         Just newContent ->

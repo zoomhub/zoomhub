@@ -37,13 +37,11 @@ import Text.Read (readMaybe)
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config(..)
-  , ExistingContentStatus(IgnoreExistingContent, ProcessExistingContent)
-  , NewContentStatus(NewContentDisallowed)
+  , ProcessContent(..)
   , defaultPort
+  , parseProcessContent
   , raxContainer
   , raxContainerPath
-  , toExistingContentStatus
-  , toNewContentStatus
   )
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
@@ -61,11 +59,8 @@ import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
 
-existingContentStatusEnvName :: String
-existingContentStatusEnvName = "PROCESS_EXISTING_CONTENT"
-
-newContentStatusEnvName :: String
-newContentStatusEnvName = "PROCESS_NEW_CONTENT"
+processContentEnvName :: String
+processContentEnvName = "PROCESS_CONTENT"
 
 numProcessingWorkersEnvName :: String
 numProcessingWorkersEnvName = "PROCESSING_WORKERS"
@@ -100,15 +95,9 @@ main = do
 
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
 
-      maybeExistingContentStatus = toExistingContentStatus <$>
-        lookup existingContentStatusEnvName env
-      existingContentStatus =
-        fromMaybe IgnoreExistingContent maybeExistingContentStatus
-
-      maybeNewContentStatus = toNewContentStatus <$>
-        lookup newContentStatusEnvName env
-      newContentStatus =
-        fromMaybe NewContentDisallowed maybeNewContentStatus
+      maybeProcessContent = parseProcessContent <$>
+        lookup processContentEnvName env
+      processContent = fromMaybe ProcessNoContent maybeProcessContent
 
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers =
@@ -181,22 +170,13 @@ main = do
         threadDelay (fromIntegral $ toMicroseconds delay)
         processExpiredActiveContent config
 
-      case existingContentStatus of
+      case processContent of
         ProcessExistingContent ->
-          forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
-            let base = 20
-                jitterRange = (0, base `div` 2) :: (Integer, Integer)
-                baseDelay = index * base
-            jitter <- randomRIO jitterRange
-            let delay = (fromIntegral $ baseDelay + jitter) :: Second
-            logInfo "Worker: Start processing existing content"
-              [ "jitter" .= (fromIntegral jitter :: Second)
-              , "index" .= index
-              , "delay" .= delay
-              ]
-            threadDelay (fromIntegral $ toMicroseconds delay)
-            processExistingContent config (show index)
-        IgnoreExistingContent -> return ()
+          startProcessingWorkers config numProcessingWorkers
+        ProcessExistingAndNewContent ->
+          startProcessingWorkers config numProcessingWorkers
+        ProcessNoContent ->
+          return ()
 
       -- Web server
       logInfo "Start web server"
@@ -209,6 +189,22 @@ main = do
     Left message ->
       error $ "Failed to read Rackspace config: " ++ message
   where
+    startProcessingWorkers :: Config -> Integer -> IO ()
+    startProcessingWorkers config numProcessingWorkers = do
+      forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
+        let base = 20
+            jitterRange = (0, base `div` 2) :: (Integer, Integer)
+            baseDelay = index * base
+        jitter <- randomRIO jitterRange
+        let delay = (fromIntegral $ baseDelay + jitter) :: Second
+        logInfo "Worker: Start processing existing content"
+          [ "jitter" .= (fromIntegral jitter :: Second)
+          , "index" .= index
+          , "delay" .= delay
+          ]
+        threadDelay (fromIntegral $ toMicroseconds delay)
+        processExistingContent config (show index)
+
     toBaseURI :: String -> BaseURI
     toBaseURI uriString =
       case parseAbsoluteURI uriString of

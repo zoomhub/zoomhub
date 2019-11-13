@@ -1,5 +1,14 @@
 # ZoomHub
 
+## Unreleased
+
+-   Combine `PROCESS_EXISTING_CONTENT` and `PROCESS_NEW_CONTENT` environment
+    variables into
+    `PROCESS_CONTENT='ProcessNoContent|ProcessExistingContent|ProcessExistingAndNewContent'`.
+    This was done because `PROCESS_EXISTING_CONTENT=0` and
+    `PROCESS_NEW_CONTENT=1` is an invalid state. We do not spin up any workers
+    unless `PROCESS_EXISTING_CONTENT=1`.
+
 ## 2.0.0 – April 14, 2016
 
 -   Add infrastructure for background processing of existing content.

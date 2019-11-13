@@ -31,11 +31,7 @@ import Test.Hspec.Wai
   )
 
 import ZoomHub.API (app)
-import ZoomHub.Config
-  ( Config(..)
-  , ExistingContentStatus(IgnoreExistingContent)
-  , NewContentStatus(NewContentAllowed)
-  )
+import ZoomHub.Config (Config(..), ProcessContent(ProcessExistingAndNewContent))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
@@ -141,11 +137,10 @@ config = Config
     , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
     , dbConnPoolNumStripes = dbConnPoolNumStripes'
     , error404 = "404"
-    , existingContentStatus = IgnoreExistingContent
     , logger = nullLogger
-    , newContentStatus = NewContentAllowed
     , openSeadragonScript = "osd"
     , port = 8000
+    , processContent = ProcessExistingAndNewContent
     , publicPath = "./public"
     , rackspace = undefined
     , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")

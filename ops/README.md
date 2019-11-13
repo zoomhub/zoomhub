@@ -29,7 +29,7 @@ set up a web server.
 
 ### Update app configuration
 
-To quickly update Keter application configuration, e.g. `PROCESS_NEW_CONTENT`,
+To quickly update Keter application configuration, e.g. `PROCESS_CONTENT`,
 edit `ops/roles/keter/templates/keter-config.yaml.j2` and run:
 
 ```
