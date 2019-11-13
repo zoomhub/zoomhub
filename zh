@@ -53,7 +53,7 @@ ops)
     ;;
     setup-admin-server)
         ansible-playbook -v --inventory-file ops/admin \
-            --ask-sudo --ask-vault-pass \
+            --ask-become --ask-vault-pass \
             ops/admin.yml
         ;;
     setup-database-server)
@@ -68,7 +68,7 @@ ops)
 
         echo 'Enter `admin` user password:'
         ansible-playbook -v --inventory-file "$hosts" \
-            --ask-sudo --ask-vault-pass \
+            --ask-become --ask-vault-pass \
             ops/web.yml
         ;;
     *)
