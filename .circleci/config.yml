@@ -103,6 +103,12 @@ jobs:
         DEPLOY_HOST: staging.zoomhub.net
     <<: *deploy
 
+  deploy-fix-glibc-error:
+    <<: *defaults
+    environment:
+        DEPLOY_HOST: 162.242.218.98
+    <<: *deploy
+
   deploy-production:
     <<: *defaults
     environment:
@@ -119,7 +125,16 @@ workflows:
             - build
           filters:
             branches:
-              ignore: master
+              ignore:
+                - master
+                - fix-glibc-error
+      - deploy-fix-glibc-error:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - fix-glibc-error
       - deploy-production:
           requires:
             - build
