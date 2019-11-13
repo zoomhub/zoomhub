@@ -32,7 +32,7 @@ set up a web server.
 Run `./zh ops setup-database-server [production|staging]` and follow the steps
 to set up a database server.
 
-### Debug database from local machine
+### Debug database remotely
 
 ```
 ssh -L 3333:<db-server-private-ip>:5432 <user>@<jumpbox>
