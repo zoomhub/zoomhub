@@ -1,7 +1,7 @@
 ---
 - name: Reboot server
   hosts: all
-  sudo: yes
+  become: yes
   roles:
     - reboot
 

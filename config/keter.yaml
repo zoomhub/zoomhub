@@ -2,7 +2,8 @@ stanzas:
   - type: webapp
     exec: ../zoomhub
     hosts:
-      - 162.242.235.90
+      - 104.239.163.79 # staging
+      - 162.242.218.98 # production
       - api.zoom.it
       - api.zoomhub.net
       - openzoom.net

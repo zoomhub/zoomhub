@@ -7,7 +7,7 @@
   when: reboot == "yes"
 
 - name: waiting for server to come back
-  sudo: False
+  become: no
   local_action: wait_for host="{{ inventory_hostname }}"
                 port=22 delay=1 timeout=300
   when: reboot == "yes"

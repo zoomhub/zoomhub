@@ -119,7 +119,9 @@ workflows:
             - build
           filters:
             branches:
-              ignore: master
+              ignore:
+                - master
+                - fix-glibc-error
       - deploy-production:
           requires:
             - build

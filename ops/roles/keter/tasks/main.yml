@@ -12,22 +12,21 @@
 - name: Add `/opt/keter/incoming`
   file: path=/opt/keter/incoming owner={{ admin_user }} state=directory
 
-# # FIXME: Disable until `pyrax is required for this module` error is diagnosed:
-# - name: Download `keter` binary from Rackspace CloudFiles
-#   rax_files_objects:
-#     container={{ rackspace_cloudfiles_admin_container }}
-#     region={{ rackspace_cloudfiles_region }}
-#     method=get
-#     dest=/opt/keter/bin
-#     src="keter-{{ lsb_release.stdout }}"
-#     username={{ rackspace_username }}
-#     api_key={{ rackspace_api_key }}
+- name: Download `keter` binary from Rackspace CloudFiles
+  rax_files_objects:
+    container={{ rackspace_cloudfiles_admin_container }}
+    region={{ rackspace_cloudfiles_region }}
+    method=get
+    dest=/opt/keter/bin
+    src="keter-{{ lsb_release.stdout }}"
+    username={{ rackspace_username }}
+    api_key={{ rackspace_api_key }}
 
-# - name: Drop `keter` release suffix
-#   command: mv /opt/keter/bin/keter-{{ lsb_release.stdout }} /opt/keter/bin/keter
+- name: Drop `keter` release suffix
+  command: mv /opt/keter/bin/keter-{{ lsb_release.stdout }} /opt/keter/bin/keter
 
-# - name: Make `/opt/keter/bin/keter` executable
-#   file: path=/opt/keter/bin/keter mode=0755
+- name: Make `/opt/keter/bin/keter` executable
+  file: path=/opt/keter/bin/keter mode=0755
 
 - name: Create `/opt/keter/etc/keter-config.yaml`
   template:
@@ -36,12 +35,19 @@
     group=root
     owner=root
 
-- name: Create `/etc/init/keter.conf`
+- name: Create `/lib/systemd/system/keter.service`
   template:
-    src=keter.conf
-    dest=/etc/init/keter.conf
+    src=keter.service
+    dest=/lib/systemd/system/keter.service
     group=root
     owner=root
 
 - name: Restart `keter`
-  service: name=keter state=restarted
+  service:
+    name: keter
+    state: restarted
+
+- name: Ensure `keter` runs on boot
+  systemd:
+    name: keter
+    enabled: yes
