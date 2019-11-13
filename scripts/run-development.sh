@@ -16,6 +16,10 @@ fi
 BASE_URI='http://localhost:8000' \
 PGUSER=$(whoami) \
 PGDATABASE='zoomhub_development' \
+RACKSPACE_USERNAME='' \
+RACKSPACE_API_KEY='' \
+RACKSPACE_CONTAINER='cache' \
+RACKSPACE_CONTAINER_PATH='content' \
   stack exec zoomhub | jq &
 
 echo $! > zoomhub.pid
