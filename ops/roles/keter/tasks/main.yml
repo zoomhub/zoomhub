@@ -43,4 +43,6 @@
     owner=root
 
 - name: Restart `keter`
-  service: name=keter state=restarted
+  service:
+    name: keter
+    state: restarted
