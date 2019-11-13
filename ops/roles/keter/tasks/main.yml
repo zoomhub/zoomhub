@@ -34,6 +34,8 @@
     dest=/opt/keter/etc/keter-config.yaml
     group=root
     owner=root
+  tags:
+    - app-configuration
 
 - name: Ensure `/lib/systemd/system/keter.service`
   template:
@@ -46,6 +48,8 @@
   service:
     name: keter
     state: restarted
+  tags:
+    - app-configuration
 
 - name: Ensure `keter` runs on boot
   systemd:
