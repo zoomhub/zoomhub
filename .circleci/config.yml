@@ -121,7 +121,6 @@ workflows:
             branches:
               ignore:
                 - master
-                - fix-glibc-error
       - deploy-production:
           requires:
             - build
