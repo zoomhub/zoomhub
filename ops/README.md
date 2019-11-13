@@ -27,6 +27,15 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 Run `./zh ops setup-web-server [production|staging]` and follow the steps to
 set up a web server.
 
+### Update app configuration
+
+To quickly update Keter application configuration, e.g. `PROCESS_NEW_CONTENT`,
+edit `ops/roles/keter/templates/keter-config.yaml.j2` and run:
+
+```
+./zh ops setup-web-server [production|staging] --tags 'app-configuration'
+```
+
 ## Database server
 
 Run `./zh ops setup-database-server [production|staging]` and follow the steps

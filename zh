@@ -67,7 +67,7 @@ ops)
 
         ansible-playbook -v --inventory-file "$hosts" \
             --vault-password-file ops/.vault_pass.txt \
-            ops/database.yml
+            ops/database.yml "${@:4}"
         ;;
     setup-web-server)
         print_hosts
@@ -76,7 +76,7 @@ ops)
         ansible-playbook -v --inventory-file "$hosts" \
             --ask-become \
             --vault-password-file ops/.vault_pass.txt \
-            ops/web.yml
+            ops/web.yml "${@:4}"
         ;;
     *)
         echo "Unknown command: $0 $@. Try $0 $1 \
