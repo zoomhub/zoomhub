@@ -35,10 +35,10 @@
     group=root
     owner=root
 
-- name: Create `/etc/init/keter.conf`
+- name: Create `/lib/systemd/system/keter.service`
   template:
-    src=keter.conf
-    dest=/etc/init/keter.conf
+    src=keter.service
+    dest=/lib/systemd/system/keter.service
     group=root
     owner=root
 

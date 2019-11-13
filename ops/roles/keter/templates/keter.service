@@ -1,0 +1,8 @@
+[Unit]
+Description=Keter - Web application deployment manager
+
+[Service]
+ExecStart=/opt/keter/bin/keter /opt/keter/etc/keter-config.yaml
+
+[Install]
+WantedBy=multi-user.target
