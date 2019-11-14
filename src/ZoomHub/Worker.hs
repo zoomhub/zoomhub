@@ -104,7 +104,7 @@ processExistingContent config workerId = forever $ do
     sleepBase = processExistingContentInterval
 
     wwwURL c = "http://zoomhub.net/" ++ unContentId (contentId c)
-    apiURL c = "http://zoomhub.net/v1/content/" ++ unContentId (contentId c)
+    apiURL c = "http://api.zoomhub.net/v1/content/" ++ unContentId (contentId c)
 
     logT msg meta = logInfoT msg (meta ++ extraLogMeta)
     extraLogMeta =
