@@ -103,6 +103,7 @@ processExistingContent config workerId = forever $ do
 
     sleepBase = processExistingContentInterval
 
+    -- TODO: Make dynamic
     wwwURL c = "http://zoomhub.net/" ++ unContentId (contentId c)
     apiURL c = "http://api.zoomhub.net/v1/content/" ++ unContentId (contentId c)
 
