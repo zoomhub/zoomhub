@@ -34,6 +34,9 @@ init)
     echo "Install 'postgres'"
     brew install postgresql@10
     brew services start postgresql@10
+
+    echo "Install 'vips'"
+    brew install vips
     ;;
 lint)
     stack exec hlint -- src tests
