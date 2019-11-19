@@ -64,7 +64,7 @@ ops)
         print_hosts
         ansible --inventory-file "$hosts" all -m ping
         ;;
-    setup)
+    init)
         ansible-galaxy install -r ops/requirements.yml
     ;;
     setup-admin-server)
@@ -91,7 +91,7 @@ ops)
         ;;
     *)
         echo "Unknown command: $0 $@. Try $0 $1 \
-bootstrap|ping|setup|setup-admin-server|setup-database-server|setup-web-server"
+bootstrap|init|ping|setup-admin-server|setup-database-server|setup-web-server"
         exit 1
     esac
     ;;
