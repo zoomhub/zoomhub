@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [[ -f ./zoomhub.pid ]] ; then
-  kill $(cat zoomhub.pid)
+  kill $(cat zoomhub.pid) > /dev/null
 fi
 
 
