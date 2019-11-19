@@ -24,8 +24,16 @@ TEST_DB_NAME='zoomhub_test'
 # Commands
 case "$1" in
 init)
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew/bda8d64e0e9011aab1612868eac2f709e631c503/Library/Formula/haskell-stack.rb
+    echo "Install Haskell 'stack'"
+    brew install haskell-stack
     stack setup
+
+    echo "Install 'jq'"
+    brew install jq
+
+    echo "Install 'postgres'"
+    brew install postgresql@10
+    brew services start postgresql@10
     ;;
 lint)
     stack exec hlint -- src tests
