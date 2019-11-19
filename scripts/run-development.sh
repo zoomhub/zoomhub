@@ -14,7 +14,7 @@ fi
 # sudo codesign --force --sign - "$zoomhub"
 
 BASE_URI='http://localhost:8000' \
-PGUSER=$(whoami) \
+PGUSER="$(whoami)" \
 PGDATABASE='zoomhub_development' \
 RACKSPACE_USERNAME='' \
 RACKSPACE_API_KEY='' \
