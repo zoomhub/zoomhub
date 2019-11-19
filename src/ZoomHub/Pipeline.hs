@@ -192,7 +192,7 @@ uploadDZI workerId raxConfig rootPath path dzi = do
     container = raxContainer raxConfig
     containerPath = raxContainerPath raxConfig
     raxCreds = mkCredentials (raxUsername raxConfig) (raxApiKey raxConfig)
-    numParallelUploads = 5
+    numParallelUploads = 10
 
     stripRoot :: FilePath -> Maybe FilePath
     stripRoot = stripPrefix (addTrailingPathSeparator rootPath)
