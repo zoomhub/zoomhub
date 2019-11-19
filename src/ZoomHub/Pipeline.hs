@@ -108,6 +108,8 @@ process workerId raxConfig tempPath content =
 
 downloadURL :: ContentURI -> FilePath -> IO (Maybe MIME.Type)
 downloadURL url dest = do
+  -- TODO: Use streaming:
+  -- https://github.com/snoyberg/http-client/blob/a9a1a1f76c44127d67695d90d5abdbf585052c82/TUTORIAL.md#streaming-1
   res <- get (show url)
   let body = res ^. responseBody
   atomicWriteFile dest body
