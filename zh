@@ -119,7 +119,7 @@ test)
     dropdb --if-exists "$TEST_DB_NAME"
     createdb "$TEST_DB_NAME"
 
-    HASHIDS_SALT='secret-salt' \
+    PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
       stack build --ghc-options='-Wall' \
                   --fast \
                   --exec "migrate-database $TEST_DB_NAME migrate"
