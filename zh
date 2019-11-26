@@ -66,6 +66,9 @@ ops)
         ;;
     init)
         ansible-galaxy install -r ops/requirements.yml
+        pip3 install passlib
+        pip3 install pyrax
+        brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/de9a176f10b1be4dcb7436a2bc839e92ccbfbeed/Library/Formula/sshpass.rb
     ;;
     setup-admin-server)
         ansible-playbook -v --inventory-file ops/admin \
