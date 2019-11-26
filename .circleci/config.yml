@@ -148,8 +148,7 @@ workflows:
             - build
           filters:
             branches:
-              ignore:
-                - master
+              only: postgresql
       - deploy-production:
           requires:
             - build
