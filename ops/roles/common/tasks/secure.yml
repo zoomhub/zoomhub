@@ -38,3 +38,11 @@
 
 - name: Delete root password
   shell: passwd -d root
+
+- name: Grant SSH access to all owners through their public keys
+  authorized_key:
+    user: '{{ admin_user }}'
+    state: present
+    key: "{{ lookup('file', item) }}"
+  with_fileglob:
+    - 'ssh/*.pub'
