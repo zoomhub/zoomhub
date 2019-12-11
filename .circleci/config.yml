@@ -148,7 +148,10 @@ workflows:
             - build
           filters:
             branches:
+              # FIXME: Only deploy `postgresql` branch to staging
               only: postgresql
+              # ignore:
+              #   - master
       - deploy-production:
           requires:
             - build
