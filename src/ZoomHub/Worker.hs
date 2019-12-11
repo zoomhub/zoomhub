@@ -24,8 +24,7 @@ import Network.HTTP.Client.Instances ()
 import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
 
-import ZoomHub.Config (Config)
-import qualified ZoomHub.Config as Config
+import ZoomHub.Config (Config(..))
 import ZoomHub.Log.Logger (logException, logInfo, logInfoT)
 import ZoomHub.Pipeline (ProcessResult(..), process)
 import ZoomHub.Storage.PostgreSQL
@@ -40,15 +39,15 @@ import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Utils (lenientDecodeUtf8)
 
 -- Constants
-processExistingContentInterval :: Minute
-processExistingContentInterval = 1
+processExistingContentInterval :: Second
+processExistingContentInterval = 3
 
 processExpiredActiveContentInterval :: Minute
 processExpiredActiveContentInterval = 30
 
 -- Public API
 processExistingContent :: Config -> String -> IO ()
-processExistingContent config workerId = forever $ do
+processExistingContent Config{..} workerId = forever $ do
     logInfo "worker:start" [ "worker" .= workerId ]
 
     go `catchAny` \ex ->
@@ -73,7 +72,7 @@ processExistingContent config workerId = forever $ do
       case maybeContent of
         Just content -> do
           let processOp = do
-                ProcessResult{..} <- process workerId raxConfig tempPath content
+                ProcessResult{..} <- process workerId rackspace tempPath content
                 runPoolPQ (markAsSuccess (contentId content) prDZI prMIME (Just prSize)) dbConnPool
               jsonToText =
                 Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError
@@ -95,17 +94,13 @@ processExistingContent config workerId = forever $ do
                                 , "worker" .= workerId
                                 ] $ errorOp e
           void $ action `catchAny` errorHandler
-        Nothing -> return ()
-
-    dbConnPool = Config.dbConnPool config
-    raxConfig = Config.rackspace config
-    tempPath = Config.tempPath config
+        Nothing ->
+          return ()
 
     sleepBase = processExistingContentInterval
 
-    -- TODO: Make dynamic
-    wwwURL c = "http://zoomhub.net/" ++ unContentId (contentId c)
-    apiURL c = "http://api.zoomhub.net/v1/content/" ++ unContentId (contentId c)
+    wwwURL c = mconcat ["http://", show baseURI, "/", unContentId (contentId c)]
+    apiURL c = mconcat ["http://api.", show baseURI, "/v1/content/", unContentId (contentId c)]
 
     logT msg meta = logInfoT msg (meta ++ extraLogMeta)
     extraLogMeta =
@@ -114,7 +109,7 @@ processExistingContent config workerId = forever $ do
       ]
 
 processExpiredActiveContent :: Config -> IO ()
-processExpiredActiveContent config = forever $ do
+processExpiredActiveContent Config{..} = forever $ do
     cs <- runPoolPQ (getExpiredActive processExpiredActiveContentInterval) dbConnPool
     logInfoT "Reset expired active content"
       [ "ids" .= map contentId cs ]
@@ -124,7 +119,6 @@ processExpiredActiveContent config = forever $ do
       [ "sleepDuration" .= sleepDuration ]
     threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
-    dbConnPool = Config.dbConnPool config
     sleepDuration = processExpiredActiveContentInterval
 
 toJSONError :: SomeException -> Value
