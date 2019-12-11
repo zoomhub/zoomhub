@@ -48,6 +48,13 @@ ssh -L 3333:<db-server-private-ip>:5432 <user>@<jumpbox>
 psql --host=localhost --port=3333 --username=<db-user> --dbname=<db-name>
 ```
 
+### Import data
+
+```
+psql --single-transaction -p 3333 -h localhost -U <db-user> <db-name> \
+  <<< $(echo 'SET session_replication_role = replica;' && cat <sql-file>)
+```
+
 ## Admin server
 
 Run `./zh ops setup-admin-server` and follow the steps to set up an admin server.
