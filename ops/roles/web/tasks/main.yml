@@ -1,4 +1,9 @@
 ---
+- name: Install sqlite3 for backups
+  apt:
+    pkg:
+      sqlite3
+
 - name: Ensure data directory
   file:
     path="{{ zoomhub_data_path }}"
