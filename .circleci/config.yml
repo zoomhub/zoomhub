@@ -19,6 +19,9 @@ migrate-database: &migrate-database
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
+    - run:
+        name: Install ssh-keyscan for dmz/open_tunnel orb
+        command: sudo apt-get update && sudo apt-get install --yes openssh-client
     - dmz/open_tunnel:
         bastion_host: "$BASTION_HOST"
         bastion_user: admin
