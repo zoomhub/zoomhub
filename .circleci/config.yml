@@ -14,10 +14,8 @@ migrate-database: &migrate-database
   docker:
     - image: buildpack-deps:trusty
   environment:
-    PGHOST: "$AWS_RDS_PGHOST"
     PGPORT: "5432"
     PGUSER: zoomhub_admin
-    PGPASSWORD: "$AWS_RDS_PGPASSWORD"
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
@@ -33,6 +31,13 @@ migrate-database: &migrate-database
 
         # target_port: "$PGPORT"
         target_port: "5432"
+
+    - run:
+        name: "Import project environment variables"
+        command: |
+          echo 'export PGHOST="$AWS_RDS_PGHOST"' >> $BASH_ENV
+          echo 'export PGPASSWORD="$AWS_RDS_PGPASSWORD"' >> $BASH_ENV
+
     - run:
         name: Migrate database
         command: cd ~/zoomhub/zoomhub/workspace && ./migrate-database.sh
