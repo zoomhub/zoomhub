@@ -20,16 +20,10 @@ migrate-database: &migrate-database
         name: Install ssh-keyscan for dmz/open_tunnel orb
         command: sudo apt-get update && sudo apt-get install --yes openssh-client
     - dmz/open_tunnel:
-        # bastion_host: "$BASTION_HOST"
-        bastion_host: "staging.zoomhub.net"
-
-        bastion_user: admin
+        bastion_host: "$BASTION_HOST"
+        bastion_user: "admin"
         local_port: "9001"
-
-        # target_host: "$PGHOST"
-        target_host: "zoomhub.cxsjq6nd8hdl.us-east-1.rds.amazonaws.com"
-
-        # target_port: "$PGPORT"
+        target_host: "$AWS_RDS_PGHOST"
         target_port: "5432"
 
     - run:
@@ -37,8 +31,6 @@ migrate-database: &migrate-database
         command: |
           echo 'export PGHOST="$AWS_RDS_PGHOST"' >> $BASH_ENV
           echo 'export PGPASSWORD="$AWS_RDS_PGPASSWORD"' >> $BASH_ENV
-          # echo 'export PGDATABASE="$PGDATABASE"' >> $BASH_ENV
-          # echo 'export HASHIDS_SALT="$HASHIDS_SALT"' >> $BASH_ENV
 
     - run:
         name: Migrate database
