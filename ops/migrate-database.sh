@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "PGHOST: $PGHOST"
-echo "PGPORT: $PGPORT"
-echo "PGUSER: $PGUSER"
+# echo "PGPORT: $PGPORT"
+# echo "PGUSER: $PGUSER"
 echo "PGDATABASE: $PGDATABASE"
 
 PGHOST='localhost' \
