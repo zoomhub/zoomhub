@@ -7,6 +7,20 @@ defaults: &defaults
     CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
     CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
 
+migrate-database: &migrate-database
+  docker:
+    - image: buildpack-deps:trusty
+  environment:
+    PGHOST: $AWS_RDS_PGHOST
+    PGUSER: zoomhub_admin
+    PGPASSWORD: $AWS_RDS_PGPASSWORD
+  steps:
+    - attach_workspace:
+        at: ~/zoomhub/zoomhub/workspace
+    - run:
+        name: Migrate database
+        command: cd ~/zoomhub/zoomhub/workspace && ./migrate-database.sh
+
 deploy: &deploy
   docker:
     - image: buildpack-deps:trusty
@@ -102,10 +116,18 @@ jobs:
       - run:
           name: Copy deploy script to workspace
           command: cp ./ops/deploy.sh workspace
+      - run:
+          name: Copy database migration binary to workspace
+          command: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
+      - run:
+          name: Copy database migration script to workspace
+          command: cp ./ops/migrate-database.sh workspace
 
       - persist_to_workspace:
           root: workspace
           paths:
+            - migrate-database
+            - migrate-database.sh
             - zoomhub.keter
             - deploy.sh
 
@@ -126,6 +148,12 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
+  migrate-database-staging:
+    <<: *defaults
+    environment:
+      PGDATABASE: zoomhub_staging
+    <<: *migrate-database
+
   deploy-staging:
     <<: *defaults
     environment:
@@ -143,9 +171,19 @@ workflows:
   build-deploy:
     jobs:
       - build
+      - migrate-database-staging:
+          requires:
+            - build
+          filters:
+            branches:
+              # FIXME: Only migrate database on `postgresql` branch
+              only: postgresql
+              # ignore:
+              #   - master
       - deploy-staging:
           requires:
             - build
+            - migrate-database-staging
           filters:
             branches:
               # FIXME: Only deploy `postgresql` branch to staging
