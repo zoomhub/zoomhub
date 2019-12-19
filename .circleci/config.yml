@@ -1,4 +1,7 @@
-version: 2
+version: 2.1
+
+orbs:
+  dmz: eddiewebb/dmz@0.0.7
 
 defaults: &defaults
   parallelism: 1
@@ -12,11 +15,18 @@ migrate-database: &migrate-database
     - image: buildpack-deps:trusty
   environment:
     PGHOST: $AWS_RDS_PGHOST
+    PGPORT: "5432"
     PGUSER: zoomhub_admin
     PGPASSWORD: $AWS_RDS_PGPASSWORD
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
+    - dmz/open_tunnel:
+        bastion_host: "$BASTION_HOST"
+        bastion_user: admin
+        local_port: "9001"
+        target_host: "$PGHOST"
+        target_port: "$PGPORT"
     - run:
         name: Migrate database
         command: cd ~/zoomhub/zoomhub/workspace && ./migrate-database.sh
@@ -151,6 +161,7 @@ jobs:
   migrate-database-staging:
     <<: *defaults
     environment:
+      BASTION_HOST: staging.zoomhub.net
       PGDATABASE: zoomhub_staging
     <<: *migrate-database
 
