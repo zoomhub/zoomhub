@@ -1,24 +1,24 @@
 version: 2
 
 defaults: &defaults
-    parallelism: 1
-    working_directory: ~/zoomhub/zoomhub
-    environment:
-        CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
-        CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+  parallelism: 1
+  working_directory: ~/zoomhub/zoomhub
+  environment:
+    CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
+    CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
 
 deploy: &deploy
-    docker:
-        - image: buildpack-deps:trusty
-    steps:
-      - attach_workspace:
-          at: ~/zoomhub/zoomhub/workspace
-      - run:
-          name: SSH setup
-          command: mkdir -p ~/.ssh && ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-      - run:
-          name: Deploy
-          command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
+  docker:
+    - image: buildpack-deps:trusty
+  steps:
+    - attach_workspace:
+        at: ~/zoomhub/zoomhub/workspace
+    - run:
+        name: SSH setup
+        command: mkdir -p ~/.ssh && ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+    - run:
+        name: Deploy
+        command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
 
 jobs:
   build:
@@ -34,108 +34,108 @@ jobs:
           POSTGRES_DB: zoomhub_test
 
     steps:
-    - checkout
+      - checkout
 
-    - run:
-        name: "Setup custom environment variables"
-        command: |
-          echo 'export PGHOST="localhost"' >> $BASH_ENV
-          echo 'export PGPORT="5432"' >> $BASH_ENV
-          echo 'export PGUSER="zoomhub"' >> $BASH_ENV
-          echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
+      - run:
+          name: "Setup custom environment variables"
+          command: |
+            echo 'export PGHOST="localhost"' >> $BASH_ENV
+            echo 'export PGPORT="5432"' >> $BASH_ENV
+            echo 'export PGUSER="zoomhub"' >> $BASH_ENV
+            echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
 
-    - run:
-        name: Initialize workspace
-        command: mkdir -p workspace
-    - run:
-        name: Initialize artifact storage
-        command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
-    - run:
-        name: Install psql for preloading data
-        command: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - run:
+          name: Initialize workspace
+          command: mkdir -p workspace
+      - run:
+          name: Initialize artifact storage
+          command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run:
+          name: Install psql for preloading data
+          command: sudo apt-get update && sudo apt-get install --yes postgresql-client
 
-    # Dependencies
-    #   This would typically go in either a build or a build-and-test job when
-    #   using workflows
-    # Restore the dependency cache
-    - restore_cache:
-        keys:
-        - zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
-        # This branch if available
-        - zh-stack-cache-v2-dep-{{ .Branch }}-
-        # Default branch if not
-        - zh-stack-cache-v2-dep-master-
-        # Any branch if there are none on the default branch -
-        # this should be unnecessary if you have your default branch
-        # configured correctly
-        - zh-stack-cache-v2-dep-
+      # Dependencies
+      #   This would typically go in either a build or a build-and-test job when
+      #   using workflows
+      # Restore the dependency cache
+      - restore_cache:
+          keys:
+            - zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+            # This branch if available
+            - zh-stack-cache-v2-dep-{{ .Branch }}-
+            # Default branch if not
+            - zh-stack-cache-v2-dep-master-
+            # Any branch if there are none on the default branch -
+            # this should be unnecessary if you have your default branch
+            # configured correctly
+            - zh-stack-cache-v2-dep-
 
-    # Test
-    - run:
-        name: Run tests
-        command: |
-          HASHIDS_SALT='secret-salt'\
-            stack build --no-terminal \
-                        --fast \
-                        --exec "migrate-database $PGDATABASE migrate"
+      # Test
+      - run:
+          name: Run tests
+          command: |
+            HASHIDS_SALT='secret-salt'\
+              stack build --no-terminal \
+                          --fast \
+                          --exec "migrate-database $PGDATABASE migrate"
 
-          psql $PGDATABASE < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
+            psql $PGDATABASE < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
-          stack test --fast --no-terminal
+            stack test --fast --no-terminal
 
-    # - run:
-    #     name: Copy coverage reports
-    #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
+      # - run:
+      #     name: Copy coverage reports
+      #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
 
-    - run:
-        name: Build binary
-        command: stack build --install-ghc --pedantic --ghc-options="-O2"
-    - run:
-        name: Create Keter package
-        command: ./ops/keter-bundle.sh
-    - run:
-        name: Copy Keter package to artifacts
-        command: cp zoomhub.keter $CIRCLE_ARTIFACTS
-    - run:
-        name: Copy Keter package to workspace
-        command: cp zoomhub.keter workspace
-    - run:
-        name: Copy deploy script to workspace
-        command: cp ./ops/deploy.sh workspace
+      - run:
+          name: Build binary
+          command: stack build --install-ghc --pedantic --ghc-options="-O2"
+      - run:
+          name: Create Keter package
+          command: ./ops/keter-bundle.sh
+      - run:
+          name: Copy Keter package to artifacts
+          command: cp zoomhub.keter $CIRCLE_ARTIFACTS
+      - run:
+          name: Copy Keter package to workspace
+          command: cp zoomhub.keter workspace
+      - run:
+          name: Copy deploy script to workspace
+          command: cp ./ops/deploy.sh workspace
 
-    - persist_to_workspace:
-        root: workspace
-        paths:
-          - zoomhub.keter
-          - deploy.sh
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - zoomhub.keter
+            - deploy.sh
 
-    # Save dependency cache
-    - save_cache:
-        key: zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
-        paths:
-        - ~/.stack
-        - .stack-work
+      # Save dependency cache
+      - save_cache:
+          key: zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+          paths:
+            - ~/.stack
+            - .stack-work
 
-    # Save test results
-    - store_test_results:
-        path: /tmp/circleci-test-results
+      # Save test results
+      - store_test_results:
+          path: /tmp/circleci-test-results
 
-    # Save artifacts
-    - store_artifacts:
-        path: /tmp/circleci-artifacts
-    - store_artifacts:
-        path: /tmp/circleci-test-results
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
 
   deploy-staging:
     <<: *defaults
     environment:
-        DEPLOY_HOST: staging.zoomhub.net
+      DEPLOY_HOST: staging.zoomhub.net
     <<: *deploy
 
   deploy-production:
     <<: *defaults
     environment:
-        DEPLOY_HOST: zoomhub.net
+      DEPLOY_HOST: zoomhub.net
     <<: *deploy
 
 workflows:
