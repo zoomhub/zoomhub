@@ -20,18 +20,11 @@ migrate-database: &migrate-database
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
     - dmz/open_tunnel:
-        # bastion_host: "$BASTION_HOST"
-        bastion_host: "staging.zoomhub.net"
-
+        bastion_host: "$BASTION_HOST"
         bastion_user: admin
         local_port: "9001"
-
-        # target_host: "$PGHOST"
-        target_host: "zoomhub.cxsjq6nd8hdl.us-east-1.rds.amazonaws.com"
-
-        # target_port: "$PGPORT"
+        target_host: "$AWS_RDS_PGHOST"
         target_port: "5432"
-
     - run:
         name: "Import project environment variables"
         command: |
