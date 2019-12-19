@@ -22,6 +22,14 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 - Run `./zh ops ping [admin|production|staging]` to test whether you can reach
   your new server.
 
+## CircleCI setup
+
+Set up the following [environment variables on CircleCI][circleci-env-vars]:
+
+- `AWS_RDS_PGHOST`
+- `AWS_RDS_PGPASSWORD`
+- `HASHIDS_SALT`
+
 ## Web servers
 
 Run `./zh ops setup-web-server [production|staging]` and follow the steps to
@@ -38,13 +46,13 @@ edit `ops/roles/keter/templates/keter-config.yaml.j2` and run:
 
 ## Database server
 
-Run `./zh ops setup-database-server [production|staging]` and follow the steps
-to set up a database server.
+Run `./zh ops setup-database-aws-rds [production|staging]` and follow the steps
+to set up a database server.~~
 
 ### Debug database remotely
 
 ```
-ssh -L 3333:<db-server-private-ip>:5432 <user>@<jumpbox>
+ssh -L 3333:<aws-rds-host>:5432 <user>@<jumpbox>
 psql --host=localhost --port=3333 --username=<db-user> --dbname=<db-name>
 ```
 
@@ -94,3 +102,4 @@ you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commi
 it. This is a convenient way to develop new features before using the vault.
 
 [ansible]: http://docs.ansible.com
+[circleci-env-vars]: https://circleci.com/gh/zoomhub/zoomhub/edit#env-vars
