@@ -40,6 +40,7 @@ migrate-database: &migrate-database
           echo 'export PGUSER="$PGUSER"' >> $BASH_ENV
           echo 'export PGPASSWORD="$AWS_RDS_PGPASSWORD"' >> $BASH_ENV
           echo 'export PGDATABASE="$PGDATABASE"' >> $BASH_ENV
+          echo 'export HASHIDS_SALT="$HASHIDS_SALT"' >> $BASH_ENV
 
     - run:
         name: Migrate database

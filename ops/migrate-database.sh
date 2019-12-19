@@ -7,5 +7,4 @@ fi
 
 PGHOST='localhost' \
 PGPORT='9001' \
-HASHIDS_SALT='secret-salt' \
   ./migrate-database "$PGDATABASE" status
