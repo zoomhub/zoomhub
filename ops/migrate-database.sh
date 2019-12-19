@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -eo pipefail
 
 PGHOST='localhost' \
 PGPORT='9001' \
