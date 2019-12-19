@@ -1,6 +1,5 @@
-#!/bin/sh
-
-set -eo pipefail
+#!/bin/bash
+set -euo pipefail
 
 echo "PGDATABASE: $PGDATABASE"
 echo "PGUSER: $PGUSER"
