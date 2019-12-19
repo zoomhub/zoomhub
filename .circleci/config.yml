@@ -12,7 +12,7 @@ defaults: &defaults
 
 migrate-database: &migrate-database
   docker:
-    - image: buildpack-deps:trusty
+    - image: fpco/stack-build
   environment:
     PGPORT: "5432"
     PGUSER: zoomhub_admin
