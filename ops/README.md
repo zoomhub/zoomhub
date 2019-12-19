@@ -4,23 +4,23 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 
 ### Prerequisites
 
--   Install [Ansible]: `brew install ansible`.
-    We have tested our setup with Ansible 2.9.0.
--   Run `./zh ops init`.
+- Install [Ansible]: `brew install ansible`.
+  We have tested our setup with Ansible 2.9.0.
+- Run `./zh ops init`.
 
-## Initial Server Setup
+## Initial server setup
 
--   Create server on Rackspace using Ubuntu 18.04 LTS (Bionic Beaver) image:
-    <https://mycloud.rackspace.com/>
--   Note `root` password. You will need it in subsequent steps.
--   **Optional:** Create DNS entry for server.
--   Add hostname or IP to one of the hosts files: `ops/admin`,
-    `ops/staging`, or `ops/production`.
--   Create `admin` user and bootstrap server using:
-    `./zh ops bootstrap [admin|production|staging]`.
-    **IMPORTANT:** This command can only be run once per server!
--   Run `./zh ops ping [admin|production|staging]` to test whether you can reach
-    your new server.
+- Create server on Rackspace using Ubuntu 18.04 LTS (Bionic Beaver) image:
+  <https://mycloud.rackspace.com/>
+- Note `root` password. You will need it in subsequent steps.
+- **Optional:** Create DNS entry for server.
+- Add hostname or IP to one of the hosts files: `ops/admin`,
+  `ops/staging`, or `ops/production`.
+- Create `admin` user and bootstrap server using:
+  `./zh ops bootstrap [admin|production|staging]`.
+  **IMPORTANT:** This command can only be run once per server!
+- Run `./zh ops ping [admin|production|staging]` to test whether you can reach
+  your new server.
 
 ## Web servers
 
@@ -93,5 +93,4 @@ If you want to override any ansible variables without having to edit configs,
 you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commit
 it. This is a convenient way to develop new features before using the vault.
 
-
-[Ansible]: http://docs.ansible.com
+[ansible]: http://docs.ansible.com
