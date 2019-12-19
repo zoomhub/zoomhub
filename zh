@@ -77,11 +77,21 @@ ops)
             ops/admin.yml
         ;;
     setup-database-server)
+        echo 'DEPRECATED: Please use `./zh ops setup-database-aws-rds`'
+        exit 1
+
         print_hosts
 
         ansible-playbook -v --inventory-file "$hosts" \
             --vault-password-file ops/.vault_pass.txt \
             ops/database.yml "${@:4}"
+        ;;
+    setup-database-aws-rds)
+        print_hosts
+
+        ansible-playbook -v --inventory-file "$hosts" \
+            --vault-password-file ops/.vault_pass.txt \
+            ops/database_aws_rds.yml "${@:4}"
         ;;
     setup-web-server)
         print_hosts
@@ -94,7 +104,7 @@ ops)
         ;;
     *)
         echo "Unknown command: $0 $@. Try $0 $1 \
-bootstrap|init|ping|setup-admin-server|setup-database-server|setup-web-server"
+bootstrap|init|ping|setup-admin-server|setup-database-server|setup-database-aws-rds|setup-web-server"
         exit 1
     esac
     ;;
