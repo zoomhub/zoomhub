@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -eo pipefail
 
 SQLITE_DB="$1"
