@@ -8,16 +8,17 @@ if [ -z "$SQLITE_DB" ]; then
   exit 1
 fi
 
-DRY_RUN="$2"
+export PGUSER="$(whoami)"
 
-DB_NAME='zoomhub_import'
+DB_NAME='zoomhub_import-newline-fix'
 
 dropdb --if-exists "$DB_NAME"
 createdb "$DB_NAME"
 stack exec migrate-database "$DB_NAME" migrate
 
-LIMIT='LIMIT 1'
-# LIMIT=''
+# LIMIT='LIMIT 1 OFFSET 3'
+# LIMIT='LIMIT 1000'
+LIMIT=''
 
 SET_COUNTERS_SQL=$(cat <<-EOM
 -- NOTE: Adding explicit IDs does not update the serial counters for each table:
@@ -38,9 +39,9 @@ IMAGE_COLUMNS_PG='content_id,created_at,width,height,tile_size,tile_overlap,tile
 FLICKR_COLUMNS_SQLITE='contentId,farmId,serverId,photoId,secret,sizeId,isPublic,licenseId,originalExtension,originalSecret,ownerNSID,ownerRealName,ownerUsername,photoPageURL'
 FLICKR_COLUMNS_PG='content_id,farm_id,server_id,photo_id,secret,size_id,is_public,license_id,original_extension,original_secret,owner_nsid,owner_real_name,owner_username,photo_page_url'
 
-sqlite3 "$SQLITE_DB" '.mode insert content' "SELECT $CONTENT_COLUMNS_SQLITE FROM content $LIMIT" | \
-  (cat && sqlite3 "$SQLITE_DB" '.mode insert image' "SELECT $IMAGE_COLUMNS_SQLITE FROM image $LIMIT") | \
-  (cat && sqlite3 "$SQLITE_DB" '.mode insert flickr' "SELECT $(echo $FLICKR_COLUMNS_SQLITE | sed "s/isPublic/(isPublic || '') AS isPublic/") FROM flickr $LIMIT") | \
+sqlite3 "$SQLITE_DB" '.headers on' '.mode insert content' "SELECT $(echo $CONTENT_COLUMNS_SQLITE | sed "s/error/replace(error, char(10), ' ') AS error/") FROM content $LIMIT" | \
+  (cat && sqlite3 "$SQLITE_DB" '.headers on' '.mode insert image' "SELECT $IMAGE_COLUMNS_SQLITE FROM image $LIMIT") | \
+  (cat && sqlite3 "$SQLITE_DB" '.headers on' '.mode insert flickr' "SELECT $(echo $FLICKR_COLUMNS_SQLITE | sed "s/isPublic/(isPublic || '') AS isPublic/") FROM flickr $LIMIT") | \
   (echo 'SET session_replication_role = replica;' && cat) | \
   (echo 'SET client_min_messages TO WARNING;' && cat) | \
   sed "s/INSERT INTO content($CONTENT_COLUMNS_SQLITE)/INSERT INTO content($CONTENT_COLUMNS_PG)/g;" | \
