@@ -1,5 +1,5 @@
 [web]
-zoomhub.net rackspace_cloudfiles_container=cache rackspace_cloudfiles_container_path=content
+23.253.156.61 rackspace_cloudfiles_container=cache rackspace_cloudfiles_container_path=content
 
-[database]
-db.zoomhub.net
+# [database]
+#db.zoomhub.net
