@@ -109,12 +109,6 @@ jobs:
         DEPLOY_HOST: zoomhub.net
     <<: *deploy
 
-  deploy-pre-production:
-    <<: *defaults
-    environment:
-      DEPLOY_HOST: 23.253.156.61
-    <<: *deploy
-
 workflows:
   version: 2
   build-deploy:
@@ -133,9 +127,3 @@ workflows:
           filters:
             branches:
               only: master
-      - deploy-pre-production:
-          requires:
-            - build
-          filters:
-            branches:
-              only: rackspace-to-aws
