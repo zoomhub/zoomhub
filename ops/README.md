@@ -10,7 +10,7 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 
 ## Initial Server Setup
 
--   Create server on Rackspace using Ubuntu 14.04 LTS (Trusty Tahr) image:
+-   Create server on Rackspace using Ubuntu 18.04 LTS (Bionic Beaver) image:
     <https://mycloud.rackspace.com/>
 -   Note `root` password. You will need it in subsequent steps.
 -   **Optional:** Create DNS entry for server.
