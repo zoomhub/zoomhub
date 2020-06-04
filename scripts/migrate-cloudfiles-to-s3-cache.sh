@@ -13,7 +13,6 @@ while IFS='' read -r LINE || [ -n "${LINE}" ]; do
     zoomhub-aws-s3:cache.zoomhub.net/content \
     --progress \
     --fast-list \
-    --low-level-retries 8 \
     --retries 8 \
     --retries-sleep=2s \
     --s3-acl='public-read' # --dry-run
@@ -22,11 +21,12 @@ while IFS='' read -r LINE || [ -n "${LINE}" ]; do
     zoomhub-aws-s3:cache.zoomhub.net/content/${LINE}_files \
     --progress \
     --fast-list \
-    --transfers=32 \
-    --checkers=32 \
-    --low-level-retries 8 \
+    --transfers=16 \
+    --checkers=16 \
     --retries 8 \
     --retries-sleep=2s \
     --s3-acl='public-read' # --dry-run
+
+  sleep 5s
 
 done
