@@ -74,6 +74,7 @@ jobs:
 
     steps:
       - checkout
+      - aws-cli/setup
 
       - run:
           name: "Setup custom environment variables"
