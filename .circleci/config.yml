@@ -48,8 +48,13 @@ deploy: &deploy
     - run:
         name: "Import project environment variables"
         command: |
+          echo 'export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"' >> $BASH_ENV
+          echo 'export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"' >> $BASH_ENV
           echo 'export ZH_AWS_ACCOUNT_ID="$ZH_AWS_ACCOUNT_ID"' >> $BASH_ENV
+          echo 'export ZH_AWS_EB_PROJECT="$ZH_AWS_EB_PROJECT"' >> $BASH_ENV
           echo 'export ZH_AWS_ECR_REPO="$ZH_AWS_ECR_REPO"' >> $BASH_ENV
+
+    - aws-cli/setup
     # - run:
     #     name: SSH setup
     #     command: mkdir -p ~/.ssh && ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
@@ -85,10 +90,6 @@ jobs:
             echo 'export PGPORT="5432"' >> $BASH_ENV
             echo 'export PGUSER="zoomhub"' >> $BASH_ENV
             echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
-            echo 'export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"' >> $BASH_ENV
-            echo 'export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"' >> $BASH_ENV
-
-      - aws-cli/setup
 
       - run:
           name: Initialize workspace
