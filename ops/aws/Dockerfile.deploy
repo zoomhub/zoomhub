@@ -1,0 +1,10 @@
+FROM fpco/stack-run:latest
+
+RUN mkdir -p /app
+WORKDIR /app
+
+ADD zoomhub /app
+
+EXPOSE 8000
+
+CMD ["/app/zoomhub"]
