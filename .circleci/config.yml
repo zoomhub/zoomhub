@@ -39,7 +39,7 @@ migrate-database: &migrate-database
 
 deploy: &deploy
   docker:
-    - image: buildpack-deps:trusty
+    - image: circleci/golang:1.13-alpine
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
@@ -55,6 +55,7 @@ deploy: &deploy
     # - run:
     #     name: Deploy
     #     command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
+    - setup_remote_docker
     - run: docker build --rm=false -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 -f Dockerfile.deploy .
     - run: ./deploy.sh $CIRCLE_SHA1
 
