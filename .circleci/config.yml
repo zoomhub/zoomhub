@@ -152,6 +152,9 @@ jobs:
           name: Copy AWS deploy script to workspace
           command: cp ./ops/aws/deploy.sh workspace
       - run:
+          name: Copy AWS Dockerfile.deploy to workspace
+          command: cp ./ops/aws/Dockerfile.deploy workspace
+      - run:
           name: Copy database migration binary to workspace
           command: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
       - run:
@@ -161,11 +164,12 @@ jobs:
       - persist_to_workspace:
           root: workspace
           paths:
+            - deploy.sh
+            - Dockerfile.deploy
             - migrate-database
             - migrate-database.sh
-            # - zoomhub.keter
             - zoomhub
-            - deploy.sh
+            # - zoomhub.keter
 
       # Save dependency cache
       - save_cache:
