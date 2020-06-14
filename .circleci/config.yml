@@ -4,6 +4,7 @@ orbs:
   aws-cli: circleci/aws-cli@1.1.0
   dmz: eddiewebb/dmz@0.0.7
   docker: circleci/docker@1.2.1
+  jq: circleci/jq@2.1.0
 
 defaults: &defaults
   parallelism: 1
@@ -55,6 +56,7 @@ deploy: &deploy
     # - run:
     #     name: Deploy
     #     command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
+    - jq/install # required for Docker installation (facepalm)
     - docker/install-docker-tools
     - setup_remote_docker
     - run: docker build --rm=false -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 -f Dockerfile.deploy .
