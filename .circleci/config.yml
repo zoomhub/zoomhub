@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   dmz: eddiewebb/dmz@0.0.7
-  python: circleci/python@0.3.0
+  aws-cli: circleci/aws-cli@1.1.0
 
 defaults: &defaults
   parallelism: 1
@@ -92,10 +92,6 @@ jobs:
       - run:
           name: Install psql for preloading data
           command: sudo apt-get update && sudo apt-get install --yes postgresql-client
-
-      - run:
-          name: Install AWS CLI
-          command: pip install awscli
 
       # Dependencies
       #   This would typically go in either a build or a build-and-test job when
