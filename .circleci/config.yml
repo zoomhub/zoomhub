@@ -39,7 +39,7 @@ migrate-database: &migrate-database
 
 deploy: &deploy
   docker:
-    - image: fpco/stack-build
+    - image: buildpack-deps:trusty
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
@@ -55,7 +55,6 @@ deploy: &deploy
     # - run:
     #     name: Deploy
     #     command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
-    - run: stack --no-terminal install --local-bin-path .
     - run: docker build --rm=false -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 -f Dockerfile.deploy .
     - run: ./deploy.sh $CIRCLE_SHA1
 
@@ -143,6 +142,9 @@ jobs:
       #     name: Copy Keter package to workspace
       #     command: cp zoomhub.keter workspace
       - run:
+          name: Copy zoomhub binary to workspace
+          command: cp "$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')" workspace
+      - run:
           name: Copy AWS deploy script to workspace
           command: cp ./ops/aws/deploy.sh workspace
       - run:
@@ -158,6 +160,7 @@ jobs:
             - migrate-database
             - migrate-database.sh
             # - zoomhub.keter
+            - zoomhub
             - deploy.sh
 
       # Save dependency cache
