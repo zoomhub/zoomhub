@@ -39,7 +39,7 @@ migrate-database: &migrate-database
 
 deploy: &deploy
   docker:
-    - image: buildpack-deps:trusty
+    - image: fpco/stack-build
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
