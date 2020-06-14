@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   dmz: eddiewebb/dmz@0.0.7
+  python: circleci/python@0.3.0
 
 defaults: &defaults
   parallelism: 1
