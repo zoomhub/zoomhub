@@ -74,7 +74,6 @@ jobs:
 
     steps:
       - checkout
-      - aws-cli/setup
 
       - run:
           name: "Setup custom environment variables"
@@ -83,6 +82,10 @@ jobs:
             echo 'export PGPORT="5432"' >> $BASH_ENV
             echo 'export PGUSER="zoomhub"' >> $BASH_ENV
             echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
+            echo 'export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"' >> $BASH_ENV
+            echo 'export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"' >> $BASH_ENV
+
+      - aws-cli/setup
 
       - run:
           name: Initialize workspace
