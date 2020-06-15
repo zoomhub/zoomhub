@@ -4,7 +4,7 @@ set -euo pipefail
 SHA1=$1
 
 # Push image to ECR
-$(aws ecr get-login --region us-east-2)
+$(aws ecr get-login --region us-east-2 --no-include-email)
 docker push $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$SHA1
 
 # Create new Elastic Beanstalk version
