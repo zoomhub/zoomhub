@@ -64,8 +64,8 @@ deploy: &deploy
     - jq/install # required for Docker installation (facepalm)
     - docker/install-docker-tools
     - setup_remote_docker
-    - run: docker build --rm=false -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 -f Dockerfile.deploy .
-    - run: ./deploy.sh $CIRCLE_SHA1
+    - run: cd ~/zoomhub/zoomhub/workspace && docker build --rm=false -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 -f Dockerfile.deploy .
+    - run: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh $CIRCLE_SHA1
 
 jobs:
   build:
