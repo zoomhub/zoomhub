@@ -156,6 +156,9 @@ jobs:
           name: Copy AWS Dockerfile.deploy to workspace
           command: cp ./ops/aws/Dockerfile.deploy workspace
       - run:
+          name: Copy AWS Dockerrun.aws.json.template to workspace
+          command: cp ./ops/aws/Dockerrun.aws.json.template workspace
+      - run:
           name: Copy database migration binary to workspace
           command: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
       - run:
@@ -167,6 +170,7 @@ jobs:
           paths:
             - deploy.sh
             - Dockerfile.deploy
+            - Dockerrun.aws.json.template
             - migrate-database
             - migrate-database.sh
             - zoomhub
