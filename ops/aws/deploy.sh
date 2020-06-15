@@ -12,7 +12,7 @@ aws ecr get-login-password \
 docker push $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$SHA1
 
 # Create new Elastic Beanstalk version
-EB_BUCKET=$ZH_AWS_EB_PROJECT-deploy-bucket
+EB_BUCKET=elasticbeanstalk-$ZH_AWS_EB_PROJECT-deploy-bucket
 DOCKERRUN_FILE=$SHA1-Dockerrun.aws.json
 
 sed "s/<TAG>/$SHA1/ ; s/<ZH_AWS_ACCOUNT_ID>/$ZH_AWS_ACCOUNT_ID/ ; s/<ZH_AWS_ECR_REPO>/$ZH_AWS_ECR_REPO/" < Dockerrun.aws.json.template > $DOCKERRUN_FILE
