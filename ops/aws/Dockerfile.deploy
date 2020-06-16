@@ -3,6 +3,7 @@ FROM fpco/stack-run:latest
 RUN mkdir -p /app
 WORKDIR /app
 
+ADD public /app
 ADD zoomhub /app
 
 EXPOSE 8000

@@ -129,32 +129,37 @@ jobs:
           name: Build binary
           command: stack build --install-ghc --pedantic --ghc-options="-O2"
       - run:
-          name: Copy zoomhub binary to workspace
+          name: Copy AWS ops files to workspace
+          command: |
+            cp \
+              ops/aws/deploy.sh \
+              ops/aws/Dockerfile.deploy \
+              ops/aws/Dockerrun.aws.json.template \
+              workspace
+      - run:
+          name: Copy public files to workspace
+          command: cp -R public workspace
+      - run:
+          name: Copy database migration script
+          command: cp ops/migrate-database.sh workspace
+      - run:
+          name: Copy zoomhub app binary to workspace
           command: cp "$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')" workspace
-      - run:
-          name: Copy AWS deploy script to workspace
-          command: cp ./ops/aws/deploy.sh workspace
-      - run:
-          name: Copy AWS Dockerfile.deploy to workspace
-          command: cp ./ops/aws/Dockerfile.deploy workspace
-      - run:
-          name: Copy AWS Dockerrun.aws.json.template to workspace
-          command: cp ./ops/aws/Dockerrun.aws.json.template workspace
       - run:
           name: Copy database migration binary to workspace
           command: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
-      - run:
-          name: Copy database migration script to workspace
-          command: cp ./ops/migrate-database.sh workspace
-
       - persist_to_workspace:
           root: workspace
           paths:
+            # deployment
             - deploy.sh
             - Dockerfile.deploy
             - Dockerrun.aws.json.template
+            # migration
             - migrate-database
             - migrate-database.sh
+            # app
+            - public
             - zoomhub
 
       # Save dependency cache
