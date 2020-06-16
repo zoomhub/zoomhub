@@ -27,7 +27,7 @@ aws elasticbeanstalk create-application-version --application-name $ZH_AWS_EB_PR
     --version-label $SHA1 --source-bundle S3Bucket=$EB_BUCKET,S3Key=$DOCKERRUN_FILE \
     --region us-east-2
 
-ENV_NAME="$(echo "$ZH_AWS_EB_PROJECT" | awk 'BEGIN{FS="";RS="-";ORS=""} {$0=toupper(substr($0,1,1)) substr($0,2)} 1')-env"
+ENV_NAME="$(echo "$ZH_AWS_EB_PROJECT" | awk 'BEGIN{FS="";RS="-";ORS=""} {$0=toupper(substr($0,1,1)) substr($0,2)} 1')-env-1"
 # Update Elastic Beanstalk environment to new version
 aws elasticbeanstalk update-environment --environment-name "$ENV_NAME" \
     --version-label $SHA1 \
