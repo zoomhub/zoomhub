@@ -3,6 +3,11 @@
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 resolver: lts-14.14
 
+# Enabled in order to avoid the following error on Amazon Linux 2:
+# /lib/x86_64-linux-gnu/libm.so.6: version `GLIBC_2.27' not found
+docker:
+  enable: true
+
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
