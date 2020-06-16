@@ -113,12 +113,19 @@ jobs:
             # configured correctly
             - zh-stack-cache-v2-dep-
 
+      # Install Docker for Stack:
+      - jq/install # required for Docker installation (facepalm)
+      - docker/install-docker-tools
+      - setup_remote_docker
+
       # Test
       - run:
           name: Run tests
           command: |
             HASHIDS_SALT='secret-salt'\
-              stack build --no-terminal \
+              stack build --docker \
+                          --docker-stack-exe /root/.stack/programs/x86_64-linux/stack-2.3.1/stack \
+                          --no-terminal \
                           --fast \
                           --exec "migrate-database $PGDATABASE migrate"
 
@@ -132,7 +139,13 @@ jobs:
 
       - run:
           name: Build binary
-          command: stack build --install-ghc --pedantic --ghc-options="-O2"
+          command: |
+            stack build \
+              --docker \
+              --docker-stack-exe /root/.stack/programs/x86_64-linux/stack-2.3.1/stack \
+              --install-ghc \
+              --pedantic \
+              --ghc-options="-O2"
       - run:
           name: Copy AWS ops files to workspace
           command: |
