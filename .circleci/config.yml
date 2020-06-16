@@ -108,11 +108,6 @@ jobs:
             # configured correctly
             - zh-stack-cache-v2-dep-
 
-      # Install Docker for Stack:
-      - jq/install # required for Docker installation (facepalm)
-      - docker/install-docker-tools
-      - setup_remote_docker
-
       # Test
       - run:
           name: Run tests
