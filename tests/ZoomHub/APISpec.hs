@@ -126,7 +126,7 @@ newContentURL = "http://example.com"
 {-# NOINLINE config #-}
 config :: Config
 config = Config
-    { baseURI = BaseURI (toURI "http://localhost:8000")
+    { baseURI = BaseURI (toURI "http://localhost:5000")
     , contentBaseURI =
         case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
           Just uri -> uri
@@ -139,7 +139,7 @@ config = Config
     , error404 = "404"
     , logger = nullLogger
     , openSeadragonScript = "osd"
-    , port = 8000
+    , port = 5000
     , processContent = ProcessExistingAndNewContent
     , publicPath = "./public"
     , rackspace = undefined
@@ -201,9 +201,9 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
 
         get ("/v1/content/" <> BC.pack newContentId) `shouldRespondWith`
           "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
-          \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/9xe\
+          \,\"embedHtml\":\"<script src=\\\"http://localhost:5000/9xe\
           \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
-          \:\"http://localhost:8000/9xe\",\"id\"\
+          \:\"http://localhost:5000/9xe\",\"id\"\
           \:\"9xe\",\"ready\":false,\"failed\":false}"
           { matchStatus = 200
           , matchHeaders = [applicationJSON]
@@ -222,8 +222,8 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
             \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
             \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
             \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
-            \\"<script src=\\\"http://localhost:8000/yQ4.js?width=auto&\
-            \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:8000\
+            \\"<script src=\\\"http://localhost:5000/yQ4.js?width=auto&\
+            \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:5000\
             \/yQ4\",\"id\":\"yQ4\",\"ready\":true,\"failed\":false}"
           { matchStatus = 200
           , matchHeaders = [applicationJSON]
@@ -269,8 +269,8 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
           \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
           \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
           \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
-          \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
-          \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
+          \src=\\\"http://localhost:5000/yQ4.js?width=auto&height=400px\\\">\
+          \</script>\",\"shareUrl\":\"http://localhost:5000/yQ4\",\"id\":\
           \\"yQ4\",\"ready\":true,\"failed\":false},\
           \\"redirectLocation\":null});"
           { matchStatus = 200

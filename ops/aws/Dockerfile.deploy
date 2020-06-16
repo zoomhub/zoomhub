@@ -6,6 +6,6 @@ WORKDIR /app
 ADD public /app
 ADD zoomhub /app
 
-EXPOSE 8000
+EXPOSE 5000
 
 CMD ["/app/zoomhub"]
