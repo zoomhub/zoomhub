@@ -55,12 +55,6 @@ deploy: &deploy
           echo 'export ZH_AWS_ECR_REPO="$ZH_AWS_ECR_REPO"' >> $BASH_ENV
 
     - aws-cli/setup
-    # - run:
-    #     name: SSH setup
-    #     command: mkdir -p ~/.ssh && ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-    # - run:
-    #     name: Deploy
-    #     command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
     - jq/install # required for Docker installation (facepalm)
     - docker/install-docker-tools
     - setup_remote_docker
@@ -71,9 +65,6 @@ jobs:
   build:
     <<: *defaults
     docker:
-      # Default CircleCI Docker container image
-      # https://circleci.com/docs/2.0/executor-types/
-      # - image: buildpack-deps:trusty
       - image: fpco/stack-build
       - image: "circleci/postgres:9.6.5-alpine-ram"
         environment:
@@ -137,15 +128,6 @@ jobs:
       - run:
           name: Build binary
           command: stack build --install-ghc --pedantic --ghc-options="-O2"
-      # - run:
-      #     name: Create Keter package
-      #     command: ./ops/keter-bundle.sh
-      # - run:
-      #     name: Copy Keter package to artifacts
-      #     command: cp zoomhub.keter $CIRCLE_ARTIFACTS
-      # - run:
-      #     name: Copy Keter package to workspace
-      #     command: cp zoomhub.keter workspace
       - run:
           name: Copy zoomhub binary to workspace
           command: cp "$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')" workspace
@@ -174,7 +156,6 @@ jobs:
             - migrate-database
             - migrate-database.sh
             - zoomhub
-            # - zoomhub.keter
 
       # Save dependency cache
       - save_cache:
