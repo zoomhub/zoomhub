@@ -15,7 +15,7 @@ defaults: &defaults
 
 migrate-database: &migrate-database
   docker:
-    - image: fpco/stack-build
+    - image: fpco/stack-build:lts-14.14
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
@@ -41,7 +41,7 @@ migrate-database: &migrate-database
 
 deploy: &deploy
   docker:
-    - image: fpco/stack-build
+    - image: fpco/stack-build:lts-14.14
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
@@ -70,7 +70,7 @@ jobs:
   build:
     <<: *defaults
     docker:
-      - image: fpco/stack-build
+      - image: fpco/stack-build:lts-14.14
       - image: "circleci/postgres:9.6.5-alpine-ram"
         environment:
           POSTGRES_USER: zoomhub
