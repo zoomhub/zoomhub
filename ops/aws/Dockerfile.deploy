@@ -5,7 +5,8 @@ WORKDIR /opt/app
 
 RUN apt-get update && apt-get install -y \
   ca-certificates \
-  libgmp-dev
+  libgmp-dev \
+  libpq-dev
 
 ADD public /opt/app/public
 ADD zoomhub /opt/app
