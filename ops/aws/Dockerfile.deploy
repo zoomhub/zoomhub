@@ -1,11 +1,15 @@
-FROM fpco/stack-run:latest
+FROM ubuntu:16.04
 
-RUN mkdir -p /app
-WORKDIR /app
+RUN mkdir -p /opt/app
+WORKDIR /opt/app
 
-ADD public /app
-ADD zoomhub /app
+RUN apt-get update && apt-get install -y \
+  ca-certificates \
+  libgmp-dev
+
+ADD public /opt/app/public
+ADD zoomhub /opt/app
 
 EXPOSE 5000
 
-CMD ["/app/zoomhub"]
+CMD ["/opt/app/zoomhub"]
