@@ -15,4 +15,5 @@ ADD zoomhub /opt/app
 
 EXPOSE 5000
 
-CMD ["/opt/app/zoomhub"]
+ENTRYPOINT ["sh", "-c", \
+  "PGHOST=$RDS_HOSTNAME PGPORT=$RDS_PORT PGDATABASE=$RDS_DB_NAME PGUSER=$RDS_USERNAME PGPASSWORD=$RDS_PASSWORD /opt/app/zoomhub"]
