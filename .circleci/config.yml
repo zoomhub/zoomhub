@@ -2,7 +2,6 @@ version: 2.1
 
 orbs:
   aws-cli: circleci/aws-cli@1.1.0
-  dmz: eddiewebb/dmz@0.0.7
   docker: circleci/docker@1.2.1
   jq: circleci/jq@2.1.0
 
@@ -12,32 +11,6 @@ defaults: &defaults
   environment:
     CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
     CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
-
-migrate-database: &migrate-database
-  docker:
-    - image: fpco/stack-build
-  steps:
-    - attach_workspace:
-        at: ~/zoomhub/zoomhub/workspace
-    - run:
-        name: Install ssh-keyscan for dmz/open_tunnel orb
-        command: sudo apt-get update && sudo apt-get install --yes openssh-client
-    - dmz/open_tunnel:
-        bastion_host: "$BASTION_HOST"
-        bastion_user: "admin"
-        local_port: "9001"
-        target_host: "$AWS_RDS_PGHOST"
-        target_port: "5432"
-
-    - run:
-        name: "Import project environment variables"
-        command: |
-          echo 'export PGHOST="$AWS_RDS_PGHOST"' >> $BASH_ENV
-          echo 'export PGPASSWORD="$AWS_RDS_PGPASSWORD"' >> $BASH_ENV
-
-    - run:
-        name: Migrate database
-        command: cd ~/zoomhub/zoomhub/workspace && ./migrate-database.sh
 
 deploy: &deploy
   docker:
@@ -150,9 +123,6 @@ jobs:
           name: Copy public files to workspace
           command: cp -R public workspace
       - run:
-          name: Copy database migration script
-          command: cp ops/migrate-database.sh workspace
-      - run:
           name: Copy zoomhub app binary to workspace
           command: cp "$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')" workspace
       - run:
@@ -169,7 +139,6 @@ jobs:
             - Dockerrun.aws.json.template
             # migration
             - migrate-database
-            - migrate-database.sh
             # app
             - public
             - zoomhub
@@ -191,13 +160,6 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
-  migrate-database-staging:
-    <<: *defaults
-    environment:
-      BASTION_HOST: staging.zoomhub.net
-      PGDATABASE: zoomhub_staging
-    <<: *migrate-database
-
   deploy-staging:
     <<: *defaults
     environment:
@@ -215,19 +177,9 @@ workflows:
   build-deploy:
     jobs:
       - build
-      - migrate-database-staging:
-          requires:
-            - build
-          filters:
-            branches:
-              # FIXME: Only migrate database on `postgresql` branch
-              only: postgresql
-              # ignore:
-              #   - master
       - deploy-staging:
           requires:
             - build
-            # - migrate-database-staging
           filters:
             branches:
               # FIXME: Only deploy `aws-elastic-beanstalk` branch to staging
