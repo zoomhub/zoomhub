@@ -8,5 +8,11 @@
     {
       "ContainerPort": "5000"
     }
+  ],
+  "Volumes": [
+    {
+      "HostDirectory": "/tmp",
+      "ContainerDirectory": "/tmp"
+    }
   ]
 }

@@ -142,7 +142,9 @@ jobs:
       - run:
           name: Copy AWS ops files to workspace
           command: |
-            cp \
+            cp -R \
+              ops/aws/.ebextensions \
+              ops/aws/run.sh \
               ops/aws/deploy.sh \
               ops/aws/Dockerfile.deploy \
               ops/aws/Dockerrun.aws.json.template \
@@ -163,6 +165,8 @@ jobs:
           root: workspace
           paths:
             # deployment
+            - .ebextensions
+            - run.sh
             - deploy.sh
             - Dockerfile.deploy
             - Dockerrun.aws.json.template

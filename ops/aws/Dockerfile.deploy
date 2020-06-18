@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 
-RUN mkdir -p /opt/app
-WORKDIR /opt/app
+RUN mkdir -p /opt/zoomhub
+WORKDIR /opt/zoomhub
 
 RUN apt-get upgrade -y && \
     apt-get update -y && \
@@ -10,10 +10,19 @@ RUN apt-get upgrade -y && \
       libgmp-dev \
       libpq-dev
 
-ADD public /opt/app/public
-ADD zoomhub /opt/app
+ADD .ebextensions/ /opt/zoomhub/.ebextensions
+ADD run.sh /opt/zoomhub
+ADD public /opt/zoomhub/public
+ADD zoomhub /opt/zoomhub
+
+ADD migrate-database /opt/zoomhub
 
 EXPOSE 5000
 
-ENTRYPOINT ["sh", "-c", \
-  "PGHOST=$RDS_HOSTNAME PGPORT=$RDS_PORT PGDATABASE=$RDS_DB_NAME PGUSER=$RDS_USERNAME PGPASSWORD=$RDS_PASSWORD /opt/app/zoomhub"]
+ENTRYPOINT [ \
+  "PGHOST=$RDS_HOSTNAME \
+  PGPORT=$RDS_PORT \
+  PGDATABASE=$RDS_DB_NAME \
+  PGUSER=$RDS_USERNAME \
+  PGPASSWORD=$RDS_PASSWORD \
+  sh", "-c", "/opt/zoomhub/run.sh"]
