@@ -14,7 +14,7 @@ defaults: &defaults
 
 deploy: &deploy
   docker:
-    - image: fpco/stack-build
+    - image: cimg/base:2020.01
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
