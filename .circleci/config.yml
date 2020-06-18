@@ -116,9 +116,6 @@ jobs:
             # configured correctly
             - zh-stack-cache-v2-dep-
 
-      # Check glibc version
-      - run: ldd --version
-
       # Test
       - run:
           name: Run tests
