@@ -7,6 +7,13 @@ function json_log_time() {
 
 # TODO: Update when we add auto-scaling or retrieve value via AWS CLI:
 # https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html#command-options-general-elasticbeanstalkenvironment
+#
+#   > aws elasticbeanstalk describe-configuration-settings \
+#       --environment-name <env-name> \
+#       --application-name <app-name> | \
+#       jq '.ConfigurationSettings[0].OptionSettings[] | select(.Namespace == "aws:elasticbeanstalk:environment" and .OptionName =="EnvironmentType") | .Value'
+#   "LoadBalanced"
+
 eb_environment_type='SingleInstance'
 # eb_environment_type='LoadBalanced'
 
