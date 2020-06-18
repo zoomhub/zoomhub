@@ -43,7 +43,7 @@ deploy: &deploy
     - run: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh $CIRCLE_SHA1
 
 jobs:
-  build:
+  build-and-test:
     <<: *defaults
     docker:
       - image: fpco/stack-build
@@ -176,10 +176,10 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-      - build
+      - build-and-test
       - deploy-staging:
           requires:
-            - build
+            - build-and-test
           filters:
             branches:
               # FIXME: Only deploy `aws-elastic-beanstalk` branch to staging
@@ -188,7 +188,7 @@ workflows:
               #   - master
       - deploy-production:
           requires:
-            - build
+            - build-and-test
           filters:
             branches:
               # FIXME: Re-enable deployment to production
