@@ -42,7 +42,7 @@ FLICKR_COLUMNS_PG='content_id,farm_id,server_id,photo_id,secret,size_id,is_publi
 sqlite3 "$SQLITE_DB" '.headers on' '.mode insert content' "SELECT $(echo $CONTENT_COLUMNS_SQLITE | sed "s/error/replace(error, char(10), ' ') AS error/") FROM content $LIMIT" | \
   (cat && sqlite3 "$SQLITE_DB" '.headers on' '.mode insert image' "SELECT $IMAGE_COLUMNS_SQLITE FROM image $LIMIT") | \
   (cat && sqlite3 "$SQLITE_DB" '.headers on' '.mode insert flickr' "SELECT $(echo $FLICKR_COLUMNS_SQLITE | sed "s/isPublic/(isPublic || '') AS isPublic/") FROM flickr $LIMIT") | \
-  (echo 'SET session_replication_role = replica;' && cat) | \
+  (echo 'SET session_replication_role = replica; -- This disables triggers which allows us to retain existing content IDs' && cat) | \
   (echo 'SET client_min_messages TO WARNING;' && cat) | \
   sed "s/INSERT INTO content($CONTENT_COLUMNS_SQLITE)/INSERT INTO content($CONTENT_COLUMNS_PG)/g;" | \
   sed "s/INSERT INTO image($IMAGE_COLUMNS_SQLITE)/INSERT INTO image($IMAGE_COLUMNS_PG)/g;" | \
