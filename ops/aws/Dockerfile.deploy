@@ -19,6 +19,4 @@ ADD migrate-database /opt/zoomhub
 
 EXPOSE 5000
 
-ENTRYPOINT ["sh", "-c", \
-  "PGHOST=$RDS_HOSTNAME PGPORT=$RDS_PORT PGDATABASE=$RDS_DB_NAME PGUSER=$RDS_USERNAME \
-  PGPASSWORD=$RDS_PASSWORD /opt/zoomhub/run.sh"]
+ENTRYPOINT ["sh", "-c", "/opt/zoomhub/run.sh"]

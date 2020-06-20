@@ -25,5 +25,5 @@ if [[  "$eb_environment_type" == "SingleInstance" || ("$eb_environment_type" == 
   /opt/zoomhub/migrate-database $PGDATABASE migrate
 fi
 
-echo "{$(json_log_time), \"message\": \"Run app\", \"script\": \"run.sh\"}"
-/opt/zoomhub/zoomhub
+echo "{$(json_log_time), \"message\": \"Run app\", \"script\": \"run.sh\", \"env\": {\"RDS_HOSTNAME\": "$RDS_HOSTNAME", \"RDS_DB_NAME\": "$RDS_DB_NAME", \"RDS_USERNAME\": "$RDS_USERNAME"}}"
+PGHOST="$RDS_HOSTNAME" PGPORT="$RDS_PORT" PGDATABASE="$RDS_DB_NAME" PGUSER="$RDS_USERNAME" PGPASSWORD="$RDS_PASSWORD" /opt/zoomhub/zoomhub
