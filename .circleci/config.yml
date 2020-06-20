@@ -163,13 +163,14 @@ jobs:
   deploy-staging:
     <<: *defaults
     environment:
-      DEPLOY_HOST: staging.zoomhub.net
+      ZH_AWS_EB_ENVIRONMENT: production # TODO: Change to `staging`
     <<: *deploy
 
   deploy-production:
     <<: *defaults
     environment:
-      DEPLOY_HOST: zoomhub.net
+      ZH_AWS_EB_ENVIRONMENT: production
+
     <<: *deploy
 
 workflows:

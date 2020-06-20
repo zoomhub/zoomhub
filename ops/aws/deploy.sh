@@ -28,6 +28,6 @@ aws elasticbeanstalk create-application-version --application-name $ZH_AWS_EB_PR
     --region us-east-2
 
 # Update Elastic Beanstalk environment to new version
-aws elasticbeanstalk update-environment --environment-name $ZH_AWS_EB_PROJECT \
+aws elasticbeanstalk update-environment --environment-name $ZH_AWS_EB_ENVIRONMENT \
     --version-label $SHA1 \
     --region us-east-2
