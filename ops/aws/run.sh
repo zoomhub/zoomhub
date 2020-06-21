@@ -22,7 +22,7 @@ is_leader=$(if [[ -f "/tmp/is_leader" ]]; then echo 'true'; else echo 'false'; f
 echo "{$(json_log_time), \"message\": \"Run startup script\", \"script\": \"run.sh\", \"environmentType\": \"$eb_environment_type\", \"isLeader\": $is_leader, \"env\": {\"RDS_HOSTNAME\": \"$RDS_HOSTNAME\", \"RDS_DB_NAME\": \"$RDS_DB_NAME\", \"RDS_USERNAME\": \"$RDS_USERNAME\"}}"
 if [[  "$eb_environment_type" == "SingleInstance" || ("$eb_environment_type" == "LoadBalanced" && "$is_leader" == "true" ) ]]; then
   echo "{$(json_log_time), \"message\": \"Migrate database\", \"script\": \"run.sh\"}"
-  /opt/zoomhub/migrate-database $PGDATABASE migrate
+  /opt/zoomhub/migrate-database $RDS_DB_NAME migrate
 fi
 
 echo "{$(json_log_time), \"message\": \"Run app\", \"script\": \"run.sh\"}"
