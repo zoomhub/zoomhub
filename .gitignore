@@ -1,19 +1,8 @@
 # Mac OS X
 .DS_Store
 
-# npm
-/node_modules
-/node/node_modules
-npm-debug.log
-
 # Haskell
-/cabal.sandbox.config
-/.cabal-sandbox
 /.stack-work
-/dist/
-
-# Sublime Text
-/*.sublime-workspace
 
 # Ops
 /ops/vars.yml
@@ -24,9 +13,6 @@ npm-debug.log
 
 # Exported design files
 /design/*.png
-
-# Databases
-*.sqlite3
 
 # Logs
 *.log
@@ -46,3 +32,8 @@ npm-debug.log
 
 # Vendor: servant
 /vendor/servant/
+
+# Elastic Beanstalk files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

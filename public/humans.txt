@@ -32,9 +32,6 @@ GitHub:    @nein09
   years, and helping us transition it when its time came. They moved mountains
   to get us both the data and the domain.
 
-- Rackspace for hosting and running this service free of charge.
-  Rackspace ♥︎ open-source, and open-source ♥︎ Rackspace.
-
 - OpenSeadragon for providing the zooming viewer.
 
 - VIPS for providing blazing-fast DZI generation.

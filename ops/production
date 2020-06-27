@@ -1,5 +1,0 @@
-[web]
-zoomhub.net rackspace_cloudfiles_container=cache rackspace_cloudfiles_container_path=content
-
-[database]
-db.zoomhub.net

@@ -42,12 +42,12 @@ limited API clients such as browsers, Silverlight, and Flash.
 - `ready` (boolean)
 - `failed` (boolean)
 - `progress` (double; between 0 and 1;
-              **NOTE:** Currently only `0` or `1` are implemented.)
+  **NOTE:** Currently only `0` or `1` are implemented.)
 - `shareUrl` (string; the URL for viewing)
 - `embedHtml` (string; HTML snippet for this content’s embeddable viewer)
-- `title` (optional string; **TODO?**)
-- `attributionText` (optional string; ***TODO?**)
-- `attributionUrl` (optional string; ***TODO?**)
+- `title` (optional string; **_TODO?_**)
+- `attributionText` (optional string; **_TODO?_**)
+- `attributionUrl` (optional string; **_TODO?_**)
 - `dzi` (optional DZI object; `null` if `progress < 1.0` or `failed === true`)
 
 **Response** objects (for non-RESTful API requests) have the form:
@@ -55,7 +55,7 @@ limited API clients such as browsers, Silverlight, and Flash.
 - `status` (int; the HTTP status code of the response)
 - `statusText` (string; the human-readable name of the HTTP status code)
 - `redirectLocation` (optional string; for `3xx` redirect responses)
-- `retryAfter` (optional int; ***TODO?***)
+- `retryAfter` (optional int; **_TODO?_**)
 - `content` (optional Content object; on successful content requests)
 - `dzi` (optional DZI object; on successful DZI requests)
 - `error` (optional string; on failed requests)
@@ -75,13 +75,13 @@ Note that all response objects have a `content`, `dzi`, or `error` object.
 - 400 w/ error message if URL is invalid (e.g. malformed)
 - 503 w/ error message if URL is new and ZoomHub is closed for new content
 
-`GET /v1/dzi/:id` (***TODO***)
+`GET /v1/dzi/:id` (**_TODO_**)
 
 - 3xx to DZI URL, w/ DZI object for convenience, if exists and ready
 - 404 w/ `Retry-After` header and message body if not ready but in progress
 - 404 w/ error message if not found or failed
 
-`GET /v1/dzi?url=<url>` (***TODO***)
+`GET /v1/dzi?url=<url>` (**_TODO_**)
 
 - 3xx to DZI URL, w/ DZI object for convenience, if successful and ready
 - 3xx to `/v1/dzi/:id` if not ready or failed, but URL is valid
@@ -97,9 +97,10 @@ variety of other input types:
 - PDF files
 - Web pages (with special support for certain sites, e.g. Flickr)
 
-***TODO:*** *Add support for these input types again.*
+**_TODO:_** _Add support for these input types again._
 
 <a name="breaking-changes"></a>
+
 ## Breaking Changes
 
 - The following Zoom.it API features have been discontinued in the ZoomHub API
@@ -109,7 +110,6 @@ variety of other input types:
   - XML as output format (opt-in using `?format=xml`).
   - Non-RESTful response format without JSONP, e.g. using just `?format=json`
     without `callback` query parameter.
-
 
 [jsonp]: http://en.wikipedia.org/wiki/JSONP
 [zoomit-api-docs]: https://web.archive.org/web/20140814051321/http://zoom.it/pages/api/

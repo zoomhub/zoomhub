@@ -1,20 +1,9 @@
 #!/bin/bash
 set -eo pipefail
 
-hosts="ops/$3"
-if [ -z "$3" ]; then
-  hosts='ops/staging'
-fi
-
 # Helpers
 separator () {
     echo '------------------------------------------------------------------------------'
-}
-
-print_hosts () {
-    separator
-    echo "Hosts:   $(basename $hosts)"
-    separator
 }
 
 DEVELOPMENT_DB_NAME='zoomhub_development'
@@ -43,69 +32,6 @@ lint)
 format)
     files=$(git ls-files | grep --invert 'vendor/' | grep '.hs$')
     stylish-haskell --inplace $files
-    ;;
-ops)
-    case "$2" in
-    bootstrap)
-        separator
-        echo 'WARNING: Running ./zh ops bootstrap more than once will fail'
-        echo '         as `root` user will no longer have password access to '
-        echo '         the server.'
-        separator
-        echo "Hosts:   $(basename $hosts)"
-        separator
-        echo 'Enter `root` SSH password:'
-        ansible-playbook --inventory-file "$hosts" \
-            ops/user.yml --user root --ask-pass \
-            --extra-vars "sudoers=y username=admin ansible_become_pass='' variable_hosts=${4:-all}"
-        ;;
-    ping)
-        print_hosts
-        ansible --inventory-file "$hosts" all -m ping
-        ;;
-    init)
-        ansible-galaxy install -r ops/requirements.yml
-        pip3 install passlib
-        pip3 install pyrax
-        brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/de9a176f10b1be4dcb7436a2bc839e92ccbfbeed/Library/Formula/sshpass.rb
-    ;;
-    setup-admin-server)
-        ansible-playbook -v --inventory-file ops/admin \
-            --vault-password-file ops/.vault_pass.txt \
-            --ask-become \
-            ops/admin.yml
-        ;;
-    setup-database-server)
-        echo 'DEPRECATED: Please use `./zh ops setup-database-aws-rds`'
-        exit 1
-
-        print_hosts
-
-        ansible-playbook -v --inventory-file "$hosts" \
-            --vault-password-file ops/.vault_pass.txt \
-            ops/database.yml "${@:4}"
-        ;;
-    setup-database-aws-rds)
-        print_hosts
-
-        ansible-playbook -v --inventory-file "$hosts" \
-            --vault-password-file ops/.vault_pass.txt \
-            ops/database_aws_rds.yml "${@:4}"
-        ;;
-    setup-web-server)
-        print_hosts
-
-        echo 'Enter `admin` user password:'
-        ansible-playbook -v --inventory-file "$hosts" \
-            --ask-become \
-            --vault-password-file ops/.vault_pass.txt \
-            ops/web.yml "${@:4}"
-        ;;
-    *)
-        echo "Unknown command: $0 $@. Try $0 $1 \
-bootstrap|init|ping|setup-admin-server|setup-database-server|setup-database-aws-rds|setup-web-server"
-        exit 1
-    esac
     ;;
 run)
     dropdb --if-exists "$DEVELOPMENT_DB_NAME"
@@ -155,6 +81,6 @@ db)
     ;;
 
 *)
-    echo "Unknown command: $0 $@. Try: $0 format|init|lint|ops|run|test"
+    echo "Unknown command: $0 $@. Try: $0 format|init|lint|run|test"
     ;;
 esac

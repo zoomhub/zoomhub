@@ -11,7 +11,6 @@ Inspired by, and has taken over, the similar former Microsoft service
 This is a full, from-scratch rewrite, brought to you by the same developers who
 built the original **[zoom.it]**.
 
-
 ## Usage
 
 This service is running live at **[zoom.it]**.
@@ -28,19 +27,16 @@ The codebase is still a work-in-progress, but we can try to help if you need.
 If you wish to run this on your own, or to contribute to our development,
 please see **[CONTRIBUTING.md](./CONTRIBUTING.md)** for instructions.
 
-
 ## Discussion
 
 You can join our [Google Group](https://groups.google.com/group/zoomhub)
 or email us at [zoomhub@googlegroups.com](mailto:zoomhub@googlegroups.com).
-
 
 ## Issues
 
 Feel free to file bugs, request features, and ask questions on
 [GitHub Issues](https://github.com/zoomhub/zoomhub/issues).
 That’s also where we’re tracking TODOs and remaining work.
-
 
 ## Credits
 
@@ -49,9 +45,6 @@ Special thanks to:
 - **Bill Crow** and **David Vos** for keeping [zoom.it] alive at Microsoft
   through the years, and helping us transition it when its time came.
   They moved mountains to get us both the data and the domain.
-
-- **[Rackspace](http://www.rackspace.com/)** for hosting and running this
-  service free of charge. Rackspace ♥︎ open-source, and open-source ♥︎ Rackspace.
 
 - **[OpenSeadragon](http://openseadragon.github.io/)** for providing the
   zooming viewer.
@@ -72,7 +65,6 @@ Special thanks to:
 ## License
 
 This code is open-source under the [MIT license](./LICENSE).
-
 
 [zoom.it]: http://zoom.it/
 [api.zoom.it]: http://api.zoom.it/

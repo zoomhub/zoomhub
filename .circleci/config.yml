@@ -1,7 +1,9 @@
 version: 2.1
 
 orbs:
-  dmz: eddiewebb/dmz@0.0.7
+  aws-cli: circleci/aws-cli@1.1.0
+  docker: circleci/docker@1.2.1
+  jq: circleci/jq@2.1.0
 
 defaults: &defaults
   parallelism: 1
@@ -10,52 +12,40 @@ defaults: &defaults
     CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
     CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
 
-migrate-database: &migrate-database
+deploy: &deploy
   docker:
-    - image: fpco/stack-build
+    - image: cimg/base:2020.01
   steps:
     - attach_workspace:
         at: ~/zoomhub/zoomhub/workspace
-    - run:
-        name: Install ssh-keyscan for dmz/open_tunnel orb
-        command: sudo apt-get update && sudo apt-get install --yes openssh-client
-    - dmz/open_tunnel:
-        bastion_host: "$BASTION_HOST"
-        bastion_user: "admin"
-        local_port: "9001"
-        target_host: "$AWS_RDS_PGHOST"
-        target_port: "5432"
-
     - run:
         name: "Import project environment variables"
         command: |
-          echo 'export PGHOST="$AWS_RDS_PGHOST"' >> $BASH_ENV
-          echo 'export PGPASSWORD="$AWS_RDS_PGPASSWORD"' >> $BASH_ENV
+          echo 'export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"' >> $BASH_ENV
+          echo 'export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"' >> $BASH_ENV
+          echo 'export ZH_AWS_ACCOUNT_ID="$ZH_AWS_ACCOUNT_ID"' >> $BASH_ENV
+          echo 'export ZH_AWS_EB_PROJECT="$ZH_AWS_EB_PROJECT"' >> $BASH_ENV
+          echo 'export ZH_AWS_ECR_REPO="$ZH_AWS_ECR_REPO"' >> $BASH_ENV
 
-    - run:
-        name: Migrate database
-        command: cd ~/zoomhub/zoomhub/workspace && ./migrate-database.sh
+    - aws-cli/setup
 
-deploy: &deploy
-  docker:
-    - image: buildpack-deps:trusty
-  steps:
-    - attach_workspace:
-        at: ~/zoomhub/zoomhub/workspace
-    - run:
-        name: SSH setup
-        command: mkdir -p ~/.ssh && ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-    - run:
-        name: Deploy
-        command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
+    # Set up Docker
+    - jq/install # required for Docker installation (facepalm)
+    - docker/install-docker-tools
+    - setup_remote_docker
+
+    - run: |
+        cd ~/zoomhub/zoomhub/workspace && \
+          docker build \
+            --rm=false \
+            -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 \
+            -f Dockerfile.deploy .
+    - run: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh $CIRCLE_SHA1
 
 jobs:
-  build:
+  build-and-test:
     <<: *defaults
     docker:
-      # Default CircleCI Docker container image
-      # https://circleci.com/docs/2.0/executor-types/
-      # - image: buildpack-deps:trusty
       - image: fpco/stack-build
       - image: "circleci/postgres:9.6.5-alpine-ram"
         environment:
@@ -83,9 +73,6 @@ jobs:
           name: Install psql for preloading data
           command: sudo apt-get update && sudo apt-get install --yes postgresql-client
 
-      # Dependencies
-      #   This would typically go in either a build or a build-and-test job when
-      #   using workflows
       # Restore the dependency cache
       - restore_cache:
           keys:
@@ -120,31 +107,38 @@ jobs:
           name: Build binary
           command: stack build --install-ghc --pedantic --ghc-options="-O2"
       - run:
-          name: Create Keter package
-          command: ./ops/keter-bundle.sh
+          name: Copy AWS ops files to workspace
+          command: |
+            cp -R \
+              ops/aws/.ebextensions \
+              ops/aws/run.sh \
+              ops/aws/deploy.sh \
+              ops/aws/Dockerfile.deploy \
+              ops/aws/Dockerrun.aws.json.template \
+              workspace
       - run:
-          name: Copy Keter package to artifacts
-          command: cp zoomhub.keter $CIRCLE_ARTIFACTS
+          name: Copy public files to workspace
+          command: cp -R public workspace
       - run:
-          name: Copy Keter package to workspace
-          command: cp zoomhub.keter workspace
-      - run:
-          name: Copy deploy script to workspace
-          command: cp ./ops/deploy.sh workspace
+          name: Copy zoomhub app binary to workspace
+          command: cp "$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')" workspace
       - run:
           name: Copy database migration binary to workspace
           command: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
-      - run:
-          name: Copy database migration script to workspace
-          command: cp ./ops/migrate-database.sh workspace
-
       - persist_to_workspace:
           root: workspace
           paths:
-            - migrate-database
-            - migrate-database.sh
-            - zoomhub.keter
+            # deployment
+            - .ebextensions
+            - run.sh
             - deploy.sh
+            - Dockerfile.deploy
+            - Dockerrun.aws.json.template
+            # migration
+            - migrate-database
+            # app
+            - public
+            - zoomhub
 
       # Save dependency cache
       - save_cache:
@@ -163,52 +157,36 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
-  migrate-database-staging:
-    <<: *defaults
-    environment:
-      BASTION_HOST: staging.zoomhub.net
-      PGDATABASE: zoomhub_staging
-    <<: *migrate-database
-
   deploy-staging:
     <<: *defaults
     environment:
-      DEPLOY_HOST: staging.zoomhub.net
+      ZH_AWS_EB_ENVIRONMENT: production # TODO: Create `staging` environment
     <<: *deploy
 
   deploy-production:
     <<: *defaults
     environment:
-      DEPLOY_HOST: zoomhub.net
+      ZH_AWS_EB_ENVIRONMENT: production
+
     <<: *deploy
 
 workflows:
   version: 2
   build-deploy:
     jobs:
-      - build
-      - migrate-database-staging:
-          requires:
-            - build
-          filters:
-            branches:
-              # FIXME: Only migrate database on `postgresql` branch
-              only: postgresql
-              # ignore:
-              #   - master
+      - build-and-test
       - deploy-staging:
           requires:
-            - build
-            - migrate-database-staging
+            - build-and-test
           filters:
             branches:
-              # FIXME: Only deploy `postgresql` branch to staging
-              only: postgresql
+              # FIXME: Only deploy `aws-elastic-beanstalk` branch to staging
+              only: aws-elastic-beanstalk
               # ignore:
               #   - master
       - deploy-production:
           requires:
-            - build
+            - build-and-test
           filters:
             branches:
               # FIXME: Re-enable deployment to production
