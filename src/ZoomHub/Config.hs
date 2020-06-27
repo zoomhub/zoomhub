@@ -46,7 +46,7 @@ import ZoomHub.Types.TempPath (TempPath)
 
 
 defaultPort :: Integer
-defaultPort = 5000
+defaultPort = 8000
 
 data Config = Config
   { baseURI                         :: BaseURI

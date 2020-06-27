@@ -13,7 +13,7 @@ fi
 # # Self-sign app to avoid constant Mac OS X firewall warnings:
 # sudo codesign --force --sign - "$zoomhub"
 
-BASE_URI='http://localhost:5000' \
+BASE_URI='http://localhost:8000' \
 PROCESS_CONTENT="ProcessExistingAndNewContent" \
 PROCESSING_WORKERS='2' \
 RACKSPACE_USERNAME='' \

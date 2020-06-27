@@ -17,6 +17,6 @@ ADD zoomhub /opt/zoomhub
 
 ADD migrate-database /opt/zoomhub
 
-EXPOSE 5000
+EXPOSE 8000
 
 ENTRYPOINT ["sh", "-c", "/opt/zoomhub/run.sh"]
