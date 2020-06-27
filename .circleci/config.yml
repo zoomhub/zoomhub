@@ -180,14 +180,11 @@ workflows:
             - build-and-test
           filters:
             branches:
-              # FIXME: Only deploy `aws-elastic-beanstalk` branch to staging
-              only: aws-elastic-beanstalk
-              # ignore:
-              #   - master
+              ignore:
+                - master
       - deploy-production:
           requires:
             - build-and-test
           filters:
             branches:
-              # FIXME: Re-enable deployment to production
-              only: non-existent
+              only: master
