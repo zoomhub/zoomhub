@@ -1,6 +1,0 @@
----
-- name: Install VIPS
-  apt:
-    pkg:
-    - libvips
-    - libvips-tools

@@ -1,3 +1,0 @@
----
-- name: Install Rackspace Python SDK 'pyrax'
-  command: pip install pyrax
