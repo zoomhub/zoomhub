@@ -1,13 +1,23 @@
 # ZoomHub
 
-## Unreleased
+## 3.0.0-alpha – June 27, 2020
 
+-   To enable concurrent submissions, migrate storage engine from [SQLite],
+    which only allows a single write operation due to a file lock, to
+    [PostgreSQL] using [Squeal], a type-safe embedding of PostgreSQL in Haskell.
+    -   Perform type-safe database migrations using `migrate-database` helper.
+    -   Set up PostgreSQL trigger for generating new content hash IDs.
+    -   Add full test suite for ZoomHub API.
+    -   **Ops**
+        -   Add infrastructure for setting up RDS PostgreSQL instance.
+        -   Add database migration scripts.
 -   Combine `PROCESS_EXISTING_CONTENT` and `PROCESS_NEW_CONTENT` environment
     variables into
     `PROCESS_CONTENT='ProcessNoContent|ProcessExistingContent|ProcessExistingAndNewContent'`.
     This was done because `PROCESS_EXISTING_CONTENT=0` and
     `PROCESS_NEW_CONTENT=1` is an invalid state. We do not spin up any workers
-    unless `PROCESS_EXISTING_CONTENT=1`.
+    unless `PROCESS_CONTENT=ProcessExistingContent|ProcessExistingAndNewContent`.
+-   Upgrade Stack LTS from 12.6 to 14.14.
 
 ## 2.0.0 – April 14, 2016
 
@@ -124,6 +134,8 @@
 [postgresql]: https://www.postgresql.org/
 [rackspace]: http://www.rackspace.com/
 [redis]: http://redis.io/
+[sqlite]: https://www.sqlite.org/index.html
+[squeal]: https://hackage.haskell.org/package/squeal-postgresql
 [vips]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS
 [zh-18]: https://github.com/zoomhub/zoomhub/issues/18
 [zh-22]: https://github.com/zoomhub/zoomhub/issues/22
