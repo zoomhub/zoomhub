@@ -73,9 +73,6 @@ jobs:
           name: Install psql for preloading data
           command: sudo apt-get update && sudo apt-get install --yes postgresql-client
 
-      # Dependencies
-      #   This would typically go in either a build or a build-and-test job when
-      #   using workflows
       # Restore the dependency cache
       - restore_cache:
           keys:
@@ -163,7 +160,7 @@ jobs:
   deploy-staging:
     <<: *defaults
     environment:
-      ZH_AWS_EB_ENVIRONMENT: production # TODO: Change to `staging`
+      ZH_AWS_EB_ENVIRONMENT: production # TODO: Create `staging` environment
     <<: *deploy
 
   deploy-production:
