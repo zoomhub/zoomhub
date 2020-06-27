@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+set -euo pipefail
 
 remote="$1"
 if [ -z "$remote" ] ; then

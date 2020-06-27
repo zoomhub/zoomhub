@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+set -euo pipefail
 
 #
 # Make a resumable local backup of our content using `rsync`:

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -24,13 +25,14 @@ import Servant
   , JSON
   , QueryParam
   , Raw
-  , ServantErr
   , Server
+  , ServerError
   , err301
   , errHeaders
   , serve
   )
 import Servant.HTML.Lucid (HTML)
+import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
 import System.Random (randomRIO)
 
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
@@ -47,18 +49,17 @@ import ZoomHub.API.Types.NonRESTfulResponse
   , mkNonRESTful404
   , mkNonRESTful503
   )
-import ZoomHub.Config (Config, NewContentStatus(NewContentAllowed))
+import ZoomHub.Config (Config, ProcessContent(..))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
-import ZoomHub.Storage.SQLite
-  (create, getById, getById', getByURL, getByURL', withConnection)
+import ZoomHub.Storage.PostgreSQL as PG
+import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
-import ZoomHub.Types.ContentId (ContentId, unId)
+import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Types.ContentURI (ContentURI)
-import ZoomHub.Types.DatabasePath (DatabasePath)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Static (serveDirectory)
@@ -131,33 +132,32 @@ server config =
          health
     :<|> version (Config.version config)
     -- API: JSONP
-    :<|> jsonpContentById baseURI contentBaseURI dbPath
+    :<|> jsonpContentById baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidContentId
-    :<|> jsonpContentByURL baseURI contentBaseURI dbPath
+    :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restContentById baseURI contentBaseURI dbPath
+    :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbPath encodeId newContentStatus
+    :<|> restContentByURL baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Embed
-    :<|> webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript
+    :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
     -- Web: View
-    :<|> webContentById baseURI contentBaseURI dbPath
-    :<|> webContentByURL baseURI dbPath
+    :<|> webContentById baseURI contentBaseURI dbConnPool
+    :<|> webContentByURL baseURI dbConnPool
     :<|> webInvalidURLParam
-    :<|> webContentByURL baseURI dbPath
+    :<|> webContentByURL baseURI dbConnPool
     -- Web: Static files
     :<|> serveDirectory (Config.error404 config) publicPath
   where
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
-    dbPath = Config.dbPath config
-    encodeId = Config.encodeId config
-    newContentStatus = Config.newContentStatus config
+    dbConnPool = Config.dbConnPool config
+    processContent = Config.processContent config
     publicPath = Config.publicPath config
     staticBaseURI = Config.staticBaseURI config
-    viewerScript = Config.openseadragonScript config
+    viewerScript = Config.openSeadragonScript config
 
 -- App
 app :: Config -> Application
@@ -176,12 +176,12 @@ version = return
 -- API: JSONP
 jsonpContentById :: BaseURI ->
                     ContentBaseURI ->
-                    DatabasePath ->
+                    Pool Connection ->
                     ContentId ->
                     Callback ->
                     Handler (JSONP (NonRESTfulResponse Content))
-jsonpContentById baseURI contentBaseURI dbPath contentId callback = do
-  maybeContent <- liftIO $ withConnection dbPath (getById' contentId dbPath)
+jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing      -> throwError $ JSONP.mkError $
       mkJSONP callback $ mkNonRESTful404 $ contentNotFoundMessage contentId
@@ -191,12 +191,12 @@ jsonpContentById baseURI contentBaseURI dbPath contentId callback = do
 
 jsonpContentByURL :: BaseURI ->
                      ContentBaseURI ->
-                     DatabasePath ->
+                     Pool Connection ->
                      ContentURI ->
                      Callback ->
                      Handler (JSONP (NonRESTfulResponse Content))
-jsonpContentByURL baseURI contentBaseURI dbPath url callback = do
-  maybeContent <- liftIO $ withConnection dbPath (getByURL' url dbPath)
+jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case maybeContent of
     Nothing      -> throwError . JSONP.mkError $
       mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
@@ -227,11 +227,11 @@ jsonpInvalidRequest maybeURL callback =
 -- API: RESTful
 restContentById :: BaseURI ->
                    ContentBaseURI ->
-                   DatabasePath ->
+                   Pool Connection ->
                    ContentId ->
                    Handler Content
-restContentById baseURI contentBaseURI dbPath contentId = do
-  maybeContent <- liftIO $ withConnection dbPath (getById' contentId  dbPath)
+restContentById baseURI contentBaseURI dbConnPool contentId = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing      -> throwError . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ fromInternal baseURI contentBaseURI content
@@ -241,21 +241,26 @@ restInvalidContentId contentId =
   throwError . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL :: BaseURI ->
-                    DatabasePath ->
-                    (Integer -> String) ->
-                    NewContentStatus ->
+                    Pool Connection ->
+                    ProcessContent ->
                     ContentURI ->
                     Handler Content
-restContentByURL baseURI dbPath encodeId newContentStatus url = do
-  maybeContent <- liftIO $ withConnection dbPath (getByURL' url dbPath)
+restContentByURL baseURI dbConnPool processContent url = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case maybeContent of
-    Nothing      -> do
-      newContent <- case newContentStatus of
-        NewContentAllowed ->
-          liftIO $ withConnection dbPath (create encodeId url)
-        _ -> noNewContentErrorAPI
-      redirectToAPI baseURI (Internal.contentId newContent)
-    Just content -> redirectToAPI baseURI (Internal.contentId content)
+    Nothing -> do
+      mNewContent <- case processContent of
+        ProcessExistingAndNewContent ->
+          liftIO $ runPoolPQ (PG.initialize url) dbConnPool
+        _ ->
+          noNewContentErrorAPI
+      case mNewContent of
+        Just newContent ->
+          redirectToAPI baseURI (Internal.contentId newContent)
+        Nothing ->
+          throwError . API.error503 $ failedToCreateContentErrorMessage
+    Just content ->
+      redirectToAPI baseURI (Internal.contentId content)
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
@@ -266,16 +271,16 @@ restInvalidRequest maybeURL = case maybeURL of
 webEmbed :: BaseURI ->
             ContentBaseURI ->
             StaticBaseURI ->
-            DatabasePath ->
+            Pool Connection ->
             String ->
             EmbedId ->
             Maybe String ->
             Maybe EmbedDimension ->
             Maybe EmbedDimension ->
             Handler Embed
-webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript embedId
+webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript embedId
          maybeId width height = do
-  maybeContent <- liftIO $ withConnection dbPath (getById' contentId  dbPath)
+  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing      -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just content -> do
@@ -292,11 +297,11 @@ webEmbed baseURI contentBaseURI staticBaseURI dbPath viewerScript embedId
 -- Web: View
 webContentById :: BaseURI ->
                   ContentBaseURI ->
-                  DatabasePath ->
+                  Pool Connection ->
                   ContentId ->
                   Handler ViewContent
-webContentById baseURI contentBaseURI dbPath contentId = do
-  maybeContent <- liftIO $ withConnection dbPath (getById contentId)
+webContentById baseURI contentBaseURI dbConnPool contentId = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
   case maybeContent of
     Nothing -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c  -> do
@@ -304,9 +309,12 @@ webContentById baseURI contentBaseURI dbPath contentId = do
       return $ mkViewContent baseURI content
 
 -- TODO: Add support for submission, i.e. create content in the background:
-webContentByURL :: BaseURI -> DatabasePath -> ContentURI -> Handler ViewContent
-webContentByURL baseURI dbPath contentURI = do
-  maybeContent <- liftIO $ withConnection dbPath (getByURL contentURI)
+webContentByURL :: BaseURI ->
+                   Pool Connection ->
+                   ContentURI ->
+                   Handler ViewContent
+webContentByURL baseURI dbConnPool contentURI = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getByURL contentURI) dbConnPool
   case maybeContent of
     Nothing -> noNewContentErrorWeb
     Just c  -> redirectToView baseURI (Internal.contentId c)
@@ -316,7 +324,8 @@ webInvalidURLParam _ = throwError . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
 contentNotFoundMessage :: ContentId -> String
-contentNotFoundMessage contentId = noContentWithIdMessage (unId contentId)
+contentNotFoundMessage contentId =
+  noContentWithIdMessage (unContentId contentId)
 
 noContentWithIdMessage :: String -> String
 noContentWithIdMessage contentId = "No content with ID: " ++ contentId
@@ -327,12 +336,16 @@ noNewContentErrorWeb = noNewContentError Web.error503
 noNewContentErrorAPI :: Handler a
 noNewContentErrorAPI = noNewContentError API.error503
 
-noNewContentError :: (String -> ServantErr) -> Handler a
+noNewContentError :: (String -> ServerError) -> Handler a
 noNewContentError err =
   throwError . err $ noNewContentErrorMessage
 
 noNewContentErrorMessage :: String
 noNewContentErrorMessage = "We are currently not processing new content."
+
+failedToCreateContentErrorMessage :: String
+failedToCreateContentErrorMessage =
+  "Sorry, we failed to process your submission at this time. Please try again later."
 
 apiMissingIdOrURLMessage :: String
 apiMissingIdOrURLMessage = unwords
@@ -363,7 +376,7 @@ webRedirectURI = redirectURI "/"
 
 redirectURI :: String -> BaseURI -> ContentId -> URI
 redirectURI pathPrefix baseURI contentId =
-  (fromJust . parseRelativeReference $ pathPrefix ++ unId contentId)
+  (fromJust . parseRelativeReference $ pathPrefix ++ unContentId contentId)
     `relativeTo` unBaseURI baseURI
 
 -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test

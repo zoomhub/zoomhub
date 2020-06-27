@@ -25,17 +25,19 @@
 - name: Drop `keter` release suffix
   command: mv /opt/keter/bin/keter-{{ lsb_release.stdout }} /opt/keter/bin/keter
 
-- name: Make `/opt/keter/bin/keter` executable
+- name: Ensure `/opt/keter/bin/keter` is executable
   file: path=/opt/keter/bin/keter mode=0755
 
-- name: Create `/opt/keter/etc/keter-config.yaml`
+- name: Ensure `/opt/keter/etc/keter-config.yaml`
   template:
     src=keter-config.yaml.j2
     dest=/opt/keter/etc/keter-config.yaml
     group=root
     owner=root
+  tags:
+    - app-configuration
 
-- name: Create `/lib/systemd/system/keter.service`
+- name: Ensure `/lib/systemd/system/keter.service`
   template:
     src=keter.service
     dest=/lib/systemd/system/keter.service
@@ -46,6 +48,8 @@
   service:
     name: keter
     state: restarted
+  tags:
+    - app-configuration
 
 - name: Ensure `keter` runs on boot
   systemd:

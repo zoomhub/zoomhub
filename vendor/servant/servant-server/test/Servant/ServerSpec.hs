@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
@@ -9,13 +8,12 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=100 #-}
-#else
-{-# OPTIONS_GHC -fcontext-stack=100 #-}
-#endif
 
 module Servant.ServerSpec where
+
+import           Prelude ()
+import           Prelude.Compat
 
 import           Control.Monad
                  (forM_, unless, when)
@@ -23,18 +21,17 @@ import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Data.Aeson
                  (FromJSON, ToJSON, decode', encode)
-import qualified Data.ByteString                            as BS
-import qualified Data.ByteString.Base64                     as Base64
+import qualified Data.ByteString                   as BS
+import qualified Data.ByteString.Base64            as Base64
 import           Data.Char
                  (toUpper)
-import           Data.Monoid
 import           Data.Proxy
                  (Proxy (Proxy))
 import           Data.String
                  (fromString)
 import           Data.String.Conversions
                  (cs)
-import qualified Data.Text                                  as T
+import qualified Data.Text                         as T
 import           GHC.Generics
                  (Generic)
 import           Network.HTTP.Types
@@ -53,18 +50,19 @@ import           Servant.API
                  EmptyAPI, Get, Header, Headers, HttpVersion, IsSecure (..),
                  JSON, NoContent (..), NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
-                 RemoteHost, ReqBody, StdMethod (..), Stream,
-                 StreamGenerator (..), Verb, addHeader)
-import           Servant.API.Internal.Test.ComprehensiveAPI
+                 RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Verb,
+                 addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, serve, serveWithContext)
+import           Servant.Test.ComprehensiveAPI
+import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
                  (Spec, context, describe, it, shouldBe, shouldContain)
 import           Test.Hspec.Wai
                  (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
                  with, (<:>))
-import qualified Test.Hspec.Wai                             as THW
+import qualified Test.Hspec.Wai                    as THW
 
 import           Servant.Server.Experimental.Auth
                  (AuthHandler, AuthServerData, mkAuthHandler)
@@ -111,7 +109,7 @@ type VerbApi method status
  :<|> "accept"    :> (    Verb method status '[JSON] Person
                      :<|> Verb method status '[PlainText] String
                      )
- :<|> "stream"    :> Stream method status NoFraming OctetStream (StreamGenerator BS.ByteString)
+ :<|> "stream"    :> Stream method status NoFraming OctetStream (SourceIO BS.ByteString)
 
 verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
@@ -121,7 +119,7 @@ verbSpec = describe "Servant.API.Verb" $ do
           :<|> return (addHeader 5 alice)
           :<|> return (addHeader 10 NoContent)
           :<|> (return alice :<|> return "B")
-          :<|> return (StreamGenerator $ \f _ -> f "bytestring")
+          :<|> return (S.source ["bytestring"])
 
       get200     = Proxy :: Proxy (VerbApi 'GET 200)
       post210    = Proxy :: Proxy (VerbApi 'POST 210)

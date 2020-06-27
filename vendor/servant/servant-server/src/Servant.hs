@@ -7,15 +7,16 @@ module Servant (
   module Servant.Server,
   -- | Utilities on top of the servant core
   module Servant.Links,
-  module Servant.Utils.StaticFiles,
+  module Servant.Server.StaticFiles,
   -- | Useful re-exports
   Proxy(..),
   throwError
   ) where
 
-import           Control.Monad.Error.Class (throwError)
+import           Control.Monad.Error.Class
+                 (throwError)
 import           Data.Proxy
 import           Servant.API
-import           Servant.Server
 import           Servant.Links
-import           Servant.Utils.StaticFiles
+import           Servant.Server
+import           Servant.Server.StaticFiles

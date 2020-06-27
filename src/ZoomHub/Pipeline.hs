@@ -2,6 +2,7 @@
 
 module ZoomHub.Pipeline
   ( process
+  , ProcessResult(..)
   )
   where
 
@@ -11,6 +12,7 @@ import Control.Concurrent.Async (forConcurrently)
 import Control.Lens ((^.))
 import Control.Monad (when)
 import Data.Aeson ((.=))
+import Data.Int (Int64)
 import Data.List (stripPrefix)
 import Data.List.Split (chunksOf)
 import Data.Monoid ((<>))
@@ -28,10 +30,9 @@ import ZoomHub.Config
 import ZoomHub.Log.Logger (logDebugT, logError, logInfo, logInfoT)
 import ZoomHub.Rackspace.CloudFiles
   (ObjectName, getMetadata, mkCredentials, parseObjectName, putContent)
-import ZoomHub.Types.Content
-  (Content, contentDZI, contentId, contentMIME, contentSize, contentURL)
-import ZoomHub.Types.ContentId (unId)
-import ZoomHub.Types.ContentMIME (ContentMIME(ContentMIME))
+import ZoomHub.Types.Content (Content, contentId, contentURL)
+import ZoomHub.Types.ContentId (unContentId)
+import ZoomHub.Types.ContentMIME (ContentMIME, ContentMIME'(ContentMIME))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage
@@ -44,8 +45,14 @@ import ZoomHub.Types.DeepZoomImage
 import ZoomHub.Types.TempPath (TempPath, unTempPath)
 import ZoomHub.Utils (lenientDecodeUtf8)
 
+data ProcessResult =
+  ProcessResult
+  { prMIME :: Maybe ContentMIME
+  , prSize :: Int64
+  , prDZI :: DeepZoomImage
+  }
 
-process :: String -> RackspaceConfig -> TempPath -> Content -> IO Content
+process :: String -> RackspaceConfig -> TempPath -> Content -> IO ProcessResult
 process workerId raxConfig tempPath content =
   withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
     let rawPathPrefix = tmpDir </> rawContentId
@@ -87,20 +94,22 @@ process workerId raxConfig tempPath content =
       , "worker" .= workerId
       ] $ uploadDZI workerId raxConfig tmpDir dziPath dzi
 
-    return content
-      { contentMIME = maybeMIME
-      , contentSize = Just rawSize
-      , contentDZI = Just dzi
+    return ProcessResult
+      { prMIME = maybeMIME
+      , prSize = fromIntegral rawSize
+      , prDZI = dzi
       }
   where
-    rawContentId = unId (contentId content)
+    rawContentId = unContentId (contentId content)
     template = rawContentId ++ "-"
 
-    getFileSize :: FilePath -> IO Integer
-    getFileSize path = toInteger . fileSize <$> getFileStatus path
+    getFileSize :: FilePath -> IO Int64
+    getFileSize path = fromIntegral . toInteger . fileSize <$> getFileStatus path
 
 downloadURL :: ContentURI -> FilePath -> IO (Maybe MIME.Type)
 downloadURL url dest = do
+  -- TODO: Use streaming:
+  -- https://github.com/snoyberg/http-client/blob/a9a1a1f76c44127d67695d90d5abdbf585052c82/TUTORIAL.md#streaming-1
   res <- get (show url)
   let body = res ^. responseBody
   atomicWriteFile dest body
@@ -185,7 +194,7 @@ uploadDZI workerId raxConfig rootPath path dzi = do
     container = raxContainer raxConfig
     containerPath = raxContainerPath raxConfig
     raxCreds = mkCredentials (raxUsername raxConfig) (raxApiKey raxConfig)
-    numParallelUploads = 5
+    numParallelUploads = 10
 
     stripRoot :: FilePath -> Maybe FilePath
     stripRoot = stripPrefix (addTrailingPathSeparator rootPath)

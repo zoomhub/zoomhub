@@ -24,9 +24,9 @@ import Network.URI (URI, parseRelativeReference, relativeTo)
 import ZoomHub.API.Types.DeepZoomImage (DeepZoomImage)
 import qualified ZoomHub.API.Types.DeepZoomImage as DZ
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
-import qualified ZoomHub.Types.Content as Internal
+import qualified ZoomHub.Types.Content.Internal as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
-import ZoomHub.Types.ContentId (ContentId, unId)
+import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Types.ContentState
   (ContentState(CompletedFailure, CompletedSuccess))
 import ZoomHub.Types.ContentURI (ContentURI)
@@ -34,14 +34,14 @@ import ZoomHub.Types.ContentURI (ContentURI)
 
 -- Content
 data Content = Content
-  { contentId        :: ContentId
-  , contentUrl       :: ContentURI
-  , contentReady     :: Bool
-  , contentFailed    :: Bool
-  , contentProgress  :: Float
-  , contentShareUrl  :: ContentShareURI
+  { contentId :: ContentId
+  , contentUrl :: ContentURI
+  , contentReady :: Bool
+  , contentFailed :: Bool
+  , contentProgress :: Double
+  , contentShareUrl :: ContentShareURI
   , contentEmbedHtml :: String
-  , contentDzi       :: Maybe DeepZoomImage
+  , contentDzi :: Maybe DeepZoomImage
   } deriving (Eq, Show, Generic)
 
 -- Constructor
@@ -59,7 +59,7 @@ fromInternal baseURI contentBaseURI c = Content
   where
     cId = Internal.contentId c
     shareURI = ContentShareURI $ sharePathURI `relativeTo` unBaseURI baseURI
-    sharePathURI = fromJust . parseRelativeReference $ unId cId
+    sharePathURI = fromJust . parseRelativeReference $ unContentId cId
     scriptSource = show shareURI ++ ".js?width=auto&height=400px"
     embedHTML = "<script src=\"" ++ scriptSource ++ "\"></script>"
     dzi = DZ.fromInternal contentBaseURI cId <$> Internal.contentDZI c

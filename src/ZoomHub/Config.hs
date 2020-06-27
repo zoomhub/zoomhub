@@ -4,25 +4,28 @@
 
 module ZoomHub.Config
   ( Config(..)
-  , ExistingContentStatus(..)
-  , NewContentStatus(..)
   , RackspaceConfig
   , defaultPort
   , raxApiKey
   , raxContainer
   , raxContainerPath
   , raxUsername
-  , toExistingContentStatus
-  , toNewContentStatus
+    -- * Process content status
+  , ProcessContent(..)
+  , parseProcessContent
   ) where
 
 import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text as T
+import Data.Time.Units (Second)
+import qualified Database.PostgreSQL.Simple as PGS
+import Database.PostgreSQL.Simple.Instances ()
 import GHC.Generics (Generic)
 import Network.URI (URI, parseRelativeReference)
 import Network.URI.Instances ()
 import Network.Wai (Middleware)
+import Squeal.PostgreSQL.Pool (Pool)
 import System.Envy
   ( DefConfig
   , FromEnv
@@ -35,9 +38,9 @@ import System.Envy
   )
 
 import ZoomHub.Rackspace.CloudFiles (Container, parseContainer)
+import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
-import ZoomHub.Types.DatabasePath (DatabasePath)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import ZoomHub.Types.TempPath (TempPath)
 
@@ -46,30 +49,34 @@ defaultPort :: Integer
 defaultPort = 8000
 
 data Config = Config
-  { baseURI               :: BaseURI
-  , contentBaseURI        :: ContentBaseURI
-  , dbPath                :: DatabasePath
-  , encodeId              :: Integer -> String
-  , error404              :: BL.ByteString
-  , existingContentStatus :: ExistingContentStatus
-  , logger                :: Middleware
-  , newContentStatus      :: NewContentStatus
-  , openseadragonScript   :: String
-  , port                  :: Integer
-  , publicPath            :: FilePath
-  , rackspace             :: RackspaceConfig
-  , staticBaseURI         :: StaticBaseURI
-  , tempPath              :: TempPath
-  , version               :: String
+  { baseURI                         :: BaseURI
+  , contentBaseURI                  :: ContentBaseURI
+  , dbConnInfo                      :: PGS.ConnectInfo
+  , dbConnPool                      :: Pool Connection
+  , dbConnPoolIdleTime              :: Second
+  , dbConnPoolMaxResourcesPerStripe :: Integer
+  , dbConnPoolNumStripes            :: Integer
+  , error404                        :: BL.ByteString
+  , logger                          :: Middleware
+  , openSeadragonScript             :: String
+  , port                            :: Integer
+  , processContent                  :: ProcessContent
+  , publicPath                      :: FilePath
+  , rackspace                       :: RackspaceConfig
+  , staticBaseURI                   :: StaticBaseURI
+  , tempPath                        :: TempPath
+  , version                         :: String
   }
 
 instance ToJSON Config where
   toJSON Config{..} = object
     [ "baseURI" .= baseURI
     , "contentBaseURI" .= contentBaseURI
-    , "dbPath" .= dbPath
-    , "existingContentStatus" .= existingContentStatus
-    , "newContentStatus" .= newContentStatus
+    , "dbConnInfo" .= dbConnInfo
+    , "dbConnPoolIdleTime" .= dbConnPoolIdleTime
+    , "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
+    , "dbConnPoolNumStripes" .= dbConnPoolNumStripes
+    , "processContent" .= processContent
     , "port" .= port
     , "publicPath" .= publicPath
     , "staticBaseURI" .= staticBaseURI
@@ -90,17 +97,15 @@ data RackspaceConfig = RackspaceConfig
 instance DefConfig RackspaceConfig where
   defConfig = RackspaceConfig
     { raxUsername = "zoomingservice"
-    , raxApiKey = ""
+    , raxApiKey = error "Missing `raxApiKey`"
     , raxContainer =
         case parseContainer "cache-development" of
           Just container -> container
-          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
-                       " Failed to parse `raxContainer`."
+          _ -> error "Failed to parse `raxContainer`."
     , raxContainerPath =
         case parseRelativeReference "content" of
           Just containerPath -> containerPath
-          _ -> error $ "ZoomHub.Config.RackspaceConfig.defConfig:" ++
-                       " Failed to parse `raxContainerPath`."
+          _ -> error "Failed to parse `raxContainerPath`."
     }
 
 instance FromEnv RackspaceConfig where
@@ -109,26 +114,17 @@ instance FromEnv RackspaceConfig where
     , customPrefix="RACKSPACE"
     }
 
--- ExistingContentStatus
-data ExistingContentStatus = ProcessExistingContent | IgnoreExistingContent
+-- ProcessContent
+data ProcessContent
+  = ProcessNoContent
+  | ProcessExistingContent
+  | ProcessExistingAndNewContent
   deriving (Eq, Show)
 
-toExistingContentStatus :: String -> ExistingContentStatus
-toExistingContentStatus "1"    = ProcessExistingContent
-toExistingContentStatus "true" = ProcessExistingContent
-toExistingContentStatus _      = IgnoreExistingContent
+parseProcessContent :: String -> ProcessContent
+parseProcessContent "ProcessExistingContent" = ProcessExistingContent
+parseProcessContent "ProcessExistingAndNewContent" = ProcessExistingAndNewContent
+parseProcessContent _ = ProcessNoContent
 
-instance ToJSON ExistingContentStatus where
-  toJSON = String . T.pack . show
-
--- NewContentStatus
-data NewContentStatus = NewContentAllowed | NewContentDisallowed
-  deriving (Eq, Show)
-
-toNewContentStatus :: String -> NewContentStatus
-toNewContentStatus "1"    = NewContentAllowed
-toNewContentStatus "true" = NewContentAllowed
-toNewContentStatus _      = NewContentDisallowed
-
-instance ToJSON NewContentStatus where
+instance ToJSON ProcessContent where
   toJSON = String . T.pack . show

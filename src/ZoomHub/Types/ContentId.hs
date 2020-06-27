@@ -1,12 +1,20 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentId
   ( ContentId
+  , ContentId'
   , fromInteger
   , fromString
   , isValid
-  , unId
+  , mkContentId
+  , unContentId
   , validChars
   ) where
 
@@ -19,24 +27,21 @@ import Data.List (intersperse)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import Database.SQLite.Simple (SQLData(SQLText))
-import Database.SQLite.Simple.FromField
-  (FromField, ResultError(ConversionFailed), fromField, returnError)
-import Database.SQLite.Simple.Internal (Field(Field))
-import Database.SQLite.Simple.Ok (Ok(Ok))
-import Database.SQLite.Simple.ToField (ToField, toField)
 import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
+import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
 
-
-
--- TODO: Use record syntax, i.e. `ContentId { unId :: String }` without
+-- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
-newtype ContentId = ContentId String
-  deriving (Eq, Generic, Show)
+newtype ContentId' a = ContentId a
+  deriving (Eq, Functor, Generic, Show)
+type ContentId = ContentId' String
 
-unId :: ContentId -> String
-unId (ContentId cId) = cId
+unContentId :: ContentId -> String
+unContentId (ContentId cId) = cId
+
+mkContentId :: a -> ContentId' a
+mkContentId = ContentId
 
 fromInteger :: (Integer -> String) -> Integer -> ContentId
 fromInteger encode intId = fromString $ encode intId
@@ -72,13 +77,10 @@ instance ToJSON ContentId where
 instance FromJSON ContentId where
    parseJSON = genericParseJSON $ aesonPrefix camelCase
 
--- SQLite
-instance ToField ContentId where
-  toField = SQLText . T.pack . unId
+-- Squeal / PostgreSQL
+type instance PG ContentId = 'PGtext
+instance ToParam ContentId 'PGtext where
+  toParam = toParam . unContentId
 
-instance FromField ContentId where
-  fromField f@(Field (SQLText t) _) =
-    case parseUrlPiece t of
-      Right r  -> Ok r
-      Left _ -> returnError ConversionFailed f "Invalid content ID"
-  fromField f = returnError ConversionFailed f "Invalid content ID"
+instance FromValue 'PGtext ContentId where
+  fromValue = ContentId <$> fromValue @'PGtext

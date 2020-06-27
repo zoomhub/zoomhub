@@ -4,39 +4,63 @@ The `./zh ops` subcommands let you manage ZoomHub ops.
 
 ### Prerequisites
 
--   Install [Ansible]: `brew install ansible`.
-    We have tested our setup with Ansible 2.9.0.
--   Run `./zh ops setup`.
+- Install [Ansible]: `brew install ansible`.
+  We have tested our setup with Ansible 2.9.0.
+- Run `./zh ops init`.
 
-## Initial Server Setup
+## Initial server setup
 
--   Create server on Rackspace using Ubuntu 18.04 LTS (Bionic Beaver) image:
-    <https://mycloud.rackspace.com/>
--   Note `root` password. You will need it in subsequent steps.
--   **Optional:** Create DNS entry for server.
--   Add hostname or IP to one of the hosts files: `ops/admin`,
-    `ops/staging`, or `ops/production`.
--   Create `admin` user and bootstrap server using:
-    `./zh ops bootstrap [admin|production|staging]`.
-    **IMPORTANT:** This command can only be run once per server!
--   Run `./zh ops ping [admin|production|staging]` to test whether you can reach
-    your new server.
+- Create server on Rackspace using Ubuntu 18.04 LTS (Bionic Beaver) image:
+  <https://mycloud.rackspace.com/>
+- Note `root` password. You will need it in subsequent steps.
+- **Optional:** Create DNS entry for server.
+- Add hostname or IP to one of the hosts files: `ops/admin`,
+  `ops/staging`, or `ops/production`.
+- Create `admin` user and bootstrap server using:
+  `./zh ops bootstrap [admin|production|staging]`.
+  **IMPORTANT:** This command can only be run once per server!
+- Run `./zh ops ping [admin|production|staging]` to test whether you can reach
+  your new server.
+
+## CircleCI setup
+
+Set up the following [environment variables on CircleCI][circleci-env-vars]:
+
+- `AWS_RDS_PGHOST`
+- `AWS_RDS_PGPASSWORD`
+- `HASHIDS_SALT`
 
 ## Web servers
 
 Run `./zh ops setup-web-server [production|staging]` and follow the steps to
 set up a web server.
 
-## Database server
+### Update app configuration
 
-Run `./zh ops setup-database-server [production|staging]` and follow the steps
-to set up a database server.
-
-### Debug database from local machine
+To quickly update Keter application configuration, e.g. `PROCESS_CONTENT`,
+edit `ops/roles/keter/templates/keter-config.yaml.j2` and run:
 
 ```
-ssh -L 3333:<db-server-private-ip>:5432 <user>@<jumpbox>
+./zh ops setup-web-server [production|staging] --tags 'app-configuration'
+```
+
+## Database server
+
+Run `./zh ops setup-database-aws-rds [production|staging]` and follow the steps
+to set up a database server.~~
+
+### Debug database remotely
+
+```
+ssh -L 3333:<aws-rds-host>:5432 <user>@<jumpbox>
 psql --host=localhost --port=3333 --username=<db-user> --dbname=<db-name>
+```
+
+### Import data
+
+```
+psql --single-transaction -p 3333 -h localhost -U <db-user> <db-name> \
+  <<< $(echo 'SET session_replication_role = replica;' && cat <sql-file>)
 ```
 
 ## Admin server
@@ -77,5 +101,5 @@ If you want to override any ansible variables without having to edit configs,
 you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commit
 it. This is a convenient way to develop new features before using the vault.
 
-
-[Ansible]: http://docs.ansible.com
+[ansible]: http://docs.ansible.com
+[circleci-env-vars]: https://circleci.com/gh/zoomhub/zoomhub/edit#env-vars

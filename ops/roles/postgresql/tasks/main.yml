@@ -18,13 +18,40 @@
     objs: ALL_IN_SCHEMA
     privs: ALL
 
-- name: Ensure PostgreSQL web user privileges are present
+- name: Ensure PostgreSQL web user table privileges are present
   become_user: postgres
   postgresql_privs:
     db: '{{postgres_database_name}}'
     role: '{{postgres_user_web_name}}'
+    type: table
+    schema: public
     objs: ALL_IN_SCHEMA
     privs: SELECT,INSERT,UPDATE,DELETE
+  tags:
+    - database-configuration
+
+- name: Ensure PostgreSQL web user sequence privileges are present
+  become_user: postgres
+  postgresql_privs:
+    db: '{{postgres_database_name}}'
+    role: '{{postgres_user_web_name}}'
+    type: sequence
+    schema: public
+    objs: ALL_IN_SCHEMA
+    privs: USAGE
+  tags:
+    - database-configuration
+
+- name: Ensure PostgreSQL web user hashids schema usage privileges are present
+  become_user: postgres
+  postgresql_privs:
+    db: '{{postgres_database_name}}'
+    role: '{{postgres_user_web_name}}'
+    type: schema
+    objs: hashids
+    privs: ALL
+  tags:
+    - database-configuration
 
 # # TODO: Enable whenever PostgreSQL configuration changes:
 # - name: Restart PostgreSQL

@@ -18,13 +18,14 @@ import Data.Aeson (ToJSON, Value(String), genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
+import qualified Generics.SOP as SOP
 import GHC.Generics (Generic)
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import System.FilePath ((<.>), (</>))
 
 import ZoomHub.Types.ContentBaseURI
   (ContentBaseURI, contentBaseHost, contentBasePath)
-import ZoomHub.Types.ContentId (ContentId, unId)
+import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.DeepZoomImage as Internal
 
 data DeepZoomImage = DeepZoomImage
@@ -49,7 +50,7 @@ fromInternal baseURI cId dzi = DeepZoomImage
   , dziTileFormat  = Internal.dziTileFormat dzi
   }
   where
-    name = unId cId <.> "dzi"
+    name = unContentId cId <.> "dzi"
     path = fromMaybe
             (error "ZoomHub.API.Types.DeepZoomImage.fromInternal: Failed to parse DZI path.")
             (parseRelativeReference $ show (contentBasePath baseURI) </> name)
@@ -84,3 +85,7 @@ instance Show DeepZoomImageURI where
 
 instance ToJSON DeepZoomImageURI where
   toJSON = String . T.pack . show . unDeepZoomImageURI
+
+-- PostgreSQL / Squeal
+instance SOP.Generic DeepZoomImage
+instance SOP.HasDatatypeInfo DeepZoomImage

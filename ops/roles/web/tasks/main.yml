@@ -11,9 +11,6 @@
     group="{{ admin_user }}"
     state=directory
 
-- name: Ensure database permissions
-  file:
-    path="{{ zoomhub_db_path }}"
-    owner="{{ admin_user }}"
-    group="{{ admin_user }}"
-    state=file
+- name: Install PostgreSQL library support
+  apt:
+    pkg: libpq-dev

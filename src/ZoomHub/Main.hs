@@ -6,16 +6,15 @@ module ZoomHub.Main (main) where
 import Control.Concurrent (getNumCapabilities, threadDelay)
 import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
-import Control.Monad (forM_, guard, unless, when)
+import Control.Monad (forM_, guard, when)
 import Data.Aeson ((.=))
-import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
-import Network.BSD (getHostName)
+import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
 import Network.Wai (Request)
 import Network.Wai.Handler.Warp
@@ -27,52 +26,41 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Middleware.RequestLogger
   (OutputFormat(CustomOutputFormatWithDetails), mkRequestLogger, outputFormat)
-import System.Directory
-  (createDirectoryIfMissing, doesFileExist, getCurrentDirectory)
+import System.Directory (createDirectoryIfMissing, getCurrentDirectory)
 import System.Environment (getEnvironment)
 import System.Envy (decodeEnv)
 import System.FilePath ((</>))
 import System.IO.Error (isDoesNotExistError)
 import System.Random (randomRIO)
 import Text.Read (readMaybe)
-import Web.Hashids (encode, hashidsSimple)
 
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config(..)
-  , ExistingContentStatus(IgnoreExistingContent, ProcessExistingContent)
-  , NewContentStatus(NewContentDisallowed)
+  , ProcessContent(..)
   , defaultPort
+  , parseProcessContent
   , raxContainer
   , raxContainerPath
-  , toExistingContentStatus
-  , toNewContentStatus
   )
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Rackspace.CloudFiles (unContainer)
+import ZoomHub.Storage.PostgreSQL (createConnectionPool)
+import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath), unDatabasePath)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath(TempPath), unTempPath)
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
+
 
 -- Environment variables
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
 
-dbPathEnvName :: String
-dbPathEnvName = "DB_PATH"
-
-existingContentStatusEnvName :: String
-existingContentStatusEnvName = "PROCESS_EXISTING_CONTENT"
-
-hashidsSaltEnvName :: String
-hashidsSaltEnvName = "HASHIDS_SALT"
-
-newContentStatusEnvName :: String
-newContentStatusEnvName = "PROCESS_NEW_CONTENT"
+processContentEnvName :: String
+processContentEnvName = "PROCESS_CONTENT"
 
 numProcessingWorkersEnvName :: String
 numProcessingWorkersEnvName = "PROCESSING_WORKERS"
@@ -95,36 +83,27 @@ main = do
   maybeRaxConfig <- decodeEnv
   hostname <- getHostName
   currentDirectory <- getCurrentDirectory
-  openseadragonScript <- readFile $ currentDirectory </>
+  openSeadragonScript <- readFile $ currentDirectory </>
     "public" </> "lib" </> "openseadragon" </> "openseadragon.min.js"
   error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
   logger <- mkRequestLogger def
               { outputFormat = CustomOutputFormatWithDetails formatAsJSON }
 
+  numProcessors <- getNumProcessors
+  numCapabilities <- getNumCapabilities
+
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
 
-      maybeHashidsSalt = BC.pack <$> lookup hashidsSaltEnvName env
-
-      maybeExistingContentStatus = toExistingContentStatus <$>
-        lookup existingContentStatusEnvName env
-      existingContentStatus =
-        fromMaybe IgnoreExistingContent maybeExistingContentStatus
-
-      maybeNewContentStatus = toNewContentStatus <$>
-        lookup newContentStatusEnvName env
-      newContentStatus =
-        fromMaybe NewContentDisallowed maybeNewContentStatus
+      maybeProcessContent = parseProcessContent <$>
+        lookup processContentEnvName env
+      processContent = fromMaybe ProcessNoContent maybeProcessContent
 
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers =
         lookup numProcessingWorkersEnvName env >>= readMaybe
       numProcessingWorkers =
         fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
-
-      defaultDBPath = DatabasePath $
-        currentDirectory </> "data" </> "zoomhub-development.sqlite3"
-      dbPath = maybe defaultDBPath DatabasePath (lookup dbPathEnvName env)
 
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
@@ -140,16 +119,26 @@ main = do
       staticBaseURI = StaticBaseURI . fromJust .
         parseAbsoluteURI $ "http://static.zoomhub.net"
 
+      defaultDBName = "zoomhub_development"
+
+      -- Database connection pool:
+      -- https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing#the-formula
+      numSpindles = 1
+      dbConnPoolNumStripes = 1
+      dbConnPoolIdleTime = 10 :: Second
+      dbConnPoolMaxResourcesPerStripe = fromIntegral $
+        (numCapabilities * 2) + numSpindles
+
+  dbConnInfo <- ConnectInfo.fromEnv defaultDBName
+  dbConnPool <- createConnectionPool dbConnInfo dbConnPoolNumStripes
+    dbConnPoolIdleTime dbConnPoolMaxResourcesPerStripe
+
   ensureTempPathExists tempPath
-  ensureDBExists dbPath
 
-  case (maybeHashidsSalt, maybeRaxConfig) of
-    (Just hashidsSalt, Right rackspace) -> do
+  case maybeRaxConfig of
+    Right rackspace -> do
 
-      let encodeContext = hashidsSimple hashidsSalt
-          encodeId integerId =
-            BC.unpack $ encode encodeContext (fromIntegral integerId)
-          maybeContentBaseHost = parseAbsoluteURI $
+      let maybeContentBaseHost = parseAbsoluteURI $
             "http://" ++ unContainer (raxContainer rackspace) ++ ".zoomhub.net"
           contentBasePath = raxContainerPath rackspace
           maybeContentBaseURI = maybeContentBaseHost >>=
@@ -167,8 +156,6 @@ main = do
         [ "config" .= config ]
 
       -- Workers
-      numProcessors <- getNumProcessors
-      numCapabilities <- getNumCapabilities
       logInfo "Config: Worker"
         [ "numProcessors" .= numProcessors
         , "numCapabilities" .= numCapabilities
@@ -183,22 +170,13 @@ main = do
         threadDelay (fromIntegral $ toMicroseconds delay)
         processExpiredActiveContent config
 
-      case existingContentStatus of
+      case processContent of
         ProcessExistingContent ->
-          forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
-            let base = 20
-                jitterRange = (0, base `div` 2) :: (Integer, Integer)
-                baseDelay = index * base
-            jitter <- randomRIO jitterRange
-            let delay = (fromIntegral $ baseDelay + jitter) :: Second
-            logInfo "Worker: Start processing existing content"
-              [ "jitter" .= (fromIntegral jitter :: Second)
-              , "index" .= index
-              , "delay" .= delay
-              ]
-            threadDelay (fromIntegral $ toMicroseconds delay)
-            processExistingContent config (show index)
-        _ -> return ()
+          startProcessingWorkers config numProcessingWorkers
+        ProcessExistingAndNewContent ->
+          startProcessingWorkers config numProcessingWorkers
+        ProcessNoContent ->
+          return ()
 
       -- Web server
       logInfo "Start web server"
@@ -207,26 +185,32 @@ main = do
             setPort (fromIntegral port) $
             setOnException serverExceptionHandler defaultSettings
       runSettings waiSettings (app config)
-    (Nothing, _) -> error $ "Please set `" ++ hashidsSaltEnvName ++ "`\
-      \ environment variable.\n\
-      \This secret salt enables ZoomHub to encode integer IDs as short,\
-      \ non-sequential string IDs which make it harder to guess valid\
-      \ content IDs."
-    (_, Left message) -> error $ "Failed to read Rackspace config: " ++ message
+
+    Left message ->
+      error $ "Failed to read Rackspace config: " ++ message
   where
+    startProcessingWorkers :: Config -> Integer -> IO ()
+    startProcessingWorkers config numProcessingWorkers = do
+      forM_ [0 .. (numProcessingWorkers - 1)] $ \index -> async $ do
+        let base = 20
+            jitterRange = (0, base `div` 2) :: (Integer, Integer)
+            baseDelay = index * base
+        jitter <- randomRIO jitterRange
+        let delay = (fromIntegral $ baseDelay + jitter) :: Second
+        logInfo "Worker: Start processing existing content"
+          [ "jitter" .= (fromIntegral jitter :: Second)
+          , "index" .= index
+          , "delay" .= delay
+          ]
+        threadDelay (fromIntegral $ toMicroseconds delay)
+        processExistingContent config (show index)
+
     toBaseURI :: String -> BaseURI
     toBaseURI uriString =
       case parseAbsoluteURI uriString of
         Just uri -> BaseURI uri
         Nothing  -> error $ "'" ++ uriString ++ "' is not a valid URL. Please\
         \ set `" ++ baseURIEnvName ++ "` to override usage of hostname."
-
-    ensureDBExists :: DatabasePath -> IO ()
-    ensureDBExists dbPath = do
-      exists <- doesFileExist (unDatabasePath dbPath)
-      unless exists $
-        error $ "Couldn’t find a database at " ++ unDatabasePath dbPath ++
-          ". Please check `" ++ dbPathEnvName ++ "`."
 
     ensureTempPathExists :: TempPath -> IO ()
     ensureTempPathExists tempPath =

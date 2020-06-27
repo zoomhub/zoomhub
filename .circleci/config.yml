@@ -1,112 +1,185 @@
-version: 2
+version: 2.1
+
+orbs:
+  dmz: eddiewebb/dmz@0.0.7
 
 defaults: &defaults
-    parallelism: 4
-    working_directory: ~/zoomhub/zoomhub
-    environment:
-        CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
-        CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+  parallelism: 1
+  working_directory: ~/zoomhub/zoomhub
+  environment:
+    CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
+    CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+
+migrate-database: &migrate-database
+  docker:
+    - image: fpco/stack-build
+  steps:
+    - attach_workspace:
+        at: ~/zoomhub/zoomhub/workspace
+    - run:
+        name: Install ssh-keyscan for dmz/open_tunnel orb
+        command: sudo apt-get update && sudo apt-get install --yes openssh-client
+    - dmz/open_tunnel:
+        bastion_host: "$BASTION_HOST"
+        bastion_user: "admin"
+        local_port: "9001"
+        target_host: "$AWS_RDS_PGHOST"
+        target_port: "5432"
+
+    - run:
+        name: "Import project environment variables"
+        command: |
+          echo 'export PGHOST="$AWS_RDS_PGHOST"' >> $BASH_ENV
+          echo 'export PGPASSWORD="$AWS_RDS_PGPASSWORD"' >> $BASH_ENV
+
+    - run:
+        name: Migrate database
+        command: cd ~/zoomhub/zoomhub/workspace && ./migrate-database.sh
 
 deploy: &deploy
-    docker:
-        - image: buildpack-deps:trusty
-    steps:
-      - attach_workspace:
-          at: ~/zoomhub/zoomhub/workspace
-      - run:
-          name: SSH setup
-          command: mkdir -p ~/.ssh && ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-      - run:
-          name: Deploy
-          command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
+  docker:
+    - image: buildpack-deps:trusty
+  steps:
+    - attach_workspace:
+        at: ~/zoomhub/zoomhub/workspace
+    - run:
+        name: SSH setup
+        command: mkdir -p ~/.ssh && ssh-keyscan "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+    - run:
+        name: Deploy
+        command: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh "$DEPLOY_HOST"
 
 jobs:
   build:
     <<: *defaults
     docker:
+      # Default CircleCI Docker container image
+      # https://circleci.com/docs/2.0/executor-types/
+      # - image: buildpack-deps:trusty
       - image: fpco/stack-build
+      - image: "circleci/postgres:9.6.5-alpine-ram"
+        environment:
+          POSTGRES_USER: zoomhub
+          POSTGRES_DB: zoomhub_test
+
     steps:
-    - checkout
+      - checkout
 
-    - run:
-        name: Initialize workspace
-        command: mkdir -p workspace
-    - run:
-        name: Initialize artifact storage
-        command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run:
+          name: "Setup custom environment variables"
+          command: |
+            echo 'export PGHOST="localhost"' >> $BASH_ENV
+            echo 'export PGPORT="5432"' >> $BASH_ENV
+            echo 'export PGUSER="zoomhub"' >> $BASH_ENV
+            echo 'export PGDATABASE="zoomhub_test"' >> $BASH_ENV
 
-    # Dependencies
-    #   This would typically go in either a build or a build-and-test job when
-    #   using workflows
-    # Restore the dependency cache
-    - restore_cache:
-        keys:
-        - zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
-        # This branch if available
-        - zh-stack-cache-v1-dep-{{ .Branch }}-
-        # Default branch if not
-        - zh-stack-cache-v1-dep-master-
-        # Any branch if there are none on the default branch -
-        # this should be unnecessary if you have your default branch
-        # configured correctly
-        - zh-stack-cache-v1-dep-
-    - run:
-        name: Build binary
-        command: stack build --install-ghc --pedantic --ghc-options="-O2"
-    - run:
-        name: Create Keter package
-        command: ./ops/keter-bundle.sh
-    - run:
-        name: Copy Keter package to artifacts
-        command: cp zoomhub.keter $CIRCLE_ARTIFACTS
-    - run:
-        name: Copy Keter package to workspace
-        command: cp zoomhub.keter workspace
-    - run:
-        name: Copy deploy script to workspace
-        command: cp ./ops/deploy.sh workspace
+      - run:
+          name: Initialize workspace
+          command: mkdir -p workspace
+      - run:
+          name: Initialize artifact storage
+          command: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run:
+          name: Install psql for preloading data
+          command: sudo apt-get update && sudo apt-get install --yes postgresql-client
 
-    - persist_to_workspace:
-        root: workspace
-        paths:
-          - zoomhub.keter
-          - deploy.sh
+      # Dependencies
+      #   This would typically go in either a build or a build-and-test job when
+      #   using workflows
+      # Restore the dependency cache
+      - restore_cache:
+          keys:
+            - zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+            # This branch if available
+            - zh-stack-cache-v2-dep-{{ .Branch }}-
+            # Default branch if not
+            - zh-stack-cache-v2-dep-master-
+            # Any branch if there are none on the default branch -
+            # this should be unnecessary if you have your default branch
+            # configured correctly
+            - zh-stack-cache-v2-dep-
 
-    # Save dependency cache
-    - save_cache:
-        key: zh-stack-cache-v1-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
-        paths:
-        - ~/.stack
-        - .stack-work
+      # Test
+      - run:
+          name: Run tests
+          command: |
+            HASHIDS_SALT='secret-salt'\
+              stack build --no-terminal \
+                          --fast \
+                          --exec "migrate-database $PGDATABASE migrate"
 
-    # Test
-    - run:
-        name: Run tests
-        command: stack test --no-terminal --coverage
-    - run:
-        name: Copy coverage reports
-        command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
+            psql $PGDATABASE < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
 
-    # Save test results
-    - store_test_results:
-        path: /tmp/circleci-test-results
+            stack test --fast --no-terminal
 
-    # Save artifacts
-    - store_artifacts:
-        path: /tmp/circleci-artifacts
-    - store_artifacts:
-        path: /tmp/circleci-test-results
+      # - run:
+      #     name: Copy coverage reports
+      #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
+
+      - run:
+          name: Build binary
+          command: stack build --install-ghc --pedantic --ghc-options="-O2"
+      - run:
+          name: Create Keter package
+          command: ./ops/keter-bundle.sh
+      - run:
+          name: Copy Keter package to artifacts
+          command: cp zoomhub.keter $CIRCLE_ARTIFACTS
+      - run:
+          name: Copy Keter package to workspace
+          command: cp zoomhub.keter workspace
+      - run:
+          name: Copy deploy script to workspace
+          command: cp ./ops/deploy.sh workspace
+      - run:
+          name: Copy database migration binary to workspace
+          command: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
+      - run:
+          name: Copy database migration script to workspace
+          command: cp ./ops/migrate-database.sh workspace
+
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - migrate-database
+            - migrate-database.sh
+            - zoomhub.keter
+            - deploy.sh
+
+      # Save dependency cache
+      - save_cache:
+          key: zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+          paths:
+            - ~/.stack
+            - .stack-work
+
+      # Save test results
+      - store_test_results:
+          path: /tmp/circleci-test-results
+
+      # Save artifacts
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+  migrate-database-staging:
+    <<: *defaults
+    environment:
+      BASTION_HOST: staging.zoomhub.net
+      PGDATABASE: zoomhub_staging
+    <<: *migrate-database
 
   deploy-staging:
     <<: *defaults
     environment:
-        DEPLOY_HOST: staging.zoomhub.net
+      DEPLOY_HOST: staging.zoomhub.net
     <<: *deploy
 
   deploy-production:
     <<: *defaults
     environment:
-        DEPLOY_HOST: zoomhub.net
+      DEPLOY_HOST: zoomhub.net
     <<: *deploy
 
 workflows:
@@ -114,16 +187,29 @@ workflows:
   build-deploy:
     jobs:
       - build
-      - deploy-staging:
+      - migrate-database-staging:
           requires:
             - build
           filters:
             branches:
-              ignore:
-                - master
+              # FIXME: Only migrate database on `postgresql` branch
+              only: postgresql
+              # ignore:
+              #   - master
+      - deploy-staging:
+          requires:
+            - build
+            - migrate-database-staging
+          filters:
+            branches:
+              # FIXME: Only deploy `postgresql` branch to staging
+              only: postgresql
+              # ignore:
+              #   - master
       - deploy-production:
           requires:
             - build
           filters:
             branches:
-              only: master
+              # FIXME: Re-enable deployment to production
+              only: non-existent

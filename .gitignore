@@ -7,16 +7,17 @@
 npm-debug.log
 
 # Haskell
-cabal.sandbox.config
-.cabal-sandbox
-.stack-work
+/cabal.sandbox.config
+/.cabal-sandbox
+/.stack-work
 /dist/
 
 # Sublime Text
-*.sublime-workspace
+/*.sublime-workspace
 
 # Ops
 /ops/vars.yml
+/ops/.vault_pass.txt
 
 # PID
 /zoomhub.pid
@@ -39,3 +40,9 @@ cabal.sandbox.config
 # DZI
 *.dzi
 *_files/
+
+# VS Code
+/.vscode
+
+# Vendor: servant
+/vendor/servant/

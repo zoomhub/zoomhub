@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [[ -f ./zoomhub.pid ]] ; then
-  kill $(cat zoomhub.pid)
+  kill $(cat zoomhub.pid) > /dev/null
 fi
 
 
@@ -14,7 +14,14 @@ fi
 # sudo codesign --force --sign - "$zoomhub"
 
 BASE_URI='http://localhost:8000' \
-HASHIDS_SALT='DEVELOPMENT-ONLY' \
-  stack exec zoomhub &
+PROCESS_CONTENT="ProcessExistingAndNewContent" \
+PROCESSING_WORKERS='2' \
+RACKSPACE_USERNAME='' \
+RACKSPACE_API_KEY='' \
+RACKSPACE_CONTAINER='cache' \
+RACKSPACE_CONTAINER_PATH='content' \
+PGUSER="$(whoami)" \
+PGDATABASE='zoomhub_development' \
+  stack exec zoomhub | jq &
 
 echo $! > zoomhub.pid

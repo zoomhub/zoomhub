@@ -5,16 +5,21 @@ module ZoomHub.APISpec
   , spec
   ) where
 
+import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
 import Data.Monoid ((<>))
+import Data.Time.Units (Second)
 import Network.HTTP.Types (methodGet)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
-import Test.Hspec (Spec, describe, hspec, it)
+import Squeal.PostgreSQL.Pool (runPoolPQ)
+import System.IO.Unsafe (unsafePerformIO)
+import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
   ( MatchHeader
   , ResponseMatcher
   , get
+  , liftIO
   , matchHeaders
   , matchStatus
   , post
@@ -26,16 +31,15 @@ import Test.Hspec.Wai
   )
 
 import ZoomHub.API (app)
-import ZoomHub.Config
-  ( Config(..)
-  , ExistingContentStatus(IgnoreExistingContent)
-  , NewContentStatus(NewContentDisallowed)
-  )
+import ZoomHub.Config (Config(..), ProcessContent(ProcessExistingAndNewContent))
 import qualified ZoomHub.Config as Config
+import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
+import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
+import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
 import ZoomHub.Types.BaseURI (BaseURI(BaseURI))
+import ZoomHub.Types.Content (contentNumViews)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import ZoomHub.Types.ContentId (ContentId, fromString, unId)
-import ZoomHub.Types.DatabasePath (DatabasePath(DatabasePath))
+import ZoomHub.Types.ContentId (ContentId, fromString, unContentId)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI(StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath(TempPath))
 
@@ -51,7 +55,7 @@ toURI s =
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( fromString "4rcn"
+  ( fromString "yQ4"
   , "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
 
@@ -82,12 +86,12 @@ invalidHTTPMethod =
   , matchHeaders = [plainText]
   }
 
-noNewContent :: ResponseMatcher
-noNewContent =
-  "We are currently not processing new content."
-  { matchStatus = 503
-  , matchHeaders = [plainTextUTF8]
-  }
+-- noNewContent :: ResponseMatcher
+-- noNewContent =
+--   "We are currently not processing new content."
+--   { matchStatus = 503
+--   , matchHeaders = [plainTextUTF8]
+--   }
 
 restRedirect :: ContentId -> ResponseMatcher
 restRedirect cId =
@@ -97,7 +101,7 @@ restRedirect cId =
     }
   where
     baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unId cId
+    expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unContentId cId
 
 viewRedirect :: ContentId -> ResponseMatcher
 viewRedirect cId =
@@ -107,36 +111,60 @@ viewRedirect cId =
     }
   where
     baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix <> "/" <> unId cId
+    expectedLocation = baseURIPrefix <> "/" <> unContentId cId
 
 -- Config
 nullLogger :: Middleware
 nullLogger = id
 
+newContentId :: String
+newContentId = "9xe"
+
+newContentURL :: String
+newContentURL = "http://example.com"
+
+{-# NOINLINE config #-}
 config :: Config
 config = Config
-  { baseURI = BaseURI (toURI "http://localhost:8000")
-  , contentBaseURI =
-      case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
-        Just uri -> uri
-        _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
-  , dbPath = DatabasePath "./data/zoomhub-development.sqlite3"
-  , encodeId = show
-  , error404 = "404"
-  , existingContentStatus = IgnoreExistingContent
-  , logger = nullLogger
-  , newContentStatus = NewContentDisallowed
-  , openseadragonScript = "osd"
-  , port = 8000
-  , publicPath = "./public"
-  , rackspace = undefined
-  , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
-  , tempPath = TempPath "./data/temp"
-  , version = "test"
-  }
+    { baseURI = BaseURI (toURI "http://localhost:8000")
+    , contentBaseURI =
+        case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
+          Just uri -> uri
+          _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`."
+    , dbConnInfo = dbConnInfo'
+    , dbConnPool = dbConnPool'
+    , dbConnPoolIdleTime = dbConnPoolIdleTime'
+    , dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe'
+    , dbConnPoolNumStripes = dbConnPoolNumStripes'
+    , error404 = "404"
+    , logger = nullLogger
+    , openSeadragonScript = "osd"
+    , port = 8000
+    , processContent = ProcessExistingAndNewContent
+    , publicPath = "./public"
+    , rackspace = undefined
+    , staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net")
+    , tempPath = TempPath "./data/temp"
+    , version = "test"
+    }
+  where
+    numSpindles = 1
+    -- TODO: How can we avoid `unsafePerformIO`?
+    numCapabilities = fromIntegral $ unsafePerformIO getNumCapabilities
+    -- TODO: How can we avoid `unsafePerformIO`?
+    dbConnInfo' = unsafePerformIO $ ConnectInfo.fromEnv "zoomhub_test"
+    -- TODO: How can we avoid `unsafePerformIO`?
+    dbConnPool' = unsafePerformIO $ createConnectionPool dbConnInfo'
+      dbConnPoolNumStripes' dbConnPoolIdleTime' dbConnPoolMaxResourcesPerStripe'
+    dbConnPoolIdleTime' = 10 :: Second
+    dbConnPoolMaxResourcesPerStripe' = (numCapabilities * 2) + numSpindles
+    dbConnPoolNumStripes' = 1
+
+closeDatabaseConnection :: Config -> IO ()
+closeDatabaseConnection = destroyAllResources . dbConnPool
 
 spec :: Spec
-spec = with (return $ app config) $ do
+spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $ do
   describe "RESTful" $ do
     describe "List (GET /v1/content)" $
         it "should be interpreted as a ‘get by URL’, with no URL given" $
@@ -167,9 +195,19 @@ spec = with (return $ app config) $ do
         get "/v1/content?url=mailto://example@example.com" `shouldRespondWith`
           invalidURL
 
-      it "should reject new HTTP URLs (for now)" $
-        get "/v1/content?url=http://example.com" `shouldRespondWith`
-          noNewContent
+      it "should accept new HTTP URLs" $ do
+        get ("/v1/content?url=" <> BC.pack newContentURL) `shouldRespondWith`
+          restRedirect (fromString newContentId)
+
+        get ("/v1/content/" <> BC.pack newContentId) `shouldRespondWith`
+          "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
+          \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/9xe\
+          \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
+          \:\"http://localhost:8000/9xe\",\"id\"\
+          \:\"9xe\",\"ready\":false,\"failed\":false}"
+          { matchStatus = 200
+          , matchHeaders = [applicationJSON]
+          }
 
       it "should redirect existing (converted) HTTP URLs to ID" $
         let (existingId, existingURL) = existingContent in
@@ -178,15 +216,15 @@ spec = with (return $ app config) $ do
 
     describe "Get by ID (GET /v1/content/:id)" $ do
       it "should return correct data for existing content" $
-        get "/v1/content/4rcn" `shouldRespondWith`
+        get "/v1/content/yQ4" `shouldRespondWith`
           "{\"dzi\":{\"height\":3750,\"url\":\
-            \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
+            \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
             \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
             \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
             \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
-            \\"<script src=\\\"http://localhost:8000/4rcn.js?width=auto&\
+            \\"<script src=\\\"http://localhost:8000/yQ4.js?width=auto&\
             \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:8000\
-            \/4rcn\",\"id\":\"4rcn\",\"ready\":true,\"failed\":false}"
+            \/yQ4\",\"id\":\"yQ4\",\"ready\":true,\"failed\":false}"
           { matchStatus = 200
           , matchHeaders = [applicationJSON]
           }
@@ -223,23 +261,23 @@ spec = with (return $ app config) $ do
 
     describe "GET /v1/content/:id?callback=…" $
       it "should accept `callback` query parameter" $
-        get "/v1/content/4rcn?callback=handleContent" `shouldRespondWith`
+        get "/v1/content/yQ4?callback=handleContent" `shouldRespondWith`
           "/**/ typeof handleContent === 'function' && \
           \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
           \{\"dzi\":{\"height\":3750,\"url\":\
-          \\"http://localhost:9000/_dzis_/4rcn.dzi\",\"width\":5058,\
+          \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
           \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
           \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
           \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
-          \src=\\\"http://localhost:8000/4rcn.js?width=auto&height=400px\\\">\
-          \</script>\",\"shareUrl\":\"http://localhost:8000/4rcn\",\"id\":\
-          \\"4rcn\",\"ready\":true,\"failed\":false},\
+          \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
+          \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
+          \\"yQ4\",\"ready\":true,\"failed\":false},\
           \\"redirectLocation\":null});"
           { matchStatus = 200
           , matchHeaders = [javaScriptUTF8]
           }
 
-  describe "View by URL (GET /:url)" $ do
+  describe "View by URL (GET /:url)" $
     it "should return correct redirect existing content" $
         let (existingId, existingURL) = existingContent in
         get ("/" <> BC.pack existingURL) `shouldRespondWith`
@@ -248,7 +286,7 @@ spec = with (return $ app config) $ do
   describe "CORS" $
     it "should allow all origins" $
       let getWithHeader path headers = request methodGet path headers "" in
-      getWithHeader "/v1/content/4rcn" [("Origin", "http://example.com")]
+      getWithHeader "/v1/content/yQ4" [("Origin", "http://example.com")]
         `shouldRespondWith` 200 {
           matchHeaders =
             [ "Access-Control-Allow-Origin" <:> "*"
@@ -264,3 +302,16 @@ spec = with (return $ app config) $ do
     describe "Version (/version)" $
       it "should respond with version" $
         get "/version" `shouldRespondWith` "test" {matchStatus = 200}
+
+  describe "Number of views" $
+    context "when requesting content through REST API" $
+      it "should increase `numViews`" $ do
+        -- TODO: How can we avoid this dummy `Test.Hspec.Wai` request to satisfy
+        -- type checker?
+        get "/v1/content/yQ4" `shouldRespondWith` 200
+
+        liftIO $ do
+          let pool = Config.dbConnPool config
+          maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
+          let numViews = maybe 0 contentNumViews maybeContent
+          numViews `shouldBe` 5

@@ -1,4 +1,5 @@
-#!/bin/bash -ex
+#!/bin/bash
+set -euo pipefail
 
 # Creates Keter bundle of app.
 # See: https://github.com/snoyberg/keter#bundles

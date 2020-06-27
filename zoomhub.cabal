@@ -20,6 +20,7 @@ source-repository head
 library
   exposed-modules:
       Data.Time.Units.Instances
+    , Database.PostgreSQL.Simple.Instances
     , Network.HTTP.Client.Instances
     , Network.URI.Instances
     , ZoomHub.API
@@ -39,17 +40,23 @@ library
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
-    , ZoomHub.Storage.SQLite
+    , ZoomHub.Storage.PostgreSQL
+    , ZoomHub.Storage.PostgreSQL.ConnectInfo
+    , ZoomHub.Storage.PostgreSQL.Internal
+    , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
+    , ZoomHub.Types.Content.Internal
     , ZoomHub.Types.ContentBaseURI
     , ZoomHub.Types.ContentId
     , ZoomHub.Types.ContentMIME
     , ZoomHub.Types.ContentState
     , ZoomHub.Types.ContentType
     , ZoomHub.Types.ContentURI
-    , ZoomHub.Types.DatabasePath
     , ZoomHub.Types.DeepZoomImage
+    , ZoomHub.Types.DeepZoomImage.TileFormat
+    , ZoomHub.Types.DeepZoomImage.TileOverlap
+    , ZoomHub.Types.DeepZoomImage.TileSize
     , ZoomHub.Types.StaticBaseURI
     , ZoomHub.Types.TempPath
     , ZoomHub.Utils
@@ -75,18 +82,17 @@ library
     , blaze-builder
     , bytestring
     , case-insensitive
-    , cassava
     , containers
-    , cryptonite
     , data-default
     , directory
-    , either
     , enclosed-exceptions
     , envy
     , exceptions
     , fast-logger
     , filepath
+    , generics-sop
     , hashids
+    , hostname
     , http-api-data
     , http-client
     , http-media
@@ -96,27 +102,32 @@ library
     , lens-aeson
     , lucid
     , mime
+    , monad-control
     , mtl
     , network
     , network-uri
+    , postgresql-simple
     , process
+    , product-profunctors
     , random
+    , raw-strings-qq
+    , resource-pool
     , retry
     , safe
     , servant
     , servant-lucid
     , servant-server
     , split
-    , sqlite-simple
-    , stm
+    , squeal-postgresql
     , string-conversions
     , temporary
     , text
     , time
-    , timeit
     , time-units
-    , transformers
+    , timeit
+    , transformers-base
     , unix
+    , unliftio
     , unordered-containers
     , utf8-string
     , wai
@@ -131,9 +142,21 @@ executable zoomhub
   default-language: Haskell2010
   ghc-options:      -Wall
   main-is:          Main.hs
+  hs-source-dirs:   app
   build-depends:
       base
     , zoomhub
+
+executable migrate-database
+  default-language: Haskell2010
+  ghc-options:      -Wall -main-is MigrateDatabase
+  main-is:          MigrateDatabase.hs
+  hs-source-dirs:   app
+  build-depends:
+      base
+    , zoomhub
+    , bytestring
+    , squeal-postgresql
 
 test-suite tests
   default-language: Haskell2010
@@ -143,22 +166,28 @@ test-suite tests
   type:             exitcode-stdio-1.0
   other-modules:
     ZoomHub.APISpec
+    ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
     ZoomHub.Types.DeepZoomImageSpec
   build-depends:
-      aeson
-    , base
+      base
+    , aeson
     , bytestring
-    , data-default
+    , generics-sop
     , hspec == 2.*
     , hspec-wai
     , http-types
     , network-uri
+    , postgresql-simple
+    , process
     , QuickCheck
     , quickcheck-instances
+    , resource-pool
     , servant-server
-    , sqlite-simple
+    , squeal-postgresql
     , text
+    , time
+    , time-units
     , wai
     , zoomhub

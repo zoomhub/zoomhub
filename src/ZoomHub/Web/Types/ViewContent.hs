@@ -38,7 +38,7 @@ import Network.URI (parseRelativeReference, relativeTo)
 
 import ZoomHub.API.Types.Content (Content, contentId, contentUrl)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
-import ZoomHub.Types.ContentId (unId)
+import ZoomHub.Types.ContentId (unContentId)
 
 data ViewContent = ViewContent
   { vcContent :: Content
@@ -146,7 +146,7 @@ instance ToHtml ViewContent where
       title = "ZoomHub · Share and view high-resolution images effortlessly"
       titleSeparator = " — "
       content = vcContent vc
-      cId = unId $ contentId content
+      cId = unContentId $ contentId content
       baseURI = vcBaseURI vc
       scriptURI = scriptPath `relativeTo` unBaseURI baseURI
       scriptPath = fromJust . parseRelativeReference $

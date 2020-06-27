@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 hosts="ops/$3"
 if [ -z "$3" ]; then
@@ -16,14 +17,28 @@ print_hosts () {
     separator
 }
 
+DEVELOPMENT_DB_NAME='zoomhub_development'
+TEST_DB_NAME='zoomhub_test'
+
 # Commands
 case "$1" in
 init)
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew/bda8d64e0e9011aab1612868eac2f709e631c503/Library/Formula/haskell-stack.rb
+    echo "Install Haskell 'stack'"
+    brew install haskell-stack
     stack setup
+
+    echo "Install 'jq'"
+    brew install jq
+
+    echo "Install 'postgres'"
+    brew install postgresql@10
+    brew services start postgresql@10
+
+    echo "Install 'vips'"
+    brew install vips
     ;;
 lint)
-    stack exec hlint src
+    stack exec hlint -- src tests
     ;;
 format)
     files=$(git ls-files | grep --invert 'vendor/' | grep '.hs$')
@@ -48,43 +63,97 @@ ops)
         print_hosts
         ansible --inventory-file "$hosts" all -m ping
         ;;
-    setup)
+    init)
         ansible-galaxy install -r ops/requirements.yml
+        pip3 install passlib
+        pip3 install pyrax
+        brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/de9a176f10b1be4dcb7436a2bc839e92ccbfbeed/Library/Formula/sshpass.rb
     ;;
     setup-admin-server)
         ansible-playbook -v --inventory-file ops/admin \
-            --ask-become --ask-vault-pass \
+            --vault-password-file ops/.vault_pass.txt \
+            --ask-become \
             ops/admin.yml
         ;;
     setup-database-server)
+        echo 'DEPRECATED: Please use `./zh ops setup-database-aws-rds`'
+        exit 1
+
         print_hosts
 
         ansible-playbook -v --inventory-file "$hosts" \
-            --ask-vault-pass \
-            ops/database.yml
+            --vault-password-file ops/.vault_pass.txt \
+            ops/database.yml "${@:4}"
+        ;;
+    setup-database-aws-rds)
+        print_hosts
+
+        ansible-playbook -v --inventory-file "$hosts" \
+            --vault-password-file ops/.vault_pass.txt \
+            ops/database_aws_rds.yml "${@:4}"
         ;;
     setup-web-server)
         print_hosts
 
         echo 'Enter `admin` user password:'
         ansible-playbook -v --inventory-file "$hosts" \
-            --ask-become --ask-vault-pass \
-            ops/web.yml
+            --ask-become \
+            --vault-password-file ops/.vault_pass.txt \
+            ops/web.yml "${@:4}"
         ;;
     *)
         echo "Unknown command: $0 $@. Try $0 $1 \
-bootstrap|ping|setup|setup-admin-server|setup-database-server|setup-web-server"
+bootstrap|init|ping|setup-admin-server|setup-database-server|setup-database-aws-rds|setup-web-server"
         exit 1
     esac
     ;;
 run)
+    dropdb --if-exists "$DEVELOPMENT_DB_NAME"
+    createdb "$DEVELOPMENT_DB_NAME"
+
+    PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
+      stack build --fast --exec "migrate-database $DEVELOPMENT_DB_NAME migrate"
+
+    # NOTE: Preserves existing content IDs:
+    DISABLE_PG_TRIGGERS='SET session_replication_role = replica;'
+    psql --single-transaction --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
+      <<< $(echo "$DISABLE_PG_TRIGGERS" && cat ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql)
+
     stack build --ghc-options='' \
                 --file-watch \
+                --fast \
                 --exec ./scripts/run-development.sh
     ;;
 test)
-    stack test
+    dropdb --if-exists "$TEST_DB_NAME"
+    createdb "$TEST_DB_NAME"
+
+    PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
+      stack build --ghc-options='-Wall' \
+                  --fast \
+                  --exec "migrate-database $TEST_DB_NAME migrate"
+
+    psql --output /dev/null --quiet "$TEST_DB_NAME" \
+      < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
+
+    # See: https://github.com/commercialhaskell/stack/issues/2210
+    MODULES="$2"
+    PGUSER="$(whoami)" PGDATABASE="$TEST_DB_NAME" \
+      stack test --ghc-options='-Wall' \
+                 --fast \
+                 --test-arguments '--match "'"$MODULES"'"'
     ;;
+db)
+    case "$2" in
+    dump)
+      pg_dump "$DEVELOPMENT_DB_NAME"
+      ;;
+    *)
+        echo "Unknown command: $0 $@. Try $0 $1 dump"
+        exit 1
+    esac
+    ;;
+
 *)
     echo "Unknown command: $0 $@. Try: $0 format|init|lint|ops|run|test"
     ;;

@@ -6,7 +6,7 @@ module ZoomHub.Log.RequestLogger (formatAsJSON) where
 
 import qualified Blaze.ByteString.Builder as BB
 import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
-import qualified Data.ByteString.Char8 as S8
+import qualified Data.ByteString.Char8 as BC
 import Data.CaseInsensitive (original)
 import qualified Data.HashMap.Strict as HM
 import Data.IP (fromHostAddress, fromIPv4)
@@ -62,7 +62,7 @@ word32ToHostAddress =
 readAsDouble :: String -> Double
 readAsDouble = read
 
-requestToJSON :: NominalDiffTime -> Request -> [S8.ByteString] -> Value
+requestToJSON :: NominalDiffTime -> Request -> [BC.ByteString] -> Value
 requestToJSON duration req reqBody =
   object
     [ "method" .= lenientDecodeUtf8 (requestMethod req)
@@ -70,7 +70,7 @@ requestToJSON duration req reqBody =
     , "query" .= toObject (map queryItemToJSON (queryString req))
     , "duration" .= (round (toMilliseconds duration) :: Millisecond)
     , "size" .= requestBodyLengthToJSON (requestBodyLength req)
-    , "body" .= lenientDecodeUtf8 (S8.concat reqBody)
+    , "body" .= lenientDecodeUtf8 (BC.concat reqBody)
     , "remoteHost" .= sockToJSON (remoteHost req)
     , "httpVersion" .= httpVersionToJSON (httpVersion req)
     , "headers" .= requestHeadersToJSON (requestHeaders req)

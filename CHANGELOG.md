@@ -1,5 +1,24 @@
 # ZoomHub
 
+## 3.0.0-alpha – June 27, 2020
+
+-   To enable concurrent submissions, migrate storage engine from [SQLite],
+    which only allows a single write operation due to a file lock, to
+    [PostgreSQL] using [Squeal], a type-safe embedding of PostgreSQL in Haskell.
+    -   Perform type-safe database migrations using `migrate-database` helper.
+    -   Set up PostgreSQL trigger for generating new content hash IDs.
+    -   Add full test suite for ZoomHub API.
+    -   **Ops**
+        -   Add infrastructure for setting up RDS PostgreSQL instance.
+        -   Add database migration scripts.
+-   Combine `PROCESS_EXISTING_CONTENT` and `PROCESS_NEW_CONTENT` environment
+    variables into
+    `PROCESS_CONTENT='ProcessNoContent|ProcessExistingContent|ProcessExistingAndNewContent'`.
+    This was done because `PROCESS_EXISTING_CONTENT=0` and
+    `PROCESS_NEW_CONTENT=1` is an invalid state. We do not spin up any workers
+    unless `PROCESS_CONTENT=ProcessExistingContent|ProcessExistingAndNewContent`.
+-   Upgrade Stack LTS from 12.6 to 14.14.
+
 ## 2.0.0 – April 14, 2016
 
 -   Add infrastructure for background processing of existing content.
@@ -93,7 +112,7 @@
 -   Link to metadata from view page.
 -   Add support for [VIPS] to improve speed of generating DZIs:
     -   Upgrade [deepzoomtools] to version 0.0.4.
-    -   Setup [Ansible] [VIPS] role.
+    -   Setup [Ansible][vips] role.
 -   Improve [Ansible] setup and deployment:
     -   Separate boostrap from setup phase. Bootstrap requires `root` access
         to create admin user so setup can simply use admin user.
@@ -102,20 +121,21 @@
 
 ## 0.0.1 — October 19, 2013
 
--   [ZH-18]:  Setup basic deployment on [Rackspace].
+-   [ZH-18]: Setup basic deployment on [Rackspace].
 -   Add [LICENSE].
 
-
 [@aseemk]: https://github.com/aseemk
-[Ansible]: http://www.ansibleworks.com/
-[CircleCI]: https://circleci.com
+[ansible]: http://www.ansibleworks.com/
+[circleci]: https://circleci.com
 [deepzoomtools]: https://github.com/openzoom/node-deepzoomtools
-[LICENSE]: LICENSE
+[license]: LICENSE
 [npm-express-streamline]: https://www.npmjs.org/package/express-streamline
 [npm-streamline-express]: https://www.npmjs.org/package/streamline-express
-[Rackspace]: http://www.rackspace.com/
-[Redis]: http://redis.io/
-[VIPS]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS
-
-[ZH-18]: https://github.com/zoomhub/zoomhub/issues/18
-[ZH-22]: https://github.com/zoomhub/zoomhub/issues/22
+[postgresql]: https://www.postgresql.org/
+[rackspace]: http://www.rackspace.com/
+[redis]: http://redis.io/
+[sqlite]: https://www.sqlite.org/index.html
+[squeal]: https://hackage.haskell.org/package/squeal-postgresql
+[vips]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS
+[zh-18]: https://github.com/zoomhub/zoomhub/issues/18
+[zh-22]: https://github.com/zoomhub/zoomhub/issues/22

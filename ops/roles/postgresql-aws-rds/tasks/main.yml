@@ -1,0 +1,63 @@
+---
+- name: Ensure PostgreSQL database is present
+  postgresql_db:
+    login_host: "{{inventory_hostname}}"
+    login_user: "{{postgres_user_admin_name}}"
+    login_password: "{{postgresql_aws_rds_admin_password}}"
+
+    name: "{{postgres_database_name}}"
+
+- name: Ensure PostgreSQL admin user privileges are present
+  postgresql_privs:
+    login_host: "{{inventory_hostname}}"
+    login_user: "{{postgres_user_admin_name}}"
+    login_password: "{{postgresql_aws_rds_admin_password}}"
+
+    db: "{{postgres_database_name}}"
+    role: "{{postgres_user_admin_name}}"
+    objs: ALL_IN_SCHEMA
+    privs: ALL
+
+- name: Ensure PostgreSQL web user table privileges are present
+  postgresql_privs:
+    login_host: "{{inventory_hostname}}"
+    login_user: "{{postgres_user_admin_name}}"
+    login_password: "{{postgresql_aws_rds_admin_password}}"
+
+    db: "{{postgres_database_name}}"
+    role: "{{postgres_user_web_name}}"
+    type: table
+    schema: public
+    objs: ALL_IN_SCHEMA
+    privs: SELECT,INSERT,UPDATE,DELETE
+  tags:
+    - database-configuration
+
+- name: Ensure PostgreSQL web user sequence privileges are present
+  postgresql_privs:
+    login_host: "{{inventory_hostname}}"
+    login_user: "{{postgres_user_admin_name}}"
+    login_password: "{{postgresql_aws_rds_admin_password}}"
+
+    db: "{{postgres_database_name}}"
+    role: "{{postgres_user_web_name}}"
+    type: sequence
+    schema: public
+    objs: ALL_IN_SCHEMA
+    privs: USAGE
+  tags:
+    - database-configuration
+
+- name: Ensure PostgreSQL web user hashids schema usage privileges are present
+  postgresql_privs:
+    login_host: "{{inventory_hostname}}"
+    login_user: "{{postgres_user_admin_name}}"
+    login_password: "{{postgresql_aws_rds_admin_password}}"
+
+    db: "{{postgres_database_name}}"
+    role: "{{postgres_user_web_name}}"
+    type: schema
+    objs: hashids
+    privs: ALL
+  tags:
+    - database-configuration
