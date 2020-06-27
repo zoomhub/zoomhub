@@ -49,7 +49,6 @@ Format code:
 ./zh format
 ```
 
-
-[Haskell]: https://www.haskell.org
-[Homebrew]: http://brew.sh
-[Stack]: http://docs.haskellstack.org/en/stable/README.html
+[haskell]: https://www.haskell.org
+[homebrew]: http://brew.sh
+[stack]: http://docs.haskellstack.org/en/stable/README.html
