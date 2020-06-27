@@ -1,5 +1,20 @@
 # ZoomHub
 
+## 3.0.0-alpha.1 – June 28, 2020
+
+-   Migrate hosting from Rackspace to Amazon AWS:
+    -   Rackspace Cloud Servers → AWS Elastic Beanstalk (EC2 + ECS + ECR)
+    -   Rackspace Cloud Files → AWS S3
+    -   Keter bundle → Docker container
+    -   Local SQLite file → AWS RDS PostgreSQL
+    -   Splunk → TBD
+-   Remove archived files.
+-   Remove old SQLite development database.
+-   Remove Ansible based ops setup.
+-   Remove Rackspace Cloud Files to AWS S3s migration scripts.
+-   Format Markdown + HTML using Prettier.
+-   Add `stack.yaml.lock` file.
+
 ## 3.0.0-alpha – June 27, 2020
 
 -   To enable concurrent submissions, migrate storage engine from [SQLite],
