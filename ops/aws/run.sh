@@ -14,6 +14,12 @@ function json_log_time() {
 #       jq '.ConfigurationSettings[0].OptionSettings[] | select(.Namespace == "aws:elasticbeanstalk:environment" and .OptionName =="EnvironmentType") | .Value'
 #   "LoadBalanced"
 
+export PGHOST="$RDS_HOSTNAME"
+export PGPORT="$RDS_PORT"
+export PGDATABASE="$RDS_DB_NAME"
+export PGUSER="$RDS_USERNAME"
+export PGPASSWORD="$RDS_PASSWORD"
+
 eb_environment_type='SingleInstance'
 # eb_environment_type='LoadBalanced'
 
@@ -22,8 +28,8 @@ is_leader=$(if [[ -f "/tmp/is_leader" ]]; then echo 'true'; else echo 'false'; f
 echo "{$(json_log_time), \"message\": \"Run startup script\", \"script\": \"run.sh\", \"environmentType\": \"$eb_environment_type\", \"isLeader\": $is_leader, \"env\": {\"RDS_HOSTNAME\": \"$RDS_HOSTNAME\", \"RDS_DB_NAME\": \"$RDS_DB_NAME\", \"RDS_USERNAME\": \"$RDS_USERNAME\"}}"
 if [[  "$eb_environment_type" == "SingleInstance" || ("$eb_environment_type" == "LoadBalanced" && "$is_leader" == "true" ) ]]; then
   echo "{$(json_log_time), \"message\": \"Migrate database\", \"script\": \"run.sh\"}"
-  /opt/zoomhub/migrate-database $RDS_DB_NAME migrate
+  /opt/zoomhub/migrate-database $PGDATABASE migrate
 fi
 
 echo "{$(json_log_time), \"message\": \"Run app\", \"script\": \"run.sh\"}"
-PGHOST="$RDS_HOSTNAME" PGPORT="$RDS_PORT" PGDATABASE="$RDS_DB_NAME" PGUSER="$RDS_USERNAME" PGPASSWORD="$RDS_PASSWORD" /opt/zoomhub/zoomhub
+/opt/zoomhub/zoomhub
