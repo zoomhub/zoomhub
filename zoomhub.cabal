@@ -1,5 +1,5 @@
 name:                zoomhub
-version:             2.0.0.0
+version:             3.0.0.2
 synopsis:            Share and view high-resolution images effortlessly.
 description:         Please see README.md
 homepage:            http://github.com/zoomhub/zoomhub#readme
@@ -7,7 +7,7 @@ license:             MIT
 license-file:        LICENSE
 author:              ZoomHub
 maintainer:          zoomhub@googlegroups.com
-copyright:           2013–2016 ZoomHub
+copyright:           2013–2020 ZoomHub
 category:            Web
 build-type:          Simple
 -- extra-source-files:

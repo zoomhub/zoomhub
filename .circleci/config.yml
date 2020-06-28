@@ -27,6 +27,8 @@ deploy: &deploy
           echo 'export ZH_AWS_EB_PROJECT="$ZH_AWS_EB_PROJECT"' >> $BASH_ENV
           echo 'export ZH_AWS_ECR_REPO="$ZH_AWS_ECR_REPO"' >> $BASH_ENV
 
+    - run: echo $CIRCLE_SHA1 > ~/zoomhub/zoomhub/workspace/version.txt
+
     - aws-cli/setup
 
     # Set up Docker

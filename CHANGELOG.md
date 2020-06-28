@@ -1,5 +1,9 @@
 # ZoomHub
 
+## 3.0.0-alpha.2 – June 28, 2020
+
+- Restore `/version` endpoint.
+
 ## 3.0.0-alpha.1 – June 28, 2020
 
 - Migrate hosting from Rackspace to Amazon AWS:
