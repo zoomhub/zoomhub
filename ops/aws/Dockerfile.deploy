@@ -12,6 +12,7 @@ RUN apt-get upgrade -y && \
 
 ADD .ebextensions/ /opt/zoomhub/.ebextensions
 ADD run.sh /opt/zoomhub
+ADD version.txt /opt/zoomhub
 ADD public /opt/zoomhub/public
 ADD zoomhub /opt/zoomhub
 
