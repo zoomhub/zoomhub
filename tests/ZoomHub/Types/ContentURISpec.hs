@@ -1,17 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.ContentURISpec
-  ( main
-  , spec
-  ) where
+  ( main,
+    spec,
+  )
+where
 
 import Data.Text (Text)
 import qualified Data.Text as T
 import Servant (parseUrlPiece)
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
-
 import ZoomHub.Types.ContentURI (ContentURI, unContentURI)
-
 
 -- International Resource Locator
 iri :: T.Text
@@ -22,6 +21,6 @@ main = hspec spec
 
 spec :: Spec
 spec =
-  describe "fromText" $
-    it "supports IRI (Internationalized Resource Identifier)" $
-      unContentURI <$> (parseUrlPiece iri :: Either Text ContentURI) `shouldBe` Right iri
+  describe "fromText"
+    $ it "supports IRI (Internationalized Resource Identifier)"
+    $ unContentURI <$> (parseUrlPiece iri :: Either Text ContentURI) `shouldBe` Right iri

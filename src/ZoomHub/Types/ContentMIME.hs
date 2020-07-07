@@ -5,21 +5,22 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentMIME
-  ( ContentMIME
-  , ContentMIME'(ContentMIME)
-  , unContentMIME
-  , fromText
-  ) where
+  ( ContentMIME,
+    ContentMIME' (ContentMIME),
+    unContentMIME,
+    fromText,
+  )
+where
 
 import Codec.MIME.Parse (parseMIMEType)
 import Codec.MIME.Type (Type, showType)
-import Data.Aeson (ToJSON, Value(String), toJSON)
+import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Maybe (fromJust)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
+import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
 
+newtype ContentMIME' a = ContentMIME {unContentMIME :: a} deriving (Eq, Show)
 
-newtype ContentMIME' a = ContentMIME { unContentMIME :: a } deriving (Eq, Show)
 type ContentMIME = ContentMIME' Type
 
 toText :: ContentMIME -> T.Text
@@ -34,6 +35,7 @@ instance ToJSON ContentMIME where
 
 -- Squeal / PostgreSQL
 type instance PG ContentMIME = 'PGtext
+
 instance ToParam ContentMIME 'PGtext where
   toParam = toParam . toText
 

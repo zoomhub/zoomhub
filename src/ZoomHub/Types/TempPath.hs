@@ -1,12 +1,13 @@
 module ZoomHub.Types.TempPath
-  ( TempPath(TempPath)
-  , unTempPath
-  ) where
+  ( TempPath (TempPath),
+    unTempPath,
+  )
+where
 
-import Data.Aeson (ToJSON, Value(String), toJSON)
+import Data.Aeson (ToJSON, Value (String), toJSON)
 import qualified Data.Text as T
 
-newtype TempPath = TempPath { unTempPath :: FilePath }
+newtype TempPath = TempPath {unTempPath :: FilePath}
   deriving (Eq, Show)
 
 -- JSON

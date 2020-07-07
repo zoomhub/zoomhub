@@ -2,41 +2,41 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Rackspace.CloudFiles
-  ( Credentials
-  , mkCredentials
-  , getMetadata
-  , Token
-  , parseToken
-  , Endpoint
-  , parseEndpoint
-  , getContent
-  , putContent
-  , Container
-  , parseContainer
-  , unContainer
-  , ObjectName
-  , parseObjectName
-  , unObjectName
-  ) where
-
+  ( Credentials,
+    mkCredentials,
+    getMetadata,
+    Token,
+    parseToken,
+    Endpoint,
+    parseEndpoint,
+    getContent,
+    putContent,
+    Container,
+    parseContainer,
+    unContainer,
+    ObjectName,
+    parseObjectName,
+    unObjectName,
+  )
+where
 
 import qualified Codec.MIME.Type as MIME
 import Control.Exception (tryJust)
-import Control.Lens (each, filtered, (&), (.~), (^.), (^..), (^?))
+import Control.Lens ((&), (.~), (^.), (^..), (^?), each, filtered)
 import Control.Monad (guard)
 import Control.Monad.Catch (Handler)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Retry
-  ( RetryPolicyM
-  , RetryStatus
-  , capDelay
-  , fullJitterBackoff
-  , limitRetries
-  , logRetries
-  , recovering
+  ( RetryPolicyM,
+    RetryStatus,
+    capDelay,
+    fullJitterBackoff,
+    limitRetries,
+    logRetries,
+    recovering,
   )
-import Data.Aeson (ToJSON, Value(String), object, toJSON, (.=))
-import Data.Aeson.Lens (key, _Array, _Object, _String)
+import Data.Aeson ((.=), ToJSON, Value (String), object, toJSON)
+import Data.Aeson.Lens (_Array, _Object, _String, key)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
 import Data.List (intercalate, isPrefixOf)
@@ -45,57 +45,64 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Network.HTTP.Client
-  ( HttpException(HttpExceptionRequest)
-  , HttpExceptionContent(ConnectionFailure, StatusCodeException)
+  ( HttpException (HttpExceptionRequest),
+    HttpExceptionContent (ConnectionFailure, StatusCodeException),
   )
 import qualified Network.HTTP.Client as HC hiding (responseBody)
 import Network.HTTP.Client.Instances ()
 import Network.HTTP.Types (notFound404)
 import Network.Wreq
-  ( Options
-  , Status
-  , defaults
-  , getWith
-  , header
-  , post
-  , putWith
-  , responseBody
-  , responseStatus
+  ( Options,
+    Status,
+    defaults,
+    getWith,
+    header,
+    post,
+    putWith,
+    responseBody,
+    responseStatus,
   )
 import System.Envy (Var, fromVar, toVar)
-
 import ZoomHub.Log.Logger (logWarning)
 
 -- Types
-data Credentials = Credentials
-  { credUsername :: String
-  , credAPIKey   :: String
-  } deriving (Eq, Show)
+data Credentials
+  = Credentials
+      { credUsername :: String,
+        credAPIKey :: String
+      }
+  deriving (Eq, Show)
 
 mkCredentials :: String -> String -> Credentials
 mkCredentials username apiKey =
   Credentials
-    { credUsername = username
-    , credAPIKey = apiKey
+    { credUsername = username,
+      credAPIKey = apiKey
     }
 
 instance ToJSON Credentials where
   toJSON (Credentials username apiKey) =
-    object ["auth" .=
-      object ["RAX-KSKEY:apiKeyCredentials" .=
-        object ["username" .= username, "apiKey" .= apiKey]
+    object
+      [ "auth"
+          .= object
+            [ "RAX-KSKEY:apiKeyCredentials"
+                .= object ["username" .= username, "apiKey" .= apiKey]
+            ]
       ]
-    ]
 
-newtype Endpoint = Endpoint { unEndpoint :: String } deriving (Eq, Show)
-newtype Token = Token { unToken :: String } deriving (Eq, Show)
-newtype Metadata = Metadata { unMetadata :: BL.ByteString } deriving (Eq, Show)
+newtype Endpoint = Endpoint {unEndpoint :: String} deriving (Eq, Show)
+
+newtype Token = Token {unToken :: String} deriving (Eq, Show)
+
+newtype Metadata = Metadata {unMetadata :: BL.ByteString} deriving (Eq, Show)
 
 -- Container
-newtype Container = Container { unContainer :: String } deriving (Eq, Show)
+newtype Container = Container {unContainer :: String} deriving (Eq, Show)
 
 instance Var Container where
+
   toVar = unContainer
+
   fromVar = parseContainer
 
 instance ToJSON Container where
@@ -107,7 +114,7 @@ parseContainer s
   | otherwise = Nothing
 
 -- ObjectName
-newtype ObjectName = ObjectName { unObjectName :: String } deriving (Eq, Show)
+newtype ObjectName = ObjectName {unObjectName :: String} deriving (Eq, Show)
 
 parseObjectName :: String -> Maybe ObjectName
 parseObjectName s
@@ -129,18 +136,27 @@ getMetadata credentials = do
 parseToken :: Metadata -> Maybe Token
 parseToken meta =
   let tokenId = key "access" . key "token" . key "id" . _String
-      maybeToken = unMetadata meta ^? tokenId in
-  Token . T.unpack <$> maybeToken
+      maybeToken = unMetadata meta ^? tokenId
+   in Token . T.unpack <$> maybeToken
 
 parseEndpoint :: Metadata -> Maybe Endpoint
 parseEndpoint meta =
-    let result = unMetadata meta ^.. key "access" . key "serviceCatalog" .
-                  _Array . traverse . name "cloudFiles" . _Object . traverse .
-                  _Array . traverse . region "IAD" . key "publicURL" .
-                  _String . each in
-    case result of
-      "" -> Nothing
-      endpoint -> Just (Endpoint endpoint)
+  let result =
+        unMetadata meta ^.. key "access" . key "serviceCatalog"
+          . _Array
+          . traverse
+          . name "cloudFiles"
+          . _Object
+          . traverse
+          . _Array
+          . traverse
+          . region "IAD"
+          . key "publicURL"
+          . _String
+          . each
+   in case result of
+        "" -> Nothing
+        endpoint -> Just (Endpoint endpoint)
   where
     name n = filtered $ \o -> o ^? key "name" . _String == Just n
     region r = filtered $ \o -> o ^? key "region" . _String == Just r
@@ -150,47 +166,48 @@ getContent meta urlPath =
   case parseToken meta of
     Nothing -> return Nothing
     Just t ->
-      let options = toOptions t in
-      case parseEndpoint meta of
-        Nothing -> return Nothing
-        Just e  -> do
-          eitherRes <-
-            tryJust (guard . is404) (getWith options (unEndpoint e ++ urlPath))
-          case eitherRes of
-            Right res -> return $ Just $ res ^. responseBody
-            _         -> return Nothing
-    where
-      is404 :: HttpException -> Bool
-      is404 (HttpExceptionRequest _ (StatusCodeException r _)) = HC.responseStatus  r == notFound404
-      is404 _ = False
+      let options = toOptions t
+       in case parseEndpoint meta of
+            Nothing -> return Nothing
+            Just e -> do
+              eitherRes <-
+                tryJust (guard . is404) (getWith options (unEndpoint e ++ urlPath))
+              case eitherRes of
+                Right res -> return $ Just $ res ^. responseBody
+                _ -> return Nothing
+  where
+    is404 :: HttpException -> Bool
+    is404 (HttpExceptionRequest _ (StatusCodeException r _)) = HC.responseStatus r == notFound404
+    is404 _ = False
 
 -- TODO: Add support for using a `wreq` session for improved performance:
-putContent :: Metadata ->
-              FilePath ->
-              MIME.Type ->
-              Container ->
-              ObjectName ->
-              IO (Maybe Status)
+putContent ::
+  Metadata ->
+  FilePath ->
+  MIME.Type ->
+  Container ->
+  ObjectName ->
+  IO (Maybe Status)
 putContent meta path mime container objectName =
-    recovering backoffPolicy handlers
-      (\_ -> unsafePutContent meta path mime container objectName)
+  recovering
+    backoffPolicy
+    handlers
+    (\_ -> unsafePutContent meta path mime container objectName)
   where
     handlers = [httpErrorH]
-
     httpErrorH :: RetryStatus -> Handler IO Bool
     httpErrorH = logRetries testE logRetry
-
     testE :: (Monad m) => HttpException -> m Bool
     testE = \case
       HttpExceptionRequest _ (ConnectionFailure _) -> return True
-      _                                            -> return False
-
+      _ -> return False
     logRetry :: Bool -> HttpException -> RetryStatus -> IO ()
     logRetry shouldRetry e _ =
-        logWarning "Retrying `CloudFiles.putContent` due to error"
-          [ "error" .= e
-          , "nextAction" .= next
-          ]
+      logWarning
+        "Retrying `CloudFiles.putContent` due to error"
+        [ "error" .= e,
+          "nextAction" .= next
+        ]
       where
         next :: Text
         next = if shouldRetry then "retry" else "crash"
@@ -206,25 +223,30 @@ addContentType mime options =
 -- Retry
 backoffPolicy :: (MonadIO m) => RetryPolicyM m
 backoffPolicy =
-    capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
+  capDelay maxDelay $ fullJitterBackoff base <> limitRetries maxRetries
   where
     maxDelay = fromIntegral $ toMicroseconds (30 :: Second)
     base = fromIntegral $ toMicroseconds (1 :: Second)
     maxRetries = 10
 
-
-unsafePutContent :: Metadata ->
-                    FilePath ->
-                    MIME.Type ->
-                    Container ->
-                    ObjectName ->
-                    IO (Maybe Status)
+unsafePutContent ::
+  Metadata ->
+  FilePath ->
+  MIME.Type ->
+  Container ->
+  ObjectName ->
+  IO (Maybe Status)
 unsafePutContent meta path mime container objectName =
   case (parseToken meta, parseEndpoint meta) of
     (Just token, Just endpoint) -> do
       let options = addContentType mime . toOptions $ token
-          url = intercalate "/" [unEndpoint endpoint,
-            unContainer container, unObjectName objectName]
+          url =
+            intercalate
+              "/"
+              [ unEndpoint endpoint,
+                unContainer container,
+                unObjectName objectName
+              ]
       body <- BL.readFile path
       res <- putWith options url body
       return . Just $ res ^. responseStatus

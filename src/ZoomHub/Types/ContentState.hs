@@ -6,9 +6,10 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentState
-  ( ContentState(..)
-  , fromString
-  ) where
+  ( ContentState (..),
+    fromString,
+  )
+where
 
 import Data.Maybe (fromJust)
 import Data.String (IsString)
@@ -16,7 +17,12 @@ import qualified Data.String as String
 import Data.Text (Text)
 import qualified Data.Text as T
 import Squeal.PostgreSQL
-  (FromValue(..), Literal(..), PG, PGType(PGtext), ToParam(..))
+  ( FromValue (..),
+    Literal (..),
+    PG,
+    PGType (PGtext),
+    ToParam (..),
+  )
 
 data ContentState
   = Initialized
@@ -44,6 +50,7 @@ instance FromValue 'PGtext ContentState where
   fromValue = fromJust . fromString <$> fromValue @'PGtext
 
 type instance PG ContentState = 'PGtext
+
 instance ToParam ContentState 'PGtext where
   toParam = toParam . toText
 

@@ -4,17 +4,17 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.DeepZoomImage.TileSize
-  ( TileSize(..)
-  , fromString
-  , fromInteger
-  ) where
+  ( TileSize (..),
+    fromString,
+    fromInteger,
+  )
+where
 
-import Prelude hiding (fromInteger)
-
-import Data.Aeson (ToJSON, Value(Number), toJSON)
+import Data.Aeson (ToJSON, Value (Number), toJSON)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
-import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGint4), ToParam(..))
+import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGint4), ToParam (..))
+import Prelude hiding (fromInteger)
 
 data TileSize = TileSize254 | TileSize256 | TileSize1024
   deriving (Bounded, Enum, Eq)
@@ -44,6 +44,7 @@ instance ToJSON TileSize where
 
 -- PostgreSQL / Squeal
 type instance PG TileSize = 'PGint4
+
 instance ToParam TileSize 'PGint4 where
   toParam TileSize254 = toParam (254 :: Int32)
   toParam TileSize256 = toParam (256 :: Int32)

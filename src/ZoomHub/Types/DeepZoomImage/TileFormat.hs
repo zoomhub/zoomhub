@@ -5,18 +5,19 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.DeepZoomImage.TileFormat
-  ( TileFormat(..)
-  , fromString
-  , fromText
-  ) where
+  ( TileFormat (..),
+    fromString,
+    fromText,
+  )
+where
 
-import Data.Aeson (ToJSON, Value(String), toJSON)
+import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromValue(..), PG, PGType(PGtext), ToParam(..))
+import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
 
-data TileFormat = JPEG | PNG deriving Eq
+data TileFormat = JPEG | PNG deriving (Eq)
 
 fromString :: String -> Maybe TileFormat
 fromString "jpg" = Just JPEG
@@ -44,6 +45,7 @@ instance FromValue 'PGtext TileFormat where
   fromValue = fromJust . fromString <$> fromValue @'PGtext
 
 type instance PG TileFormat = 'PGtext
+
 instance ToParam TileFormat 'PGtext where
   toParam JPEG = toParam ("jpeg" :: Text)
   toParam PNG = toParam ("png" :: Text)
