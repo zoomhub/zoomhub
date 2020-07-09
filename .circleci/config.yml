@@ -57,9 +57,6 @@ jobs:
     steps:
       - checkout
 
-      - run: ./zh format install
-      - run: ./zh format check
-
       - run:
           name: "Setup custom environment variables"
           command: |
@@ -90,6 +87,9 @@ jobs:
             # this should be unnecessary if you have your default branch
             # configured correctly
             - zh-stack-cache-v2-dep-
+
+      - run: ./zh format install
+      - run: ./zh format check
 
       # Test
       - run:
