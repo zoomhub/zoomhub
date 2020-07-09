@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.APISpec
@@ -168,18 +169,18 @@ closeDatabaseConnection :: Config -> IO ()
 closeDatabaseConnection = destroyAllResources . dbConnPool
 
 spec :: Spec
-spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $ do
-  describe "RESTful" $ do
-    describe "List (GET /v1/content)"
-      $ it "should be interpreted as a ‘get by URL’, with no URL given"
-      $ get "/v1/content"
-        `shouldRespondWith` "Missing ID or URL.\
-                            \ Please provide ID, e.g. `/v1/content/<id>`,\
-                            \ or URL via `/v1/content?url=<url>` query parameter."
-          { matchStatus = 400,
-            matchHeaders = [plainTextUTF8]
-          }
-    describe "Get by URL (GET /v1/content?url=…)" $ do
+spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
+  describe "RESTful" do
+    describe "List (GET /v1/content)" do
+      it "should be interpreted as a ‘get by URL’, with no URL given" $
+        get "/v1/content"
+          `shouldRespondWith` "Missing ID or URL.\
+                              \ Please provide ID, e.g. `/v1/content/<id>`,\
+                              \ or URL via `/v1/content?url=<url>` query parameter."
+            { matchStatus = 400,
+              matchHeaders = [plainTextUTF8]
+            }
+    describe "Get by URL (GET /v1/content?url=…)" do
       it "should reject empty URLs" $
         get "/v1/content?url="
           `shouldRespondWith` invalidURL
@@ -189,12 +190,12 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
       it "should reject URLs without protocol" $
         get "/v1/content?url=example.com"
           `shouldRespondWith` invalidURL
-      it "should reject URLs with non-HTTP protocol" $ do
+      it "should reject URLs with non-HTTP protocol" do
         get "/v1/content?url=ftp://example.com"
           `shouldRespondWith` invalidURL
         get "/v1/content?url=mailto://example@example.com"
           `shouldRespondWith` invalidURL
-      it "should accept new HTTP URLs" $ do
+      it "should accept new HTTP URLs" do
         get ("/v1/content?url=" <> BC.pack newContentURL)
           `shouldRespondWith` restRedirect (fromString newContentId)
         get ("/v1/content/" <> BC.pack newContentId)
@@ -210,7 +211,7 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
         let (existingId, existingURL) = existingContent
          in get ("/v1/content?url=" <> BC.pack existingURL)
               `shouldRespondWith` restRedirect existingId
-    describe "Get by ID (GET /v1/content/:id)" $ do
+    describe "Get by ID (GET /v1/content/:id)" do
       it "should return correct data for existing content" $
         get "/v1/content/yQ4"
           `shouldRespondWith` "{\"dzi\":{\"height\":3750,\"url\":\
@@ -230,51 +231,51 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
-    describe "POST /v1/content?url=…"
-      $ it "should be rejected"
-      $ post "/v1/content?url=http://example.com" ""
-        `shouldRespondWith` invalidHTTPMethod
-    describe "PUT /v1/content?url=…"
-      $ it "should be rejected"
-      $ put "/v1/content?url=http://example.com" ""
-        `shouldRespondWith` invalidHTTPMethod
-  describe "JSONP" $ do
-    describe "GET /v1/content?url=…&callback=…"
-      $ it "should accept `callback` query parameter"
-      $ get "/v1/content?callback=handleContent"
-        `shouldRespondWith` "/**/ typeof handleContent === 'function' &&\
-                            \ handleContent({\"status\":400,\"error\":\"Missing ID or URL.\
-                            \ Please provide ID, e.g. `/v1/content/<id>`, or URL via\
-                            \ `/v1/content?url=<url>` query parameter.\",\"statusText\":\
-                            \\"Bad Request\",\"redirectLocation\":null});"
-          { matchStatus = 200,
-            matchHeaders = [javaScriptUTF8]
-          }
-    describe "GET /v1/content/:id?callback=…"
-      $ it "should accept `callback` query parameter"
-      $ get "/v1/content/yQ4?callback=handleContent"
-        `shouldRespondWith` "/**/ typeof handleContent === 'function' && \
-                            \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
-                            \{\"dzi\":{\"height\":3750,\"url\":\
-                            \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
-                            \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
-                            \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
-                            \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
-                            \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
-                            \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
-                            \\"yQ4\",\"ready\":true,\"failed\":false},\
-                            \\"redirectLocation\":null});"
-          { matchStatus = 200,
-            matchHeaders = [javaScriptUTF8]
-          }
-  describe "View by URL (GET /:url)"
-    $ it "should return correct redirect existing content"
-    $ let (existingId, existingURL) = existingContent
+    describe "POST /v1/content?url=…" do
+      it "should be rejected" $
+        post "/v1/content?url=http://example.com" ""
+          `shouldRespondWith` invalidHTTPMethod
+    describe "PUT /v1/content?url=…" do
+      it "should be rejected" $
+        put "/v1/content?url=http://example.com" ""
+          `shouldRespondWith` invalidHTTPMethod
+  describe "JSONP" do
+    describe "GET /v1/content?url=…&callback=…" do
+      it "should accept `callback` query parameter" $
+        get "/v1/content?callback=handleContent"
+          `shouldRespondWith` "/**/ typeof handleContent === 'function' &&\
+                              \ handleContent({\"status\":400,\"error\":\"Missing ID or URL.\
+                              \ Please provide ID, e.g. `/v1/content/<id>`, or URL via\
+                              \ `/v1/content?url=<url>` query parameter.\",\"statusText\":\
+                              \\"Bad Request\",\"redirectLocation\":null});"
+            { matchStatus = 200,
+              matchHeaders = [javaScriptUTF8]
+            }
+    describe "GET /v1/content/:id?callback=…" do
+      it "should accept `callback` query parameter" do
+        get "/v1/content/yQ4?callback=handleContent"
+          `shouldRespondWith` "/**/ typeof handleContent === 'function' && \
+                              \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
+                              \{\"dzi\":{\"height\":3750,\"url\":\
+                              \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
+                              \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
+                              \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
+                              \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
+                              \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
+                              \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
+                              \\"yQ4\",\"ready\":true,\"failed\":false},\
+                              \\"redirectLocation\":null});"
+            { matchStatus = 200,
+              matchHeaders = [javaScriptUTF8]
+            }
+  describe "View by URL (GET /:url)" do
+    it "should return correct redirect existing content" do
+      let (existingId, existingURL) = existingContent
        in get ("/" <> BC.pack existingURL)
             `shouldRespondWith` viewRedirect existingId
-  describe "CORS"
-    $ it "should allow all origins"
-    $ let getWithHeader path headers = request methodGet path headers ""
+  describe "CORS" do
+    it "should allow all origins" do
+      let getWithHeader path headers = request methodGet path headers ""
        in getWithHeader "/v1/content/yQ4" [("Origin", "http://example.com")]
             `shouldRespondWith` 200
               { matchHeaders =
@@ -282,22 +283,21 @@ spec = with (return $ app config) $ afterAll_ (closeDatabaseConnection config) $
                     applicationJSON
                   ]
               }
-  describe "Meta" $ do
-    describe "Health (/health)"
-      $ it "should respond with `up`"
-      $ get "/health" `shouldRespondWith` "up" {matchStatus = 200}
-    describe "Version (/version)"
-      $ it "should respond with version"
-      $ get "/version" `shouldRespondWith` "test" {matchStatus = 200}
-  describe "Number of views"
-    $ context "when requesting content through REST API"
-    $ it "should increase `numViews`"
-    $ do
-      -- TODO: How can we avoid this dummy `Test.Hspec.Wai` request to satisfy
-      -- type checker?
-      get "/v1/content/yQ4" `shouldRespondWith` 200
-      liftIO $ do
-        let pool = Config.dbConnPool config
-        maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
-        let numViews = maybe 0 contentNumViews maybeContent
-        numViews `shouldBe` 5
+  describe "Meta" do
+    describe "Health (/health)" do
+      it "should respond with `up`" do
+        get "/health" `shouldRespondWith` "up" {matchStatus = 200}
+    describe "Version (/version)" do
+      it "should respond with version" do
+        get "/version" `shouldRespondWith` "test" {matchStatus = 200}
+  describe "Number of views" do
+    context "when requesting content through REST API" do
+      it "should increase `numViews`" do
+        -- TODO: How can we avoid this dummy `Test.Hspec.Wai` request to satisfy
+        -- type checker?
+        get "/v1/content/yQ4" `shouldRespondWith` 200
+        liftIO do
+          let pool = Config.dbConnPool config
+          maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
+          let numViews = maybe 0 contentNumViews maybeContent
+          numViews `shouldBe` 5

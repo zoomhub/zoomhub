@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -35,7 +36,7 @@ main = hspec spec
 
 spec :: Spec
 spec =
-  describe "encode"
-    $ context "when used with valid strings, i.e. no underscores,"
-    $ it "is inverse to `decode`"
-    $ property prop_invertible
+  describe "encode" do
+    context "when used with valid strings, i.e. no underscores," do
+      it "is inverse to `decode`" $
+        property prop_invertible

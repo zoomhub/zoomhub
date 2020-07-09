@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.DeepZoomImageSpec
@@ -48,7 +49,7 @@ main = hspec spec
 
 spec :: Spec
 spec =
-  describe "fromXML" $ do
+  describe "fromXML" do
     it "should create `DeepZoomImage` value from JPEG DZI XML" $
       fromXML jpegXML
         `shouldBe` Just (mkDeepZoomImage 1234 5678 TileSize254 TileOverlap1 JPEG)

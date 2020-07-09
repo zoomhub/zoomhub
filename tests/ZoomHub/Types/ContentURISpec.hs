@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.ContentURISpec
@@ -21,6 +22,7 @@ main = hspec spec
 
 spec :: Spec
 spec =
-  describe "fromText"
-    $ it "supports IRI (Internationalized Resource Identifier)"
-    $ unContentURI <$> (parseUrlPiece iri :: Either Text ContentURI) `shouldBe` Right iri
+  describe "fromText" do
+    it "supports IRI (Internationalized Resource Identifier)" $
+      unContentURI <$> (parseUrlPiece iri :: Either Text ContentURI)
+        `shouldBe` Right iri
