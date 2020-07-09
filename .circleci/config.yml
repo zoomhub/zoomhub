@@ -57,6 +57,9 @@ jobs:
     steps:
       - checkout
 
+      - run: ./zh format install
+      - run: ./zh format check
+
       - run:
           name: "Setup custom environment variables"
           command: |
