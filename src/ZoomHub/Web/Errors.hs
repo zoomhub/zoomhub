@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Web.Errors
-  ( error400
-  , error404
-  , error503
+  ( error400,
+    error404,
+    error503,
   )
-  where
+where
 
 import qualified Data.ByteString.Lazy.UTF8 as BU
 import Servant (ServerError, err400, err404, err503, errBody, errHeaders)
@@ -20,7 +20,8 @@ error503 :: String -> ServerError
 error503 = mkError err503
 
 mkError :: ServerError -> String -> ServerError
-mkError errorType message = errorType
-  { errHeaders = [("Content-Type", "text/html; charset=utf-8")]
-  , errBody = BU.fromString message
-  }
+mkError errorType message =
+  errorType
+    { errHeaders = [("Content-Type", "text/html; charset=utf-8")],
+      errBody = BU.fromString message
+    }

@@ -1,8 +1,9 @@
 module ZoomHub.Utils
-  ((<$$>)
-  , intercalate
-  , lenientDecodeUtf8
-  ) where
+  ( (<$$>),
+    intercalate,
+    lenientDecodeUtf8,
+  )
+where
 
 import Data.ByteString (ByteString)
 import Data.List (intersperse)

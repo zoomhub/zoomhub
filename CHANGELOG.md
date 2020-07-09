@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 3.0.0-rc.1 – July 7, 2020
+
+- Serving all production traffic.
+- Auto-formatted Haskell code using [Ormolu].
+
 ## 3.0.0-alpha.2 – June 28, 2020
 
 - Restore `/version` endpoint.
@@ -150,6 +155,7 @@
 [license]: LICENSE
 [npm-express-streamline]: https://www.npmjs.org/package/express-streamline
 [npm-streamline-express]: https://www.npmjs.org/package/streamline-express
+[ormolu]: https://hackage.haskell.org/package/ormolu
 [postgresql]: https://www.postgresql.org/
 [rackspace]: http://www.rackspace.com/
 [redis]: http://redis.io/

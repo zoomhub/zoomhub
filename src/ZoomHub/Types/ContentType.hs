@@ -6,15 +6,21 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module ZoomHub.Types.ContentType
-  ( ContentType(..)
-  ) where
+  ( ContentType (..),
+  )
+where
 
 import Data.Int (Int32)
 import Squeal.PostgreSQL
-  (FromValue(..), Literal(..), PG, PGType(PGint4), ToParam(..))
+  ( FromValue (..),
+    Literal (..),
+    PG,
+    PGType (PGint4),
+    ToParam (..),
+  )
 
-data ContentType =
-    Unknown
+data ContentType
+  = Unknown
   | Image
   | Webpage
   | FlickrImage
@@ -39,17 +45,18 @@ fromPGint4 14 = WebpageThumbnail
 fromPGint4 t = error $ "Invalid ContentType: " <> show t
 
 toPGint4 :: ContentType -> Int32
-toPGint4 Unknown =  0
-toPGint4 Image =  1
-toPGint4 Webpage =  2
-toPGint4 FlickrImage =  3
-toPGint4 GigaPan =  6
-toPGint4 Zoomify =  7
+toPGint4 Unknown = 0
+toPGint4 Image = 1
+toPGint4 Webpage = 2
+toPGint4 FlickrImage = 3
+toPGint4 GigaPan = 6
+toPGint4 Zoomify = 7
 toPGint4 PDF10 = 10
 toPGint4 PDF11 = 11
 toPGint4 WebpageThumbnail = 14
 
 type instance PG ContentType = 'PGint4
+
 instance ToParam ContentType 'PGint4 where
   toParam = toParam . toPGint4
 

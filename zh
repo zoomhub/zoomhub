@@ -30,8 +30,8 @@ lint)
     stack exec hlint -- src tests
     ;;
 format)
-    files=$(git ls-files | grep --invert 'vendor/' | grep '.hs$')
-    stylish-haskell --inplace $files
+    files=$(git ls-files | grep --invert 'vendor/' | grep '.hs$' | grep --invert 'src/ZoomHub/Storage/PostgreSQL/Internal.hs')
+    ormolu --mode inplace $files
     ;;
 run)
     dropdb --if-exists "$DEVELOPMENT_DB_NAME"

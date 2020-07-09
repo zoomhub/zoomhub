@@ -4,16 +4,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module ZoomHub.Worker
-  ( processExistingContent
-  , processExpiredActiveContent
-  ) where
+  ( processExistingContent,
+    processExpiredActiveContent,
+  )
+where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (SomeException, fromException)
 import Control.Exception.Enclosed (catchAny)
 import Control.Monad (forM_, forever, void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson (Value(String), encode, toJSON, (.=))
+import Data.Aeson ((.=), Value (String), encode, toJSON)
 import qualified Data.ByteString.Lazy as BL
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -23,16 +24,15 @@ import Network.HTTP.Client (HttpException)
 import Network.HTTP.Client.Instances ()
 import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
-
-import ZoomHub.Config (Config(..))
+import ZoomHub.Config (Config (..))
 import ZoomHub.Log.Logger (logException, logInfo, logInfoT)
-import ZoomHub.Pipeline (ProcessResult(..), process)
+import ZoomHub.Pipeline (ProcessResult (..), process)
 import ZoomHub.Storage.PostgreSQL
-  ( dequeueNextUnprocessed
-  , getExpiredActive
-  , markAsFailure
-  , markAsSuccess
-  , resetAsInitialized
+  ( dequeueNextUnprocessed,
+    getExpiredActive,
+    markAsFailure,
+    markAsSuccess,
+    resetAsInitialized,
   )
 import ZoomHub.Types.Content (contentId, contentURL)
 import ZoomHub.Types.ContentId (unContentId)
@@ -47,77 +47,77 @@ processExpiredActiveContentInterval = 30
 
 -- Public API
 processExistingContent :: Config -> String -> IO ()
-processExistingContent Config{..} workerId = forever $ do
-    logInfo "worker:start" [ "worker" .= workerId ]
-
-    go `catchAny` \ex ->
-      -- TODO: Mark as `completed:failure` or `initialized`:
-      logException "worker:error" ex extraLogMeta
-
-    logInfo "worker:end" extraLogMeta
-
-    let delta = (2 * toMicroseconds sleepBase) `div` 2
-    jitter <- randomRIO (0, delta)
-    let sleepDuration = fromMicroseconds $ delta + jitter :: Second
-
-    logInfo "Wait for next unprocessed content" $
-      ( "sleepDuration" .= sleepDuration ) : extraLogMeta
-    threadDelay . fromIntegral $ toMicroseconds sleepDuration
+processExistingContent Config {..} workerId = forever $ do
+  logInfo "worker:start" ["worker" .= workerId]
+  go `catchAny` \ex ->
+    -- TODO: Mark as `completed:failure` or `initialized`:
+    logException "worker:error" ex extraLogMeta
+  logInfo "worker:end" extraLogMeta
+  let delta = (2 * toMicroseconds sleepBase) `div` 2
+  jitter <- randomRIO (0, delta)
+  let sleepDuration = fromMicroseconds $ delta + jitter :: Second
+  logInfo "Wait for next unprocessed content" $
+    ("sleepDuration" .= sleepDuration) : extraLogMeta
+  threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     go = do
       maybeContent <-
-        logT "Get next unprocessed content and mark as active" [] $
-          liftIO $ runPoolPQ dequeueNextUnprocessed dbConnPool
-
+        logT "Get next unprocessed content and mark as active" []
+          $ liftIO
+          $ runPoolPQ dequeueNextUnprocessed dbConnPool
       case maybeContent of
         Just content -> do
           let processOp = do
-                ProcessResult{..} <- process workerId rackspace tempPath content
+                ProcessResult {..} <- process workerId rackspace tempPath content
                 runPoolPQ (markAsSuccess (contentId content) prDZI prMIME (Just prSize)) dbConnPool
               jsonToText =
                 Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError
               errorOp e =
                 runPoolPQ (markAsFailure (contentId content) (jsonToText e)) dbConnPool
-              action = logT "Process content: success"
-                        [ "id" .= contentId content
-                        , "url" .= contentURL content
-                        , "apiURL" .= apiURL content
-                        , "wwwURL" .= wwwURL content
-                        , "worker" .= workerId
-                        ] processOp
-              errorHandler e = logT "Process content: failure"
-                                [ "id" .= contentId content
-                                , "url" .= contentURL content
-                                , "apiURL" .= apiURL content
-                                , "wwwURL" .= wwwURL content
-                                , "error" .= toJSONError e
-                                , "worker" .= workerId
-                                ] $ errorOp e
+              action =
+                logT
+                  "Process content: success"
+                  [ "id" .= contentId content,
+                    "url" .= contentURL content,
+                    "apiURL" .= apiURL content,
+                    "wwwURL" .= wwwURL content,
+                    "worker" .= workerId
+                  ]
+                  processOp
+              errorHandler e =
+                logT
+                  "Process content: failure"
+                  [ "id" .= contentId content,
+                    "url" .= contentURL content,
+                    "apiURL" .= apiURL content,
+                    "wwwURL" .= wwwURL content,
+                    "error" .= toJSONError e,
+                    "worker" .= workerId
+                  ]
+                  $ errorOp e
           void $ action `catchAny` errorHandler
         Nothing ->
           return ()
-
     sleepBase = processExistingContentInterval
-
     wwwURL c = mconcat ["http://", show baseURI, "/", unContentId (contentId c)]
     apiURL c = mconcat ["http://api.", show baseURI, "/v1/content/", unContentId (contentId c)]
-
     logT msg meta = logInfoT msg (meta ++ extraLogMeta)
     extraLogMeta =
-      [ "worker" .= workerId
-      , "topic" .= ("worker:process:existing" :: Text)
+      [ "worker" .= workerId,
+        "topic" .= ("worker:process:existing" :: Text)
       ]
 
 processExpiredActiveContent :: Config -> IO ()
-processExpiredActiveContent Config{..} = forever $ do
-    cs <- runPoolPQ (getExpiredActive processExpiredActiveContentInterval) dbConnPool
-    logInfoT "Reset expired active content"
-      [ "ids" .= map contentId cs ]
-      (forM_ cs $ \content -> runPoolPQ (resetAsInitialized (contentId content)) dbConnPool)
-
-    logInfo "Wait for next expired active content"
-      [ "sleepDuration" .= sleepDuration ]
-    threadDelay . fromIntegral $ toMicroseconds sleepDuration
+processExpiredActiveContent Config {..} = forever $ do
+  cs <- runPoolPQ (getExpiredActive processExpiredActiveContentInterval) dbConnPool
+  logInfoT
+    "Reset expired active content"
+    ["ids" .= map contentId cs]
+    (forM_ cs $ \content -> runPoolPQ (resetAsInitialized (contentId content)) dbConnPool)
+  logInfo
+    "Wait for next expired active content"
+    ["sleepDuration" .= sleepDuration]
+  threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     sleepDuration = processExpiredActiveContentInterval
 
