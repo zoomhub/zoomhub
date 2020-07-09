@@ -13,6 +13,8 @@ extra-deps:
 - squeal-postgresql-0.5.1.0
 - time-units-1.0.0
 - ./vendor/servant/servant-server
+# Pinned for `ormolu` code formatter
+- ghc-lib-parser-8.10.1.20200523@sha256:857dbd2d456d4b74e6c3dbd3dacff3888a3c64bdb9fe306bd51b94fdcfb9094e,8770 
 
 # Override default flag values for local packages and extra-deps
 flags: {}
