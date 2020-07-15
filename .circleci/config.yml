@@ -88,9 +88,6 @@ jobs:
             # configured correctly
             - zh-stack-cache-v2-dep-
 
-      - run: ./zh format install
-      - run: ./zh format check
-
       # Test
       - run:
           name: Run tests
