@@ -30,8 +30,31 @@ lint)
     stack exec hlint -- src tests
     ;;
 format)
+    case "$2" in
+    install)
+      stack install ormolu
+      exit 0
+      ;;
+    check)
+      mode='check'
+      ;;
+    "")
+      mode='inplace'
+      ;;
+    *)
+        echo "Unknown command: $0 $@. Try $0 $1 [check|install]"
+        exit 1
+    esac
     files=$(git ls-files | grep --invert 'vendor/' | grep '.hs$' | grep --invert 'src/ZoomHub/Storage/PostgreSQL/Internal.hs')
-    ormolu --mode inplace $files
+    set +e
+    ormolu --mode "$mode" $files
+    ormolu_status=$?
+    set -e
+
+    if [[ "$mode" == "check" && $ormolu_status != 0 ]]; then
+      echo "Ormolu check failed. Exit status: $ormolu_status"
+      exit $ormolu_status
+    fi
     ;;
 run)
     dropdb --if-exists "$DEVELOPMENT_DB_NAME"
