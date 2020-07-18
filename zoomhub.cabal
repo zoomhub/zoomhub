@@ -116,6 +116,7 @@ library
     , safe
     , servant
     , servant-lucid
+    , servant-multipart
     , servant-server
     , split
     , squeal-postgresql

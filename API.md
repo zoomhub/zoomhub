@@ -64,6 +64,10 @@ Note that all response objects have a `content`, `dzi`, or `error` object.
 
 ### URLs
 
+`POST /v1/content`
+
+- 200 w/ If content was uploaded successfully
+
 `GET /v1/content/:id`
 
 - 200 w/ Content object if exists
