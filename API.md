@@ -64,6 +64,10 @@ Note that all response objects have a `content`, `dzi`, or `error` object.
 
 ### URLs
 
+`GET /v1/content/upload`
+
+- 200 w/ S3 presigned POST request parameters
+
 `GET /v1/content/:id`
 
 - 200 w/ Content object if exists

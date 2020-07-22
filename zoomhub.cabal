@@ -102,6 +102,7 @@ library
     , lens-aeson
     , lucid
     , mime
+    , minio-hs
     , monad-control
     , mtl
     , network
@@ -116,6 +117,7 @@ library
     , safe
     , servant
     , servant-lucid
+    , servant-multipart
     , servant-server
     , split
     , squeal-postgresql

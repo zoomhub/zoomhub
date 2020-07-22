@@ -342,6 +342,11 @@
     <!--End mc_embed_signup-->
 
     <article class="container">
+      <form class="upload-form">
+        <input type="file" name="content" accept="image/png,image/jpeg" />
+        <input type="submit" value="Upload image" name="submit" />
+      </form>
+
       <h2>What is it?</h2>
       <p>
         <span class="mark">ZoomHub</span> lets you share &amp; view your
@@ -427,5 +432,40 @@
         <p>Powered by <a href="https://www.haskell.org/">Haskell</a>.</p>
       </footer>
     </article>
+    <script>
+      async function upload(file) {
+        const response = await fetch("/v1/content/upload");
+        const presignedPostData = await response.json();
+        const formData = new FormData();
+        Object.entries(presignedPostData)
+          .filter(([key, _]) => key !== "url")
+          .forEach(([key, value]) => {
+            formData.append(key, value);
+          });
+        formData.append("file", file);
+        // const uploadResponse = await fetch(presignedPostData.url, { method: 'POST', body: formData })
+        const uploadResponse = await fetch(
+          "http://sources-development.zoomhub.net.s3.us-east-2.amazonaws.com",
+          { method: "POST", body: formData }
+        );
+        console.log("uploadResponse:", uploadResponse);
+      }
+      let file = null;
+      document
+        .querySelector(".upload-form > input[type='file']")
+        .addEventListener("change", (event) => {
+          file = event.target.files[0];
+          event.preventDefault();
+        });
+      document
+        .querySelector(".upload-form")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          if (!file) {
+            return;
+          }
+          upload(file);
+        });
+    </script>
   </body>
 </html>
