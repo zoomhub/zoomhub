@@ -1,0 +1,20 @@
+{
+  "name": "zoomhub-server",
+  "version": "0.0.0",
+  "description": "ZoomHub server",
+  "main": "index.js",
+  "scripts": {
+    "start": "BUCKET_NAME='uploads-development.zoomhub.net' AWS_ACCESS_KEY_ID='<TODO>' AWS_SECRET_ACCESS_KEY='<TODO>' npx nodemon ./server.js localhost 3000"
+  },
+  "author": "Daniel Gasienica <daniel@gasienica.ch>",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.715.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "uuid": "^8.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
