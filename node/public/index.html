@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>S3 POST Upload</title>
+    <style type="text/css">
+      div {
+        background: #e2e2e2;
+        padding: 20px;
+        margin: 10px;
+        font-family: sans-serif;
+      }
+
+      div > strong {
+        display: block;
+      }
+
+      #urlinput {
+        width: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- <div>
+    <strong>Step 1 - Enter API URL</strong><br/>
+    <input type="text" id="urlinput" placeholder="https://example.execute-api.example.amazonaws.com/example/" />
+  </div> -->
+    <div>
+      <strong>Step 2 - Choose upload method</strong><br />
+      <input type="radio" id="presignedurl" name="uploadmethod" /><label
+        for="presignedurl"
+        >Presigned URL</label
+      >
+      <input
+        type="radio"
+        id="presignedpost"
+        name="uploadmethod"
+        checked
+      /><label for="presignedpost">Presigned POST</label>
+    </div>
+    <div>
+      <strong>Step 3 - Choose a file</strong><br />
+      <input type="file" id="fileinput" />
+    </div>
+    <div>
+      <strong>Step 4 - Click upload</strong><br />
+      <input type="button" id="uploadbutton" value="Upload" />
+    </div>
+    <div>
+      <span id="output"></span>
+    </div>
+
+    <script type="text/javascript" src="presigned-url.js"></script>
+    <script type="text/javascript" src="presigned-post.js"></script>
+    <script type="text/javascript">
+      // const urlinput = document.getElementById("urlinput");
+      const presignedurl = document.getElementById("presignedurl");
+      const presignedpost = document.getElementById("presignedpost");
+      const fileinput = document.getElementById("fileinput");
+      const uploadbutton = document.getElementById("uploadbutton");
+      const output = document.getElementById("output");
+
+      uploadbutton.addEventListener("click", async () => {
+        const urlinput = {
+          value: "http://localhost:3000/",
+        };
+
+        let url = urlinput.value.endsWith("/")
+          ? urlinput.value
+          : `${urlinput.value}/`;
+        let file = fileinput.files[0];
+        let result;
+
+        if (presignedurl.checked) {
+          result = await uploadViaPresignedUrl(url, file);
+        } else if (presignedpost.checked) {
+          result = await uploadViaPresignedPost(url, file);
+        }
+
+        output.innerHTML = result;
+      });
+    </script>
+  </body>
+</html>
