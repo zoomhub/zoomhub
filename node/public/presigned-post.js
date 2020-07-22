@@ -13,6 +13,7 @@ async function uploadViaPresignedPost(api, file) {
   // Send the POST request
   // response = await fetch(json.data.url, { method: "POST", body: form });
   const uploadResponse = await fetch(
+    // HACK: For CORS to work, we need HTTP based direct bucket URL:
     "http://uploads-development.zoomhub.net.s3.amazonaws.com",
     { method: "POST", body: form }
   );
@@ -22,7 +23,6 @@ async function uploadViaPresignedPost(api, file) {
 
   const successMetadata = await uploadResponse.json();
 
-  // Done!
   return `
     <p>File uploaded via presigned POST with key: ${json.id}</p>
     <p>JSON response: <code>${JSON.stringify(

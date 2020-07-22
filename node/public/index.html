@@ -22,41 +22,20 @@
     </style>
   </head>
   <body>
-    <!-- <div>
-    <strong>Step 1 - Enter API URL</strong><br/>
-    <input type="text" id="urlinput" placeholder="https://example.execute-api.example.amazonaws.com/example/" />
-  </div> -->
     <div>
-      <strong>Step 2 - Choose upload method</strong><br />
-      <input type="radio" id="presignedurl" name="uploadmethod" /><label
-        for="presignedurl"
-        >Presigned URL</label
-      >
-      <input
-        type="radio"
-        id="presignedpost"
-        name="uploadmethod"
-        checked
-      /><label for="presignedpost">Presigned POST</label>
-    </div>
-    <div>
-      <strong>Step 3 - Choose a file</strong><br />
+      <strong>Step 1: Choose a file</strong><br />
       <input type="file" id="fileinput" />
     </div>
     <div>
-      <strong>Step 4 - Click upload</strong><br />
+      <strong>Step 2: Click upload</strong><br />
       <input type="button" id="uploadbutton" value="Upload" />
     </div>
     <div>
       <span id="output"></span>
     </div>
 
-    <script type="text/javascript" src="presigned-url.js"></script>
     <script type="text/javascript" src="presigned-post.js"></script>
     <script type="text/javascript">
-      // const urlinput = document.getElementById("urlinput");
-      const presignedurl = document.getElementById("presignedurl");
-      const presignedpost = document.getElementById("presignedpost");
       const fileinput = document.getElementById("fileinput");
       const uploadbutton = document.getElementById("uploadbutton");
       const output = document.getElementById("output");
@@ -70,13 +49,7 @@
           ? urlinput.value
           : `${urlinput.value}/`;
         let file = fileinput.files[0];
-        let result;
-
-        if (presignedurl.checked) {
-          result = await uploadViaPresignedUrl(url, file);
-        } else if (presignedpost.checked) {
-          result = await uploadViaPresignedPost(url, file);
-        }
+        let result = await uploadViaPresignedPost(url, file);
 
         output.innerHTML = result;
       });
