@@ -4,7 +4,7 @@
   "description": "ZoomHub server",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "BUCKET_NAME='uploads-development.zoomhub.net' AWS_ACCESS_KEY_ID='<TODO>' AWS_SECRET_ACCESS_KEY='<TODO>' npx nodemon ./server.js localhost 3000"
   },
   "author": "Daniel Gasienica <daniel@gasienica.ch>",
   "license": "ISC",
