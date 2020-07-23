@@ -41,7 +41,6 @@ import Servant
     serve,
   )
 import Servant.HTML.Lucid (HTML)
--- import Servant.Multipart (MultipartData, MultipartForm, Tmp, files, inputs)
 import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
 import System.Random (randomRIO)
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
@@ -105,7 +104,6 @@ type API =
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
     -- API: RESTful: Upload
-    -- :<|> "v1" :> "content" :> MultipartForm Tmp (MultipartData Tmp) :> Post '[PlainText] String
     :<|> "v1" :> "content" :> "upload" :> Get '[JSON] (HashMap Text Text)
     -- API: RESTful: ID
     :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
@@ -247,19 +245,6 @@ jsonpInvalidRequest maybeURL callback =
       return $ mkJSONP callback (mkNonRESTful400 apiMissingIdOrURLMessage)
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
-
--- API: RESTful
--- restUpload ::
---   BaseURI ->
---   ContentBaseURI ->
---   Pool Connection ->
---   MultipartData Tmp ->
---   Handler String
--- restUpload _baseURI _contentBaseURI _conn multipartData =
---   return $
---     "inputs:" <> (show $ inputs multipartData)
---       <> "\nfiles:"
---       <> (show $ files multipartData)
 
 restUpload :: Handler (HashMap Text Text)
 restUpload = do
