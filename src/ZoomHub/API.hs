@@ -251,13 +251,16 @@ restUpload = do
   currentTime <- liftIO Time.getCurrentTime
   let expiryTime = Time.addUTCTime Time.nominalDay currentTime
       bucket = "sources-development.zoomhub.net"
+      key = "uploads/test-" <> (T.pack $ show currentTime)
+      s3URL = "http://" <> bucket <> ".s3.us-east-2.amazonaws.com" <> "/" <> key
       ePolicy =
         S3.newPostPolicy
           expiryTime
           [ S3.ppCondBucket bucket,
-            S3.ppCondKey $ "uploads/test-" <> (T.pack $ show currentTime),
+            S3.ppCondKey key,
             S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
-            S3.ppCondContentType "image/"
+            S3.ppCondContentType "image/",
+            S3.ppCondSuccessActionRedirect $ "http://localhost:8000/v1/content?url=" <> s3URL
           ]
   case ePolicy of
     Left policyError ->

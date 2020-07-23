@@ -28,6 +28,7 @@ module Network.Minio.PresignedOperations
   , ppCondKey
   , ppCondKeyStartsWith
   , ppCondSuccessActionStatus
+  , ppCondSuccessActionRedirect
 
   , PostPolicy(..)
   , PostPolicyError(..)
@@ -207,6 +208,10 @@ ppCondKeyStartsWith = PPCStartsWith "key"
 ppCondSuccessActionStatus :: Int -> PostPolicyCondition
 ppCondSuccessActionStatus n =
   PPCEquals "success_action_status" (show n)
+
+ppCondSuccessActionRedirect :: Text -> PostPolicyCondition
+ppCondSuccessActionRedirect url =
+  PPCEquals "success_action_redirect" url
 
 -- | This function creates a PostPolicy after validating its
 -- arguments.
