@@ -454,6 +454,9 @@
       document
         .querySelector(".upload-form > input[type='file']")
         .addEventListener("change", (event) => {
+          if (!event.target.files || event.target.files.length === 0) {
+            alert("Please choose a file");
+          }
           file = event.target.files[0];
           event.preventDefault();
         });
