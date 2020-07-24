@@ -123,12 +123,12 @@ main = do
             (lookup tempRootPathEnvName env)
             </> "temp"
       baseURI = case lookup baseURIEnvName env of
-        Just uriString -> toBaseURI uriString
-        Nothing -> toBaseURI ("http://" ++ hostname)
+        Just uriString ->
+          toBaseURI uriString
+        Nothing ->
+          toBaseURI $ "http://" <> hostname
       staticBaseURI =
-        StaticBaseURI . fromJust
-          . parseAbsoluteURI
-          $ "http://static.zoomhub.net"
+        StaticBaseURI . fromJust . parseAbsoluteURI $ "http://static.zoomhub.net"
       defaultDBName = "zoomhub_development"
       -- Database connection pool:
       -- https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing#the-formula
@@ -152,8 +152,9 @@ main = do
             parseAbsoluteURI $
               "http://" ++ unContainer (raxContainer rackspace) ++ ".zoomhub.net"
           contentBasePath = raxContainerPath rackspace
-          maybeContentBaseURI = maybeContentBaseHost
-            >>= \baseHost -> mkContentBaseURI baseHost contentBasePath
+          maybeContentBaseURI =
+            maybeContentBaseHost
+              >>= \baseHost -> mkContentBaseURI baseHost contentBasePath
           contentBaseURI =
             case maybeContentBaseURI of
               Just uri -> uri

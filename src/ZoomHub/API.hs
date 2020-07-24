@@ -24,9 +24,7 @@ import Network.URI (URI, parseRelativeReference, relativeTo)
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
-  ( (:<|>) (..),
-    (:>),
-    Capture,
+  ( Capture,
     Get,
     Handler,
     JSON,
@@ -39,6 +37,8 @@ import Servant
     err301,
     errHeaders,
     serve,
+    (:<|>) (..),
+    (:>),
   )
 import Servant.HTML.Lucid (HTML)
 import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
@@ -198,10 +198,11 @@ jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing ->
-      throwError $ JSONP.mkError
-        $ mkJSONP callback
-        $ mkNonRESTful404
-        $ contentNotFoundMessage contentId
+      throwError $
+        JSONP.mkError $
+          mkJSONP callback $
+            mkNonRESTful404 $
+              contentNotFoundMessage contentId
     Just content -> do
       let publicContent = fromInternal baseURI contentBaseURI content
       return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
@@ -223,8 +224,9 @@ jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
       let publicContent = fromInternal baseURI contentBaseURI content
           redirectLocation = apiRedirectURI baseURI contentId
           contentId = Internal.contentId content
-      return $ mkJSONP callback $
-        mkNonRESTful301 "content" publicContent redirectLocation
+      return $
+        mkJSONP callback $
+          mkNonRESTful301 "content" publicContent redirectLocation
 
 jsonpInvalidContentId ::
   String ->
