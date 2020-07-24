@@ -148,7 +148,7 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restUpload
+    :<|> restUpload baseURI
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
@@ -248,8 +248,8 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: Handler (HashMap Text Text)
-restUpload = do
+restUpload :: BaseURI -> Handler (HashMap Text Text)
+restUpload baseURI = do
   currentTime <- liftIO Time.getCurrentTime
   let expiryTime = Time.addUTCTime Time.nominalDay currentTime
       bucket = "sources-development.zoomhub.net"
@@ -264,7 +264,8 @@ restUpload = do
             S3.ppCondContentType "image/",
             PPCEquals
               "success_action_redirect"
-              ("http://localhost:8000/v1/content?url=" <> s3URL)
+              -- TODO: Use type-safe links
+              ((T.pack $ show baseURI) <> "/v1/content?url=" <> s3URL)
           ]
   case ePolicy of
     Left policyError ->
