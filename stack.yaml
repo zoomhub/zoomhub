@@ -5,27 +5,26 @@ resolver: lts-14.14
 
 # Local packages, usually specified by relative directory name
 packages:
-- '.'
+  - "."
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
-- ./vendor/minio-hs
-# minio-hs pinned dependencies
-- protolude-0.2.4@sha256:8bcf18da79be0832fccdd4cd5770e20baa4caec61c141d7119632a830b4096a9,2191
-- unliftio-core-0.1.2.0@sha256:7f9b48adef8e36da0202e6e70a733a5e210263ed4177c93e47a4b3f89694194b,1081
+  # - ./vendor/minio-hs
+  # # minio-hs pinned dependencies
+  # - protolude-0.2.4@sha256:8bcf18da79be0832fccdd4cd5770e20baa4caec61c141d7119632a830b4096a9,2191
+  # - unliftio-core-0.1.2.0@sha256:7f9b48adef8e36da0202e6e70a733a5e210263ed4177c93e47a4b3f89694194b,1081
 
-- ./vendor/servant/servant-server
+  - ./vendor/servant/servant-server
 
-- mime-0.4.0.2
-- squeal-postgresql-0.5.1.0
-- time-units-1.0.0
+  - mime-0.4.0.2
+  - squeal-postgresql-0.5.1.0
+  - time-units-1.0.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []
-
 # Control whether we use the GHC we find on the path
 # system-ghc: true
 

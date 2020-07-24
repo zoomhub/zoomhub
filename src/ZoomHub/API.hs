@@ -260,7 +260,9 @@ restUpload = do
             S3.ppCondKey key,
             S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
             S3.ppCondContentType "image/",
-            S3.ppCondSuccessActionRedirect $ "http://localhost:8000/v1/content?url=" <> s3URL
+            PPCEquals
+              "success_action_redirect"
+              ("http://localhost:8000/v1/content?url=" <> s3URL)
           ]
   case ePolicy of
     Left policyError ->

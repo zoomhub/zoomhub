@@ -5,20 +5,6 @@
 
 packages:
 - completed:
-    hackage: protolude-0.2.4@sha256:8bcf18da79be0832fccdd4cd5770e20baa4caec61c141d7119632a830b4096a9,2191
-    pantry-tree:
-      size: 1438
-      sha256: 9d8560e5514bac03fa00a37195d683ee628169a502c263b8d94588bfeb0ba097
-  original:
-    hackage: protolude-0.2.4@sha256:8bcf18da79be0832fccdd4cd5770e20baa4caec61c141d7119632a830b4096a9,2191
-- completed:
-    hackage: unliftio-core-0.1.2.0@sha256:7f9b48adef8e36da0202e6e70a733a5e210263ed4177c93e47a4b3f89694194b,1081
-    pantry-tree:
-      size: 328
-      sha256: 72be5813b35ba78db99459fb73a553a58b95a393005fdffb96eec3c1244f90c4
-  original:
-    hackage: unliftio-core-0.1.2.0@sha256:7f9b48adef8e36da0202e6e70a733a5e210263ed4177c93e47a4b3f89694194b,1081
-- completed:
     hackage: mime-0.4.0.2@sha256:208947d9d1a19d08850be67ecb28c6e776db697f3bba05bd9d682e51a59f241f,983
     pantry-tree:
       size: 565
