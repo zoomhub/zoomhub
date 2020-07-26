@@ -15,14 +15,12 @@ fi
 AWS_ACCESS_KEY_ID='<TODO>' \
 AWS_SECRET_ACCESS_KEY='<TODO>' \
 BASE_URI='http://localhost:8000' \
+PGDATABASE='zoomhub_development' \
+PGUSER="$(whoami)" \
 PROCESS_CONTENT="ProcessExistingAndNewContent" \
 PROCESSING_WORKERS='2' \
-RACKSPACE_USERNAME='' \
-RACKSPACE_API_KEY='' \
-RACKSPACE_CONTAINER='cache' \
-RACKSPACE_CONTAINER_PATH='content' \
-PGUSER="$(whoami)" \
-PGDATABASE='zoomhub_development' \
+S3_CACHE_BUCKET='cache-development.zoomhub.net' \
+S3_SOURCES_BUCKET='sources-development.zoomhub.net' \
   stack exec zoomhub | jq &
 
 echo $! > zoomhub.pid
