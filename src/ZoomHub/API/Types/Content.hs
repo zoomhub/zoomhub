@@ -18,6 +18,7 @@ where
 import Data.Aeson (ToJSON, Value (String), genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import Data.Maybe (fromJust)
+import Control.Monad(join)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Network.URI (URI, parseRelativeReference, relativeTo)
@@ -56,7 +57,7 @@ fromInternal baseURI contentBaseURI c = Content
     contentProgress = Internal.contentProgress c,
     contentShareUrl = shareURI,
     contentEmbedHtml = embedHTML,
-    contentDzi = dzi
+    contentDzi = join dzi
   }
   where
     cId = Internal.contentId c

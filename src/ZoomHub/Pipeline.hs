@@ -13,36 +13,23 @@ import Control.Lens ((^.))
 import Control.Monad (when)
 import Data.Aeson ((.=))
 import Data.Int (Int64)
-import Data.List (stripPrefix)
 import Data.List.Split (chunksOf)
 import Data.Monoid ((<>))
 import Network.Wreq (get, responseBody, responseHeader)
 import System.AtomicWrite.Writer.LazyByteString (atomicWriteFile)
 import System.Directory (listDirectory)
 import System.Exit (ExitCode (ExitSuccess))
-import System.FilePath ((<.>), (</>), addTrailingPathSeparator, dropExtension)
+import System.FilePath ((<.>), (</>), dropExtension)
 import System.IO.Temp (withTempDirectory)
 import System.Posix (fileSize, getFileStatus)
 import System.Process (readProcessWithExitCode)
-import ZoomHub.Config
-  ( RackspaceConfig,
-    raxApiKey,
-    raxContainer,
-    raxContainerPath,
-    raxUsername,
-  )
-import ZoomHub.Log.Logger (logDebugT, logError, logInfo, logInfoT)
-import ZoomHub.Rackspace.CloudFiles
-  ( ObjectName,
-    getMetadata,
-    mkCredentials,
-    parseObjectName,
-    putContent,
-  )
+import ZoomHub.Log.Logger (logInfo, logInfoT)
 import ZoomHub.Types.Content (Content, contentId, contentURL)
 import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME, ContentMIME' (ContentMIME))
 import ZoomHub.Types.ContentURI (ContentURI)
+
+import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage,
     TileFormat (JPEG, PNG),
@@ -61,7 +48,7 @@ data ProcessResult
         prDZI :: DeepZoomImage
       }
 
-process :: String -> RackspaceConfig -> TempPath -> Content -> IO ProcessResult
+process :: String -> AWS.Config -> TempPath -> Content -> IO ProcessResult
 process workerId raxConfig tempPath content =
   withTempDirectory (unTempPath tempPath) template $ \tmpDir -> do
     let rawPathPrefix = tmpDir </> rawContentId
@@ -114,6 +101,7 @@ process workerId raxConfig tempPath content =
   where
     rawContentId = unContentId (contentId content)
     template = rawContentId ++ "-"
+
     getFileSize :: FilePath -> IO Int64
     getFileSize path = fromIntegral . toInteger . fileSize <$> getFileStatus path
 
@@ -161,67 +149,60 @@ createDZI workerId src dest tileFormat = do
 
 uploadDZI ::
   String ->
-  RackspaceConfig ->
+  AWS.Config ->
   FilePath ->
   FilePath ->
   DeepZoomImage ->
   IO ()
-uploadDZI workerId raxConfig rootPath path dzi = do
-  meta <- getMetadata raxCreds
+uploadDZI workerId awsConfig rootPath path dzi = do
   tilePaths <- getDZITilePaths path
   -- Upload tiles
   let chunks = chunksOf numParallelUploads tilePaths
   sequence_ $ (`map` chunks) $ \chunk ->
-    forConcurrently chunk $ \tilePath ->
-      case toObjectName tilePath of
-        (Just tileObjectName) -> do
-          _ <-
-            logDebugT
-              "Upload DZI tile"
-              [ "container" .= container,
-                "objectName" .= tileObjectName,
-                "worker" .= workerId
-              ]
-              $ putContent meta tilePath tileMIME container tileObjectName
-          return ()
-        Nothing ->
-          logError
-            "Invalid DZI tile object name"
-            [ "tilePath" .= tilePath,
-              "rootPath" .= rootPath,
-              "worker" .= workerId
-            ]
-  -- Upload manifest
-  case toObjectName path of
-    (Just dziObjectName) -> do
-      _ <-
-        logDebugT
-          "Upload DZI manifest"
-          [ "container" .= container,
-            "objectName" .= dziObjectName,
-            "worker" .= workerId
-          ]
-          $ putContent meta path manifestMIME container dziObjectName
-      return ()
-    _ ->
-      logError
-        "Invalid DZI manifest object name"
-        [ "path" .= path,
-          "rootPath" .= rootPath,
-          "worker" .= workerId
-        ]
+    forConcurrently chunk $ \_tilePath ->
+        -- TODO: Implement S3 upload
+        undefined
+      -- case toObjectName tilePath of
+      --   (Just tileObjectName) -> do
+      --     _ <-
+      --       logDebugT
+      --         "Upload DZI tile"
+      --         [ "container" .= container,
+      --           "objectName" .= tileObjectName,
+      --           "worker" .= workerId
+      --         ]
+      --         $ putContent meta tilePath tileMIME container tileObjectName
+      --     return ()
+      --   Nothing ->
+      --     logError
+      --       "Invalid DZI tile object name"
+      --       [ "tilePath" .= tilePath,
+      --         "rootPath" .= rootPath,
+      --         "worker" .= workerId
+      --       ]
+  -- -- Upload manifest
+  -- case toObjectName path of
+  --   (Just dziObjectName) -> do
+  --     _ <-
+  --       logDebugT
+  --         "Upload DZI manifest"
+  --         [ "container" .= container,
+  --           "objectName" .= dziObjectName,
+  --           "worker" .= workerId
+  --         ]
+  --         $ putContent meta path manifestMIME container dziObjectName
+  --     return ()
+  --   _ ->
+  --     logError
+  --       "Invalid DZI manifest object name"
+  --       [ "path" .= path,
+  --         "rootPath" .= rootPath,
+  --         "worker" .= workerId
+  --       ]
   where
     manifestMIME = MIME.Type (MIME.Application "xml") []
     tileMIME = toMIME (dziTileFormat dzi)
-    container = raxContainer raxConfig
-    containerPath = raxContainerPath raxConfig
-    raxCreds = mkCredentials (raxUsername raxConfig) (raxApiKey raxConfig)
     numParallelUploads = 10
-    stripRoot :: FilePath -> Maybe FilePath
-    stripRoot = stripPrefix (addTrailingPathSeparator rootPath)
-    toObjectName :: FilePath -> Maybe ObjectName
-    toObjectName p =
-      stripRoot p >>= Just . (show containerPath </>) >>= parseObjectName
 
 getDZITilePaths :: FilePath -> IO [FilePath]
 getDZITilePaths dziPath = do

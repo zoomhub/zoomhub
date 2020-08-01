@@ -127,8 +127,9 @@ newContentURL = "http://example.com"
 {-# NOINLINE config #-}
 config :: Config
 config = Config
-  { baseURI = BaseURI (toURI "http://localhost:8000"),
-    contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
+  { aws = undefined, -- FIXME
+    baseURI = BaseURI (toURI "http://localhost:8000"),
+    contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
       Just uri -> uri
       _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`.",
     dbConnInfo = dbConnInfo',
@@ -142,7 +143,6 @@ config = Config
     port = 8000,
     processContent = ProcessExistingAndNewContent,
     publicPath = "./public",
-    rackspace = undefined,
     staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net"),
     tempPath = TempPath "./data/temp",
     version = "test"
