@@ -23,7 +23,8 @@ import qualified Generics.SOP as SOP
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import System.FilePath ((<.>), (</>))
 import ZoomHub.Types.ContentBaseURI
-  ( ContentBaseURI, unContentBaseURI
+  ( ContentBaseURI,
+    unContentBaseURI,
   )
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.DeepZoomImage as Internal
@@ -47,13 +48,14 @@ fromInternal ::
 fromInternal baseURI cId dzi = do
   namePath <- parseRelativeReference name
   let url = namePath `relativeTo` unContentBaseURI baseURI
-  pure $ DeepZoomImage { dziUrl = DeepZoomImageURI url,
-    dziWidth = Internal.dziWidth dzi,
-    dziHeight = Internal.dziHeight dzi,
-    dziTileSize = Internal.dziTileSize dzi,
-    dziTileOverlap = Internal.dziTileOverlap dzi,
-    dziTileFormat = Internal.dziTileFormat dzi
-  }
+  pure DeepZoomImage
+    { dziUrl = DeepZoomImageURI url,
+      dziWidth = Internal.dziWidth dzi,
+      dziHeight = Internal.dziHeight dzi,
+      dziTileSize = Internal.dziTileSize dzi,
+      dziTileOverlap = Internal.dziTileOverlap dzi,
+      dziTileFormat = Internal.dziTileFormat dzi
+    }
   where
     name = unContentId cId <.> "dzi"
 
