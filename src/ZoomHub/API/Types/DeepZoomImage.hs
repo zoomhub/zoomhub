@@ -21,7 +21,7 @@ import qualified Data.Text as T
 import GHC.Generics (Generic)
 import qualified Generics.SOP as SOP
 import Network.URI (URI, parseRelativeReference, relativeTo)
-import System.FilePath ((<.>), (</>))
+import System.FilePath ((<.>))
 import ZoomHub.Types.ContentBaseURI
   ( ContentBaseURI,
     unContentBaseURI,

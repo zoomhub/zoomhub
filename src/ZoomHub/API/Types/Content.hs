@@ -15,10 +15,10 @@ module ZoomHub.API.Types.Content
   )
 where
 
+import Control.Monad (join)
 import Data.Aeson (ToJSON, Value (String), genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import Data.Maybe (fromJust)
-import Control.Monad(join)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Network.URI (URI, parseRelativeReference, relativeTo)

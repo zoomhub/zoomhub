@@ -17,6 +17,7 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Time as Time
 import Network.Minio as Minio
 import Network.Minio.S3API as S3
@@ -255,11 +256,12 @@ restUpload baseURI = do
   let expiryTime = Time.addUTCTime Time.nominalDay currentTime
       bucket = "sources-development.zoomhub.net"
       key = "uploads/test-" <> (T.pack $ show currentTime)
-      s3URL = "http://" <> bucket <> ".s3.us-east-2.amazonaws.com" <> "/" <> key
+      s3BucketURL = T.pack $ "http://" <> bucket <> ".s3.us-east-2.amazonaws.com"
+      s3URL = s3BucketURL <> "/" <> key
       ePolicy =
         S3.newPostPolicy
           expiryTime
-          [ S3.ppCondBucket bucket,
+          [ S3.ppCondBucket $ T.pack bucket,
             S3.ppCondKey key,
             S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
             S3.ppCondContentType "image/",
@@ -283,8 +285,8 @@ restUpload baseURI = do
           case result of
             Left minioErr ->
               return $ HS.singleton "error" (T.pack $ show minioErr)
-            Right (url, formData) -> do
-              return $ lenientDecodeUtf8 <$> (HS.insert "url" url $ formData)
+            Right (_url, formData) -> do
+              return $ lenientDecodeUtf8 <$> (HS.insert "url" (encodeUtf8 s3BucketURL) $ formData)
   where
     minUploadSizeBytes = 1
     maxUploadSizeBytes = 512 * 1024 * 1024

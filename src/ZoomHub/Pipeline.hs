@@ -23,13 +23,12 @@ import System.FilePath ((<.>), (</>), dropExtension)
 import System.IO.Temp (withTempDirectory)
 import System.Posix (fileSize, getFileStatus)
 import System.Process (readProcessWithExitCode)
+import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Log.Logger (logInfo, logInfoT)
 import ZoomHub.Types.Content (Content, contentId, contentURL)
 import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME, ContentMIME' (ContentMIME))
 import ZoomHub.Types.ContentURI (ContentURI)
-
-import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Types.DeepZoomImage
   ( DeepZoomImage,
     TileFormat (JPEG, PNG),
@@ -101,7 +100,6 @@ process workerId raxConfig tempPath content =
   where
     rawContentId = unContentId (contentId content)
     template = rawContentId ++ "-"
-
     getFileSize :: FilePath -> IO Int64
     getFileSize path = fromIntegral . toInteger . fileSize <$> getFileStatus path
 

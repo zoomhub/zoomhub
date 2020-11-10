@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module ZoomHub.Main
+module ZoomHub.Web.Main
   ( main,
   )
 where
@@ -43,8 +43,9 @@ import ZoomHub.Config
   ( Config (..),
     ProcessContent (..),
     defaultPort,
-    parseProcessContent
+    parseProcessContent,
   )
+import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Storage.PostgreSQL (createConnectionPool)
@@ -54,7 +55,6 @@ import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath (TempPath), unTempPath)
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
-import qualified ZoomHub.Config.AWS as AWS
 
 -- Environment variables
 baseURIEnvName :: String

@@ -36,7 +36,6 @@ library
     , ZoomHub.Config.AWS
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
-    , ZoomHub.Main
     , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
@@ -62,6 +61,7 @@ library
     , ZoomHub.Types.TempPath
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
+    , ZoomHub.Web.Main
     , ZoomHub.Web.Static
     , ZoomHub.Web.Types.Embed
     , ZoomHub.Web.Types.EmbedDimension
