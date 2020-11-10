@@ -3,7 +3,7 @@
 
 module ZoomHub.Config.AWS
   ( Config (..),
-  fromEnv
+    fromEnv,
   )
 where
 

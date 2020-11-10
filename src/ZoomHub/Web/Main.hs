@@ -189,8 +189,9 @@ main = do
         "Start web server"
         ["port" .= port]
       let waiSettings =
-            setPort (fromIntegral port) $
-              setOnException serverExceptionHandler defaultSettings
+            setPort (fromIntegral port)
+              . setOnException serverExceptionHandler
+              $ defaultSettings
       runSettings waiSettings (app config)
   where
     startProcessingWorkers :: Config -> Integer -> IO ()
