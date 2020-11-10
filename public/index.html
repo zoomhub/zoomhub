@@ -434,8 +434,15 @@
     </article>
     <script>
       async function upload(file) {
-        const response = await fetch("/v1/content/upload")
-        const presignedPostData = await response.json()
+        let presignedPostData
+        try {
+          presignedPostData = await fetch(
+            "/v1/content/upload"
+          ).then((response) => response.json())
+        } catch (error) {
+          console.error("Failed to fetch S3 presigned POST data:", error)
+          return
+        }
         const formData = new FormData()
         Object.entries(presignedPostData)
           .filter(([key, _]) => key !== "url")
@@ -444,11 +451,23 @@
           })
         formData.append("file", file)
 
-        // TODO: Handle error cases
-        const uploadResponse = await fetch(presignedPostData.url, {
-          method: "POST",
-          body: formData,
-        })
+        let uploadResponse
+        try {
+          uploadResponse = await fetch(presignedPostData.url, {
+            method: "POST",
+            body: formData,
+          })
+        } catch (error) {
+          console.error("Failed upload content:", error)
+          return
+        }
+
+        if (uploadResponse.status != 200) {
+          console.error(
+            `Upload error: ${uploadResponse.status} (${uploadResponse.statusText})`
+          )
+          return
+        }
 
         // TODO: Handle error cases
         const contentData = await fetch(uploadResponse.url).then((response) =>
