@@ -342,10 +342,12 @@
     <!--End mc_embed_signup-->
 
     <article class="container">
+      <!--
       <form class="upload-form">
         <input type="file" name="content" accept="image/png,image/jpeg" />
         <input type="submit" value="Upload image" name="submit" />
       </form>
+      -->
 
       <h2>What is it?</h2>
       <p>
@@ -477,25 +479,30 @@
         // Redirect to view page
         location.href = contentData.shareUrl
       }
+      const fileInput = document.querySelector(
+        ".upload-form > input[type='file']"
+      )
+      const form = document.querySelector(".upload-form")
+
       let file = null
-      document
-        .querySelector(".upload-form > input[type='file']")
-        .addEventListener("change", (event) => {
+      if (fileInput) {
+        fileInput.addEventListener("change", (event) => {
           if (!event.target.files || event.target.files.length === 0) {
             alert("Please choose a file")
           }
           file = event.target.files[0]
           event.preventDefault()
         })
-      document
-        .querySelector(".upload-form")
-        .addEventListener("submit", (event) => {
+      }
+      if (form) {
+        form.addEventListener("submit", (event) => {
           event.preventDefault()
           if (!file) {
             return
           }
           upload(file)
         })
+      }
     </script>
   </body>
 </html>
