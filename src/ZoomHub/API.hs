@@ -25,10 +25,7 @@ import Network.URI (URI, parseRelativeReference, relativeTo)
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
-  ( -- PlainText,
-    -- Post,
-
-    (:<|>) (..),
+  ( (:<|>) (..),
     (:>),
     Capture,
     Get,
@@ -286,7 +283,6 @@ restUpload baseURI uploads =
             Nothing ->
               return $ HS.singleton "error" "missing credentials"
             Just awsCredentials -> do
-              -- TODO: `success_action_redirect`
               let connectInfo = setRegion "us-east-2" $ setCreds awsCredentials Minio.awsCI
               result <- liftIO $ runMinio connectInfo (S3.presignedPostPolicy policy)
               case result of
