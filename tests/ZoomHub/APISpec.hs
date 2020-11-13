@@ -33,9 +33,9 @@ import Test.Hspec.Wai
   )
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
+import qualified ZoomHub.Config as Config
 import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
 import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
-import qualified ZoomHub.Config as Config
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
@@ -92,9 +92,9 @@ invalidHTTPMethod =
 noNewContent :: ResponseMatcher
 noNewContent =
   "We are currently not processing new content."
-  { matchStatus = 503
-  , matchHeaders = [plainTextUTF8]
-  }
+    { matchStatus = 503,
+      matchHeaders = [plainTextUTF8]
+    }
 
 restRedirect :: ContentId -> ResponseMatcher
 restRedirect cId =

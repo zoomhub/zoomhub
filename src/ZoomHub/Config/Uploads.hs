@@ -1,9 +1,10 @@
 module ZoomHub.Config.Uploads
-  ( Uploads(..)
-  , parse
-  ) where
+  ( Uploads (..),
+    parse,
+  )
+where
 
-import Data.Aeson (ToJSON, toJSON, Value (String))
+import Data.Aeson (ToJSON, Value (String), toJSON)
 import qualified Data.Text as T
 
 data Uploads

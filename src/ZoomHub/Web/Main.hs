@@ -41,14 +41,13 @@ import Text.Read (readMaybe)
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config (..),
-    defaultPort
+    defaultPort,
   )
-
-import ZoomHub.Config.ProcessContent (ProcessContent(..))
-import qualified ZoomHub.Config.ProcessContent as ProcessContent
-import ZoomHub.Config.Uploads (Uploads(..))
-import qualified ZoomHub.Config.Uploads as Uploads
 import qualified ZoomHub.Config.AWS as AWS
+import ZoomHub.Config.ProcessContent (ProcessContent (..))
+import qualified ZoomHub.Config.ProcessContent as ProcessContent
+import ZoomHub.Config.Uploads (Uploads (..))
+import qualified ZoomHub.Config.Uploads as Uploads
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Storage.PostgreSQL (createConnectionPool)

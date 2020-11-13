@@ -1,9 +1,10 @@
 module ZoomHub.Config.ProcessContent
-  ( ProcessContent(..)
-  , parse
-  ) where
+  ( ProcessContent (..),
+    parse,
+  )
+where
 
-import Data.Aeson (ToJSON, toJSON, Value (String))
+import Data.Aeson (ToJSON, Value (String), toJSON)
 import qualified Data.Text as T
 
 data ProcessContent

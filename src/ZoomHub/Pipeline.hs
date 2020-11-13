@@ -158,46 +158,47 @@ uploadDZI workerId awsConfig rootPath path dzi = do
   let chunks = chunksOf numParallelUploads tilePaths
   sequence_ $ (`map` chunks) $ \chunk ->
     forConcurrently chunk $ \_tilePath ->
-        -- TODO: Implement S3 upload
-        undefined
-      -- case toObjectName tilePath of
-      --   (Just tileObjectName) -> do
-      --     _ <-
-      --       logDebugT
-      --         "Upload DZI tile"
-      --         [ "container" .= container,
-      --           "objectName" .= tileObjectName,
-      --           "worker" .= workerId
-      --         ]
-      --         $ putContent meta tilePath tileMIME container tileObjectName
-      --     return ()
-      --   Nothing ->
-      --     logError
-      --       "Invalid DZI tile object name"
-      --       [ "tilePath" .= tilePath,
-      --         "rootPath" .= rootPath,
-      --         "worker" .= workerId
-      --       ]
-  -- -- Upload manifest
-  -- case toObjectName path of
-  --   (Just dziObjectName) -> do
-  --     _ <-
-  --       logDebugT
-  --         "Upload DZI manifest"
-  --         [ "container" .= container,
-  --           "objectName" .= dziObjectName,
-  --           "worker" .= workerId
-  --         ]
-  --         $ putContent meta path manifestMIME container dziObjectName
-  --     return ()
-  --   _ ->
-  --     logError
-  --       "Invalid DZI manifest object name"
-  --       [ "path" .= path,
-  --         "rootPath" .= rootPath,
-  --         "worker" .= workerId
-  --       ]
+      -- TODO: Implement S3 upload
+      undefined
   where
+    -- case toObjectName tilePath of
+    --   (Just tileObjectName) -> do
+    --     _ <-
+    --       logDebugT
+    --         "Upload DZI tile"
+    --         [ "container" .= container,
+    --           "objectName" .= tileObjectName,
+    --           "worker" .= workerId
+    --         ]
+    --         $ putContent meta tilePath tileMIME container tileObjectName
+    --     return ()
+    --   Nothing ->
+    --     logError
+    --       "Invalid DZI tile object name"
+    --       [ "tilePath" .= tilePath,
+    --         "rootPath" .= rootPath,
+    --         "worker" .= workerId
+    --       ]
+    -- -- Upload manifest
+    -- case toObjectName path of
+    --   (Just dziObjectName) -> do
+    --     _ <-
+    --       logDebugT
+    --         "Upload DZI manifest"
+    --         [ "container" .= container,
+    --           "objectName" .= dziObjectName,
+    --           "worker" .= workerId
+    --         ]
+    --         $ putContent meta path manifestMIME container dziObjectName
+    --     return ()
+    --   _ ->
+    --     logError
+    --       "Invalid DZI manifest object name"
+    --       [ "path" .= path,
+    --         "rootPath" .= rootPath,
+    --         "worker" .= workerId
+    --       ]
+
     manifestMIME = MIME.Type (MIME.Application "xml") []
     tileMIME = toMIME (dziTileFormat dzi)
     numParallelUploads = 10
