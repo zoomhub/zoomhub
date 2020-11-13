@@ -41,10 +41,11 @@ import Text.Read (readMaybe)
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config (..),
-    ProcessContent (..),
-    defaultPort,
-    parseProcessContent,
+    defaultPort
   )
+
+import ZoomHub.Config.ProcessContent (ProcessContent(..))
+import qualified ZoomHub.Config.ProcessContent as ProcessContent
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
@@ -104,9 +105,7 @@ main = do
   numCapabilities <- getNumCapabilities
   mAWS <- AWS.fromEnv
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
-      maybeProcessContent =
-        parseProcessContent
-          <$> lookup processContentEnvName env
+      maybeProcessContent = ProcessContent.parse <$> lookup processContentEnvName env
       processContent = fromMaybe ProcessNoContent maybeProcessContent
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers =

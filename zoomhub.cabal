@@ -34,6 +34,7 @@ library
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
     , ZoomHub.Config.AWS
+    , ZoomHub.Config.ProcessContent
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
     , ZoomHub.Pipeline

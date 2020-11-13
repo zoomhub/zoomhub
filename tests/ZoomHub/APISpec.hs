@@ -32,7 +32,8 @@ import Test.Hspec.Wai
     with,
   )
 import ZoomHub.API (app)
-import ZoomHub.Config (Config (..), ProcessContent (ProcessExistingAndNewContent))
+import ZoomHub.Config (Config (..))
+import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)

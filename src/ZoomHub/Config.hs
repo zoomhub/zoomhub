@@ -4,17 +4,12 @@
 
 module ZoomHub.Config
   ( Config (..),
-    defaultPort,
-
-    -- * Process content status
-    ProcessContent (..),
-    parseProcessContent,
+    defaultPort
   )
 where
 
-import Data.Aeson ((.=), ToJSON, Value (String), object, toJSON)
+import Data.Aeson ((.=), ToJSON, object, toJSON)
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text as T
 import Data.Time.Units (Second)
 import Data.Time.Units.Instances ()
 import qualified Database.PostgreSQL.Simple as PGS
@@ -23,6 +18,7 @@ import Network.URI.Instances ()
 import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Pool (Pool)
 import qualified ZoomHub.Config.AWS as AWS
+import ZoomHub.Config.ProcessContent (ProcessContent(..))
 import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -62,25 +58,11 @@ instance ToJSON Config where
         "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
         "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe,
         "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
-        "processContent" .= processContent,
         "port" .= port,
+        "processContent" .= processContent,
         "publicPath" .= publicPath,
         "staticBaseURI" .= staticBaseURI,
         "tempPath" .= tempPath,
+        "uploads" .= uploads,
         "version" .= version
       ]
-
--- ProcessContent
-data ProcessContent
-  = ProcessNoContent
-  | ProcessExistingContent
-  | ProcessExistingAndNewContent
-  deriving (Eq, Show)
-
-parseProcessContent :: String -> ProcessContent
-parseProcessContent "ProcessExistingContent" = ProcessExistingContent
-parseProcessContent "ProcessExistingAndNewContent" = ProcessExistingAndNewContent
-parseProcessContent _ = ProcessNoContent
-
-instance ToJSON ProcessContent where
-  toJSON = String . T.pack . show

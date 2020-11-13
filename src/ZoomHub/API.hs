@@ -59,7 +59,8 @@ import ZoomHub.API.Types.NonRESTfulResponse
     mkNonRESTful404,
     mkNonRESTful503,
   )
-import ZoomHub.Config (Config, ProcessContent (..))
+import ZoomHub.Config.ProcessContent (ProcessContent (..))
+import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
