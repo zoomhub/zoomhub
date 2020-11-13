@@ -60,6 +60,7 @@ import ZoomHub.API.Types.NonRESTfulResponse
     mkNonRESTful503,
   )
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
+import ZoomHub.Config.Uploads (Uploads (..))
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import ZoomHub.Servant.RawCapture (RawCapture)
@@ -151,7 +152,7 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restUpload baseURI
+    :<|> restUpload baseURI uploads
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
@@ -172,6 +173,7 @@ server config =
     processContent = Config.processContent config
     publicPath = Config.publicPath config
     staticBaseURI = Config.staticBaseURI config
+    uploads = Config.uploads config
     viewerScript = Config.openSeadragonScript config
 
 -- App
@@ -251,46 +253,50 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: BaseURI -> Handler (HashMap Text Text)
-restUpload baseURI = do
-  currentTime <- liftIO Time.getCurrentTime
-  let expiryTime = Time.addUTCTime Time.nominalDay currentTime
-      bucket = "sources-development.zoomhub.net"
-      key = "uploads/test-" <> (T.pack $ show currentTime)
-      s3BucketURL = T.pack $ "http://" <> bucket <> ".s3.us-east-2.amazonaws.com"
-      s3URL = s3BucketURL <> "/" <> key
-      ePolicy =
-        S3.newPostPolicy
-          expiryTime
-          [ S3.ppCondBucket $ T.pack bucket,
-            S3.ppCondKey key,
-            S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
-            S3.ppCondContentType "image/",
-            PPCEquals
-              "success_action_redirect"
-              -- TODO: Use type-safe links
-              ((T.pack $ show baseURI) <> "/v1/content?url=" <> s3URL)
-          ]
-  case ePolicy of
-    Left policyError ->
-      return $ HS.singleton "error" (T.pack $ show policyError)
-    Right policy -> do
-      mAwsCredentials <- liftIO Minio.fromAWSEnv
-      case mAwsCredentials of
-        Nothing ->
-          return $ HS.singleton "error" "missing credentials"
-        Just awsCredentials -> do
-          -- TODO: `success_action_redirect`
-          let connectInfo = setRegion "us-east-2" $ setCreds awsCredentials Minio.awsCI
-          result <- liftIO $ runMinio connectInfo (S3.presignedPostPolicy policy)
-          case result of
-            Left minioErr ->
-              return $ HS.singleton "error" (T.pack $ show minioErr)
-            Right (_url, formData) -> do
-              return $ lenientDecodeUtf8 <$> (HS.insert "url" (encodeUtf8 s3BucketURL) $ formData)
-  where
-    minUploadSizeBytes = 1
-    maxUploadSizeBytes = 512 * 1024 * 1024
+restUpload :: BaseURI -> Uploads -> Handler (HashMap Text Text)
+restUpload baseURI uploads =
+  case uploads of
+    UploadsDisabled ->
+      noNewContentErrorAPI
+    UploadsEnabled -> do
+      currentTime <- liftIO Time.getCurrentTime
+      let expiryTime = Time.addUTCTime Time.nominalDay currentTime
+          bucket = "sources-development.zoomhub.net"
+          key = "uploads/test-" <> T.pack (show currentTime)
+          s3BucketURL = T.pack $ "http://" <> bucket <> ".s3.us-east-2.amazonaws.com"
+          s3URL = s3BucketURL <> "/" <> key
+          ePolicy =
+            S3.newPostPolicy
+              expiryTime
+              [ S3.ppCondBucket $ T.pack bucket,
+                S3.ppCondKey key,
+                S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
+                S3.ppCondContentType "image/",
+                PPCEquals
+                  "success_action_redirect"
+                  -- TODO: Use type-safe links
+                  (T.pack (show baseURI) <> "/v1/content?url=" <> s3URL)
+              ]
+      case ePolicy of
+        Left policyError ->
+          return $ HS.singleton "error" (T.pack $ show policyError)
+        Right policy -> do
+          mAwsCredentials <- liftIO Minio.fromAWSEnv
+          case mAwsCredentials of
+            Nothing ->
+              return $ HS.singleton "error" "missing credentials"
+            Just awsCredentials -> do
+              -- TODO: `success_action_redirect`
+              let connectInfo = setRegion "us-east-2" $ setCreds awsCredentials Minio.awsCI
+              result <- liftIO $ runMinio connectInfo (S3.presignedPostPolicy policy)
+              case result of
+                Left minioErr ->
+                  return $ HS.singleton "error" (T.pack $ show minioErr)
+                Right (_url, formData) -> do
+                  return $ lenientDecodeUtf8 <$> (HS.insert "url" (encodeUtf8 s3BucketURL) $ formData)
+      where
+        minUploadSizeBytes = 1
+        maxUploadSizeBytes = 512 * 1024 * 1024
 
 restContentById ::
   BaseURI ->

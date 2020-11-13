@@ -19,6 +19,7 @@ import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Pool (Pool)
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent(..))
+import ZoomHub.Config.Uploads (Uploads(..))
 import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -43,6 +44,7 @@ data Config
         openSeadragonScript :: String,
         port :: Integer,
         processContent :: ProcessContent,
+        uploads :: Uploads,
         publicPath :: FilePath,
         staticBaseURI :: StaticBaseURI,
         tempPath :: TempPath,

@@ -34,6 +34,7 @@ import Test.Hspec.Wai
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
+import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import qualified ZoomHub.Config as Config
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
@@ -88,12 +89,12 @@ invalidHTTPMethod =
       matchHeaders = [plainText]
     }
 
--- noNewContent :: ResponseMatcher
--- noNewContent =
---   "We are currently not processing new content."
---   { matchStatus = 503
---   , matchHeaders = [plainTextUTF8]
---   }
+noNewContent :: ResponseMatcher
+noNewContent =
+  "We are currently not processing new content."
+  { matchStatus = 503
+  , matchHeaders = [plainTextUTF8]
+  }
 
 restRedirect :: ContentId -> ResponseMatcher
 restRedirect cId =
@@ -146,6 +147,7 @@ config = Config
     publicPath = "./public",
     staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net"),
     tempPath = TempPath "./data/temp",
+    uploads = UploadsDisabled,
     version = "test"
   }
   where
@@ -172,6 +174,9 @@ closeDatabaseConnection = destroyAllResources . dbConnPool
 spec :: Spec
 spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
   describe "RESTful" do
+    describe "Upload (GET /v1/content/upload)" do
+      it "should return  503" $
+        get "/v1/content/upload" `shouldRespondWith` noNewContent
     describe "List (GET /v1/content)" do
       it "should be interpreted as a ‘get by URL’, with no URL given" $
         get "/v1/content"

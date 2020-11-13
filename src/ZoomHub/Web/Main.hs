@@ -46,6 +46,8 @@ import ZoomHub.Config
 
 import ZoomHub.Config.ProcessContent (ProcessContent(..))
 import qualified ZoomHub.Config.ProcessContent as ProcessContent
+import ZoomHub.Config.Uploads (Uploads(..))
+import qualified ZoomHub.Config.Uploads as Uploads
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
@@ -66,6 +68,9 @@ contentBaseURIEnvName = "CONTENT_BASE_URI"
 
 processContentEnvName :: String
 processContentEnvName = "PROCESS_CONTENT"
+
+uploadsEnvName :: String
+uploadsEnvName = "UPLOADS"
 
 numProcessingWorkersEnvName :: String
 numProcessingWorkersEnvName = "PROCESSING_WORKERS"
@@ -107,6 +112,8 @@ main = do
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup processContentEnvName env
       processContent = fromMaybe ProcessNoContent maybeProcessContent
+      maybeUploads = Uploads.parse <$> lookup uploadsEnvName env
+      uploads = fromMaybe UploadsDisabled maybeUploads
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers =
         lookup numProcessingWorkersEnvName env >>= readMaybe

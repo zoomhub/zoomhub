@@ -35,6 +35,7 @@ library
     , ZoomHub.Config
     , ZoomHub.Config.AWS
     , ZoomHub.Config.ProcessContent
+    , ZoomHub.Config.Uploads
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
     , ZoomHub.Pipeline
