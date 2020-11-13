@@ -33,9 +33,11 @@ library
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
+    , ZoomHub.Config.AWS
+    , ZoomHub.Config.ProcessContent
+    , ZoomHub.Config.Uploads
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
-    , ZoomHub.Main
     , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
@@ -61,6 +63,7 @@ library
     , ZoomHub.Types.TempPath
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
+    , ZoomHub.Web.Main
     , ZoomHub.Web.Static
     , ZoomHub.Web.Types.Embed
     , ZoomHub.Web.Types.EmbedDimension
@@ -102,6 +105,7 @@ library
     , lens-aeson
     , lucid
     , mime
+    , minio-hs
     , monad-control
     , mtl
     , network

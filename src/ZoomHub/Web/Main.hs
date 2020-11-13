@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module ZoomHub.Main
+module ZoomHub.Web.Main
   ( main,
   )
 where
@@ -34,7 +34,6 @@ import Network.Wai.Middleware.RequestLogger
   )
 import System.Directory (createDirectoryIfMissing, getCurrentDirectory)
 import System.Environment (getEnvironment)
-import System.Envy (decodeEnv)
 import System.FilePath ((</>))
 import System.IO.Error (isDoesNotExistError)
 import System.Random (randomRIO)
@@ -42,15 +41,15 @@ import Text.Read (readMaybe)
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config (..),
-    ProcessContent (..),
     defaultPort,
-    parseProcessContent,
-    raxContainer,
-    raxContainerPath,
   )
+import qualified ZoomHub.Config.AWS as AWS
+import ZoomHub.Config.ProcessContent (ProcessContent (..))
+import qualified ZoomHub.Config.ProcessContent as ProcessContent
+import ZoomHub.Config.Uploads (Uploads (..))
+import qualified ZoomHub.Config.Uploads as Uploads
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
-import ZoomHub.Rackspace.CloudFiles (unContainer)
 import ZoomHub.Storage.PostgreSQL (createConnectionPool)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
@@ -63,8 +62,14 @@ import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 baseURIEnvName :: String
 baseURIEnvName = "BASE_URI"
 
+contentBaseURIEnvName :: String
+contentBaseURIEnvName = "CONTENT_BASE_URI"
+
 processContentEnvName :: String
 processContentEnvName = "PROCESS_CONTENT"
+
+uploadsEnvName :: String
+uploadsEnvName = "UPLOADS"
 
 numProcessingWorkersEnvName :: String
 numProcessingWorkersEnvName = "PROCESSING_WORKERS"
@@ -84,7 +89,6 @@ main = do
   -- TODO: Migrate configuration to `configurator`:
   -- https://hackage.haskell.org/package/configurator
   env <- getEnvironment
-  maybeRaxConfig <- decodeEnv
   hostname <- getHostName
   currentDirectory <- getCurrentDirectory
   openSeadragonScript <-
@@ -103,11 +107,12 @@ main = do
         }
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
+  mAWS <- AWS.fromEnv
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
-      maybeProcessContent =
-        parseProcessContent
-          <$> lookup processContentEnvName env
+      maybeProcessContent = ProcessContent.parse <$> lookup processContentEnvName env
       processContent = fromMaybe ProcessNoContent maybeProcessContent
+      maybeUploads = Uploads.parse <$> lookup uploadsEnvName env
+      uploads = fromMaybe UploadsDisabled maybeUploads
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers =
         lookup numProcessingWorkersEnvName env >>= readMaybe
@@ -123,12 +128,12 @@ main = do
             (lookup tempRootPathEnvName env)
             </> "temp"
       baseURI = case lookup baseURIEnvName env of
-        Just uriString -> toBaseURI uriString
-        Nothing -> toBaseURI ("http://" ++ hostname)
+        Just uriString ->
+          toBaseURI uriString
+        Nothing ->
+          toBaseURI $ "http://" <> hostname
       staticBaseURI =
-        StaticBaseURI . fromJust
-          . parseAbsoluteURI
-          $ "http://static.zoomhub.net"
+        StaticBaseURI . fromJust . parseAbsoluteURI $ "http://static.zoomhub.net"
       defaultDBName = "zoomhub_development"
       -- Database connection pool:
       -- https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing#the-formula
@@ -138,6 +143,7 @@ main = do
       dbConnPoolMaxResourcesPerStripe =
         fromIntegral $
           (numCapabilities * 2) + numSpindles
+      mContentBaseURI = mkContentBaseURI =<< parseAbsoluteURI =<< lookup contentBaseURIEnvName env
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-
     createConnectionPool
@@ -145,20 +151,14 @@ main = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
-  ensureTempPathExists tempPath
-  case maybeRaxConfig of
-    Right rackspace -> do
-      let maybeContentBaseHost =
-            parseAbsoluteURI $
-              "http://" ++ unContainer (raxContainer rackspace) ++ ".zoomhub.net"
-          contentBasePath = raxContainerPath rackspace
-          maybeContentBaseURI = maybeContentBaseHost
-            >>= \baseHost -> mkContentBaseURI baseHost contentBasePath
-          contentBaseURI =
-            case maybeContentBaseURI of
-              Just uri -> uri
-              _ -> error "ZoomHub.Main: Failed to parse `contentBaseURI`."
-          config = Config {..}
+  case (mAWS, mContentBaseURI) of
+    (Nothing, _) ->
+      error "ZoomHub.Main: Failed to parse AWS configuration."
+    (_, Nothing) ->
+      error "ZoomHub.Main: Failed to parse content base URI."
+    (Just aws, Just contentBaseURI) -> do
+      let config = Config {..}
+      ensureTempPathExists tempPath
       logInfo_ $
         "Welcome to ZoomHub.\
         \ Go to <"
@@ -194,11 +194,10 @@ main = do
         "Start web server"
         ["port" .= port]
       let waiSettings =
-            setPort (fromIntegral port) $
-              setOnException serverExceptionHandler defaultSettings
+            setPort (fromIntegral port)
+              . setOnException serverExceptionHandler
+              $ defaultSettings
       runSettings waiSettings (app config)
-    Left message ->
-      error $ "Failed to read Rackspace config: " ++ message
   where
     startProcessingWorkers :: Config -> Integer -> IO ()
     startProcessingWorkers config numProcessingWorkers = do

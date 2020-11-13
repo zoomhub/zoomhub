@@ -17,16 +17,14 @@ where
 
 import Data.Aeson (ToJSON, Value (String), genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
-import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import qualified Generics.SOP as SOP
 import Network.URI (URI, parseRelativeReference, relativeTo)
-import System.FilePath ((<.>), (</>))
+import System.FilePath ((<.>))
 import ZoomHub.Types.ContentBaseURI
   ( ContentBaseURI,
-    contentBaseHost,
-    contentBasePath,
+    unContentBaseURI,
   )
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.DeepZoomImage as Internal
@@ -46,22 +44,20 @@ fromInternal ::
   ContentBaseURI ->
   ContentId ->
   Internal.DeepZoomImage ->
-  DeepZoomImage
-fromInternal baseURI cId dzi = DeepZoomImage
-  { dziUrl = DeepZoomImageURI url,
-    dziWidth = Internal.dziWidth dzi,
-    dziHeight = Internal.dziHeight dzi,
-    dziTileSize = Internal.dziTileSize dzi,
-    dziTileOverlap = Internal.dziTileOverlap dzi,
-    dziTileFormat = Internal.dziTileFormat dzi
-  }
+  Maybe DeepZoomImage
+fromInternal baseURI cId dzi = do
+  namePath <- parseRelativeReference name
+  let url = namePath `relativeTo` unContentBaseURI baseURI
+  pure DeepZoomImage
+    { dziUrl = DeepZoomImageURI url,
+      dziWidth = Internal.dziWidth dzi,
+      dziHeight = Internal.dziHeight dzi,
+      dziTileSize = Internal.dziTileSize dzi,
+      dziTileOverlap = Internal.dziTileOverlap dzi,
+      dziTileFormat = Internal.dziTileFormat dzi
+    }
   where
     name = unContentId cId <.> "dzi"
-    path =
-      fromMaybe
-        (error "ZoomHub.API.Types.DeepZoomImage.fromInternal: Failed to parse DZI path.")
-        (parseRelativeReference $ show (contentBasePath baseURI) </> name)
-    url = path `relativeTo` contentBaseHost baseURI
 
 mkDeepZoomImage ::
   DeepZoomImageURI ->

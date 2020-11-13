@@ -3,31 +3,30 @@
 
 module ZoomHub.Types.ContentBaseURI
   ( ContentBaseURI,
-    contentBaseHost,
-    contentBasePath,
+    unContentBaseURI,
     mkContentBaseURI,
   )
 where
 
 import Data.Aeson ((.=), ToJSON, object, toJSON)
-import Network.URI (URI, uriIsAbsolute, uriIsRelative)
+import Data.List (isSuffixOf)
+import Network.URI (URI, uriIsAbsolute, uriPath)
 
-data ContentBaseURI
-  = ContentBaseURI
-      { contentBaseHost :: URI,
-        contentBasePath :: URI
-      }
-  deriving (Eq)
+newtype ContentBaseURI = ContentBaseURI {unContentBaseURI :: URI} deriving (Eq)
 
 instance ToJSON ContentBaseURI where
   toJSON ContentBaseURI {..} =
     object
-      [ "host" .= show contentBaseHost,
-        "path" .= show contentBasePath
+      [ "unContentBaseURI" .= show unContentBaseURI
       ]
 
-mkContentBaseURI :: URI -> URI -> Maybe ContentBaseURI
-mkContentBaseURI base path =
-  case (uriIsAbsolute base, uriIsRelative path) of
-    (True, True) -> Just (ContentBaseURI base path)
-    _ -> Nothing
+mkContentBaseURI :: URI -> Maybe ContentBaseURI
+mkContentBaseURI uri
+  | uriIsAbsolute uri = pure $ ContentBaseURI $ ensureTrailingSlash uri
+  | otherwise = Nothing
+  where
+    ensureTrailingSlash url =
+      let path = uriPath url
+       in if path == "" || "/" `isSuffixOf` path
+            then url
+            else url {uriPath = path <> "/"}

@@ -1,6 +1,6 @@
 module Main (main) where
 
-import qualified ZoomHub.Main as ZoomHub
+import qualified ZoomHub.Web.Main as Web
 
 main :: IO ()
-main = ZoomHub.main
+main = Web.main

@@ -68,7 +68,7 @@ processExistingContent Config {..} workerId = forever $ do
       case maybeContent of
         Just content -> do
           let processOp = do
-                ProcessResult {..} <- process workerId rackspace tempPath content
+                ProcessResult {..} <- process workerId aws tempPath content
                 runPoolPQ (markAsSuccess (contentId content) prDZI prMIME (Just prSize)) dbConnPool
               jsonToText =
                 Just . lenientDecodeUtf8 . BL.toStrict . encode . toJSONError

@@ -11,8 +11,16 @@ where
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BC
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
+import qualified Data.Time as Time
+import Network.Minio as Minio
+import Network.Minio.S3API as S3
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
@@ -48,8 +56,10 @@ import ZoomHub.API.Types.NonRESTfulResponse
     mkNonRESTful404,
     mkNonRESTful503,
   )
-import ZoomHub.Config (Config, ProcessContent (..))
+import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
+import ZoomHub.Config.ProcessContent (ProcessContent (..))
+import ZoomHub.Config.Uploads (Uploads (..))
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL as PG
@@ -60,6 +70,7 @@ import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
+import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Static (serveDirectory)
 import ZoomHub.Web.Types.Embed (Embed, mkEmbed)
@@ -93,6 +104,8 @@ type API =
       :> QueryParam "url" String
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
+    -- API: RESTful: Upload
+    :<|> "v1" :> "content" :> "upload" :> Get '[JSON] (HashMap Text Text)
     -- API: RESTful: ID
     :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
     -- API: RESTful: Error: ID
@@ -136,6 +149,7 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
+    :<|> restUpload baseURI uploads
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
@@ -156,6 +170,7 @@ server config =
     processContent = Config.processContent config
     publicPath = Config.publicPath config
     staticBaseURI = Config.staticBaseURI config
+    uploads = Config.uploads config
     viewerScript = Config.openSeadragonScript config
 
 -- App
@@ -185,7 +200,8 @@ jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing ->
-      throwError $ JSONP.mkError
+      throwError
+        $ JSONP.mkError
         $ mkJSONP callback
         $ mkNonRESTful404
         $ contentNotFoundMessage contentId
@@ -210,8 +226,9 @@ jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
       let publicContent = fromInternal baseURI contentBaseURI content
           redirectLocation = apiRedirectURI baseURI contentId
           contentId = Internal.contentId content
-      return $ mkJSONP callback $
-        mkNonRESTful301 "content" publicContent redirectLocation
+      return
+        $ mkJSONP callback
+        $ mkNonRESTful301 "content" publicContent redirectLocation
 
 jsonpInvalidContentId ::
   String ->
@@ -233,7 +250,50 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
--- API: RESTful
+restUpload :: BaseURI -> Uploads -> Handler (HashMap Text Text)
+restUpload baseURI uploads =
+  case uploads of
+    UploadsDisabled ->
+      noNewContentErrorAPI
+    UploadsEnabled -> do
+      currentTime <- liftIO Time.getCurrentTime
+      let expiryTime = Time.addUTCTime Time.nominalDay currentTime
+          bucket = "sources-development.zoomhub.net"
+          key = "uploads/test-" <> T.pack (show currentTime)
+          s3BucketURL = T.pack $ "http://" <> bucket <> ".s3.us-east-2.amazonaws.com"
+          s3URL = s3BucketURL <> "/" <> key
+          ePolicy =
+            S3.newPostPolicy
+              expiryTime
+              [ S3.ppCondBucket $ T.pack bucket,
+                S3.ppCondKey key,
+                S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
+                S3.ppCondContentType "image/",
+                PPCEquals
+                  "success_action_redirect"
+                  -- TODO: Use type-safe links
+                  (T.pack (show baseURI) <> "/v1/content?url=" <> s3URL)
+              ]
+      case ePolicy of
+        Left policyError ->
+          return $ HS.singleton "error" (T.pack $ show policyError)
+        Right policy -> do
+          mAwsCredentials <- liftIO Minio.fromAWSEnv
+          case mAwsCredentials of
+            Nothing ->
+              return $ HS.singleton "error" "missing credentials"
+            Just awsCredentials -> do
+              let connectInfo = setRegion "us-east-2" $ setCreds awsCredentials Minio.awsCI
+              result <- liftIO $ runMinio connectInfo (S3.presignedPostPolicy policy)
+              case result of
+                Left minioErr ->
+                  return $ HS.singleton "error" (T.pack $ show minioErr)
+                Right (_url, formData) -> do
+                  return $ lenientDecodeUtf8 <$> (HS.insert "url" (encodeUtf8 s3BucketURL) $ formData)
+      where
+        minUploadSizeBytes = 1
+        maxUploadSizeBytes = 512 * 1024 * 1024
+
 restContentById ::
   BaseURI ->
   ContentBaseURI ->

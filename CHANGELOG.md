@@ -1,5 +1,17 @@
 # ZoomHub
 
+## 3.0.0-rc.2 – November 12, 2020
+
+- **Uploads**
+  - Add `/v1/content/upload` endpoint for AWS S3 presigned POST using MinIO.
+  - Add `UPLOADS=true|false` environment variable for enabling/disabling
+    uploads.
+  - Add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_CACHE_BUCKET`, and
+    `S3_SOURCES_BUCKET` environment variables for AWS/MinIO configuration.
+- Add `CONTENT_BASE_URI` environment variable to replace Rackspace container
+  based URL resolution.
+- Limit logging of request body to 512 bytes.
+
 ## 3.0.0-rc.1 – July 7, 2020
 
 - Serving all production traffic.

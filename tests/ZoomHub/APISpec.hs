@@ -32,8 +32,10 @@ import Test.Hspec.Wai
     with,
   )
 import ZoomHub.API (app)
-import ZoomHub.Config (Config (..), ProcessContent (ProcessExistingAndNewContent))
+import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
+import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
+import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
@@ -87,12 +89,12 @@ invalidHTTPMethod =
       matchHeaders = [plainText]
     }
 
--- noNewContent :: ResponseMatcher
--- noNewContent =
---   "We are currently not processing new content."
---   { matchStatus = 503
---   , matchHeaders = [plainTextUTF8]
---   }
+noNewContent :: ResponseMatcher
+noNewContent =
+  "We are currently not processing new content."
+    { matchStatus = 503,
+      matchHeaders = [plainTextUTF8]
+    }
 
 restRedirect :: ContentId -> ResponseMatcher
 restRedirect cId =
@@ -127,8 +129,9 @@ newContentURL = "http://example.com"
 {-# NOINLINE config #-}
 config :: Config
 config = Config
-  { baseURI = BaseURI (toURI "http://localhost:8000"),
-    contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000") (toURI "_dzis_") of
+  { aws = undefined, -- FIXME
+    baseURI = BaseURI (toURI "http://localhost:8000"),
+    contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
       Just uri -> uri
       _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`.",
     dbConnInfo = dbConnInfo',
@@ -142,9 +145,9 @@ config = Config
     port = 8000,
     processContent = ProcessExistingAndNewContent,
     publicPath = "./public",
-    rackspace = undefined,
     staticBaseURI = StaticBaseURI (toURI "http://static.zoomhub.net"),
     tempPath = TempPath "./data/temp",
+    uploads = UploadsDisabled,
     version = "test"
   }
   where
@@ -171,6 +174,9 @@ closeDatabaseConnection = destroyAllResources . dbConnPool
 spec :: Spec
 spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
   describe "RESTful" do
+    describe "Upload (GET /v1/content/upload)" do
+      it "should return  503" $
+        get "/v1/content/upload" `shouldRespondWith` noNewContent
     describe "List (GET /v1/content)" do
       it "should be interpreted as a ‘get by URL’, with no URL given" $
         get "/v1/content"

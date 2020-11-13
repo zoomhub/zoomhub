@@ -15,6 +15,7 @@ module ZoomHub.API.Types.Content
   )
 where
 
+import Control.Monad (join)
 import Data.Aeson (ToJSON, Value (String), genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import Data.Maybe (fromJust)
@@ -56,7 +57,7 @@ fromInternal baseURI contentBaseURI c = Content
     contentProgress = Internal.contentProgress c,
     contentShareUrl = shareURI,
     contentEmbedHtml = embedHTML,
-    contentDzi = dzi
+    contentDzi = join dzi
   }
   where
     cId = Internal.contentId c
