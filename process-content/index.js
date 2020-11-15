@@ -1,15 +1,19 @@
-const exec = require("child_process").exec
+const AWS = require("aws-sdk")
+const fs = require("fs").promises
 
-exports.handler = (event, context, callback) => {
-  if (!event.cmd) {
-    return callback("Please specify a command to run as event.cmd")
+const s3 = new AWS.S3({ apiVersion: "2006-03-01" })
+
+exports.handler = async (event, context) => {
+  if (!event.bucket) {
+    return "Please specify a URL to process"
   }
-  const child = exec(event.cmd, (error) => {
-    // Resolve with result of process
-    callback(error, "Process complete!")
-  })
+  if (!event.key) {
+    return "Please specify a URL to process"
+  }
 
-  // Log process stdout and stderr
-  child.stdout.on("data", console.log)
-  child.stderr.on("data", console.error)
+  const result = await s3
+    .getObject({ Bucket: event.bucket, Key: event.key })
+    .promise()
+
+  await fs.writeFile("/tmp/download.jpg", result.Body)
 }
