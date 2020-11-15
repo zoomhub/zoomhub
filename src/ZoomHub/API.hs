@@ -58,6 +58,7 @@ import ZoomHub.API.Types.NonRESTfulResponse
   )
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
+import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import ZoomHub.Servant.RawCapture (RawCapture)
@@ -149,7 +150,7 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restUpload baseURI uploads
+    :<|> restUpload baseURI awsConfig uploads
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
@@ -164,6 +165,7 @@ server config =
     -- Web: Static files
     :<|> serveDirectory (Config.error404 config) publicPath
   where
+    awsConfig = Config.aws config
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dbConnPool = Config.dbConnPool config
@@ -250,22 +252,21 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: BaseURI -> Uploads -> Handler (HashMap Text Text)
-restUpload baseURI uploads =
+restUpload :: BaseURI -> AWS.Config -> Uploads -> Handler (HashMap Text Text)
+restUpload baseURI awsConfig uploads =
   case uploads of
     UploadsDisabled ->
       noNewContentErrorAPI
     UploadsEnabled -> do
       currentTime <- liftIO Time.getCurrentTime
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
-          bucket = "sources-development.zoomhub.net"
           key = "uploads/test-" <> T.pack (show currentTime)
-          s3BucketURL = T.pack $ "http://" <> bucket <> ".s3.us-east-2.amazonaws.com"
+          s3BucketURL = "http://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
           s3URL = s3BucketURL <> "/" <> key
           ePolicy =
             S3.newPostPolicy
               expiryTime
-              [ S3.ppCondBucket $ T.pack bucket,
+              [ S3.ppCondBucket s3Bucket,
                 S3.ppCondKey key,
                 S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
                 S3.ppCondContentType "image/",
@@ -293,6 +294,7 @@ restUpload baseURI uploads =
       where
         minUploadSizeBytes = 1
         maxUploadSizeBytes = 512 * 1024 * 1024
+        s3Bucket = AWS.configSourcesS3Bucket awsConfig
 
 restContentById ::
   BaseURI ->
