@@ -1,0 +1,17 @@
+{
+  "name": "zoomhub-lambda-process-content",
+  "version": "0.0.0",
+  "description": "ZoomHub Lambda `processContent` function",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Gasienica <daniel@gasienica.ch>",
+  "license": "ISC",
+  "dependencies": {
+    "file-type": "^16.0.1",
+    "mime": "^2.4.6",
+    "sharp": "^0.26.2",
+    "uuid": "^8.3.1"
+  }
+}
