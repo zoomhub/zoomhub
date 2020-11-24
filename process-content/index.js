@@ -4,7 +4,7 @@ const axios = require("axios")
 const FileType = require("file-type")
 const fs = require("fs")
 const path = require("path")
-const PQueue = require("p-queue").default
+const pLimit = require("p-limit")
 const readdir = require("recursive-readdir")
 const rmfr = require("rmfr")
 const sharp = require("sharp")
@@ -16,8 +16,9 @@ const TILE_FORMAT = {
 }
 
 const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
+const limit = pLimit(10)
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   if (!event.contentId) {
     return "Please specify a contentID to process"
   }
@@ -29,14 +30,14 @@ exports.handler = async (event, context) => {
   const url = event.url
   const s3URL = parseS3URL(url)
 
-  console.log("meta", { contentId, url, s3URL })
+  console.log({ message: "meta", contentId, url, s3URL })
 
   const body = await (s3URL
     ? fetchS3URL({ ...s3URL, s3Client })
     : fetchGenericURL({ url }))
 
   const outputPath = `${ROOT_PATH}/${contentId}`
-  console.log("outputPath:", outputPath)
+  console.log({ outputPath })
 
   // Clean up output directory
   await Promise.all([
@@ -51,7 +52,7 @@ exports.handler = async (event, context) => {
   const fileType = await FileType.fromFile(outputPath)
   const isPNG = fileType && fileType.mime === "image/png"
   const tileFormat = isPNG ? { id: "png" } : { id: "jpg", quality: 90 }
-  console.log("file meta:", { fileType, isPNG, tileFormat })
+  console.log({ message: "file meta", fileType, isPNG, tileFormat })
 
   await sharp(outputPath)
     .toFormat(tileFormat)
@@ -64,6 +65,7 @@ exports.handler = async (event, context) => {
     .toFile(`${outputPath}.dz`)
 
   await uploadDZI({ s3Client, basePath: outputPath, tileFormat })
+  console.log({ message: "DZI uploaded" })
 }
 
 const parseS3URL = (url) => {
@@ -82,12 +84,12 @@ const fetchGenericURL = async ({ url }) =>
   (await axios.get(url, { responseType: "arraybuffer" })).data
 
 const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
-  const queue = new PQueue({ concurrency: 25 })
-
-  // tiles
   const tileFileNames = await readdir(`${basePath}_files`)
-  tileFileNames.forEach((fileName) =>
-    queue.add(() =>
+  const manifestFileName = `${basePath}.dzi`
+  console.log({ manifestFileName, tileFileNames })
+
+  const tileOperations = tileFileNames.map((fileName) =>
+    limit(() =>
       uploadFile({
         s3Client,
         fileName,
@@ -97,16 +99,16 @@ const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
     )
   )
 
-  // manifest
-  const dziFileName = `${basePath}.dzi`
-  queue.add(() =>
+  const dziManifestOperation = limit(() =>
     uploadFile({
       s3Client,
-      fileName: dziFileName,
-      key: path.relative(ROOT_PATH, dziFileName),
+      fileName: manifestFileName,
+      key: path.relative(ROOT_PATH, manifestFileName),
       contentType: "application/xml",
     })
   )
+
+  return await Promise.all([...tileOperations, dziManifestOperation])
 }
 
 const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
@@ -119,5 +121,6 @@ const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
       Key: `content/${key}`,
     })
     .promise()
-  console.log("File uploaded:", { fileName, key, contentType })
+
+  console.log({ message: "file uploaded", fileName, key, contentType })
 }
