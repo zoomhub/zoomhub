@@ -9,7 +9,7 @@ publish:
 	mv node_modules node_modules-linux
 	mv node_modules-macos node_modules
 
-	aws lambda update-function-code --profile zoomhub --zip-file fileb://function.zip --function-name process-content
+	aws lambda update-function-code --profile zoomhub --zip-file fileb://function.zip --function-name processContent
 
 install-linux:
 	rm -rf node_modules-linux
