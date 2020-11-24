@@ -17,7 +17,7 @@ install-linux:
 
 	npm install
 	rm -rf node_modules/sharp
-	docker run -v "$PWD":/var/task lambci/lambda:build-nodejs12.x npm install sharp
+	SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --arch=x64 --platform=linux sharp
 
 	mv node_modules node_modules-linux
 	mv node_modules-macos node_modules
