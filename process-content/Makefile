@@ -11,6 +11,10 @@ publish:
 
 	aws lambda update-function-code --profile zoomhub --zip-file fileb://function.zip --function-name processContent
 
+invoke:
+	S3_CACHE_BUCKET='cache-development.zoomhub.net' \
+	node invoke.js
+
 install-linux:
 	rm -rf node_modules-linux
 	mv node_modules node_modules-macos
