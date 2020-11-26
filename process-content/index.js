@@ -34,8 +34,15 @@ exports.handler = async (event) => {
     }
   }
 
+  const contentId = parseContentId(content.id)
+  if (!contentId) {
+    return {
+      status: 400,
+      body: `Invalid content ID: ${contentId}`,
+    }
+  }
+
   const url = content.url
-  const contentId = content.id
   const s3URL = parseS3URL(url)
   log("meta", { contentId, url, s3URL })
 
@@ -71,7 +78,11 @@ exports.handler = async (event) => {
     })
     .toFile(`${outputPath}.dz`)
 
-  await uploadDZI({ s3Client, basePath: outputPath, tileFormat })
+  await uploadDZI({
+    basePath: outputPath,
+    s3Client,
+    tileFormat,
+  })
   log("DZI uploaded")
 }
 
@@ -82,6 +93,15 @@ const parseS3URL = (url) => {
     // ignore errors
     return null
   }
+}
+
+const parseContentId = (value) => {
+  const isValid = /[a-zA-Z0-9]+/.test(value)
+  if (!isValid) {
+    return null
+  }
+
+  return value
 }
 
 const log = (message, props = {}) =>
