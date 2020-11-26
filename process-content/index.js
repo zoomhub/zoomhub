@@ -138,7 +138,7 @@ const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
     })
   )
 
-  return await Promise.all([...tileOperations, dziManifestOperation])
+  return Promise.all([...tileOperations, dziManifestOperation])
 }
 
 const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
