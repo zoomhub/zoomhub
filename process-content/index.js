@@ -19,25 +19,32 @@ const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
 const limit = pLimit(10)
 
 exports.handler = async (event) => {
-  if (!event.contentId) {
-    return "Please specify a contentID to process"
-  }
   if (!event.url) {
-    return "Please specify a URL to process"
+    return {
+      status: 400,
+      body: "Please specify a URL to process",
+    }
   }
 
-  const contentId = event.contentId
-  const url = event.url
-  const s3URL = parseS3URL(url)
+  const content = await fetchContent({ url: event.url })
+  if (!content.id) {
+    return {
+      status: 400,
+      body: "Invalid content",
+    }
+  }
 
-  console.log({ message: "meta", contentId, url, s3URL })
+  const url = content.url
+  const contentId = content.id
+  const s3URL = parseS3URL(url)
+  log("meta", { contentId, url, s3URL })
 
   const body = await (s3URL
     ? fetchS3URL({ ...s3URL, s3Client })
     : fetchGenericURL({ url }))
 
   const outputPath = `${ROOT_PATH}/${contentId}`
-  console.log({ outputPath })
+  log("output", { outputPath })
 
   // Clean up output directory
   await Promise.all([
@@ -52,7 +59,7 @@ exports.handler = async (event) => {
   const fileType = await FileType.fromFile(outputPath)
   const isPNG = fileType && fileType.mime === "image/png"
   const tileFormat = isPNG ? { id: "png" } : { id: "jpg", quality: 90 }
-  console.log({ message: "file meta", fileType, isPNG, tileFormat })
+  log("file meta", { fileType, isPNG, tileFormat })
 
   await sharp(outputPath)
     .toFormat(tileFormat)
@@ -65,7 +72,7 @@ exports.handler = async (event) => {
     .toFile(`${outputPath}.dz`)
 
   await uploadDZI({ s3Client, basePath: outputPath, tileFormat })
-  console.log({ message: "DZI uploaded" })
+  log("DZI uploaded")
 }
 
 const parseS3URL = (url) => {
@@ -77,16 +84,19 @@ const parseS3URL = (url) => {
   }
 }
 
+const log = (message, props = {}) =>
+  console.log({ time: new Date().toISOString(), message, ...props })
+
+const fetchContent = async ({ url }) => (await axios.get(url)).data
 const fetchS3URL = async ({ s3Client, bucket, key }) =>
   (await s3Client.getObject({ Bucket: bucket, Key: key }).promise()).Body
-
 const fetchGenericURL = async ({ url }) =>
   (await axios.get(url, { responseType: "arraybuffer" })).data
 
 const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
   const tileFileNames = await readdir(`${basePath}_files`)
   const manifestFileName = `${basePath}.dzi`
-  console.log({ manifestFileName, tileFileNames })
+  log("DZI", { manifestFileName, tileFileNames })
 
   const tileOperations = tileFileNames.map((fileName) =>
     limit(() =>
@@ -122,5 +132,5 @@ const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
     })
     .promise()
 
-  console.log({ message: "file uploaded", fileName, key, contentType })
+  log("file uploaded", { fileName, key, contentType })
 }
