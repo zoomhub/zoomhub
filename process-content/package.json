@@ -14,7 +14,9 @@
     "file-type": "^16.0.1",
     "p-limit": "^3.0.2",
     "recursive-readdir": "^2.2.2",
+    "replace-ext": "^2.0.0",
     "rmfr": "^2.0.0",
-    "sharp": "^0.26.2"
+    "sharp": "^0.26.2",
+    "xml2js": "^0.4.23"
   }
 }
