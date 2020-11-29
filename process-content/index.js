@@ -86,7 +86,7 @@ const processContent = async ({ contentURL }) => {
   const tileFormat = isPNG ? { id: "png" } : { id: "jpg", quality: 90 }
   log("file meta", { fileType, isPNG, tileFormat })
 
-  await sharp(outputPath)
+  await sharp(outputPath, { limitInputPixels: false })
     .toFormat(tileFormat)
     .tile({
       depth: "onepixel",
