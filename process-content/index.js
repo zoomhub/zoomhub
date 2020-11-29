@@ -20,8 +20,7 @@ const TILE_FORMAT = {
 const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
 const limit = pLimit(10)
 
-exports.handler = async (event) => {
-  const contentURL = event.url
+exports.handler = async ({ contentURL }) => {
   if (!contentURL) {
     return {
       status: 400,
