@@ -1,6 +1,7 @@
 const AmazonS3URI = require("amazon-s3-uri")
 const AWS = require("aws-sdk")
 const axios = require("axios")
+const ClientError = require("./lib/ClientError")
 const FileType = require("file-type")
 const fs = require("fs")
 const path = require("path")
@@ -32,12 +33,22 @@ exports.handler = async ({ contentURL }) => {
   try {
     await processContent({ contentURL })
   } catch (error) {
-    const isClientError = error instanceof TypeError
+    const isClientError = error instanceof ClientError
+    if (isClientError) {
+      return {
+        status: error.status,
+        body: error.message,
+      }
+    }
 
-    await markAsFailure({ contentURL, error: error.message })
+    try {
+      await markAsFailure({ contentURL, error: error.message })
+    } catch (failureError) {
+      error = failureError
+    }
 
     return {
-      status: isClientError ? 400 : 500,
+      status: 500,
       body: error.message,
     }
   }
@@ -52,16 +63,18 @@ exports.handler = async ({ contentURL }) => {
 const processContent = async ({ contentURL }) => {
   const content = await fetchContent(contentURL)
   if (!content.id) {
-    throw new TypeError("Invalid content")
+    throw new ClientError("Invalid content")
   }
 
   const contentId = parseContentId(content.id)
   if (!contentId) {
-    throw new TypeError(`Invalid content ID: ${contentId}`)
+    throw new ClientError(`Invalid content ID: ${contentId}`)
   }
 
   if (content.ready) {
-    throw new TypeError(`Content already processed`)
+    throw new ClientError("Content already processed successfully", {
+      status: 200,
+    })
   }
 
   const sourceURL = content.url
