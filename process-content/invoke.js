@@ -4,5 +4,5 @@ const processContent = require("./index").handler
   const result = await processContent({
     contentURL: "http://api.zoomhub.net/v1/content/h",
   })
-  console.log("result:", result)
+  console.log("Lambda invoke response:", result)
 })()
