@@ -6,8 +6,10 @@ const fs = require("fs")
 const path = require("path")
 const pLimit = require("p-limit")
 const readdir = require("recursive-readdir")
+const replaceExt = require("replace-ext")
 const rmfr = require("rmfr")
 const sharp = require("sharp")
+const xml2js = require("xml2js")
 
 const ROOT_PATH = "/tmp"
 const TILE_FORMAT = {
@@ -19,36 +21,53 @@ const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
 const limit = pLimit(10)
 
 exports.handler = async (event) => {
-  if (!event.url) {
+  const contentURL = event.url
+  if (!contentURL) {
     return {
       status: 400,
-      body: "Please specify a URL to process",
+      body:
+        "Please specify a content URL to process, i.e. http://www.zoomhub.net/v1/content/:id",
     }
   }
 
-  const content = await fetchContent({ url: event.url })
-  if (!content.id) {
+  try {
+    await processContent({ contentURL })
+  } catch (error) {
+    const isClientError = error instanceof TypeError
+
+    await markAsFailure({ contentURL, error: error.message })
+
     return {
-      status: 400,
-      body: "Invalid content",
+      status: isClientError ? 400 : 500,
+      body: error.message,
     }
+  }
+
+  return {
+    status: 200,
+    body: "success",
+  }
+}
+
+// Public API
+const processContent = async ({ contentURL }) => {
+  const content = await fetchContent(contentURL)
+  if (!content.id) {
+    throw new TypeError("Invalid content")
   }
 
   const contentId = parseContentId(content.id)
   if (!contentId) {
-    return {
-      status: 400,
-      body: `Invalid content ID: ${contentId}`,
-    }
+    throw new TypeError(`Invalid content ID: ${contentId}`)
   }
 
-  const url = content.url
-  const s3URL = parseS3URL(url)
-  log("meta", { contentId, url, s3URL })
+  const sourceURL = content.url
+  const s3URL = parseS3URL(sourceURL)
+  log("meta", { contentId, contentURL, sourceURL, s3URL })
 
-  const body = await (s3URL
-    ? fetchS3URL({ ...s3URL, s3Client })
-    : fetchGenericURL({ url }))
+  const body = s3URL
+    ? await fetchS3URL({ ...s3URL, s3Client })
+    : await fetchGenericURL(sourceURL)
 
   const outputPath = `${ROOT_PATH}/${contentId}`
   log("output", { outputPath })
@@ -78,14 +97,30 @@ exports.handler = async (event) => {
     })
     .toFile(`${outputPath}.dz`)
 
+  const dziXMLString = await fs.promises.readFile(`${outputPath}.dzi`)
+  const fixedDZIXMLString = await fixDZITileFormat(dziXMLString)
+  await fs.promises.writeFile(`${outputPath}.dzi`, fixedDZIXMLString)
+
+  const [fileSize, dzi] = await Promise.all([
+    (await fs.promises.stat(outputPath)).size,
+    await parseDZI(fixedDZIXMLString),
+  ])
+
   await uploadDZI({
     basePath: outputPath,
     s3Client,
     tileFormat,
   })
-  log("DZI uploaded")
+
+  await markAsSuccess({
+    contentURL,
+    mime: fileType && fileType.mime,
+    size: fileSize,
+    dzi,
+  })
 }
 
+// Helpers
 const parseS3URL = (url) => {
   try {
     return AmazonS3URI(url)
@@ -107,10 +142,10 @@ const parseContentId = (value) => {
 const log = (message, props = {}) =>
   console.log({ time: new Date().toISOString(), message, ...props })
 
-const fetchContent = async ({ url }) => (await axios.get(url)).data
+const fetchContent = async (url) => (await axios.get(url)).data
 const fetchS3URL = async ({ s3Client, bucket, key }) =>
   (await s3Client.getObject({ Bucket: bucket, Key: key }).promise()).Body
-const fetchGenericURL = async ({ url }) =>
+const fetchGenericURL = async (url) =>
   (await axios.get(url, { responseType: "arraybuffer" })).data
 
 const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
@@ -119,14 +154,17 @@ const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
   log("DZI", { manifestFileName, tileFileNames })
 
   const tileOperations = tileFileNames.map((fileName) =>
-    limit(() =>
-      uploadFile({
+    limit(() => {
+      const baseKey = path.relative(ROOT_PATH, fileName)
+      const key =
+        tileFormat.id === "jpg" ? replaceExt(baseKey, ".jpg") : baseKey
+      return uploadFile({
         s3Client,
         fileName,
-        key: path.relative(ROOT_PATH, fileName),
+        key,
         contentType: TILE_FORMAT[tileFormat.id],
       })
-    )
+    })
   )
 
   const dziManifestOperation = limit(() =>
@@ -153,4 +191,45 @@ const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
     .promise()
 
   log("file uploaded", { fileName, key, contentType })
+}
+
+const markAsSuccess = async ({ contentURL, mime, size, dzi }) => {
+  const type = "success"
+  await axios.put(`${contentURL}/completion`, {
+    type,
+    mime,
+    size,
+    dzi,
+  })
+  log("content completed", { type, contentURL, mime, size, dzi })
+}
+
+const markAsFailure = async ({ contentURL, error }) => {
+  const type = "failure"
+  await axios.post(`${contentURL}/completion`, { type, error })
+  log("content completed", { type, contentURL, error })
+}
+
+const parseDZI = async (xmlString) => {
+  const dzi = await xml2js.parseStringPromise(xmlString)
+  const image = dzi.Image["$"]
+  const size = dzi.Image.Size[0]["$"]
+  return {
+    width: parseInt(size.Width, 10),
+    height: parseInt(size.Height, 10),
+    tileFormat: image.Format,
+    tileOverlap: parseInt(image.Overlap, 10),
+    tileSize: parseInt(image.TileSize, 10),
+  }
+}
+
+// Renames `Format="jpeg"` to `Format="jpg"` for backwards compatibility
+// See: https://github.com/lovell/sharp/issues/1206
+const fixDZITileFormat = async (xmlString) => {
+  const dzi = await xml2js.parseStringPromise(xmlString)
+  const format = dzi.Image["$"].Format
+  const fixedFormat = format === "jpeg" ? "jpg" : format
+  dzi.Image["$"].Format = fixedFormat
+
+  return new xml2js.Builder().buildObject(dzi)
 }
