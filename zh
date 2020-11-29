@@ -67,7 +67,7 @@ run)
 
     # NOTE: Preserves existing content IDs:
     DISABLE_PG_TRIGGERS='SET session_replication_role = replica;'
-    psql --single-transaction --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
+    psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
       <<< $(echo "$DISABLE_PG_TRIGGERS" && cat ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql)
 
     stack build --test --no-run-tests \

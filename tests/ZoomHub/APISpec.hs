@@ -123,7 +123,7 @@ nullLogger :: Middleware
 nullLogger = id
 
 newContentId :: String
-newContentId = "9xe"
+newContentId = "Xar"
 
 newContentURL :: String
 newContentURL = "http://example.com"
@@ -208,10 +208,10 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
           `shouldRespondWith` restRedirect (fromString newContentId)
         get ("/v1/content/" <> BC.pack newContentId)
           `shouldRespondWith` "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
-                              \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/9xe\
+                              \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/Xar\
                               \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
-                              \:\"http://localhost:8000/9xe\",\"id\"\
-                              \:\"9xe\",\"ready\":false,\"failed\":false}"
+                              \:\"http://localhost:8000/Xar\",\"id\"\
+                              \:\"Xar\",\"ready\":false,\"failed\":false}"
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
