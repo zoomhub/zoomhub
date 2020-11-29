@@ -31,6 +31,7 @@ library
     , ZoomHub.API.Types.Content
     , ZoomHub.API.Types.ContentCompletion
     , ZoomHub.API.Types.DeepZoomImage
+    , ZoomHub.API.Types.DeepZoomImageWithoutURL
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config

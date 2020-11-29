@@ -244,7 +244,7 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
         it "should accept success" $
           putJSON
             "/v1/content/X75/completion"
-            [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"url":"https://example.com/test.dzi","width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
+            [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
             `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
         it "should accept failure" $
           putJSON

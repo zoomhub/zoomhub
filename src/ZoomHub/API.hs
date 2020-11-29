@@ -51,7 +51,7 @@ import ZoomHub.API.Types.Callback (Callback)
 import ZoomHub.API.Types.Content (Content, fromInternal)
 import ZoomHub.API.Types.ContentCompletion (ContentCompletion (..))
 import qualified ZoomHub.API.Types.ContentCompletion as Completion
-import qualified ZoomHub.API.Types.DeepZoomImage as DeepZoomImage
+import qualified ZoomHub.API.Types.DeepZoomImageWithoutURL as DeepZoomImage
 import ZoomHub.API.Types.JSONP (JSONP, mkJSONP)
 import ZoomHub.API.Types.NonRESTfulResponse
   ( NonRESTfulResponse,

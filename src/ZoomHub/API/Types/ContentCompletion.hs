@@ -17,7 +17,7 @@ import Data.Aeson.Types
   )
 import Data.Int (Int64)
 import Data.Text (Text)
-import ZoomHub.API.Types.DeepZoomImage (DeepZoomImage)
+import ZoomHub.API.Types.DeepZoomImageWithoutURL (DeepZoomImage)
 import ZoomHub.Types.ContentMIME (ContentMIME)
 import qualified ZoomHub.Types.ContentMIME as ContentMIME
 
