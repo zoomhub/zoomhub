@@ -222,7 +222,7 @@ const markAsSuccess = async ({ contentURL, mime, size, dzi }) => {
 
 const markAsFailure = async ({ contentURL, error }) => {
   const type = "failure"
-  await axios.post(`${contentURL}/completion`, { type, error })
+  await axios.put(`${contentURL}/completion`, { type, error })
   log("content completed", { type, contentURL, error })
 }
 
