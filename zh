@@ -61,16 +61,18 @@ run)
     createdb "$DEVELOPMENT_DB_NAME"
 
     PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
-      stack build --fast --exec "migrate-database $DEVELOPMENT_DB_NAME migrate"
+      stack build --test --no-run-tests \
+                  --ghc-options='-Wall' \
+                  --exec "migrate-database $DEVELOPMENT_DB_NAME migrate"
 
     # NOTE: Preserves existing content IDs:
     DISABLE_PG_TRIGGERS='SET session_replication_role = replica;'
     psql --single-transaction --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
       <<< $(echo "$DISABLE_PG_TRIGGERS" && cat ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql)
 
-    stack build --ghc-options='' \
+    stack build --test --no-run-tests \
+                --ghc-options='-Wall' \
                 --file-watch \
-                --fast \
                 --exec ./scripts/run-development.sh
     ;;
 test)
@@ -78,7 +80,8 @@ test)
     createdb "$TEST_DB_NAME"
 
     PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
-      stack build --ghc-options='-Wall' \
+      stack build --test --no-run-tests \
+                  --ghc-options='-Wall' \
                   --exec "migrate-database $TEST_DB_NAME migrate"
 
     psql --output /dev/null --quiet "$TEST_DB_NAME" \
