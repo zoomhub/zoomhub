@@ -39,7 +39,6 @@ library
     , ZoomHub.Config.Uploads
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
-    , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
