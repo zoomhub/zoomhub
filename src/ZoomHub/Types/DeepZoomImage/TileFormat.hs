@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -11,7 +12,7 @@ module ZoomHub.Types.DeepZoomImage.TileFormat
   )
 where
 
-import Data.Aeson (ToJSON, Value (String), toJSON)
+import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText)
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -38,6 +39,13 @@ instance Show TileFormat where
 -- JSON
 instance ToJSON TileFormat where
   toJSON = String . T.pack . show
+
+instance FromJSON TileFormat where
+  parseJSON = withText "TileFormat" $ \case
+    "jpeg" -> pure JPEG
+    "jpg" -> pure JPEG
+    "png" -> pure PNG
+    _ -> fail "invalid tile format"
 
 -- Squeal / PostgreSQL
 instance FromValue 'PGtext TileFormat where

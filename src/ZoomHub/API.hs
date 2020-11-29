@@ -31,8 +31,10 @@ import Servant
     Get,
     Handler,
     JSON,
+    Put,
     QueryParam,
     Raw,
+    ReqBody,
     Server,
     ServerError,
     err301,
@@ -47,6 +49,9 @@ import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
 import ZoomHub.API.Types.Callback (Callback)
 import ZoomHub.API.Types.Content (Content, fromInternal)
+import ZoomHub.API.Types.ContentCompletion (ContentCompletion (..))
+import qualified ZoomHub.API.Types.ContentCompletion as Completion
+import qualified ZoomHub.API.Types.DeepZoomImage as DeepZoomImage
 import ZoomHub.API.Types.JSONP (JSONP, mkJSONP)
 import ZoomHub.API.Types.NonRESTfulResponse
   ( NonRESTfulResponse,
@@ -107,6 +112,8 @@ type API =
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
     -- API: RESTful: Upload
     :<|> "v1" :> "content" :> "upload" :> Get '[JSON] (HashMap Text Text)
+    -- API: RESTful: Completion
+    :<|> "v1" :> "content" :> Capture "id" ContentId :> "completion" :> ReqBody '[JSON] ContentCompletion :> Put '[JSON] Content
     -- API: RESTful: ID
     :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
     -- API: RESTful: Error: ID
@@ -151,6 +158,7 @@ server config =
     :<|> jsonpInvalidRequest
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
+    :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
@@ -295,6 +303,29 @@ restUpload baseURI awsConfig uploads =
         minUploadSizeBytes = 1
         maxUploadSizeBytes = 512 * 1024 * 1024
         s3Bucket = AWS.configSourcesS3Bucket awsConfig
+
+restContentCompletionById ::
+  BaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  ContentId ->
+  ContentCompletion ->
+  Handler Content
+restContentCompletionById baseURI contentBaseURI dbConnPool contentId completion = do
+  maybeContent <- liftIO $ flip runPoolPQ dbConnPool $ case completion of
+    Completion.Success sc ->
+      PG.markAsSuccess
+        contentId
+        (DeepZoomImage.toInternal $ Completion.scDZI sc)
+        (Completion.scMIME sc)
+        (Just $ Completion.scSize sc)
+    Completion.Failure fc ->
+      PG.markAsFailure contentId (Just $ Completion.fcErrorMessage fc)
+  case maybeContent of
+    Nothing ->
+      throwError . API.error404 $ contentNotFoundMessage contentId
+    Just content ->
+      return $ fromInternal baseURI contentBaseURI content
 
 restContentById ::
   BaseURI ->

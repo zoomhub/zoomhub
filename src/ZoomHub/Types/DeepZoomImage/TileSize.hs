@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -11,6 +12,7 @@ module ZoomHub.Types.DeepZoomImage.TileSize
 where
 
 import Data.Aeson (ToJSON, Value (Number), toJSON)
+import Data.Aeson.Types (FromJSON (parseJSON), withScientific)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
 import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGint4), ToParam (..))
@@ -41,6 +43,13 @@ instance ToJSON TileSize where
   toJSON TileSize254 = Number 254
   toJSON TileSize256 = Number 256
   toJSON TileSize1024 = Number 1024
+
+instance FromJSON TileSize where
+  parseJSON = withScientific "TileSize" $ \case
+    254 -> pure TileSize254
+    256 -> pure TileSize256
+    1024 -> pure TileSize1024
+    _ -> fail "invalid tile size"
 
 -- PostgreSQL / Squeal
 type instance PG TileSize = 'PGint4

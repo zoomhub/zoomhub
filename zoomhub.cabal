@@ -29,6 +29,7 @@ library
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
     , ZoomHub.API.Types.Content
+    , ZoomHub.API.Types.ContentCompletion
     , ZoomHub.API.Types.DeepZoomImage
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
@@ -169,6 +170,7 @@ test-suite tests
   main-is:          Spec.hs
   type:             exitcode-stdio-1.0
   other-modules:
+    ZoomHub.API.Types.ContentCompletionSpec
     ZoomHub.APISpec
     ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Types.ContentIdSpec
@@ -187,6 +189,7 @@ test-suite tests
     , process
     , QuickCheck
     , quickcheck-instances
+    , raw-strings-qq
     , resource-pool
     , servant-server
     , squeal-postgresql

@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module ZoomHub.APISpec
   ( main,
@@ -11,7 +12,7 @@ import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
 import Data.Monoid ((<>))
 import Data.Time.Units (Second)
-import Network.HTTP.Types (methodGet)
+import Network.HTTP.Types (hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Pool (runPoolPQ)
@@ -31,6 +32,7 @@ import Test.Hspec.Wai
     shouldRespondWith,
     with,
   )
+import Text.RawString.QQ (r)
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
@@ -237,6 +239,18 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
+    describe "Complete content by ID (PUT /v1/content/:id/completion " do
+      describe "content with 'initialized' state" do
+        it "should accept success" $
+          putJSON
+            "/v1/content/X75/completion"
+            [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"url":"https://example.com/test.dzi","width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
+            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
+        it "should accept failure" $
+          putJSON
+            "/v1/content/yQ4/completion"
+            [r|{"type": "failure", "error": "FAIL!"}|]
+            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
     describe "POST /v1/content?url=…" do
       it "should be rejected" $
         post "/v1/content?url=http://example.com" ""
@@ -269,7 +283,7 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
                               \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
                               \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
                               \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
-                              \\"yQ4\",\"ready\":true,\"failed\":false},\
+                              \\"yQ4\",\"ready\":false,\"failed\":true},\
                               \\"redirectLocation\":null});"
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
@@ -307,3 +321,6 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
           maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
+  where
+    putJSON path =
+      request methodPut path [(hContentType, "application/json")]
