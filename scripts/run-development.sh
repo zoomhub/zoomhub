@@ -15,7 +15,7 @@ fi
 AWS_ACCESS_KEY_ID='<TODO>' \
 AWS_SECRET_ACCESS_KEY='<TODO>' \
 BASE_URI='http://localhost:8000' \
-CONTENT_BASE_URI='http://cache.zoomhub.net/content' \
+CONTENT_BASE_URI='http://cache-development.zoomhub.net/content' \
 PGDATABASE='zoomhub_development' \
 PGUSER="$(whoami)" \
 PROCESS_CONTENT='ProcessExistingAndNewContent' \
