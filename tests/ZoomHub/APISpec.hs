@@ -322,5 +322,4 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
   where
-    putJSON path =
-      request methodPut path [(hContentType, "application/json")]
+    putJSON path = request methodPut path [(hContentType, "application/json")]
