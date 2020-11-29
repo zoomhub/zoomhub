@@ -187,7 +187,7 @@ const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
     .upload({
       ACL: "public-read",
       Body: fs.createReadStream(fileName),
-      Bucket: process.env["S3_CACHE_BUCKET"],
+      Bucket: process.env.S3_CACHE_BUCKET,
       ContentType: contentType,
       Key: `content/${key}`,
     })
