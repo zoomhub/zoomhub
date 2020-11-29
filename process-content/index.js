@@ -60,6 +60,10 @@ const processContent = async ({ contentURL }) => {
     throw new TypeError(`Invalid content ID: ${contentId}`)
   }
 
+  if (content.ready) {
+    throw new TypeError(`Content already processed`)
+  }
+
   const sourceURL = content.url
   const s3URL = parseS3URL(sourceURL)
   log("meta", { contentId, contentURL, sourceURL, s3URL })
