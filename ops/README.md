@@ -37,25 +37,4 @@ If you want to override any ansible variables without having to edit configs,
 you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commit
 it. This is a convenient way to develop new features before using the vault.
 
-## Import SQLite data into PostgreSQL
-
-```
-# Download SQLite backup
-./scripts/backup-content.sh
-
-# Import SQLite to PostgreSQL
-./scripts/import-sqlite-schema-to-psql.sh
-
-# Dump PostgreSQL
-./scripts/dump-postgresql.sh
-
-# Restore
-PGHOST='...' \
-PGPORT='5432' \
-PGUSER='...' \
-PGPASSWORD='...' \
-PGDATABASE='...' \
-  ./scripts/migrate-postgresql-local-to-aws-rds.sh zoomhub-production-*.dump.sql
-```
-
 [circleci-env-vars]: https://app.circleci.com/settings/project/github/zoomhub/zoomhub/environment-variabless
