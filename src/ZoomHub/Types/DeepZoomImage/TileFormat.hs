@@ -21,10 +21,7 @@ import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
 data TileFormat = JPEG | PNG deriving (Eq)
 
 fromString :: String -> Maybe TileFormat
-fromString "jpg" = Just JPEG
-fromString "jpeg" = Just JPEG
-fromString "png" = Just PNG
-fromString _ = Nothing
+fromString = fromText . T.pack
 
 fromText :: T.Text -> Maybe TileFormat
 fromText "jpg" = Just JPEG
