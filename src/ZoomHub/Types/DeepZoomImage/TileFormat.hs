@@ -18,19 +18,20 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
 
-data TileFormat = JPEG | PNG deriving (Eq)
+data TileFormat = JPEG | JPG | PNG deriving (Eq)
 
 fromString :: String -> Maybe TileFormat
 fromString = fromText . T.pack
 
 fromText :: T.Text -> Maybe TileFormat
-fromText "jpg" = Just JPEG
 fromText "jpeg" = Just JPEG
+fromText "jpg" = Just JPG
 fromText "png" = Just PNG
 fromText _ = Nothing
 
 instance Show TileFormat where
-  show JPEG = "jpg"
+  show JPEG = "jpeg"
+  show JPG = "jpg"
   show PNG = "png"
 
 -- JSON
@@ -40,7 +41,7 @@ instance ToJSON TileFormat where
 instance FromJSON TileFormat where
   parseJSON = withText "TileFormat" $ \case
     "jpeg" -> pure JPEG
-    "jpg" -> pure JPEG
+    "jpg" -> pure JPG
     "png" -> pure PNG
     _ -> fail "invalid tile format"
 
@@ -53,4 +54,5 @@ type instance PG TileFormat = 'PGtext
 
 instance ToParam TileFormat 'PGtext where
   toParam JPEG = toParam ("jpeg" :: Text)
+  toParam JPG = toParam ("jpg" :: Text)
   toParam PNG = toParam ("png" :: Text)
