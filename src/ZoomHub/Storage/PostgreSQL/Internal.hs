@@ -8,7 +8,6 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
 
 -- Simplify Squeal query type signatures
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -32,7 +31,7 @@ import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
-import Control.Monad (void, when)
+import Control.Monad (when)
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime, UTCTime)
@@ -47,7 +46,7 @@ import Squeal.PostgreSQL
   , Grouping(Ungrouped)
   , Manipulation_
   , MonadPQ
-  , NP((:*))
+  , NP((:*), Nil)
   , NullityType(NotNull)
   , Only(..)
   , Optional(Default, Set)
@@ -58,6 +57,7 @@ import Squeal.PostgreSQL
   , RowPG
   , TableExpression
   , ToParam
+  , (.&&)
   , as
   , currentTimestamp
   , firstRow
@@ -66,6 +66,7 @@ import Squeal.PostgreSQL
   , leftOuterJoin
   , literal
   , manipulateParams
+  , manipulateParams_
   , null_
   , param
   , runQueryParams
@@ -126,7 +127,7 @@ getBy' condition parameter = do
         numViewsSample <- liftIO $ randomRIO (1, numViewsSampleRate)
         when (numViewsSample == 1) $
           -- TODO: How can we run this async?
-          void $ manipulateParams incrNumViews (numViewsSampleRate, cId)
+          manipulateParams_ incrNumViews (numViewsSampleRate, cId)
         return $ Just content
       Nothing ->
         return Nothing
@@ -551,6 +552,13 @@ insertImage = insertInto_ #image
         )
     )
   )
+
+deleteImage :: Manipulation_ Schemas (Only Text) ()
+deleteImage =
+  deleteFrom #image
+  (Using (table #content))
+  ((#content ! #hash_id .== param @1) .&& (#image ! #content_id .== #content ! #id))
+  (Returning_ Nil)
 
 -- Unsafe
 unsafeCreateContent

@@ -53,6 +53,7 @@ import Squeal.PostgreSQL
     limit,
     literal,
     manipulateParams,
+    manipulateParams_,
     orderBy,
     param,
     runQueryParams,
@@ -71,6 +72,7 @@ import ZoomHub.Storage.PostgreSQL.Internal
     contentImageRowToContent,
     contentRowToContent,
     createConnectionPool,
+    deleteImage,
     getBy,
     getBy',
     imageToInsertRow,
@@ -171,6 +173,7 @@ markAsFailure ::
   m (Maybe Content)
 markAsFailure cId mErrorMessage =
   transactionally_ $ do
+    manipulateParams_ deleteImage (Only cId)
     contentResult <- manipulateParams markContentAsFailure (cId, mErrorMessage)
     mContentRow <- firstRow contentResult
     return $ contentRowToContent <$> mContentRow
@@ -185,7 +188,7 @@ markAsSuccess ::
 markAsSuccess cId dzi mMIME mSize =
   transactionally_ $ do
     contentResult <- manipulateParams markContentAsSuccess (cId, mMIME, mSize)
-    void $ manipulateParams insertImage (imageToInsertRow cId dzi)
+    manipulateParams_ insertImage (imageToInsertRow cId dzi)
     mContentRow <- firstRow contentResult
     return $ case mContentRow of
       Just contentRow -> do
