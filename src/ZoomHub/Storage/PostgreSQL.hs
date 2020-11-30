@@ -34,7 +34,6 @@ module ZoomHub.Storage.PostgreSQL
   )
 where
 
-import Control.Monad (void)
 import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
