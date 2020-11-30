@@ -235,14 +235,14 @@ workflows:
       - deploy-staging:
           requires:
             - process-content-build
-            - web-build-and-test
+            # - web-build-and-test
           filters:
             branches:
               ignore:
                 - master
-      - deploy-production:
-          requires:
-            - web-build-and-test
-          filters:
-            branches:
-              only: master
+      # - deploy-production:
+      #     requires:
+      #       - web-build-and-test
+      #     filters:
+      #       branches:
+      #         only: master
