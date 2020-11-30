@@ -80,7 +80,7 @@ jobs:
           paths:
             - node_modules
 
-      - run: cd process-content && zip -r function-processContent.zip index.js node_modules
+      - run: cd process-content && zip -r function-processContent.zip index.js lib node_modules
       - run: cd process-content && mv function-processContent.zip ~/zoomhub/zoomhub/workspace
 
       - run:

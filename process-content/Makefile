@@ -4,7 +4,7 @@ publish:
 	mv node_modules node_modules-macos
 	mv node_modules-linux node_modules
 
-	zip -r function-processContent.zip index.js node_modules
+	zip -r function-processContent.zip index.js lib node_modules
 
 	mv node_modules node_modules-linux
 	mv node_modules-macos node_modules
