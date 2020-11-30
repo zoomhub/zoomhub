@@ -1,19 +1,22 @@
 publish:
-	rm -f function.zip
+	rm -f function-processContent.zip
 
 	mv node_modules node_modules-macos
 	mv node_modules-linux node_modules
 
-	zip -r function.zip index.js node_modules
+	zip -r function-processContent.zip index.js node_modules
 
 	mv node_modules node_modules-linux
 	mv node_modules-macos node_modules
 
-	aws lambda update-function-code --profile zoomhub --zip-file fileb://function.zip --function-name processContent
+	aws lambda update-function-code \
+		--profile zoomhub \
+		--zip-file fileb://function-processContent.zip \
+		--function-name processContent
 
 invoke:
 	S3_CACHE_BUCKET='cache-development.zoomhub.net' \
-	node invoke.js
+		node invoke.js
 
 install-linux:
 	rm -rf node_modules-linux
