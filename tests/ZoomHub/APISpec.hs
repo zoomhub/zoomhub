@@ -274,17 +274,7 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "GET /v1/content/:id?callback=…" do
       it "should accept `callback` query parameter" do
         get "/v1/content/yQ4?callback=handleContent"
-          `shouldRespondWith` "/**/ typeof handleContent === 'function' && \
-                              \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
-                              \{\"dzi\":{\"height\":3750,\"url\":\
-                              \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
-                              \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
-                              \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
-                              \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
-                              \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
-                              \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
-                              \\"yQ4\",\"ready\":false,\"failed\":true},\
-                              \\"redirectLocation\":null});"
+          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
