@@ -70,7 +70,7 @@ jobs:
       # Restore the dependency cache
       - restore_cache:
           keys:
-            - zh-node-cache-v2-dep-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - zh-node-cache-v2-dep-{{ .Branch }}-{{ checksum "process-content/package-lock.json" }}
             - zh-node-cache-v2-dep-{{ .Branch }}-
             - zh-node-cache-v2-dep-master-
 
@@ -78,7 +78,7 @@ jobs:
 
       # Save dependency cache
       - save_cache:
-          key: zh-node-cache-v2-dep-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: zh-node-cache-v2-dep-{{ .Branch }}-{{ checksum "process-content/package-lock.json" }}
           paths:
             - node_modules
 
