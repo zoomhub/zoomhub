@@ -80,6 +80,8 @@ library
       aeson
     , aeson-casing
     , aeson-pretty
+    , amazonka
+    , amazonka-lambda
     , async
     , atomic-write
     , base
