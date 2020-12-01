@@ -31,23 +31,23 @@ deploy: &deploy
 
     - aws-cli/setup
 
-    # # Set up Docker
-    # - jq/install # required for Docker installation (facepalm)
-    # - docker/install-docker-tools
-    # - setup_remote_docker
+    # Set up Docker
+    - jq/install # required for Docker installation (facepalm)
+    - docker/install-docker-tools
+    - setup_remote_docker
 
-    # - run:
-    #     name: Build 'web' Docker image
-    #     command: |
-    #       cd ~/zoomhub/zoomhub/workspace && \
-    #         docker build \
-    #           --rm=false \
-    #           -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 \
-    #           -f Dockerfile.deploy .
+    - run:
+        name: Build 'web' Docker image
+        command: |
+          cd ~/zoomhub/zoomhub/workspace && \
+            docker build \
+              --rm=false \
+              -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 \
+              -f Dockerfile.deploy .
 
-    # - run:
-    #     name: Deploy 'web' Docker image to AWS Elastic Beanstalk
-    #     command: cd ~/zoomhub/zoomhub/workspace && ./deploy-web.sh
+    - run:
+        name: Deploy 'web' Docker image to AWS Elastic Beanstalk
+        command: cd ~/zoomhub/zoomhub/workspace && ./deploy-web.sh
 
     - run:
         name: Deploy 'processContent' to AWS Lambda
@@ -235,14 +235,14 @@ workflows:
       - deploy-staging:
           requires:
             - process-content-build
-            # - web-build-and-test
+            - web-build-and-test
           filters:
             branches:
               ignore:
                 - master
-      # - deploy-production:
-      #     requires:
-      #       - web-build-and-test
-      #     filters:
-      #       branches:
-      #         only: master
+      - deploy-production:
+          requires:
+            - web-build-and-test
+          filters:
+            branches:
+              only: master
