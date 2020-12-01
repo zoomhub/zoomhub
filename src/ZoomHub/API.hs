@@ -298,7 +298,7 @@ restUpload baseURI awsConfig uploads =
                 Left minioErr ->
                   return $ HS.singleton "error" (T.pack $ show minioErr)
                 Right (_url, formData) -> do
-                  return $ lenientDecodeUtf8 <$> (HS.insert "url" (encodeUtf8 s3BucketURL) $ formData)
+                  return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
         maxUploadSizeBytes = 512 * 1024 * 1024
