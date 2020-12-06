@@ -201,7 +201,8 @@ main = do
             setPort (fromIntegral port)
               . setOnException serverExceptionHandler
               $ defaultSettings
-      runSettings waiSettings (app config)
+      waiApp <- app config
+      runSettings waiSettings waiApp
   where
     startProcessingWorkers :: Config -> Integer -> IO ()
     startProcessingWorkers config numProcessingWorkers = do

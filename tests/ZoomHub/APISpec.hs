@@ -9,10 +9,11 @@ module ZoomHub.APISpec
 where
 
 import Control.Concurrent (getNumCapabilities)
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BC
 import Data.Monoid ((<>))
 import Data.Time.Units (Second)
-import Network.HTTP.Types (hContentType, methodGet, methodPut)
+import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Pool (runPoolPQ)
@@ -174,7 +175,7 @@ closeDatabaseConnection :: Config -> IO ()
 closeDatabaseConnection = destroyAllResources . dbConnPool
 
 spec :: Spec
-spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
+spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
   describe "RESTful" do
     describe "Upload (GET /v1/content/upload)" do
       it "should return  503" $
@@ -312,4 +313,12 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
   where
-    putJSON path = request methodPut path [(hContentType, "application/json")]
+    putJSON path = putJSON' path []
+    -- FIXME: Replace hard-coded username + password
+    putJSON' path headers =
+      request
+        methodPut
+        path
+        [ (hContentType, "application/json"),
+          (hAuthorization, "Basic cHJvY2Vzc0NvbnRlbnQ6c2VjcjN0")
+        ]

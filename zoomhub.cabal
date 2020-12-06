@@ -122,6 +122,8 @@ library
     , retry
     , safe
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-lucid
     , servant-server
     , split
