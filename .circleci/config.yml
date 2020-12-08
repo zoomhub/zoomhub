@@ -113,10 +113,11 @@ jobs:
           command: |
             cp -R \
               ops/aws/.ebextensions \
-              ops/aws/run.sh \
+              ops/aws/.platform \
               ops/aws/deploy.sh \
               ops/aws/Dockerfile.deploy \
               ops/aws/Dockerrun.aws.json.template \
+              ops/aws/run.sh \
               workspace
       - run:
           name: Copy public files to workspace
@@ -132,6 +133,7 @@ jobs:
           paths:
             # deployment
             - .ebextensions
+            - .platform
             - run.sh
             - deploy.sh
             - Dockerfile.deploy
