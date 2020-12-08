@@ -162,7 +162,7 @@ jobs:
   deploy-staging:
     <<: *defaults
     environment:
-      ZH_AWS_EB_ENVIRONMENT: staging # TODO: Create `staging` environment
+      ZH_AWS_EB_ENVIRONMENT: staging-2 # TODO: Create `staging` environment
     <<: *deploy
 
   deploy-production:
@@ -177,14 +177,13 @@ workflows:
   build-deploy:
     jobs:
       - build-and-test
-      # TODO: Re-enable staging deploys once we have an environment
-      # - deploy-staging:
-      #     requires:
-      #       - build-and-test
-      #     filters:
-      #       branches:
-      #         ignore:
-      #           - master
+      - deploy-staging:
+          requires:
+            - build-and-test
+          filters:
+            branches:
+              ignore:
+                - master
       - deploy-production:
           requires:
             - build-and-test
