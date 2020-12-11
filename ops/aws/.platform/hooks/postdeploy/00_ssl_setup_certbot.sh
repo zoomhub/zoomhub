@@ -12,30 +12,21 @@ CERTBOT_EMAIL="$CERTBOT_EMAIL"
 # Multiple domain example: CERTBOT_DOMAINS='bort.com,www.bort.com,bort-env.eba-2kg3gsq2.us-east-2.elasticbeanstalk.com'
 CERTBOT_DOMAINS="$CERTBOT_DOMAINS"
 
-crontab_exists() {
-    crontab -u root -l 2>/dev/null | grep 'certbot renew --quiet' >/dev/null 2>/dev/null
-}
-
 log_level() {
     if [ -n "$LOG_PATH" ] && [ -n "$DATE" ]; then
         echo "$DATE | $1: $2" | tee -a "$LOG_PATH"
     fi
 }
 
-log_debug() {
-    log_level "DEBUG" "$1"
-}
-
-log_and_exit() {
-    log_level "$1" "$2"
-    exit 0
-}
+log_debug() { log_level 'DEBUG' "$1" }
+log_info() { log_level 'INFO' "$1" }
+log_error() { log_level 'ERROR' "$1" }
 
 # Variable check
-
 log_debug "Check certbot variables"
 if [ ! -n "$CERTBOT_NAME" ] || [ ! -n "$CERTBOT_EMAIL" ] || [ ! -n "$CERTBOT_DOMAINS" ]; then
-    log_and_exit 'INFO' 'Certbot and/or proxy server information is missing.'
+    log_error 'Certbot and/or proxy server information is missing.'
+    exit 1
 fi
 
 # Auto allow yes for all yum install
@@ -68,7 +59,8 @@ if ! grep -Fxq "$NAME_LIMIT" /etc/nginx/nginx.conf; then
 
     log_debug "nginx: Increase name limit"
     if ! sed -i "s/$HTTP_STRING/$NAME_LIMIT/g" /etc/nginx/nginx.conf; then
-        log_and_exit 'ERROR' 'Changing server name limit failed'
+        log_error 'Changing server name limit failed'
+        exit 1
     fi
 fi
 
@@ -87,24 +79,19 @@ if command -v certbot &>/dev/null; then
           --keep-until-expiring \
           --non-interactive
     else
-        log_and_exit 'ERROR' 'Nginx configuration is invalid.'
+        log_error 'nginx configuration is invalid.'
+        exit 1
     fi
 else
-    log_and_exit 'ERROR' 'Certbot installation may have failed.'
+    log_error 'Certbot installation may have failed.'
+    exit 1
 fi
 
-# Create cron task (attempt) to renew certificate every 29 days
-log_debug "crontab: Check if exists"
-if ! crontab_exists; then
-    systemctl start crond
-    systemctl enable crond
+# cron: Attempt to renew certificates twice a day (to account for revocations, etc.)
+cat >> /etc/cron.d/certbot_renew << END_CRON
+MAILTO="$CERTBOT_EMAIL"
+42 2,14 * * * root certbot renew --quiet --no-self-upgrade --deploy-hook "service nginx reload && service nginx restart"
+END_CRON
+chmod +x /etc/cron.d/certbot_renew
 
-    LINE="42 2,14 * * * certbot renew --quiet --no-self-upgrade --deploy-hook \"service nginx reload && service nginx restart\""
-
-    (
-        crontab -u root -l
-        echo "$LINE"
-    ) | crontab -u root -
-fi
-
-log_and_exit 'INFO' 'Script ran successfully.'
+log_info 'Script ran successfully.'
