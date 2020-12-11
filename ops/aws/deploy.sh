@@ -14,7 +14,7 @@ docker push $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:
 
 # Create new Elastic Beanstalk version
 EB_BUCKET=elasticbeanstalk-$ZH_AWS_EB_PROJECT-deploy-bucket
-DOCKERRUN_FILE=$SHA1-Dockerrun.aws.json
+DOCKERRUN_FILE=Dockerrun.aws.json
 SOURCE_BUNDLE_ZIP="$SHA1"_source_bundle.zip
 
 # NOTE: For `.ebextensions` and `.platform` to be included, we must not include
