@@ -11,6 +11,7 @@ RUN apt-get upgrade -y && \
   libpq-dev
 
 ADD .ebextensions/ /opt/zoomhub/.ebextensions
+ADD .platform/ /opt/zoomhub/.platform
 ADD run.sh /opt/zoomhub
 ADD version.txt /opt/zoomhub
 ADD public /opt/zoomhub/public
