@@ -3,12 +3,7 @@ set -euo pipefail
 
 SHA1=$1
 
-# Push image to ECR
-
-# AWS CLI version 1
-# $(aws ecr get-login --region us-east-2 --no-include-email)
-
-# AWS CLI version 2
+# Push image to ECR (AWS CLI version 2)
 aws ecr get-login-password \
     --region us-east-2 \
 | docker login \
