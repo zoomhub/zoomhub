@@ -14,17 +14,16 @@ docker push $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:
 
 # Create new Elastic Beanstalk version
 EB_BUCKET=elasticbeanstalk-$ZH_AWS_EB_PROJECT-deploy-bucket
-DOCKERRUN_FILE=Dockerrun.aws.json
 SOURCE_BUNDLE_ZIP="$SHA1"_source_bundle.zip
 
-sed "s/<TAG>/$SHA1/ ; s/<ZH_AWS_ACCOUNT_ID>/$ZH_AWS_ACCOUNT_ID/ ; s/<ZH_AWS_ECR_REPO>/$ZH_AWS_ECR_REPO/" < Dockerrun.aws.json.template > $DOCKERRUN_FILE
+sed "s/<TAG>/$SHA1/ ; s/<ZH_AWS_ACCOUNT_ID>/$ZH_AWS_ACCOUNT_ID/ ; s/<ZH_AWS_ECR_REPO>/$ZH_AWS_ECR_REPO/" < Dockerrun.aws.json.template > Dockerrun.aws.json
 
 # NOTE: For `.ebextensions` and `.platform` to be included, we must not include
 # them inside the Docker image, but rather in the source ZIP file bundle:
 # - https://stackoverflow.com/a/30926732/125305
 # - https://gist.github.com/ianblenke/dec31660e170cfdfc7d3
 # - https://serverfault.com/questions/887912/using-ebextensions-with-docker-in-aws-elasticbeanstalk
-zip $SOURCE_BUNDLE_ZIP $DOCKERRUN_FILE .ebextensions .platform
+zip -r $SOURCE_BUNDLE_ZIP Dockerrun.aws.json .ebextensions .platform
 
 aws s3 cp \
   $SOURCE_BUNDLE_ZIP \
