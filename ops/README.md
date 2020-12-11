@@ -38,3 +38,11 @@ you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commi
 it. This is a convenient way to develop new features before using the vault.
 
 [circleci-env-vars]: https://app.circleci.com/settings/project/github/zoomhub/zoomhub/environment-variabless
+
+## AWS
+
+### Elastic Beanstalk
+
+- Application logs: `tail -f /var/log/eb-docker/containers/eb-current-app/*.log`
+- nginx configuration: `cat /etc/nginx/nginx.conf`
+- nginx extensions: `cat /etc/nginx/conf.d/*.conf` (note `.conf` extension)
