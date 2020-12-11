@@ -164,7 +164,7 @@ jobs:
   deploy-staging:
     <<: *defaults
     environment:
-      ZH_AWS_EB_ENVIRONMENT: staging-2 # TODO: Create `staging` environment
+      ZH_AWS_EB_ENVIRONMENT: staging
     <<: *deploy
 
   deploy-production:
