@@ -4,11 +4,11 @@ RUN mkdir -p /opt/zoomhub
 WORKDIR /opt/zoomhub
 
 RUN apt-get upgrade -y && \
-    apt-get update -y && \
-    apt-get install -y \
-      ca-certificates \
-      libgmp-dev \
-      libpq-dev
+  apt-get update -y && \
+  apt-get install -y \
+  ca-certificates \
+  libgmp-dev \
+  libpq-dev
 
 ADD .ebextensions/ /opt/zoomhub/.ebextensions
 ADD run.sh /opt/zoomhub
