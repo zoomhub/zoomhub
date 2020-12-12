@@ -65,6 +65,9 @@ baseURIEnvName = "BASE_URI"
 contentBaseURIEnvName :: String
 contentBaseURIEnvName = "CONTENT_BASE_URI"
 
+staticBaseURIEnvName :: String
+staticBaseURIEnvName = "STATIC_BASE_URI"
+
 processContentEnvName :: String
 processContentEnvName = "PROCESS_CONTENT"
 
@@ -132,8 +135,9 @@ main = do
           toBaseURI uriString
         Nothing ->
           toBaseURI $ "http://" <> hostname
-      staticBaseURI =
-        StaticBaseURI . fromJust . parseAbsoluteURI $ "http://static.zoomhub.net"
+      defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "http://static.zoomhub.net"
+      mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup staticBaseURIEnvName env)
+      staticBaseURI = fromMaybe defaultStaticBaseURI mStaticBaseURI
       defaultDBName = "zoomhub_development"
       -- Database connection pool:
       -- https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing#the-formula
