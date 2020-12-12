@@ -19,13 +19,13 @@ log_level() {
     fi
 }
 
-log_debug() { log_level 'DEBUG' "$1" }
-log_info() { log_level 'INFO' "$1" }
-log_error() { log_level 'ERROR' "$1" }
+log_debug() { log_level 'DEBUG' "$1"; }
+log_info() { log_level 'INFO' "$1"; }
+log_error() { log_level 'ERROR' "$1"; }
 
 # Variable check
 log_debug "Check certbot variables"
-if [ ! -n "$CERTBOT_NAME" ] || [ ! -n "$CERTBOT_EMAIL" ] || [ ! -n "$CERTBOT_DOMAINS" ]; then
+if [ -z "$CERTBOT_NAME" ] || [ -z "$CERTBOT_EMAIL" ] || [ -z "$CERTBOT_DOMAINS" ]; then
     log_error 'Certbot and/or proxy server information is missing.'
     exit 1
 fi
