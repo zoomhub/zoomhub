@@ -1,10 +1,10 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Config
   ( Config (..),
     defaultPort,
+    APIUser,
   )
 where
 
@@ -21,6 +21,7 @@ import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import ZoomHub.Storage.PostgreSQL (Connection)
+import ZoomHub.Types.APIUser (APIUser)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
@@ -31,7 +32,8 @@ defaultPort = 8000
 
 data Config
   = Config
-      { aws :: AWS.Config,
+      { apiUser :: APIUser,
+        aws :: AWS.Config,
         baseURI :: BaseURI,
         contentBaseURI :: ContentBaseURI,
         dbConnInfo :: PGS.ConnectInfo,
@@ -44,10 +46,10 @@ data Config
         openSeadragonScript :: String,
         port :: Integer,
         processContent :: ProcessContent,
-        uploads :: Uploads,
         publicPath :: FilePath,
         staticBaseURI :: StaticBaseURI,
         tempPath :: TempPath,
+        uploads :: Uploads,
         version :: String
       }
 

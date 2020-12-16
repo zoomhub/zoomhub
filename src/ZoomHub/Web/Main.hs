@@ -14,6 +14,7 @@ import Data.Aeson ((.=))
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
 import Data.Maybe (fromJust, fromMaybe)
+import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
@@ -52,6 +53,8 @@ import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Storage.PostgreSQL (createConnectionPool)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
+import ZoomHub.Types.APIUser (APIUser (APIUser))
+import qualified ZoomHub.Types.APIUser as APIUser
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
@@ -148,6 +151,10 @@ main = do
         fromIntegral $
           (numCapabilities * 2) + numSpindles
       mContentBaseURI = mkContentBaseURI =<< parseAbsoluteURI =<< lookup contentBaseURIEnvName env
+      mAPIUser = do
+        username <- T.pack <$> lookup "API_USERNAME" env
+        password <- T.pack <$> lookup "API_PASSWORD" env
+        pure $ APIUser {..}
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-
     createConnectionPool
@@ -155,12 +162,14 @@ main = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
-  case (mAWS, mContentBaseURI) of
-    (Nothing, _) ->
+  case (mAWS, mContentBaseURI, mAPIUser) of
+    (Nothing, _, _) ->
       error "ZoomHub.Main: Failed to parse AWS configuration."
-    (_, Nothing) ->
+    (_, Nothing, _) ->
       error "ZoomHub.Main: Failed to parse content base URI."
-    (Just aws, Just contentBaseURI) -> do
+    (_, _, Nothing) ->
+      error "ZoomHub.Main: Failed to parse API user."
+    (Just aws, Just contentBaseURI, Just apiUser) -> do
       let config = Config {..}
       ensureTempPathExists tempPath
       logInfo_ $
