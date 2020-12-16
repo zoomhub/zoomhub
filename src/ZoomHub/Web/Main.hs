@@ -106,11 +106,7 @@ main = do
         </> "openseadragon.min.js"
   error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
-  logger <-
-    mkRequestLogger
-      def
-        { outputFormat = CustomOutputFormatWithDetails formatAsJSON
-        }
+  logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
   mAWS <- AWS.fromEnv
@@ -120,19 +116,12 @@ main = do
       maybeUploads = Uploads.parse <$> lookup uploadsEnvName env
       uploads = fromMaybe UploadsDisabled maybeUploads
       defaultNumProcessingWorkers = 0 :: Integer
-      maybeNumProcessingWorkers =
-        lookup numProcessingWorkersEnvName env >>= readMaybe
-      numProcessingWorkers =
-        fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
+      maybeNumProcessingWorkers = lookup numProcessingWorkersEnvName env >>= readMaybe
+      numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
       defaultTempRootPath = currentDirectory </> "data"
-      tempPath =
-        TempPath $
-          fromMaybe
-            defaultTempRootPath
-            (lookup tempRootPathEnvName env)
-            </> "temp"
+      tempPath = TempPath $ fromMaybe defaultTempRootPath (lookup tempRootPathEnvName env) </> "temp"
       baseURI = case lookup baseURIEnvName env of
         Just uriString ->
           toBaseURI uriString
@@ -147,9 +136,7 @@ main = do
       numSpindles = 1
       dbConnPoolNumStripes = 1
       dbConnPoolIdleTime = 10 :: Second
-      dbConnPoolMaxResourcesPerStripe =
-        fromIntegral $
-          (numCapabilities * 2) + numSpindles
+      dbConnPoolMaxResourcesPerStripe = fromIntegral $ (numCapabilities * 2) + numSpindles
       mContentBaseURI = mkContentBaseURI =<< parseAbsoluteURI =<< lookup contentBaseURIEnvName env
       mAPIUser = do
         username <- T.pack <$> lookup "API_USERNAME" env
