@@ -211,18 +211,36 @@ const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
 
 const markAsSuccess = async ({ contentURL, mime, size, dzi }) => {
   const type = "success"
-  await axios.put(`${contentURL}/completion`, {
-    type,
-    mime,
-    size,
-    dzi,
-  })
+  await axios.put(
+    `${contentURL}/completion`,
+    {
+      type,
+      mime,
+      size,
+      dzi,
+    },
+    {
+      auth: {
+        username: process.env.ZH_API_USERNAME,
+        password: process.env.ZH_API_PASSWORD,
+      },
+    }
+  )
   log("content completed", { type, contentURL, mime, size, dzi })
 }
 
 const markAsFailure = async ({ contentURL, error }) => {
   const type = "failure"
-  await axios.put(`${contentURL}/completion`, { type, error })
+  await axios.put(
+    `${contentURL}/completion`,
+    { type, error },
+    {
+      auth: {
+        username: process.env.ZH_API_USERNAME,
+        password: process.env.ZH_API_PASSWORD,
+      },
+    }
+  )
   log("content completed", { type, contentURL, error })
 }
 
