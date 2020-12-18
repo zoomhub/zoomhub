@@ -26,7 +26,7 @@ exports.handler = async ({ contentURL }) => {
     return {
       status: 400,
       body:
-        "Please specify a content URL to process, i.e. http://www.zoomhub.net/v1/content/:id",
+        "Please specify a content URL to process, i.e. https://www.zoomhub.net/v1/content/:id",
     }
   }
 
