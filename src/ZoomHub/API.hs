@@ -115,6 +115,8 @@ import ZoomHub.Storage.PostgreSQL as PG
     markAsSuccess,
   )
 import ZoomHub.Storage.PostgreSQL (Connection)
+import ZoomHub.Types.APIUser (APIUser)
+import qualified ZoomHub.Types.APIUser as APIUser
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -247,16 +249,14 @@ server config =
 
 type instance BasicAuthCfg = BasicAuthData -> IO (AuthResult AuthenticatedUser)
 
-authCheck :: BasicAuthData -> IO (AuthResult AuthenticatedUser)
-authCheck (BasicAuthData user password) =
-  case (user, password) of
-    -- FIXME: Replace hard-coded username + password
-    ("processContent", "secr3t") ->
-      return $ Authenticated AuthenticatedUser
-    ("processContent", _) ->
-      return BadPassword
-    (_, _) ->
-      return NoSuchUser
+authCheck :: APIUser -> BasicAuthData -> IO (AuthResult AuthenticatedUser)
+authCheck apiUser (BasicAuthData unverifiedUsername unverifiedPassword) =
+  let username = APIUser.username apiUser
+      password = APIUser.password apiUser
+   in if username == lenientDecodeUtf8 unverifiedUsername
+        && password == lenientDecodeUtf8 unverifiedPassword
+        then pure $ Authenticated AuthenticatedUser
+        else pure NoSuchUser
 
 instance FromBasicAuthData AuthenticatedUser where
   fromBasicAuthData authData authCheckFunction = authCheckFunction authData
@@ -269,7 +269,7 @@ app config = do
   where
     -- TODO: Can we use `BasicAuth` without JWT and cookies?
     cfg jwtKey =
-      defaultJWTSettings jwtKey :. defaultCookieSettings :. authCheck :. EmptyContext
+      defaultJWTSettings jwtKey :. defaultCookieSettings :. authCheck (Config.apiUser config) :. EmptyContext
     logger = Config.logger config
 
 -- Handlers

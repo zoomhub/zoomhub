@@ -47,6 +47,7 @@ library
     , ZoomHub.Storage.PostgreSQL.ConnectInfo
     , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL.Schema
+    , ZoomHub.Types.APIUser
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
     , ZoomHub.Types.Content.Internal
@@ -77,14 +78,14 @@ library
   ghc-options:      -Wall
   hs-source-dirs:   src
   build-depends:
-      aeson
+      base
+    , aeson
     , aeson-casing
     , aeson-pretty
     , amazonka
     , amazonka-lambda
     , async
     , atomic-write
-    , base
     , blaze-builder
     , bytestring
     , case-insensitive
@@ -183,6 +184,7 @@ test-suite tests
   build-depends:
       base
     , aeson
+    , base64
     , bytestring
     , generics-sop
     , hspec == 2.*

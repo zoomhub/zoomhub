@@ -46,6 +46,20 @@ packages:
       sha256: 9b516d4195fcea22cd1f4335cfe210e88deca397ba7dacc494d5a2feb69e1af8
   original:
     hackage: time-units-1.0.0
+- completed:
+    hackage: base64-0.4.2.2@sha256:7aaab1623fd3a003efc840f679d6f582b33536c8e508bd989bc88c22618fa6bd,2849
+    pantry-tree:
+      size: 2116
+      sha256: d83c62f2c369dd8625e7abf2fbce72105885bd100c42b176ba77cffd0aa62909
+  original:
+    hackage: base64-0.4.2.2@sha256:7aaab1623fd3a003efc840f679d6f582b33536c8e508bd989bc88c22618fa6bd,2849
+- completed:
+    hackage: ghc-byteorder-4.11.0.0.10@sha256:5ee4a907279bfec27b0f9de7b8fba4cecfd34395a0235a7784494de70ad4e98f,1535
+    pantry-tree:
+      size: 169
+      sha256: 54a4636f72c3b9eff7f081714cb1a7b809fc1f3b2e239caaf0d65d79aa9cb56f
+  original:
+    hackage: ghc-byteorder-4.11.0.0.10@sha256:5ee4a907279bfec27b0f9de7b8fba4cecfd34395a0235a7784494de70ad4e98f,1535
 snapshots:
 - completed:
     size: 525663
