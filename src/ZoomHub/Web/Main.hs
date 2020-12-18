@@ -153,9 +153,9 @@ main = do
     (Nothing, _, _) ->
       error "ZoomHub.Main: Failed to parse AWS configuration."
     (_, Nothing, _) ->
-      error "ZoomHub.Main: Failed to parse content base URI."
+      error $ "ZoomHub.Main: Failed to parse content base URI. Please check '" <> contentBaseURIEnvName <> "'."
     (_, _, Nothing) ->
-      error "ZoomHub.Main: Failed to parse API user."
+      error "ZoomHub.Main: Missing API user. Please set 'API_USERNAME' and/or 'API_PASSWORD'."
     (Just aws, Just contentBaseURI, Just apiUser) -> do
       let config = Config {..}
       ensureTempPathExists tempPath
