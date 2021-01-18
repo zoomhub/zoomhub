@@ -1,5 +1,9 @@
 # ZoomHub
 
+## 3.0.0 – December 12, 2020
+
+- Enable HTTPS.
+
 ## 3.0.0-rc.2 – November 12, 2020
 
 - **Uploads**
