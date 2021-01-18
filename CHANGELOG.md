@@ -1,5 +1,23 @@
 # ZoomHub
 
+## 3.1.0-alpha.1 – January 18, 2021
+
+- Add AWS Lambda worker for converting content into Deep Zoom Images (DZIs)
+  using VIPS:
+  - Package and deploy code from CI.
+  - Add `API_USERNAME` and `API_PASSWORD` for authenticating Lambda worker.
+  - Add authenticated endpoint `PUT /v1/content/:id/completion` for reporting
+    AWS Lambda worker processing completions.
+  - Remove unused `ZoomHub.Pipeline` module.
+- Introduce distinction between `JPG` and `JPEG` tile formats. By default, VIPS
+  outputs DZI tiles with `.jpeg` extension. To accommodate that, we needed
+  distinguish tiles by file extension. Ultimately, we worked around it by
+  renaming tiles before upload to S3.
+- Add `amazonka` dependency for invoking AWS Lambda worker.
+- **Development:** Normalize GHC flags to avoid multiple recompilations.
+- **Development:** Fix database setup by separating content insertions and
+  adjustment of PostgreSQL sequences.
+
 ## 3.0.0 – December 12, 2020
 
 - Enable HTTPS.
