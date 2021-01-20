@@ -61,7 +61,7 @@ run)
     createdb "$DEVELOPMENT_DB_NAME"
 
     PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
-      stack build --test --no-run-tests \
+      stack build --no-run-tests \
                   --ghc-options='-Wall' \
                   --exec "migrate-database $DEVELOPMENT_DB_NAME migrate"
 
@@ -72,7 +72,7 @@ run)
     psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
       < ./data/zoomhub_sequences.sql
 
-    stack build --test --no-run-tests \
+    stack build --no-run-tests \
                 --ghc-options='-Wall' \
                 --file-watch \
                 --exec ./scripts/run-development.sh
@@ -82,7 +82,7 @@ test)
     createdb "$TEST_DB_NAME"
 
     PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
-      stack build --test --no-run-tests \
+      stack build --no-run-tests \
                   --ghc-options='-Wall' \
                   --exec "migrate-database $TEST_DB_NAME migrate"
 

@@ -139,28 +139,39 @@ jobs:
             # configured correctly
             - zh-stack-cache-v2-dep-
 
+      - run:
+          name: Build binary
+          command: |
+            stack build --no-run-tests \
+                        --no-terminal \
+                        --install-ghc \
+                        --pedantic \
+                        --ghc-options='-O2'
+
       # Test
       - run:
           name: Run tests
           command: |
             HASHIDS_SALT='secret-salt'\
-              stack build --jobs 1 \
+              stack build --no-run-tests \
                           --no-terminal \
-                          --fast \
+                          --install-ghc \
+                          --pedantic \
+                          --ghc-options='-O2' \
                           --exec "migrate-database $PGDATABASE migrate"
 
             psql $PGDATABASE < ./data/zoomhub_data.sql
             psql $PGDATABASE < ./data/zoomhub_sequences.sql
 
-            stack test --jobs 1 --no-terminal --fast
+            stack test --no-terminal \
+                       --install-ghc \
+                       --pedantic \
+                       --ghc-options='-O2'
 
       # - run:
       #     name: Copy coverage reports
       #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
 
-      - run:
-          name: Build binary
-          command: stack build --install-ghc --pedantic --ghc-options="-O2"
       - run:
           name: Copy AWS ops files to workspace
           command: |
