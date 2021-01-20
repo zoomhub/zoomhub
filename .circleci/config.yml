@@ -47,7 +47,7 @@ deploy: &deploy
 
     - run:
         name: Deploy 'web' Docker image to AWS Elastic Beanstalk
-        command: cd ~/zoomhub/zoomhub/workspace && ./deploy-web.sh
+        command: cd ~/zoomhub/zoomhub/workspace && ./deploy-web.sh $CIRCLE_SHA1
 
     - run:
         name: Deploy 'processContent' to AWS Lambda

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-SHA1=$1
+SHA1="$1"
 
 # Push image to ECR (AWS CLI version 2)
 aws ecr get-login-password \
