@@ -40,3 +40,7 @@
 
 # Node.js
 /node_modules
+
+# Shortcuts
+invoke-local.sh
+run-local.sh

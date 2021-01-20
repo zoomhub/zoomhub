@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Config.AWS
@@ -22,6 +21,7 @@ data Config
 fromEnv :: IO (Maybe Config)
 fromEnv = do
   env <- getEnvironment
+  -- TODO: Refactor to use named instead of positional arguments:
   return $
     Config
       <$> (T.pack <$> lookup "AWS_ACCESS_KEY_ID" env)

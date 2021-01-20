@@ -1,5 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module ZoomHub.APISpec
   ( main,
@@ -10,8 +12,10 @@ where
 import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
 import Data.Monoid ((<>))
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
-import Network.HTTP.Types (methodGet)
+import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Pool (runPoolPQ)
@@ -31,6 +35,7 @@ import Test.Hspec.Wai
     shouldRespondWith,
     with,
   )
+import Text.RawString.QQ (r)
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
@@ -39,6 +44,7 @@ import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
+import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.Content (contentNumViews)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
@@ -121,15 +127,19 @@ nullLogger :: Middleware
 nullLogger = id
 
 newContentId :: String
-newContentId = "9xe"
+newContentId = "Xar"
 
 newContentURL :: String
 newContentURL = "http://example.com"
 
+authorizedUser :: APIUser
+authorizedUser = APIUser {username = "worker", password = "secr3t"}
+
 {-# NOINLINE config #-}
 config :: Config
 config = Config
-  { aws = undefined, -- FIXME
+  { apiUser = authorizedUser,
+    aws = undefined, -- TODO: Test AWS functionality
     baseURI = BaseURI (toURI "http://localhost:8000"),
     contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
       Just uri -> uri
@@ -172,7 +182,7 @@ closeDatabaseConnection :: Config -> IO ()
 closeDatabaseConnection = destroyAllResources . dbConnPool
 
 spec :: Spec
-spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
+spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
   describe "RESTful" do
     describe "Upload (GET /v1/content/upload)" do
       it "should return  503" $
@@ -206,10 +216,10 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
           `shouldRespondWith` restRedirect (fromString newContentId)
         get ("/v1/content/" <> BC.pack newContentId)
           `shouldRespondWith` "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
-                              \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/9xe\
+                              \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/Xar\
                               \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
-                              \:\"http://localhost:8000/9xe\",\"id\"\
-                              \:\"9xe\",\"ready\":false,\"failed\":false}"
+                              \:\"http://localhost:8000/Xar\",\"id\"\
+                              \:\"Xar\",\"ready\":false,\"failed\":false}"
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -237,6 +247,40 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
+    describe "Complete content by ID (PUT /v1/content/:id/completion " do
+      context "without auth" do
+        it "should reject request" $
+          putJSON
+            "/v1/content/X75/completion"
+            [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
+            `shouldRespondWith` 401
+      context "with invalid username" do
+        it "should reject request" $
+          authPutJSON
+            "/v1/content/X75/completion"
+            authorizedUser {username = "eve"}
+            [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
+            `shouldRespondWith` 401
+      context "with invalid password" do
+        it "should reject request" $
+          authPutJSON
+            "/v1/content/X75/completion"
+            authorizedUser {password = "eve"}
+            [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
+            `shouldRespondWith` 401
+      describe "content with 'initialized' state" do
+        it "should accept success" $
+          authPutJSON
+            "/v1/content/X75/completion"
+            authorizedUser
+            [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
+            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
+        it "should accept failure" $
+          authPutJSON
+            "/v1/content/yQ4/completion"
+            authorizedUser
+            [r|{"type": "failure", "error": "FAIL!"}|]
+            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
     describe "POST /v1/content?url=…" do
       it "should be rejected" $
         post "/v1/content?url=http://example.com" ""
@@ -260,17 +304,7 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "GET /v1/content/:id?callback=…" do
       it "should accept `callback` query parameter" do
         get "/v1/content/yQ4?callback=handleContent"
-          `shouldRespondWith` "/**/ typeof handleContent === 'function' && \
-                              \handleContent({\"status\":200,\"statusText\":\"OK\",\"content\":\
-                              \{\"dzi\":{\"height\":3750,\"url\":\
-                              \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
-                              \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
-                              \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
-                              \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\"<script \
-                              \src=\\\"http://localhost:8000/yQ4.js?width=auto&height=400px\\\">\
-                              \</script>\",\"shareUrl\":\"http://localhost:8000/yQ4\",\"id\":\
-                              \\"yQ4\",\"ready\":true,\"failed\":false},\
-                              \\"redirectLocation\":null});"
+          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
@@ -307,3 +341,16 @@ spec = with (pure $ app config) $ afterAll_ (closeDatabaseConnection config) do
           maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
+  where
+    authPutJSON path user = putJSON' path [(hAuthorization, toBasicAuthHeader user)]
+    putJSON path = putJSON' path []
+    putJSON' path headers =
+      request
+        methodPut
+        path
+        ( [ (hContentType, "application/json")
+          ]
+            <> headers
+        )
+    toBasicAuthHeader APIUser {username, password} =
+      T.encodeUtf8 $ "Basic " <> T.encodeBase64 (username <> ":" <> password)

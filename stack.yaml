@@ -11,9 +11,15 @@ packages:
 extra-deps:
   - ./vendor/servant/servant-server
 
+  - amazonka-1.6.1@sha256:f58b63e83876f93aa03c54e54b3eb8ba9358af93819d41f4a5a8f8b7d8b8399c,3544
+  - amazonka-core-1.6.1@sha256:9bc59ce403c6eeba3b3eaf3f10e5f0b6a33b6edbbf8f6de0dd6f4c67b86fa698,5135
+  - amazonka-lambda-1.6.1@sha256:395f48418da98b6c8853c7751e08464eee7b9140683c0b6f19b54c4b21699b5d,4231
   - mime-0.4.0.2
   - squeal-postgresql-0.5.1.0
   - time-units-1.0.0
+
+  - base64-0.4.2.2@sha256:7aaab1623fd3a003efc840f679d6f582b33536c8e508bd989bc88c22618fa6bd,2849
+  - ghc-byteorder-4.11.0.0.10@sha256:5ee4a907279bfec27b0f9de7b8fba4cecfd34395a0235a7784494de70ad4e98f,1535
 
 # Override default flag values for local packages and extra-deps
 flags: {}

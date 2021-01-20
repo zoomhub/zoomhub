@@ -14,6 +14,7 @@ import Data.Aeson ((.=))
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
 import Data.Maybe (fromJust, fromMaybe)
+import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
@@ -52,6 +53,8 @@ import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Storage.PostgreSQL (createConnectionPool)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
+import ZoomHub.Types.APIUser (APIUser (APIUser))
+import qualified ZoomHub.Types.APIUser as APIUser
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
@@ -103,11 +106,7 @@ main = do
         </> "openseadragon.min.js"
   error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
   version <- readVersion currentDirectory
-  logger <-
-    mkRequestLogger
-      def
-        { outputFormat = CustomOutputFormatWithDetails formatAsJSON
-        }
+  logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
   mAWS <- AWS.fromEnv
@@ -117,19 +116,12 @@ main = do
       maybeUploads = Uploads.parse <$> lookup uploadsEnvName env
       uploads = fromMaybe UploadsDisabled maybeUploads
       defaultNumProcessingWorkers = 0 :: Integer
-      maybeNumProcessingWorkers =
-        lookup numProcessingWorkersEnvName env >>= readMaybe
-      numProcessingWorkers =
-        fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
+      maybeNumProcessingWorkers = lookup numProcessingWorkersEnvName env >>= readMaybe
+      numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
       defaultTempRootPath = currentDirectory </> "data"
-      tempPath =
-        TempPath $
-          fromMaybe
-            defaultTempRootPath
-            (lookup tempRootPathEnvName env)
-            </> "temp"
+      tempPath = TempPath $ fromMaybe defaultTempRootPath (lookup tempRootPathEnvName env) </> "temp"
       baseURI = case lookup baseURIEnvName env of
         Just uriString ->
           toBaseURI uriString
@@ -144,10 +136,12 @@ main = do
       numSpindles = 1
       dbConnPoolNumStripes = 1
       dbConnPoolIdleTime = 10 :: Second
-      dbConnPoolMaxResourcesPerStripe =
-        fromIntegral $
-          (numCapabilities * 2) + numSpindles
+      dbConnPoolMaxResourcesPerStripe = fromIntegral $ (numCapabilities * 2) + numSpindles
       mContentBaseURI = mkContentBaseURI =<< parseAbsoluteURI =<< lookup contentBaseURIEnvName env
+      mAPIUser = do
+        username <- T.pack <$> lookup "API_USERNAME" env
+        password <- T.pack <$> lookup "API_PASSWORD" env
+        pure $ APIUser {..}
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-
     createConnectionPool
@@ -155,12 +149,14 @@ main = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
-  case (mAWS, mContentBaseURI) of
-    (Nothing, _) ->
+  case (mAWS, mContentBaseURI, mAPIUser) of
+    (Nothing, _, _) ->
       error "ZoomHub.Main: Failed to parse AWS configuration."
-    (_, Nothing) ->
-      error "ZoomHub.Main: Failed to parse content base URI."
-    (Just aws, Just contentBaseURI) -> do
+    (_, Nothing, _) ->
+      error $ "ZoomHub.Main: Failed to parse content base URI. Please check '" <> contentBaseURIEnvName <> "'."
+    (_, _, Nothing) ->
+      error "ZoomHub.Main: Missing API user. Please set 'API_USERNAME' and/or 'API_PASSWORD'."
+    (Just aws, Just contentBaseURI, Just apiUser) -> do
       let config = Config {..}
       ensureTempPathExists tempPath
       logInfo_ $
@@ -201,7 +197,8 @@ main = do
             setPort (fromIntegral port)
               . setOnException serverExceptionHandler
               $ defaultSettings
-      runSettings waiSettings (app config)
+      waiApp <- app config
+      runSettings waiSettings waiApp
   where
     startProcessingWorkers :: Config -> Integer -> IO ()
     startProcessingWorkers config numProcessingWorkers = do

@@ -1,24 +1,28 @@
-#!/bin/sh
+#!/bin/bash
+set -eo pipefail
+
 
 if [[ -f ./zoomhub.pid ]] ; then
-  kill $(cat zoomhub.pid) > /dev/null
+  set +e
+  kill -9 $(cat zoomhub.pid) >/dev/null 2>&1
+  set -e
 fi
 
-# # See: http://apple.stackexchange.com/questions/3271/how-to-get-rid-of-firewall-accept-incoming-connections-dialog/121010
+if [[ -z "$AWS_ACCESS_KEY_ID" ]]; then
+  echo "Missing 'AWS_ACCESS_KEY_ID' environment variable"
+  exit 1
+fi
 
-# # Find app binary:
-# zoomhub=$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')
+if [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
+  echo "Missing 'AWS_SECRET_ACCESS_KEY' environment variable"
+  exit 1
+fi
 
-# # Self-sign app to avoid constant Mac OS X firewall warnings:
-# sudo codesign --force --sign - "$zoomhub"
-
-AWS_ACCESS_KEY_ID='<TODO>' \
-AWS_SECRET_ACCESS_KEY='<TODO>' \
-BASE_URI='http://localhost:8000' \
-CONTENT_BASE_URI='http://cache.zoomhub.net/content' \
+BASE_URI="${BASE_URI:-http://localhost:8000}" \
+CONTENT_BASE_URI='http://cache-development.zoomhub.net/content' \
 PGDATABASE='zoomhub_development' \
 PGUSER="$(whoami)" \
-PROCESS_CONTENT="ProcessExistingAndNewContent" \
+PROCESS_CONTENT='ProcessExistingAndNewContent' \
 PROCESSING_WORKERS='2' \
 S3_CACHE_BUCKET='cache-development.zoomhub.net' \
 S3_SOURCES_BUCKET='sources-development.zoomhub.net' \

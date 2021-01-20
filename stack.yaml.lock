@@ -5,6 +5,27 @@
 
 packages:
 - completed:
+    hackage: amazonka-1.6.1@sha256:f58b63e83876f93aa03c54e54b3eb8ba9358af93819d41f4a5a8f8b7d8b8399c,3544
+    pantry-tree:
+      size: 992
+      sha256: d792656a70ee42df262a599bc6608bda069e33092d665c3438a6eeeaf7db4fb2
+  original:
+    hackage: amazonka-1.6.1@sha256:f58b63e83876f93aa03c54e54b3eb8ba9358af93819d41f4a5a8f8b7d8b8399c,3544
+- completed:
+    hackage: amazonka-core-1.6.1@sha256:9bc59ce403c6eeba3b3eaf3f10e5f0b6a33b6edbbf8f6de0dd6f4c67b86fa698,5135
+    pantry-tree:
+      size: 3438
+      sha256: c13e643176308771491ec0e06390e269047bb1b28be4535992842f7426a95eb4
+  original:
+    hackage: amazonka-core-1.6.1@sha256:9bc59ce403c6eeba3b3eaf3f10e5f0b6a33b6edbbf8f6de0dd6f4c67b86fa698,5135
+- completed:
+    hackage: amazonka-lambda-1.6.1@sha256:395f48418da98b6c8853c7751e08464eee7b9140683c0b6f19b54c4b21699b5d,4231
+    pantry-tree:
+      size: 7461
+      sha256: 5689d99657ec128bad74fa506524bc6c5c0309c6e90aeaf4197c317f8b39dbfc
+  original:
+    hackage: amazonka-lambda-1.6.1@sha256:395f48418da98b6c8853c7751e08464eee7b9140683c0b6f19b54c4b21699b5d,4231
+- completed:
     hackage: mime-0.4.0.2@sha256:208947d9d1a19d08850be67ecb28c6e776db697f3bba05bd9d682e51a59f241f,983
     pantry-tree:
       size: 565
@@ -25,6 +46,20 @@ packages:
       sha256: 9b516d4195fcea22cd1f4335cfe210e88deca397ba7dacc494d5a2feb69e1af8
   original:
     hackage: time-units-1.0.0
+- completed:
+    hackage: base64-0.4.2.2@sha256:7aaab1623fd3a003efc840f679d6f582b33536c8e508bd989bc88c22618fa6bd,2849
+    pantry-tree:
+      size: 2116
+      sha256: d83c62f2c369dd8625e7abf2fbce72105885bd100c42b176ba77cffd0aa62909
+  original:
+    hackage: base64-0.4.2.2@sha256:7aaab1623fd3a003efc840f679d6f582b33536c8e508bd989bc88c22618fa6bd,2849
+- completed:
+    hackage: ghc-byteorder-4.11.0.0.10@sha256:5ee4a907279bfec27b0f9de7b8fba4cecfd34395a0235a7784494de70ad4e98f,1535
+    pantry-tree:
+      size: 169
+      sha256: 54a4636f72c3b9eff7f081714cb1a7b809fc1f3b2e239caaf0d65d79aa9cb56f
+  original:
+    hackage: ghc-byteorder-4.11.0.0.10@sha256:5ee4a907279bfec27b0f9de7b8fba4cecfd34395a0235a7784494de70ad4e98f,1535
 snapshots:
 - completed:
     size: 525663

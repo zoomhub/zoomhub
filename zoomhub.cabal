@@ -29,7 +29,9 @@ library
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
     , ZoomHub.API.Types.Content
+    , ZoomHub.API.Types.ContentCompletion
     , ZoomHub.API.Types.DeepZoomImage
+    , ZoomHub.API.Types.DeepZoomImageWithoutURL
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Config
@@ -38,7 +40,6 @@ library
     , ZoomHub.Config.Uploads
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
-    , ZoomHub.Pipeline
     , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
@@ -46,6 +47,7 @@ library
     , ZoomHub.Storage.PostgreSQL.ConnectInfo
     , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL.Schema
+    , ZoomHub.Types.APIUser
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
     , ZoomHub.Types.Content.Internal
@@ -76,12 +78,14 @@ library
   ghc-options:      -Wall
   hs-source-dirs:   src
   build-depends:
-      aeson
+      base
+    , aeson
     , aeson-casing
     , aeson-pretty
+    , amazonka
+    , amazonka-lambda
     , async
     , atomic-write
-    , base
     , blaze-builder
     , bytestring
     , case-insensitive
@@ -119,6 +123,8 @@ library
     , retry
     , safe
     , servant
+    , servant-auth
+    , servant-auth-server
     , servant-lucid
     , servant-server
     , split
@@ -169,6 +175,7 @@ test-suite tests
   main-is:          Spec.hs
   type:             exitcode-stdio-1.0
   other-modules:
+    ZoomHub.API.Types.ContentCompletionSpec
     ZoomHub.APISpec
     ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Types.ContentIdSpec
@@ -177,6 +184,7 @@ test-suite tests
   build-depends:
       base
     , aeson
+    , base64
     , bytestring
     , generics-sop
     , hspec == 2.*
@@ -187,6 +195,7 @@ test-suite tests
     , process
     , QuickCheck
     , quickcheck-instances
+    , raw-strings-qq
     , resource-pool
     , servant-server
     , squeal-postgresql

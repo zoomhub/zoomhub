@@ -37,7 +37,7 @@ If you want to override any ansible variables without having to edit configs,
 you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commit
 it. This is a convenient way to develop new features before using the vault.
 
-[circleci-env-vars]: https://app.circleci.com/settings/project/github/zoomhub/zoomhub/environment-variabless
+[circleci-env-vars]: https://app.circleci.com/settings/project/github/zoomhub/zoomhub/environment-variables
 
 ## AWS
 

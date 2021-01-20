@@ -13,7 +13,6 @@ data Uploads
   deriving (Eq, Show)
 
 parse :: String -> Uploads
-parse "1" = UploadsEnabled
 parse "true" = UploadsEnabled
 parse _ = UploadsDisabled
 

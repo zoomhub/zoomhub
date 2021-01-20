@@ -11,16 +11,17 @@ module ZoomHub.API.Types.DeepZoomImage
     dziUrl,
     dziWidth,
     fromInternal,
+    toInternal,
     mkDeepZoomImage,
   )
 where
 
-import Data.Aeson (ToJSON, Value (String), genericToJSON, toJSON)
+import Data.Aeson (FromJSON, ToJSON, Value (String), genericParseJSON, genericToJSON, parseJSON, toJSON, withText)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import qualified Generics.SOP as SOP
-import Network.URI (URI, parseRelativeReference, relativeTo)
+import Network.URI (URI, parseAbsoluteURI, parseRelativeReference, relativeTo)
 import System.FilePath ((<.>))
 import ZoomHub.Types.ContentBaseURI
   ( ContentBaseURI,
@@ -59,6 +60,15 @@ fromInternal baseURI cId dzi = do
   where
     name = unContentId cId <.> "dzi"
 
+toInternal :: DeepZoomImage -> Internal.DeepZoomImage
+toInternal dzi =
+  Internal.mkDeepZoomImage
+    (dziWidth dzi)
+    (dziHeight dzi)
+    (dziTileSize dzi)
+    (dziTileOverlap dzi)
+    (dziTileFormat dzi)
+
 mkDeepZoomImage ::
   DeepZoomImageURI ->
   Integer ->
@@ -80,6 +90,9 @@ mkDeepZoomImage uri width height tileSize tileOverlap tileFormat = DeepZoomImage
 instance ToJSON DeepZoomImage where
   toJSON = genericToJSON $ aesonPrefix camelCase
 
+instance FromJSON DeepZoomImage where
+  parseJSON = genericParseJSON $ aesonPrefix camelCase
+
 -- Types
 newtype DeepZoomImageURI = DeepZoomImageURI {unDeepZoomImageURI :: URI}
   deriving (Eq)
@@ -89,6 +102,12 @@ instance Show DeepZoomImageURI where
 
 instance ToJSON DeepZoomImageURI where
   toJSON = String . T.pack . show . unDeepZoomImageURI
+
+instance FromJSON DeepZoomImageURI where
+  parseJSON = withText "DeepZoomImageURI" $ \text ->
+    case parseAbsoluteURI $ T.unpack text of
+      Just uri -> pure $ DeepZoomImageURI uri
+      Nothing -> fail "invalid URI"
 
 -- PostgreSQL / Squeal
 instance SOP.Generic DeepZoomImage

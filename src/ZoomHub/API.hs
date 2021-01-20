@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module ZoomHub.API
@@ -10,7 +12,9 @@ where
 
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
+import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Lazy as BL
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
@@ -19,25 +23,60 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Time as Time
+import qualified Debug.Trace as Trace
+import GHC.Generics (Generic)
 import Network.Minio as Minio
+  ( awsCI,
+    fromAWSEnv,
+    runMinio,
+    setCreds,
+    setRegion,
+  )
 import Network.Minio.S3API as S3
+  ( PostPolicyCondition (PPCEquals),
+    newPostPolicy,
+    ppCondBucket,
+    ppCondContentLengthRange,
+    ppCondContentType,
+    ppCondKey,
+    presignedPostPolicy,
+  )
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
   ( (:<|>) (..),
     (:>),
+    BasicAuthData (BasicAuthData),
     Capture,
+    Context ((:.), EmptyContext),
     Get,
     Handler,
     JSON,
+    Put,
     QueryParam,
     Raw,
+    ReqBody,
     Server,
     ServerError,
     err301,
+    err401,
+    errBody,
     errHeaders,
-    serve,
+    serveWithContext,
+  )
+import Servant.Auth.Server
+  ( Auth,
+    AuthResult (Authenticated, BadPassword, Indefinite, NoSuchUser),
+    BasicAuth,
+    BasicAuthCfg,
+    FromBasicAuthData,
+    FromJWT,
+    ToJWT,
+    defaultCookieSettings,
+    defaultJWTSettings,
+    fromBasicAuthData,
+    generateKey,
   )
 import Servant.HTML.Lucid (HTML)
 import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
@@ -47,6 +86,9 @@ import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
 import ZoomHub.API.Types.Callback (Callback)
 import ZoomHub.API.Types.Content (Content, fromInternal)
+import ZoomHub.API.Types.ContentCompletion (ContentCompletion (..))
+import qualified ZoomHub.API.Types.ContentCompletion as Completion
+import qualified ZoomHub.API.Types.DeepZoomImageWithoutURL as DeepZoomImage
 import ZoomHub.API.Types.JSONP (JSONP, mkJSONP)
 import ZoomHub.API.Types.NonRESTfulResponse
   ( NonRESTfulResponse,
@@ -58,12 +100,23 @@ import ZoomHub.API.Types.NonRESTfulResponse
   )
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
+import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL as PG
+  ( getById,
+    getById',
+    getByURL,
+    getByURL',
+    initialize,
+    markAsFailure,
+    markAsSuccess,
+  )
 import ZoomHub.Storage.PostgreSQL (Connection)
+import ZoomHub.Types.APIUser (APIUser)
+import qualified ZoomHub.Types.APIUser as APIUser
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -77,6 +130,17 @@ import ZoomHub.Web.Types.Embed (Embed, mkEmbed)
 import ZoomHub.Web.Types.EmbedDimension (EmbedDimension)
 import ZoomHub.Web.Types.EmbedId (EmbedId, unEmbedId)
 import ZoomHub.Web.Types.ViewContent (ViewContent, mkViewContent)
+
+data AuthenticatedUser = AuthenticatedUser
+  deriving (Show, Generic)
+
+instance ToJSON AuthenticatedUser
+
+instance FromJSON AuthenticatedUser
+
+instance ToJWT AuthenticatedUser
+
+instance FromJWT AuthenticatedUser
 
 -- API
 type API =
@@ -106,6 +170,14 @@ type API =
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
     -- API: RESTful: Upload
     :<|> "v1" :> "content" :> "upload" :> Get '[JSON] (HashMap Text Text)
+    -- API: RESTful: Completion
+    :<|> Auth '[BasicAuth] AuthenticatedUser
+      :> "v1"
+      :> "content"
+      :> Capture "id" ContentId
+      :> "completion"
+      :> ReqBody '[JSON] ContentCompletion
+      :> Put '[JSON] Content
     -- API: RESTful: ID
     :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
     -- API: RESTful: Error: ID
@@ -149,7 +221,8 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restUpload baseURI uploads
+    :<|> restUpload baseURI awsConfig uploads
+    :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
@@ -164,6 +237,7 @@ server config =
     -- Web: Static files
     :<|> serveDirectory (Config.error404 config) publicPath
   where
+    awsConfig = Config.aws config
     baseURI = Config.baseURI config
     contentBaseURI = Config.contentBaseURI config
     dbConnPool = Config.dbConnPool config
@@ -173,10 +247,29 @@ server config =
     uploads = Config.uploads config
     viewerScript = Config.openSeadragonScript config
 
+type instance BasicAuthCfg = BasicAuthData -> IO (AuthResult AuthenticatedUser)
+
+authCheck :: APIUser -> BasicAuthData -> IO (AuthResult AuthenticatedUser)
+authCheck apiUser (BasicAuthData unverifiedUsername unverifiedPassword) =
+  let username = APIUser.username apiUser
+      password = APIUser.password apiUser
+   in if username == lenientDecodeUtf8 unverifiedUsername
+        && password == lenientDecodeUtf8 unverifiedPassword
+        then pure $ Authenticated AuthenticatedUser
+        else pure NoSuchUser
+
+instance FromBasicAuthData AuthenticatedUser where
+  fromBasicAuthData authData authCheckFunction = authCheckFunction authData
+
 -- App
-app :: Config -> Application
-app config = logger . simpleCors $ serve api (server config)
+app :: Config -> IO Application
+app config = do
+  jwtKey <- generateKey
+  return $ logger . simpleCors $ serveWithContext api (cfg jwtKey) (server config)
   where
+    -- TODO: Can we use `BasicAuth` without JWT and cookies?
+    cfg jwtKey =
+      defaultJWTSettings jwtKey :. defaultCookieSettings :. authCheck (Config.apiUser config) :. EmptyContext
     logger = Config.logger config
 
 -- Handlers
@@ -250,22 +343,21 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: BaseURI -> Uploads -> Handler (HashMap Text Text)
-restUpload baseURI uploads =
+restUpload :: BaseURI -> AWS.Config -> Uploads -> Handler (HashMap Text Text)
+restUpload baseURI awsConfig uploads =
   case uploads of
     UploadsDisabled ->
       noNewContentErrorAPI
     UploadsEnabled -> do
       currentTime <- liftIO Time.getCurrentTime
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
-          bucket = "sources-development.zoomhub.net"
           key = "uploads/test-" <> T.pack (show currentTime)
-          s3BucketURL = T.pack $ "http://" <> bucket <> ".s3.us-east-2.amazonaws.com"
+          s3BucketURL = "http://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
           s3URL = s3BucketURL <> "/" <> key
           ePolicy =
             S3.newPostPolicy
               expiryTime
-              [ S3.ppCondBucket $ T.pack bucket,
+              [ S3.ppCondBucket s3Bucket,
                 S3.ppCondKey key,
                 S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
                 S3.ppCondContentType "image/",
@@ -289,10 +381,43 @@ restUpload baseURI uploads =
                 Left minioErr ->
                   return $ HS.singleton "error" (T.pack $ show minioErr)
                 Right (_url, formData) -> do
-                  return $ lenientDecodeUtf8 <$> (HS.insert "url" (encodeUtf8 s3BucketURL) $ formData)
+                  return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
         maxUploadSizeBytes = 512 * 1024 * 1024
+        s3Bucket = AWS.configSourcesS3Bucket awsConfig
+
+restContentCompletionById ::
+  BaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  AuthResult AuthenticatedUser ->
+  ContentId ->
+  ContentCompletion ->
+  Handler Content
+restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion = do
+  case Trace.trace "authResult" authResult of
+    Authenticated _ -> do
+      maybeContent <- liftIO $ flip runPoolPQ dbConnPool $ case completion of
+        Completion.Success sc ->
+          PG.markAsSuccess
+            contentId
+            (DeepZoomImage.toInternal $ Completion.scDZI sc)
+            (Completion.scMIME sc)
+            (Just $ Completion.scSize sc)
+        Completion.Failure fc ->
+          PG.markAsFailure contentId (Just $ Completion.fcErrorMessage fc)
+      case maybeContent of
+        Nothing ->
+          throwError . API.error404 $ contentNotFoundMessage contentId
+        Just content ->
+          return $ fromInternal baseURI contentBaseURI content
+    NoSuchUser ->
+      throwError err401 {errBody = BL.fromStrict . BC.pack $ "Invalid auth"}
+    BadPassword ->
+      throwError err401 {errBody = BL.fromStrict . BC.pack $ "Invalid auth"}
+    Indefinite ->
+      throwError err401 {errBody = BL.fromStrict . BC.pack $ "Missing 'Authorization' header"}
 
 restContentById ::
   BaseURI ->

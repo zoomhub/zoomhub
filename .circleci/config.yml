@@ -36,16 +36,67 @@ deploy: &deploy
     - docker/install-docker-tools
     - setup_remote_docker
 
-    - run: |
-        cd ~/zoomhub/zoomhub/workspace && \
-          docker build \
-            --rm=false \
-            -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 \
-            -f Dockerfile.deploy .
-    - run: cd ~/zoomhub/zoomhub/workspace && ./deploy.sh $CIRCLE_SHA1
+    - run:
+        name: Build 'web' Docker image
+        command: |
+          cd ~/zoomhub/zoomhub/workspace && \
+            docker build \
+              --rm=false \
+              -t $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$CIRCLE_SHA1 \
+              -f Dockerfile.deploy .
+
+    - run:
+        name: Deploy 'web' Docker image to AWS Elastic Beanstalk
+        command: cd ~/zoomhub/zoomhub/workspace && ./deploy-web.sh
+
+    - run:
+        name: Deploy 'processContent' to AWS Lambda
+        command: cd ~/zoomhub/zoomhub/workspace && ./deploy-processContent.sh
 
 jobs:
-  build-and-test:
+  process-content-build:
+    <<: *defaults
+    docker:
+      - image: "cimg/node:12.19"
+    steps:
+      - checkout
+
+      - run:
+          name: Initialize workspace
+          command: mkdir -p workspace
+
+      # Restore the dependency cache
+      - restore_cache:
+          keys:
+            - zh-node-cache-v2-dep-{{ .Branch }}-{{ checksum "process-content/package-lock.json" }}
+            - zh-node-cache-v2-dep-{{ .Branch }}-
+            - zh-node-cache-v2-dep-master-
+
+      - run: cd process-content && npm install
+
+      # Save dependency cache
+      - save_cache:
+          key: zh-node-cache-v2-dep-{{ .Branch }}-{{ checksum "process-content/package-lock.json" }}
+          paths:
+            - node_modules
+
+      - run: cd process-content && zip -r function-processContent.zip index.js lib node_modules
+      - run: cd process-content && mv function-processContent.zip ~/zoomhub/zoomhub/workspace
+
+      - run:
+          name: Copy AWS ops files to workspace
+          command: |
+            cp -R \
+              ops/aws/deploy-processContent.sh \
+              workspace
+
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - deploy-processContent.sh
+            - function-processContent.zip
+
+  web-build-and-test:
     <<: *defaults
     docker:
       - image: fpco/stack-build
@@ -78,43 +129,49 @@ jobs:
       # Restore the dependency cache
       - restore_cache:
           keys:
-            - zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+            - zh-stack-cache-v3-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}-{{ checksum "stack.yaml" }}
             # This branch if available
-            - zh-stack-cache-v2-dep-{{ .Branch }}-
+            - zh-stack-cache-v3-dep-{{ .Branch }}-
             # Default branch if not
-            - zh-stack-cache-v2-dep-master-
+            - zh-stack-cache-v3-dep-master-
             # Any branch if there are none on the default branch -
             # this should be unnecessary if you have your default branch
             # configured correctly
-            - zh-stack-cache-v2-dep-
+            - zh-stack-cache-v3-dep-
 
       # Test
       - run:
-          name: Run tests
+          name: Build binary and run tests
           command: |
             HASHIDS_SALT='secret-salt'\
-              stack build --no-terminal \
-                          --fast \
+              stack build --test \
+                          --no-run-tests \
+                          --no-terminal \
+                          --install-ghc \
+                          --pedantic \
+                          --ghc-options='-O2' \
                           --exec "migrate-database $PGDATABASE migrate"
 
-            psql $PGDATABASE < ./data/zoomhub_test-pg-dump-2019-10-16-2-data.sql
+            psql $PGDATABASE < ./data/zoomhub_data.sql
+            psql $PGDATABASE < ./data/zoomhub_sequences.sql
 
-            stack test --fast --no-terminal
+            stack build --test \
+                        --no-terminal \
+                        --install-ghc \
+                        --pedantic \
+                        --ghc-options='-O2'
 
       # - run:
       #     name: Copy coverage reports
       #     command: cp -r $(stack path --local-hpc-root) $CIRCLE_ARTIFACTS
 
       - run:
-          name: Build binary
-          command: stack build --install-ghc --pedantic --ghc-options="-O2"
-      - run:
           name: Copy AWS ops files to workspace
           command: |
             cp -R \
               ops/aws/.ebextensions \
               ops/aws/.platform \
-              ops/aws/deploy.sh \
+              ops/aws/deploy-web.sh \
               ops/aws/Dockerfile.deploy \
               ops/aws/Dockerrun.aws.json.template \
               ops/aws/run.sh \
@@ -135,7 +192,7 @@ jobs:
             - .ebextensions
             - .platform
             - run.sh
-            - deploy.sh
+            - deploy-web.sh
             - Dockerfile.deploy
             - Dockerrun.aws.json.template
             # migration
@@ -146,7 +203,7 @@ jobs:
 
       # Save dependency cache
       - save_cache:
-          key: zh-stack-cache-v2-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}
+          key: zh-stack-cache-v3-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}-{{ checksum "stack.yaml" }}
           paths:
             - ~/.stack
             - .stack-work
@@ -178,17 +235,19 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-      - build-and-test
-      - deploy-staging:
-          requires:
-            - build-and-test
-          filters:
-            branches:
-              ignore:
-                - master
+      - process-content-build
+      - web-build-and-test
+      # - deploy-staging:
+      #     requires:
+      #       - process-content-build
+      #       - web-build-and-test
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - master
       - deploy-production:
           requires:
-            - build-and-test
+            - web-build-and-test
           filters:
             branches:
               only: master

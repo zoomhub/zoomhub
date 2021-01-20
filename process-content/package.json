@@ -1,0 +1,22 @@
+{
+  "name": "zoomhub-lambda-process-content",
+  "version": "0.0.0",
+  "description": "ZoomHub Lambda `processContent` function",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Gasienica <daniel@gasienica.ch>",
+  "license": "ISC",
+  "dependencies": {
+    "amazon-s3-uri": "^0.1.0",
+    "axios": "^0.21.0",
+    "file-type": "^16.0.1",
+    "p-limit": "^3.0.2",
+    "recursive-readdir": "^2.2.2",
+    "replace-ext": "^2.0.0",
+    "rmfr": "^2.0.0",
+    "sharp": "^0.26.3",
+    "xml2js": "^0.4.23"
+  }
+}

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -10,7 +11,7 @@ module ZoomHub.Types.DeepZoomImage.TileOverlap
   )
 where
 
-import Data.Aeson (ToJSON, Value (Number), toJSON)
+import Data.Aeson (FromJSON (parseJSON), ToJSON, Value (Number), toJSON, withScientific)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
 import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGint4), ToParam (..))
@@ -38,6 +39,12 @@ instance Show TileOverlap where
 instance ToJSON TileOverlap where
   toJSON TileOverlap1 = Number 1
   toJSON TileOverlap0 = Number 0
+
+instance FromJSON TileOverlap where
+  parseJSON = withScientific "TileOverlap" $ \case
+    1 -> pure TileOverlap1
+    0 -> pure TileOverlap0
+    _ -> fail "invalid tile overlap"
 
 -- PostgreSQL / Squeal
 type instance PG TileOverlap = 'PGint4
