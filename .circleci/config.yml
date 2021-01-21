@@ -85,10 +85,7 @@ jobs:
 
       - run:
           name: Copy AWS ops files to workspace
-          command: |
-            cp -R \
-              ops/aws/deploy-processContent.sh \
-              workspace
+          command: cp ops/aws/deploy-processContent.sh workspace
 
       - persist_to_workspace:
           root: workspace
