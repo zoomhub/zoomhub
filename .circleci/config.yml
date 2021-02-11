@@ -245,6 +245,7 @@ workflows:
       #           - master
       - deploy-production:
           requires:
+            - process-content-build
             - web-build-and-test
           filters:
             branches:
