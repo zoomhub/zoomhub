@@ -23,7 +23,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Time as Time
-import qualified Debug.Trace as Trace
 import GHC.Generics (Generic)
 import Network.Minio as Minio
   ( awsCI,
@@ -396,7 +395,7 @@ restContentCompletionById ::
   ContentCompletion ->
   Handler Content
 restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion = do
-  case Trace.trace "authResult" authResult of
+  case authResult of
     Authenticated _ -> do
       maybeContent <- liftIO $ flip runPoolPQ dbConnPool $ case completion of
         Completion.Success sc ->
