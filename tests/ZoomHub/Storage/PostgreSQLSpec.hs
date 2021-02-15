@@ -80,6 +80,7 @@ import ZoomHub.Types.Content
     contentProgress,
     contentSize,
     contentState,
+    contentSubmitterEmail,
     contentType,
     contentURL,
   )
@@ -437,7 +438,8 @@ spec =
           contentProgress = 0.0,
           contentNumViews = numViews,
           contentError = Nothing,
-          contentDZI = Nothing
+          contentDZI = Nothing,
+          contentSubmitterEmail = Nothing
         }
     mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkActiveContent id_ currentTime age =
@@ -454,7 +456,8 @@ spec =
           contentProgress = 0.0,
           contentNumViews = 0,
           contentError = Nothing,
-          contentDZI = Nothing
+          contentDZI = Nothing,
+          contentSubmitterEmail = Nothing
         }
       where
         activeAt = addUTCTime (- age) currentTime
@@ -476,7 +479,8 @@ spec =
               contentProgress = 1.0,
               contentNumViews = 0,
               contentError = Nothing,
-              contentDZI = Just dzi
+              contentDZI = Just dzi,
+              contentSubmitterEmail = Nothing
             }
       where
         activeAt = addUTCTime (- age) currentTime

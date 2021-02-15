@@ -13,6 +13,7 @@ module ZoomHub.Types.Content
     contentNumViews,
     contentError,
     contentDZI,
+    contentSubmitterEmail,
   )
 where
 
@@ -29,6 +30,7 @@ import ZoomHub.Types.Content.Internal
     contentProgress,
     contentSize,
     contentState,
+    contentSubmitterEmail,
     contentType,
     contentURL,
   )

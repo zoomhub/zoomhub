@@ -18,22 +18,17 @@ import Data.String (IsString)
 import Squeal.PostgreSQL
   ( (&),
     (.==),
-    (:::),
-    (:=>),
     (>>>),
     AlignedList ((:>>), Done),
-    ColumnConstraint (Def, NoDef),
     Definition,
     Manipulation (UnsafeManipulation),
     NP ((:*)),
-    NullityType (NotNull, Null),
     OnDeleteClause (OnDeleteCascade),
     OnUpdateClause (OnUpdateCascade),
     Optional (Default, Set),
-    PGType (PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
     Public,
-    SchemumType (Table),
-    TableConstraint (ForeignKey, PrimaryKey, Unique),
+    addColumn,
+    alterTable,
     as,
     bigint,
     bigserial,
@@ -43,6 +38,7 @@ import Squeal.PostgreSQL
     default_,
     deleteFrom_,
     doublePrecision,
+    dropColumn,
     dropTable,
     foreignKey,
     insertInto_,
@@ -61,99 +57,28 @@ import Squeal.PostgreSQL
 import Squeal.PostgreSQL.Manipulation
 import Squeal.PostgreSQL.Migration (Migration (..))
 import Text.RawString.QQ (r)
+import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, ContentTable0, FlickrTable0, ImageTable0)
+import ZoomHub.Storage.PostgreSQL.Schema.Schema1 (ContentTable1)
 import qualified ZoomHub.Types.ContentState as ContentState
 import qualified ZoomHub.Types.ContentType as ContentType
 
-type Schema =
-  '[ ConfigTable,
-     ContentTable,
-     ImageTable,
-     FlickrTable
+type Schema0 =
+  '[ ConfigTable0,
+     ContentTable0,
+     ImageTable0,
+     FlickrTable0
    ]
 
+type Schema =
+  '[ ConfigTable0,
+     ContentTable1,
+     ImageTable0,
+     FlickrTable0
+   ]
+
+type Schemas0 = Public Schema0
+
 type Schemas = Public Schema
-
-type ConfigTable =
-  "config"
-    ::: 'Table
-          ( '[ "pk_config" ::: 'PrimaryKey '["id"],
-               "config_unique_key" ::: 'Unique '["key"]
-             ]
-              :=> '[ "id" ::: 'Def :=> 'NotNull 'PGint8,
-                     "key" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "value" ::: 'NoDef :=> 'NotNull 'PGtext
-                   ]
-          )
-
-type ContentTable =
-  "content"
-    ::: 'Table
-          ( '[ "pk_content" ::: 'PrimaryKey '["id"],
-               "content_unique_hash_id" ::: 'Unique '["hash_id"],
-               "content_unique_url" ::: 'Unique '["url"]
-             ]
-              :=> '[ "id" ::: 'Def :=> 'NotNull 'PGint8,
-                     "hash_id" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "type_id" ::: 'Def :=> 'NotNull 'PGint4,
-                     "url" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "state" ::: 'Def :=> 'NotNull 'PGtext,
-                     "initialized_at" ::: 'Def :=> 'NotNull 'PGtimestamptz,
-                     "active_at" ::: 'Def :=> 'Null 'PGtimestamptz,
-                     "completed_at" ::: 'Def :=> 'Null 'PGtimestamptz,
-                     "title" ::: 'Def :=> 'Null 'PGtext,
-                     "attribution_text" ::: 'Def :=> 'Null 'PGtext,
-                     "attribution_link" ::: 'Def :=> 'Null 'PGtext,
-                     "mime" ::: 'Def :=> 'Null 'PGtext,
-                     "size" ::: 'Def :=> 'Null 'PGint8,
-                     "error" ::: 'Def :=> 'Null 'PGtext,
-                     "progress" ::: 'Def :=> 'NotNull 'PGfloat8,
-                     "abuse_level_id" ::: 'Def :=> 'NotNull 'PGint4,
-                     "num_abuse_reports" ::: 'Def :=> 'NotNull 'PGint8,
-                     "num_views" ::: 'Def :=> 'NotNull 'PGint8,
-                     "version" ::: 'Def :=> 'NotNull 'PGint4
-                   ]
-          )
-
-type ImageTable =
-  "image"
-    ::: 'Table
-          ( '[ "pk_image" ::: 'PrimaryKey '["content_id"],
-               "fk_content_id" ::: 'ForeignKey '["content_id"] "content" '["id"],
-               "image_unique_content_id" ::: 'Unique '["content_id"]
-             ]
-              :=> '[ "content_id" ::: 'Def :=> 'NotNull 'PGint8,
-                     "created_at" ::: 'Def :=> 'NotNull 'PGtimestamptz,
-                     "width" ::: 'NoDef :=> 'NotNull 'PGint8,
-                     "height" ::: 'NoDef :=> 'NotNull 'PGint8,
-                     "tile_size" ::: 'NoDef :=> 'NotNull 'PGint4,
-                     "tile_overlap" ::: 'NoDef :=> 'NotNull 'PGint4,
-                     "tile_format" ::: 'NoDef :=> 'NotNull 'PGtext
-                   ]
-          )
-
-type FlickrTable =
-  "flickr"
-    ::: 'Table
-          ( '[ "pk_flickr" ::: 'PrimaryKey '["content_id"],
-               "fk_content_id" ::: 'ForeignKey '["content_id"] "content" '["id"],
-               "flickr_unique_content_id" ::: 'Unique '["content_id"]
-             ]
-              :=> '[ "content_id" ::: 'Def :=> 'NotNull 'PGint8,
-                     "farm_id" ::: 'NoDef :=> 'NotNull 'PGint4,
-                     "server_id" ::: 'NoDef :=> 'NotNull 'PGint4,
-                     "photo_id" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "secret" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "size_id" ::: 'NoDef :=> 'NotNull 'PGint4,
-                     "is_public" ::: 'NoDef :=> 'NotNull 'PGbool,
-                     "license_id" ::: 'NoDef :=> 'NotNull 'PGint4,
-                     "original_extension" ::: 'NoDef :=> 'Null 'PGtext,
-                     "original_secret" ::: 'NoDef :=> 'Null 'PGtext,
-                     "owner_nsid" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "owner_real_name" ::: 'NoDef :=> 'Null 'PGtext,
-                     "owner_username" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "photo_page_url" ::: 'NoDef :=> 'Null 'PGtext
-                   ]
-          )
 
 migrations :: String -> AlignedList (Migration Definition) (Public '[]) Schemas
 migrations hashidsSecret =
@@ -162,6 +87,7 @@ migrations hashidsSecret =
     :>> initialSchema
     :>> insertHashidsSecret hashidsSecret
     :>> createContentHashIdTrigger
+    :>> addSubmitterEmail
     :>> Done
 
 installPLpgSQLExtension :: Migration Definition (Public '[]) (Public '[])
@@ -184,14 +110,14 @@ initializeHashidsEncode = Migration
       DROP SCHEMA hashids CASCADE;
     |]
 
-initialSchema :: Migration Definition (Public '[]) Schemas
+initialSchema :: Migration Definition (Public '[]) Schemas0
 initialSchema = Migration
   { name = "2019-11-11-3: Initial setup",
     up = setup,
     down = teardown
   }
   where
-    setup :: Definition (Public '[]) Schemas
+    setup :: Definition (Public '[]) Schemas0
     setup =
       createTable
         #config
@@ -281,14 +207,14 @@ initialSchema = Migration
         defaultContentTypeId = literal ContentType.Unknown
         defaultContentState = literal ContentState.Initialized
         defaultContentVersion = 4
-    teardown :: Definition Schemas (Public '[])
+    teardown :: Definition Schemas0 (Public '[])
     teardown =
       dropTable #flickr
         >>> dropTable #image
         >>> dropTable #content
         >>> dropTable #config
 
-insertHashidsSecret :: String -> Migration Definition Schemas Schemas
+insertHashidsSecret :: String -> Migration Definition Schemas0 Schemas0
 insertHashidsSecret secret = Migration
   { name = "2019-11-11-4: Insert Hashids secret",
     up =
@@ -306,7 +232,7 @@ insertHashidsSecret secret = Migration
         deleteFrom_ #config (#key .== "hashids_salt")
   }
 
-createContentHashIdTrigger :: Migration Definition Schemas Schemas
+createContentHashIdTrigger :: Migration Definition Schemas0 Schemas0
 createContentHashIdTrigger = Migration
   { name = "2019-11-11-5: Create content hash_id trigger",
     up =
@@ -833,3 +759,10 @@ createHashidsFunctions =
       $$ language plpgsql;
     |]
   ]
+
+addSubmitterEmail :: Migration Definition Schemas0 Schemas
+addSubmitterEmail = Migration
+  { name = "2021-02-15-1: Add submitter email",
+    up = alterTable #content (addColumn #submitter_email (text & nullable)),
+    down = alterTable #content (dropColumn #submitter_email)
+  }
