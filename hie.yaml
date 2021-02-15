@@ -1,0 +1,13 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "zoomhub:lib"
+
+    - path: "./app/Main.hs"
+      component: "zoomhub:exe:zoomhub"
+
+    - path: "./app/MigrateDatabase.hs"
+      component: "zoomhub:exe:migrate-database"
+
+    - path: "./tests"
+      component: "zoomhub:test:tests"
