@@ -38,6 +38,7 @@ library
     , ZoomHub.Config.AWS
     , ZoomHub.Config.ProcessContent
     , ZoomHub.Config.Uploads
+    , ZoomHub.Debug
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
     , ZoomHub.Rackspace.CloudFiles
