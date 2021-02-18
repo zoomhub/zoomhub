@@ -344,6 +344,7 @@
     <article class="container">
       <!--
       <form class="upload-form">
+        <input type="email" name="email" />
         <input type="file" name="content" accept="image/png,image/jpeg" />
         <input type="submit" value="Upload image" name="submit" />
       </form>
@@ -436,15 +437,13 @@
     </article>
     <script>
       async function upload(file) {
-        let presignedPostData
-        try {
-          presignedPostData = await fetch(
-            "/v1/content/upload"
-          ).then((response) => response.json())
-        } catch (error) {
-          console.error("Failed to fetch S3 presigned POST data:", error)
-          return
-        }
+        // TODO: Handle errors
+        const email = document.querySelector('.upload-form input[name="email"]')
+          .value
+        // TODO: Handle errors
+        const presignedPostData = await fetch(
+          "/v1/content/upload?email=" + email
+        ).then((response) => response.json())
         const formData = new FormData()
         Object.entries(presignedPostData)
           .filter(([key, _]) => key !== "url")

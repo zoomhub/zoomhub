@@ -141,6 +141,7 @@ library
     , unix
     , unliftio
     , unordered-containers
+    , uri-encode
     , utf8-string
     , wai
     , wai-app-static

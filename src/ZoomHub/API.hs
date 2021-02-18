@@ -41,6 +41,7 @@ import Network.Minio.S3API as S3
     presignedPostPolicy,
   )
 import Network.URI (URI, parseRelativeReference, relativeTo)
+import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
@@ -168,7 +169,11 @@ type API =
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
     -- API: RESTful: Upload
-    :<|> "v1" :> "content" :> "upload" :> Get '[JSON] (HashMap Text Text)
+    :<|> "v1"
+      :> "content"
+      :> "upload"
+      :> RequiredQueryParam "email" Text
+      :> Get '[JSON] (HashMap Text Text)
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] AuthenticatedUser
       :> "v1"
@@ -182,6 +187,11 @@ type API =
     -- API: RESTful: Error: ID
     :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
     -- API: RESTful: URL
+    :<|> "v1" :> "content"
+      :> RequiredQueryParam "url" ContentURI
+      :> RequiredQueryParam "email" Text
+      :> Get '[JSON] Content
+    -- API: RESTful: Error: URL without email
     :<|> "v1" :> "content"
       :> RequiredQueryParam "url" ContentURI
       :> Get '[JSON] Content
@@ -225,6 +235,7 @@ server config =
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
+    :<|> restContentByURLWithoutEmail
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -342,8 +353,8 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: BaseURI -> AWS.Config -> Uploads -> Handler (HashMap Text Text)
-restUpload baseURI awsConfig uploads =
+restUpload :: BaseURI -> AWS.Config -> Uploads -> Text -> Handler (HashMap Text Text)
+restUpload baseURI awsConfig uploads email =
   case uploads of
     UploadsDisabled ->
       noNewContentErrorAPI
@@ -363,7 +374,16 @@ restUpload baseURI awsConfig uploads =
                 PPCEquals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
-                  (T.pack (show baseURI) <> "/v1/content?url=" <> s3URL)
+                  ( Debug.spy
+                      "success_action_redirect"
+                      ( T.pack (show baseURI)
+                          <> "/v1/content"
+                          <> "?email="
+                          <> URIEncode.encodeText email
+                          <> "&url="
+                          <> URIEncode.encodeText s3URL
+                      )
+                  )
               ]
       case ePolicy of
         Left policyError ->
@@ -439,8 +459,9 @@ restContentByURL ::
   Pool Connection ->
   ProcessContent ->
   ContentURI ->
+  Text -> -- Email
   Handler Content
-restContentByURL baseURI dbConnPool processContent url = do
+restContentByURL baseURI dbConnPool processContent url email = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case maybeContent of
     Nothing -> do
@@ -456,6 +477,11 @@ restContentByURL baseURI dbConnPool processContent url = do
           throwError . API.error503 $ failedToCreateContentErrorMessage
     Just content ->
       redirectToAPI baseURI (Internal.contentId content)
+
+restContentByURLWithoutEmail :: ContentURI -> Handler Content
+restContentByURLWithoutEmail _ =
+  throwError . API.error400 $
+    "ZoomHub now requires an 'email' query parameter to associate a submission with your account."
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
