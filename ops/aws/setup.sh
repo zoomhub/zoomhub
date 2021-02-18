@@ -15,6 +15,7 @@ aws s3api create-bucket \
 
 # Create the CI user with appropricate permissions
 aws iam create-user --user-name $CIUSER
+# NOTE: AWSElasticBeanstalkFullAccess --> AdministratorAccess-AWSElasticBeanstalk
 aws iam attach-user-policy --user-name $CIUSER --policy-arn arn:aws:iam::aws:policy/AWSElasticBeanstalkFullAccess
 aws iam attach-user-policy --user-name $CIUSER --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
 aws iam create-policy --policy-name deploy-bucket-policy --policy-document file://bucket-policy.json
