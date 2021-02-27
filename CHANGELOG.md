@@ -1,5 +1,11 @@
 # ZoomHub
 
+## 2021-02-28
+
+- Require email for each submission:
+  - `/v1/content/upload?email=<email>`
+  - `/v1/content?email=<email>&url=<url>`
+
 ## 3.1.0-alpha.1 – January 18, 2021
 
 - Add AWS Lambda worker for converting content into Deep Zoom Images (DZIs)
