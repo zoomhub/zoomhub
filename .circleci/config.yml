@@ -144,7 +144,7 @@ jobs:
               stack build --test \
                           --no-run-tests \
                           --no-terminal \
-                          --jobs 2 \
+                          --jobs 1 \
                           --install-ghc \
                           --pedantic \
                           --ghc-options='-O2' \
