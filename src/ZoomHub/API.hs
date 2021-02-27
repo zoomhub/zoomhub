@@ -172,7 +172,11 @@ type API =
     :<|> "v1"
       :> "content"
       :> "upload"
-      :> RequiredQueryParam "email" Text
+      :> RequiredQueryParam "email" Text -- TODO: Introduce `Email` type
+      :> Get '[JSON] (HashMap Text Text)
+    :<|> "v1"
+      :> "content"
+      :> "upload"
       :> Get '[JSON] (HashMap Text Text)
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] AuthenticatedUser
@@ -189,11 +193,7 @@ type API =
     -- API: RESTful: URL
     :<|> "v1" :> "content"
       :> RequiredQueryParam "url" ContentURI
-      :> RequiredQueryParam "email" Text
-      :> Get '[JSON] Content
-    -- API: RESTful: Error: URL without email
-    :<|> "v1" :> "content"
-      :> RequiredQueryParam "url" ContentURI
+      :> QueryParam "email" Text
       :> Get '[JSON] Content
     -- API: RESTful: Error: URL
     :<|> "v1" :> "content"
@@ -231,11 +231,11 @@ server config =
     :<|> jsonpInvalidRequest
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
+    :<|> restUploadWithoutEmail uploads
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
     :<|> restContentByURL baseURI dbConnPool processContent
-    :<|> restContentByURLWithoutEmail
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -403,6 +403,10 @@ restUpload baseURI awsConfig uploads email =
         maxUploadSizeBytes = 512 * 1024 * 1024
         s3Bucket = AWS.configSourcesS3Bucket awsConfig
 
+restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
+restUploadWithoutEmail UploadsDisabled = noNewContentErrorAPI
+restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
+
 restContentCompletionById ::
   BaseURI ->
   ContentBaseURI ->
@@ -456,15 +460,17 @@ restContentByURL ::
   Pool Connection ->
   ProcessContent ->
   ContentURI ->
-  Text -> -- Email
+  Maybe Text -> -- Email
   Handler Content
-restContentByURL baseURI dbConnPool processContent url email = do
+restContentByURL baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
-  case maybeContent of
-    Nothing -> do
+  case (maybeContent, mEmail) of
+    (Nothing, Nothing) -> do
+      missingEmailErrorAPI
+    (Nothing, Just email) -> do
       mNewContent <- case processContent of
         ProcessExistingAndNewContent ->
-          liftIO $ runPoolPQ (PG.initialize url) dbConnPool
+          liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
         _ ->
           noNewContentErrorAPI
       case mNewContent of
@@ -472,13 +478,8 @@ restContentByURL baseURI dbConnPool processContent url email = do
           redirectToAPI baseURI (Internal.contentId newContent)
         Nothing ->
           throwError . API.error503 $ failedToCreateContentErrorMessage
-    Just content ->
+    (Just content, _) ->
       redirectToAPI baseURI (Internal.contentId content)
-
-restContentByURLWithoutEmail :: ContentURI -> Handler Content
-restContentByURLWithoutEmail _ =
-  throwError . API.error400 $
-    "ZoomHub now requires an 'email' query parameter to associate a submission with your account."
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
@@ -578,6 +579,11 @@ noNewContentError err =
 
 noNewContentErrorMessage :: String
 noNewContentErrorMessage = "We are currently not processing new content."
+
+missingEmailErrorAPI :: Handler a
+missingEmailErrorAPI =
+  throwError . API.error400 $
+    "ZoomHub now requires an 'email' query parameter to associate a submission with your account."
 
 failedToCreateContentErrorMessage :: String
 failedToCreateContentErrorMessage =

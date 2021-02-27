@@ -132,6 +132,9 @@ newContentId = "Xar"
 newContentURL :: String
 newContentURL = "http://example.com"
 
+testEmail :: String
+testEmail = "test@example.com"
+
 authorizedUser :: APIUser
 authorizedUser = APIUser {username = "worker", password = "secr3t"}
 
@@ -212,7 +215,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content?url=mailto://example@example.com"
           `shouldRespondWith` invalidURL
       it "should accept new HTTP URLs" do
-        get ("/v1/content?url=" <> BC.pack newContentURL)
+        get ("/v1/content?email=" <> BC.pack testEmail <> "&url=" <> BC.pack newContentURL)
           `shouldRespondWith` restRedirect (fromString newContentId)
         get ("/v1/content/" <> BC.pack newContentId)
           `shouldRespondWith` "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\

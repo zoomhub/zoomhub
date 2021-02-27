@@ -330,7 +330,7 @@ data ContentRow =
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
 
-insertContent :: Manipulation_ Schemas (Only Text) ContentRow
+insertContent :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
 insertContent = insertInto #content
   ( Values_
     ( Default `as` #id :*
@@ -352,7 +352,7 @@ insertContent = insertInto #content
       Default `as` #num_abuse_reports :*
       Default `as` #num_views :*
       Default `as` #version :*
-      Set null_ `as` #submitter_email
+      Set (param @2) `as` #submitter_email
     )
   ) OnConflictDoRaise
   ( Returning_
