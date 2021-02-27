@@ -374,15 +374,12 @@ restUpload baseURI awsConfig uploads email =
                 PPCEquals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
-                  ( Debug.spy
-                      "success_action_redirect"
-                      ( T.pack (show baseURI)
-                          <> "/v1/content"
-                          <> "?email="
-                          <> URIEncode.encodeText email
-                          <> "&url="
-                          <> URIEncode.encodeText s3URL
-                      )
+                  ( T.pack (show baseURI)
+                      <> "/v1/content"
+                      <> "?email="
+                      <> URIEncode.encodeText email
+                      <> "&url="
+                      <> URIEncode.encodeText s3URL
                   )
               ]
       case ePolicy of
