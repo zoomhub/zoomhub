@@ -192,6 +192,7 @@ spec =
               contentNumViews content `shouldBe` 0
               contentError content `shouldBe` Nothing
               contentDZI content `shouldBe` Nothing
+              contentSubmitterEmail content `shouldBe` (Just testEmail)
             Nothing ->
               expectationFailure "expected content to be initialized"
     describe "markAsActive" do
