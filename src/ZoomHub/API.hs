@@ -15,6 +15,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
+import Data.Foldable (fold)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
@@ -374,12 +375,14 @@ restUpload baseURI awsConfig uploads email =
                 PPCEquals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
-                  ( T.pack (show baseURI)
-                      <> "/v1/content"
-                      <> "?email="
-                      <> URIEncode.encodeText email
-                      <> "&url="
-                      <> URIEncode.encodeText s3URL
+                  ( fold $
+                      [ T.pack $ show baseURI,
+                        "/v1/content",
+                        "?email=",
+                        URIEncode.encodeText email,
+                        "&url=",
+                        URIEncode.encodeText s3URL
+                      ]
                   )
               ]
       case ePolicy of
