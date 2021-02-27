@@ -583,7 +583,7 @@ noNewContentErrorMessage = "We are currently not processing new content."
 missingEmailErrorAPI :: Handler a
 missingEmailErrorAPI =
   throwError . API.error400 $
-    "ZoomHub now requires an 'email' query parameter to associate a submission with your account."
+    "ZoomHub now requires an 'email' query parameter to know who submitted an image."
 
 failedToCreateContentErrorMessage :: String
 failedToCreateContentErrorMessage =
