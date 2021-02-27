@@ -126,15 +126,15 @@ jobs:
       # Restore the dependency cache
       - restore_cache:
           keys:
-            - zh-stack-cache-v3-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}-{{ checksum "stack.yaml" }}
+            - zh-stack-cache-v4-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}-{{ checksum "stack.yaml" }}
             # This branch if available
-            - zh-stack-cache-v3-dep-{{ .Branch }}-
+            - zh-stack-cache-v4-dep-{{ .Branch }}-
             # Default branch if not
-            - zh-stack-cache-v3-dep-master-
+            - zh-stack-cache-v4-dep-master-
             # Any branch if there are none on the default branch -
             # this should be unnecessary if you have your default branch
             # configured correctly
-            - zh-stack-cache-v3-dep-
+            - zh-stack-cache-v4-dep-
 
       # Test
       - run:
@@ -201,7 +201,7 @@ jobs:
 
       # Save dependency cache
       - save_cache:
-          key: zh-stack-cache-v3-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}-{{ checksum "stack.yaml" }}
+          key: zh-stack-cache-v4-dep-{{ .Branch }}-{{ checksum "zoomhub.cabal" }}-{{ checksum "stack.yaml" }}
           paths:
             - ~/.stack
             - .stack-work
