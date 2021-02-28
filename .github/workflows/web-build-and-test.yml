@@ -1,0 +1,71 @@
+name: web-build-and-test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: "localhost"
+      PGPORT: "5432"
+      PGUSER: "zoomhub"
+      PGDATABASE: "zoomhub_test"
+
+    services:
+      postgres:
+        image: "circleci/postgres:9.6.5-alpine-ram"
+        env:
+          POSTGRES_USER: zoomhub
+          POSTGRES_DB: zoomhub_test
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: haskell/actions/setup@v1
+        with:
+          ghc-version: "8.6.5"
+          cabal-version: "latest"
+          enable-stack: true
+          stack-version: "latest"
+
+      - name: Cache
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-cabal
+        with:
+          path: ~/.cabal
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: Build and run tests
+        run: |
+          HASHIDS_SALT='secret-salt'\
+            stack build --test \
+                        --no-run-tests \
+                        --no-terminal \
+                        --jobs 1 \
+                        --install-ghc \
+                        --pedantic \
+                        --ghc-options='-O0' \
+                        --exec "migrate-database $PGDATABASE migrate"
+
+          psql $PGDATABASE < ./data/zoomhub_data.sql
+          psql $PGDATABASE < ./data/zoomhub_sequences.sql
+
+          stack build --test \
+                      --no-terminal \
+                      --install-ghc \
+                      --pedantic \
+                      --ghc-options='-O0'
