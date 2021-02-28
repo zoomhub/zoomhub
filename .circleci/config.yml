@@ -144,10 +144,10 @@ jobs:
               stack build --test \
                           --no-run-tests \
                           --no-terminal \
-                          --jobs 2 \
+                          --jobs 4 \
                           --install-ghc \
                           --pedantic \
-                          --ghc-options='-O2' \
+                          --ghc-options='-O0' \
                           --exec "migrate-database $PGDATABASE migrate"
 
             psql $PGDATABASE < ./data/zoomhub_data.sql
@@ -157,7 +157,7 @@ jobs:
                         --no-terminal \
                         --install-ghc \
                         --pedantic \
-                        --ghc-options='-O2'
+                        --ghc-options='-O0'
 
       # - run:
       #     name: Copy coverage reports

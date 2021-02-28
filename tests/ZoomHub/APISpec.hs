@@ -12,6 +12,7 @@ where
 import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
 import Data.Monoid ((<>))
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
@@ -46,7 +47,7 @@ import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
 import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
-import ZoomHub.Types.Content (contentNumViews)
+import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, fromString, unContentId)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
@@ -132,6 +133,9 @@ newContentId = "Xar"
 newContentURL :: String
 newContentURL = "http://example.com"
 
+testEmail :: String
+testEmail = "test@example.com"
+
 authorizedUser :: APIUser
 authorizedUser = APIUser {username = "worker", password = "secr3t"}
 
@@ -212,8 +216,12 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content?url=mailto://example@example.com"
           `shouldRespondWith` invalidURL
       it "should accept new HTTP URLs" do
-        get ("/v1/content?url=" <> BC.pack newContentURL)
+        get ("/v1/content?email=" <> BC.pack testEmail <> "&url=" <> BC.pack newContentURL)
           `shouldRespondWith` restRedirect (fromString newContentId)
+        liftIO do
+          let pool = Config.dbConnPool config
+          mContent <- runPoolPQ (getById $ fromString newContentId) pool
+          (mContent >>= contentSubmitterEmail) `shouldBe` (Just $ T.pack testEmail)
         get ("/v1/content/" <> BC.pack newContentId)
           `shouldRespondWith` "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
                               \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/Xar\

@@ -15,6 +15,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
+import Data.Foldable (fold)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
@@ -41,6 +42,7 @@ import Network.Minio.S3API as S3
     presignedPostPolicy,
   )
 import Network.URI (URI, parseRelativeReference, relativeTo)
+import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
@@ -168,7 +170,15 @@ type API =
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
     -- API: RESTful: Upload
-    :<|> "v1" :> "content" :> "upload" :> Get '[JSON] (HashMap Text Text)
+    :<|> "v1"
+      :> "content"
+      :> "upload"
+      :> RequiredQueryParam "email" Text -- TODO: Introduce `Email` type
+      :> Get '[JSON] (HashMap Text Text)
+    :<|> "v1"
+      :> "content"
+      :> "upload"
+      :> Get '[JSON] (HashMap Text Text)
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] AuthenticatedUser
       :> "v1"
@@ -184,6 +194,7 @@ type API =
     -- API: RESTful: URL
     :<|> "v1" :> "content"
       :> RequiredQueryParam "url" ContentURI
+      :> QueryParam "email" Text
       :> Get '[JSON] Content
     -- API: RESTful: Error: URL
     :<|> "v1" :> "content"
@@ -221,6 +232,7 @@ server config =
     :<|> jsonpInvalidRequest
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
+    :<|> restUploadWithoutEmail uploads
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
@@ -342,8 +354,8 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: BaseURI -> AWS.Config -> Uploads -> Handler (HashMap Text Text)
-restUpload baseURI awsConfig uploads =
+restUpload :: BaseURI -> AWS.Config -> Uploads -> Text -> Handler (HashMap Text Text)
+restUpload baseURI awsConfig uploads email =
   case uploads of
     UploadsDisabled ->
       noNewContentErrorAPI
@@ -363,7 +375,15 @@ restUpload baseURI awsConfig uploads =
                 PPCEquals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
-                  (T.pack (show baseURI) <> "/v1/content?url=" <> s3URL)
+                  ( fold $
+                      [ T.pack $ show baseURI,
+                        "/v1/content",
+                        "?email=",
+                        URIEncode.encodeText email,
+                        "&url=",
+                        URIEncode.encodeText s3URL
+                      ]
+                  )
               ]
       case ePolicy of
         Left policyError ->
@@ -385,6 +405,10 @@ restUpload baseURI awsConfig uploads =
         minUploadSizeBytes = 1
         maxUploadSizeBytes = 512 * 1024 * 1024
         s3Bucket = AWS.configSourcesS3Bucket awsConfig
+
+restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
+restUploadWithoutEmail UploadsDisabled = noNewContentErrorAPI
+restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
 
 restContentCompletionById ::
   BaseURI ->
@@ -439,14 +463,17 @@ restContentByURL ::
   Pool Connection ->
   ProcessContent ->
   ContentURI ->
+  Maybe Text -> -- Email
   Handler Content
-restContentByURL baseURI dbConnPool processContent url = do
+restContentByURL baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
-  case maybeContent of
-    Nothing -> do
+  case (maybeContent, mEmail) of
+    (Nothing, Nothing) -> do
+      missingEmailErrorAPI
+    (Nothing, Just email) -> do
       mNewContent <- case processContent of
         ProcessExistingAndNewContent ->
-          liftIO $ runPoolPQ (PG.initialize url) dbConnPool
+          liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
         _ ->
           noNewContentErrorAPI
       case mNewContent of
@@ -454,7 +481,7 @@ restContentByURL baseURI dbConnPool processContent url = do
           redirectToAPI baseURI (Internal.contentId newContent)
         Nothing ->
           throwError . API.error503 $ failedToCreateContentErrorMessage
-    Just content ->
+    (Just content, _) ->
       redirectToAPI baseURI (Internal.contentId content)
 
 restInvalidRequest :: Maybe String -> Handler Content
@@ -555,6 +582,11 @@ noNewContentError err =
 
 noNewContentErrorMessage :: String
 noNewContentErrorMessage = "We are currently not processing new content."
+
+missingEmailErrorAPI :: Handler a
+missingEmailErrorAPI =
+  throwError . API.error400 $
+    "ZoomHub now requires an 'email' query parameter to know who submitted an image."
 
 failedToCreateContentErrorMessage :: String
 failedToCreateContentErrorMessage =

@@ -42,7 +42,7 @@ That’s also where we’re tracking TODOs and remaining work.
 
 Special thanks to:
 
-- **Bill Crow** and **David Vos** for keeping [zoom.it] alive at Microsoft
+- **Bill Crow** (RIP) and **David Vos** for keeping [zoom.it] alive at Microsoft
   through the years, and helping us transition it when its time came.
   They moved mountains to get us both the data and the domain.
 

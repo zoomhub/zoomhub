@@ -1,5 +1,5 @@
-
 {-# OPTIONS_GHC -O0 #-}
+{-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
@@ -169,6 +169,7 @@ selectContentBy clauses = select_
     #content ! #num_abuse_reports `as` #cirNumAbuseReports :*
     #content ! #num_views `as` #cirNumViews :*
     #content ! #version `as` #cirVersion :*
+    #content ! #submitter_email `as` #cirSubmitterEmail :*
     #image ! #width `as` #cirWidth :*
     #image ! #height `as` #cirHeight :*
     #image ! #tile_size `as` #cirTileSize :*
@@ -230,6 +231,7 @@ data ContentImageRow = ContentImageRow
   , cirNumAbuseReports :: Int64
   , cirNumViews :: Int64
   , cirVersion :: Int32
+  , cirSubmitterEmail :: Maybe Text -- TODO: Introduce `Email` type
     -- image
   , cirWidth :: Maybe Int64
   , cirHeight :: Maybe Int64
@@ -266,6 +268,7 @@ contentImageRowToContent cr = Content
     , contentNumViews = fromIntegral (cirNumViews cr)
     , contentError = cirError cr
     , contentDZI = mDZI
+    , contentSubmitterEmail = cirSubmitterEmail cr
     }
   where
     mDZI = mkDeepZoomImage <$>
@@ -299,19 +302,20 @@ contentRowToContent result =
   , contentNumViews = crNumViews result
   , contentError = crError result
   , contentDZI = Nothing
+  , contentSubmitterEmail = crSubmitterEmail result
   }
 
 data ContentRow =
   ContentRow
-  { crHashId :: ContentId           -- 1
-  , crTypeId :: ContentType         -- 2
-  , crURL :: ContentURI             -- 3
-  , crState :: ContentState         -- 4
-  , crInitializedAt :: UTCTime      -- 5
-  , crActiveAt :: Maybe UTCTime     -- 6
-  , crCompletedAt :: Maybe UTCTime  -- 7
-  , crTitle :: Maybe Text           -- 8
-  , crAttributionText :: Maybe Text -- 9
+  { crHashId :: ContentId           --  1
+  , crTypeId :: ContentType         --  2
+  , crURL :: ContentURI             --  3
+  , crState :: ContentState         --  4
+  , crInitializedAt :: UTCTime      --  5
+  , crActiveAt :: Maybe UTCTime     --  6
+  , crCompletedAt :: Maybe UTCTime  --  7
+  , crTitle :: Maybe Text           --  8
+  , crAttributionText :: Maybe Text --  9
   , crAttributionLink :: Maybe Text -- 10
   , crMIME :: Maybe ContentMIME     -- 11
   , crSize :: Maybe Int64           -- 12
@@ -321,11 +325,12 @@ data ContentRow =
   , crNumAbuseReports :: Int64      -- 16
   , crNumViews :: Int64             -- 17
   , crVersion :: Int32              -- 18
+  , crSubmitterEmail :: Maybe Text  -- 19
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
 
-insertContent :: Manipulation_ Schemas (Only Text) ContentRow
+insertContent :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
 insertContent = insertInto #content
   ( Values_
     ( Default `as` #id :*
@@ -346,7 +351,8 @@ insertContent = insertInto #content
       Default `as` #abuse_level_id :*
       Default `as` #num_abuse_reports :*
       Default `as` #num_views :*
-      Default `as` #version
+      Default `as` #version :*
+      Set (param @2) `as` #submitter_email
     )
   ) OnConflictDoRaise
   ( Returning_
@@ -367,7 +373,8 @@ insertContent = insertInto #content
       #abuse_level_id `as` #crAbuseLevelId :*
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
-      #version `as` #crVersion
+      #version `as` #crVersion :*
+      #submitter_email `as` #crSubmitterEmail
     )
   )
 
@@ -404,7 +411,8 @@ markContentAsActive = update #content
       #abuse_level_id `as` #crAbuseLevelId :*
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
-      #version `as` #crVersion
+      #version `as` #crVersion :*
+      #submitter_email `as` #crSubmitterEmail
     )
   )
 
@@ -440,7 +448,8 @@ markContentAsFailure = update #content
       #abuse_level_id `as` #crAbuseLevelId :*
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
-      #version `as` #crVersion
+      #version `as` #crVersion :*
+      #submitter_email `as` #crSubmitterEmail
     )
   )
 
@@ -476,7 +485,8 @@ markContentAsSuccess = update #content
       #abuse_level_id `as` #crAbuseLevelId :*
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
-      #version `as` #crVersion
+      #version `as` #crVersion :*
+      #submitter_email `as` #crSubmitterEmail
     )
   )
 
@@ -510,7 +520,8 @@ resetContentAsInitialized = update #content
       #abuse_level_id `as` #crAbuseLevelId :*
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
-      #version `as` #crVersion
+      #version `as` #crVersion :*
+      #submitter_email `as` #crSubmitterEmail
     )
   )
 
@@ -592,7 +603,8 @@ unsafeInsertContent = insertInto #content
       Set (param @15) `as` #abuse_level_id :*
       Set (param @16) `as` #num_abuse_reports :*
       Set (param @17) `as` #num_views :*
-      Set (param @18) `as` #version
+      Set (param @18) `as` #version :*
+      Set (param @19) `as` #submitter_email
     )
   ) OnConflictDoRaise
   ( Returning_
@@ -613,7 +625,8 @@ unsafeInsertContent = insertInto #content
       #abuse_level_id `as` #crAbuseLevelId :*
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
-      #version `as` #crVersion
+      #version `as` #crVersion :*
+      #submitter_email `as` #crSubmitterEmail
     )
   )
 
@@ -637,6 +650,7 @@ contentToRow c = ContentRow
   , crNumAbuseReports = 0
   , crNumViews = contentNumViews c
   , crVersion = 4 -- TODO: Replace hard-coded value
+  , crSubmitterEmail = contentSubmitterEmail c
   }
 
 toNominalDiffTime :: TimeUnit a => a -> NominalDiffTime

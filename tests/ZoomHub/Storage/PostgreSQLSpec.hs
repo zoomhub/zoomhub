@@ -16,6 +16,7 @@ import Control.Monad (forM_, void)
 import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
 import Data.Int (Int64)
+import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time.Clock
   ( NominalDiffTime,
@@ -80,6 +81,7 @@ import ZoomHub.Types.Content
     contentProgress,
     contentSize,
     contentState,
+    contentSubmitterEmail,
     contentType,
     contentURL,
   )
@@ -172,7 +174,7 @@ spec =
       it "should return initialized content" do
         \conn -> do
           currentTime <- safeGetCurrentTime
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               -- HACK: Hard-coded content ID set by database trigger
@@ -190,12 +192,13 @@ spec =
               contentNumViews content `shouldBe` 0
               contentError content `shouldBe` Nothing
               contentDZI content `shouldBe` Nothing
+              contentSubmitterEmail content `shouldBe` (Just testEmail)
             Nothing ->
               expectationFailure "expected content to be initialized"
     describe "markAsActive" do
       it "should mark content as active" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               currentTime <- safeGetCurrentTime
@@ -220,7 +223,7 @@ spec =
     describe "markAsSuccess" do
       it "should mark content as successful" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               currentTime <- safeGetCurrentTime
@@ -251,7 +254,7 @@ spec =
     describe "markAsFailure" do
       it "should mark content as failure" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               currentTime <- safeGetCurrentTime
@@ -278,7 +281,7 @@ spec =
     describe "resetAsInitialized" do
       it "should reset content as initialized" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               let cId = contentId content
@@ -332,7 +335,7 @@ spec =
     describe "getById" do
       it "should return item by hash ID" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               (result, _) <- runPQ (getById $ contentId content) conn
@@ -342,7 +345,7 @@ spec =
     describe "getById'" do
       it "should increase number of views" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               let cId = contentId content
@@ -356,7 +359,7 @@ spec =
     describe "getByURL" do
       it "should return item by URL" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               (result, _) <- runPQ (getByURL testURL) conn
@@ -366,7 +369,7 @@ spec =
     describe "getByURL'" do
       it "should increase number of views" do
         \conn -> do
-          (mContent, _) <- runPQ (initialize testURL) conn
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
           case mContent of
             Just content -> do
               let url = contentURL content
@@ -437,7 +440,8 @@ spec =
           contentProgress = 0.0,
           contentNumViews = numViews,
           contentError = Nothing,
-          contentDZI = Nothing
+          contentDZI = Nothing,
+          contentSubmitterEmail = Nothing
         }
     mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkActiveContent id_ currentTime age =
@@ -454,7 +458,8 @@ spec =
           contentProgress = 0.0,
           contentNumViews = 0,
           contentError = Nothing,
-          contentDZI = Nothing
+          contentDZI = Nothing,
+          contentSubmitterEmail = Nothing
         }
       where
         activeAt = addUTCTime (- age) currentTime
@@ -476,12 +481,15 @@ spec =
               contentProgress = 1.0,
               contentNumViews = 0,
               contentError = Nothing,
-              contentDZI = Just dzi
+              contentDZI = Just dzi,
+              contentSubmitterEmail = Nothing
             }
       where
         activeAt = addUTCTime (- age) currentTime
     testURL :: ContentURI
     testURL = ContentURI "https://example.com/1"
+    testEmail :: Text
+    testEmail = "test@example.com"
     isWithinSecondsOf :: UTCTime -> NominalDiffTime -> UTCTime -> Bool
     isWithinSecondsOf pivot interval t =
       let upperBound = addUTCTime interval pivot

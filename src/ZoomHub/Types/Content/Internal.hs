@@ -29,7 +29,8 @@ data Content
         contentProgress :: Double,
         contentNumViews :: Int64,
         contentError :: Maybe Text,
-        contentDZI :: Maybe DeepZoomImage
+        contentDZI :: Maybe DeepZoomImage,
+        contentSubmitterEmail :: Maybe Text -- TODO: Introduce `Email` type
       }
   deriving (Eq, GHC.Generic, Show)
 
@@ -48,7 +49,8 @@ mkContent type_ cId uri initializedAt =
       contentProgress = 0.0,
       contentNumViews = 0,
       contentError = Nothing,
-      contentDZI = Nothing
+      contentDZI = Nothing,
+      contentSubmitterEmail = Nothing
     }
 
 -- PostgreSQL / Squeal

@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -O0 #-}
+{-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 module ZoomHub.Storage.PostgreSQL
   ( -- ** Schema
@@ -148,10 +149,11 @@ getByURL' = getBy' ((#content ! #url) .== param @1)
 initialize ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>
   ContentURI ->
+  Text -> -- Email
   m (Maybe Content)
-initialize uri =
+initialize uri email =
   transactionally_ $ do
-    result <- manipulateParams insertContent (Only uri)
+    result <- manipulateParams insertContent (uri, Just email)
     mRow <- firstRow result
     return $ contentRowToContent <$> mRow
 

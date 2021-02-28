@@ -64,7 +64,7 @@ Note that all response objects have a `content`, `dzi`, or `error` object.
 
 ### URLs
 
-`GET /v1/content/upload`
+`GET /v1/content/upload?email=<email>`
 
 - 200 w/ S3 presigned POST request parameters
 - 503 w/ error message if uploads are disabled
@@ -74,9 +74,10 @@ Note that all response objects have a `content`, `dzi`, or `error` object.
 - 200 w/ Content object if exists
 - 404 w/ error message if doesn’t exist
 
-`GET /v1/content?url=<url>` (be sure to percent-encode the URL)
+`GET /v1/content?email=<email>&url=<url>` (for new submission)
+`GET /v1/content?url=<url>` (for existing content)
 
-- 3xx to `/v1/content/:id`, w/ Content object for convenience, if URL is valid
+- 3xx to `/v1/content/:id`, w/ `Content` object for convenience, if URL is valid
 - 400 w/ error message if URL is invalid (e.g. malformed)
 - 503 w/ error message if URL is new and ZoomHub is closed for new content
 
