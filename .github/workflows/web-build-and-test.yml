@@ -41,10 +41,12 @@ jobs:
       - name: Cache
         uses: actions/cache@v1
         env:
-          cache-name: cache-cabal
+          cache-name: cache-stack
         with:
-          path: ~/.cabal
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+          path: |
+            ~/.stack
+            .stack-work
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
