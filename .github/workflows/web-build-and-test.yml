@@ -18,11 +18,11 @@ jobs:
 
     services:
       postgres:
-        image: "circleci/postgres:9.6.5-alpine-ram"
+        image: postgres:10.13
         env:
           POSTGRES_USER: zoomhub
           POSTGRES_DB: zoomhub_test
-        # Set health checks to wait until postgres has started
+        # Set health checks to wait until PostgreSQL has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -52,6 +52,8 @@ jobs:
 
       - name: Build and run tests
         run: |
+          echo $PGDATABASE
+
           HASHIDS_SALT='secret-salt'\
             stack build --test \
                         --no-run-tests \
