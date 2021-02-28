@@ -5,6 +5,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -O0 #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 module ZoomHub.Storage.PostgreSQL.Schema.Schema0

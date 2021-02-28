@@ -1,9 +1,11 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -O0 #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 module ZoomHub.Storage.PostgreSQL.Schema.Schema2
@@ -31,7 +33,6 @@ import Squeal.PostgreSQL
   )
 import Squeal.PostgreSQL.Migration (Migration (..))
 import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, FlickrTable0, ImageTable0)
-import ZoomHub.Storage.PostgreSQL.Schema.Schema1 (Schemas1)
 
 type Schema2 =
   '[ ConfigTable0,
@@ -73,15 +74,15 @@ type ContentTable2 =
                    ]
           )
 
-migration :: Migration Definition Schemas1 Schemas2
+migration :: Migration Definition _ Schemas2
 migration = Migration
   { name = "2021-02-28-1: Add verification token",
     up = setup,
     down = teardown
   }
 
-setup :: Definition Schemas1 Schemas2
+setup :: Definition _ Schemas2
 setup = alterTable #content (addColumn #verification_token (text & nullable))
 
-teardown :: Definition Schemas2 Schemas1
+teardown :: Definition Schemas2 _
 teardown = alterTable #content (dropColumn #verification_token)
