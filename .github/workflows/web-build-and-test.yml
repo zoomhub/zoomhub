@@ -18,7 +18,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:10.13
+        image: postgres:9.6.5
         env:
           POSTGRES_USER: zoomhub
           POSTGRES_DB: zoomhub_test
@@ -52,8 +52,6 @@ jobs:
 
       - name: Build and run tests
         run: |
-          echo $PGDATABASE
-
           HASHIDS_SALT='secret-salt'\
             stack build --test \
                         --no-run-tests \
