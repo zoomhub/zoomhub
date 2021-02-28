@@ -211,6 +211,7 @@ selectImageBy condition = select_
 
 -- TODO: How can we avoid this duplication between `ContentRow`,
 -- `ContentImageRow`, and `ImageRow`?
+-- TODO: Look into Squeal’s `Join`.
 data ContentImageRow = ContentImageRow
   { -- content
     cirHashId :: ContentId
