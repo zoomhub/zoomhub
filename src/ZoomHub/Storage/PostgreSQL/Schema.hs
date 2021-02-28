@@ -26,9 +26,7 @@ import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema1 as Schema1
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema2 as Schema2
 import ZoomHub.Storage.PostgreSQL.Schema.Schema2 (Schema2)
 
-type Schema = Schema2
-
-type Schemas = Public Schema
+type Schemas = Public Schema2
 
 migrations :: String -> AlignedList (Migration Definition) (Public '[]) Schemas
 migrations hashidsSecret =
