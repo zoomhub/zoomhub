@@ -47,7 +47,7 @@ import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
 import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
-import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail)
+import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVerificationToken)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, fromString, unContentId)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
@@ -222,6 +222,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           let pool = Config.dbConnPool config
           mContent <- runPoolPQ (getById $ fromString newContentId) pool
           (mContent >>= contentSubmitterEmail) `shouldBe` (Just $ T.pack testEmail)
+          (mContent >>= \c -> T.length <$> contentVerificationToken c) `shouldBe` (Just 36)
         get ("/v1/content/" <> BC.pack newContentId)
           `shouldRespondWith` "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
                               \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/Xar\

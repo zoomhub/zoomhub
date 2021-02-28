@@ -6,10 +6,8 @@
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
-module ZoomHub.Storage.PostgreSQL.Schema.Schema1
-  ( ContentTable1,
-    Schema1,
-    Schemas1,
+module ZoomHub.Storage.PostgreSQL.Schema.Schema2
+  ( Schema2,
     migration,
   )
 where
@@ -32,18 +30,19 @@ import Squeal.PostgreSQL
     text,
   )
 import Squeal.PostgreSQL.Migration (Migration (..))
-import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, FlickrTable0, ImageTable0, Schemas0)
+import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, FlickrTable0, ImageTable0)
+import ZoomHub.Storage.PostgreSQL.Schema.Schema1 (Schemas1)
 
-type Schema1 =
+type Schema2 =
   '[ ConfigTable0,
-     ContentTable1,
+     ContentTable2,
      ImageTable0,
      FlickrTable0
    ]
 
-type Schemas1 = Public Schema1
+type Schemas2 = Public Schema2
 
-type ContentTable1 =
+type ContentTable2 =
   "content"
     ::: 'Table
           ( '[ "pk_content" ::: 'PrimaryKey '["id"],
@@ -69,19 +68,20 @@ type ContentTable1 =
                      "num_abuse_reports" ::: 'Def :=> 'NotNull 'PGint8,
                      "num_views" ::: 'Def :=> 'NotNull 'PGint8,
                      "version" ::: 'Def :=> 'NotNull 'PGint4,
-                     "submitter_email" ::: 'NoDef :=> 'Null 'PGtext
+                     "submitter_email" ::: 'NoDef :=> 'Null 'PGtext,
+                     "verification_token" ::: 'NoDef :=> 'Null 'PGtext
                    ]
           )
 
-migration :: Migration Definition Schemas0 Schemas1
+migration :: Migration Definition Schemas1 Schemas2
 migration = Migration
-  { name = "2021-02-15-1: Add submitter email",
+  { name = "2021-02-28-1: Add verification token",
     up = setup,
     down = teardown
   }
 
-setup :: Definition Schemas0 Schemas1
-setup = alterTable #content (addColumn #submitter_email (text & nullable))
+setup :: Definition Schemas1 Schemas2
+setup = alterTable #content (addColumn #verification_token (text & nullable))
 
-teardown :: Definition Schemas1 Schemas0
-teardown = alterTable #content (dropColumn #submitter_email)
+teardown :: Definition Schemas2 Schemas1
+teardown = alterTable #content (dropColumn #verification_token)

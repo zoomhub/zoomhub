@@ -39,6 +39,7 @@ import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
+import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
   ( (!),
     (&),
@@ -151,9 +152,10 @@ initialize ::
   ContentURI ->
   Text -> -- Email
   m (Maybe Content)
-initialize uri email =
+initialize uri email = do
+  verificationToken <- show <$> liftIO UUIDV4.nextRandom
   transactionally_ $ do
-    result <- manipulateParams insertContent (uri, Just email)
+    result <- manipulateParams insertContent (uri, Just email, Just verificationToken)
     mRow <- firstRow result
     return $ contentRowToContent <$> mRow
 
