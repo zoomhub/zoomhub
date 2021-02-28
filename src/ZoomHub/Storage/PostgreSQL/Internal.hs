@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
@@ -11,7 +12,6 @@
 
 -- Simplify Squeal query type signatures
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module ZoomHub.Storage.PostgreSQL.Internal
   ( module ZoomHub.Storage.PostgreSQL.Internal
