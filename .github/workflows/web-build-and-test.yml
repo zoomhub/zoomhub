@@ -57,7 +57,6 @@ jobs:
                         --no-run-tests \
                         --no-terminal \
                         --jobs 4 \
-                        --install-ghc \
                         --pedantic \
                         --ghc-options='-O0' \
                         --exec "migrate-database $PGDATABASE migrate"
@@ -67,6 +66,5 @@ jobs:
 
           stack build --test \
                       --no-terminal \
-                      --install-ghc \
                       --pedantic \
                       --ghc-options='-O0'
