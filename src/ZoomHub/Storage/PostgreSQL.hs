@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -O0 #-}
+{-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 module ZoomHub.Storage.PostgreSQL
   ( -- ** Schema

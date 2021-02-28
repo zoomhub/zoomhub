@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -O0 #-}
+{-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
