@@ -58,7 +58,7 @@ jobs:
                         --no-terminal \
                         --jobs 4 \
                         --pedantic \
-                        --ghc-options='-O0' \
+                        --ghc-options='-O2' \
                         --exec "migrate-database $PGDATABASE migrate"
 
           psql $PGDATABASE < ./data/zoomhub_data.sql
@@ -67,4 +67,4 @@ jobs:
           stack build --test \
                       --no-terminal \
                       --pedantic \
-                      --ghc-options='-O0'
+                      --ghc-options='-O2'
