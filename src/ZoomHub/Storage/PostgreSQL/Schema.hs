@@ -4,7 +4,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -O0 #-}
-{-# OPTIONS_GHC -fomit-interface-pragmas #-}
+{-# OPTIONS_GHC -fomit-interface-pragmas -fno-specialise -fno-full-laziness #-}
 
 module ZoomHub.Storage.PostgreSQL.Schema
   ( Schemas,
