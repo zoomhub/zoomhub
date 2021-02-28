@@ -38,15 +38,25 @@ jobs:
           enable-stack: true
           stack-version: "latest"
 
-      - name: Cache
+      - name: Cache ~/.stack
         uses: actions/cache@v1
         env:
           cache-name: cache-stack
         with:
-          path: |
-            ~/.stack
-            .stack-work
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml')-${{ hashFiles('**/stack.yaml.lock') }}
+          path: ~/.stack
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: Cache .stack-work
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-stack-work
+        with:
+          path: .stack-work
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
