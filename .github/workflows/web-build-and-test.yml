@@ -56,7 +56,7 @@ jobs:
             stack build --test \
                         --no-run-tests \
                         --no-terminal \
-                        --jobs 1 \
+                        --jobs 4 \
                         --install-ghc \
                         --pedantic \
                         --ghc-options='-O0' \
