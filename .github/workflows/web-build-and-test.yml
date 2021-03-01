@@ -15,6 +15,7 @@ jobs:
       PGPORT: "5432"
       PGUSER: "zoomhub"
       PGDATABASE: "zoomhub_test"
+      PGPASSWORD: "popcorn"
 
     services:
       postgres:
@@ -22,6 +23,7 @@ jobs:
         env:
           POSTGRES_USER: zoomhub
           POSTGRES_DB: zoomhub_test
+          POSTGRES_PASSWORD: popcorn
         # Set health checks to wait until PostgreSQL has started
         options: >-
           --health-cmd pg_isready
