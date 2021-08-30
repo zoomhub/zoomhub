@@ -78,12 +78,6 @@ jobs:
 
       - name: Run tests
         run: |
-          echo "PGHOST: $PGHOST"
-          echo "PGPORT: $PGPORT"
-          echo "PGUSER: $PGUSER"
-          echo "PGDATABASE: $PGDATABASE"
-          echo "PGPASSWORD: $PGPASSWORD"
-
           HASHIDS_SALT='secret-salt' \
             stack build --test \
                         --no-run-tests \
