@@ -153,6 +153,12 @@ jobs:
         with:
           name: workspace
 
+      - name: pwd
+        run: pwd
+
+      - name: List files
+        run: ls -laR
+
       - name: Create version
         run: echo $GITHUB_SHA > version.txt
 
