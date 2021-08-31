@@ -98,13 +98,47 @@ jobs:
             --pedantic \
             --ghc-options='-O2'
 
-      - name: Upload binaries
+      - name: Create workspace directory
+        run: mkdir workspace
+
+      - name: Copy AWS ops files to workspace
+        run: |
+          cp -R \
+            ops/aws/.ebextensions \
+            ops/aws/.platform \
+            ops/aws/deploy-web.sh \
+            ops/aws/Dockerfile.deploy \
+            ops/aws/Dockerrun.aws.json.template \
+            ops/aws/run.sh \
+            workspace
+
+      - name: Copy public files to workspace
+        run: cp -R public workspace
+
+      - name: Copy zoomhub app binary to workspace
+        run: cp "$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')" workspace
+
+      - name: Copy database migration binary to workspace
+        run: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
+
+      - name: Upload workspace
         uses: actions/upload-artifact@v2
         with:
-          name: binaries
+          name: workspace
           path: |
-            zoomhub
+            workspace
+            # deployment
+            .ebextensions
+            .platform
+            run.sh
+            deploy-web.sh
+            Dockerfile.deploy
+            Dockerrun.aws.json.template
+            # migration
             migrate-database
+            # app
+            public
+            zoomhub
 
   deploy:
     runs-on: ubuntu-latest
@@ -113,10 +147,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Download binaries
+      - name: Download workspace
         uses: actions/download-artifact@v2
         with:
-          name: binaries
+          name: workspace
 
       - name: Create version
         run: echo $GITHUB_SHA > version.txt
