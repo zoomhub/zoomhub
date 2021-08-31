@@ -106,6 +106,7 @@ jobs:
           cp -R \
             ops/aws/.ebextensions \
             ops/aws/.platform \
+            ops/aws/build-web.sh \
             ops/aws/deploy-web.sh \
             ops/aws/Dockerfile.deploy \
             ops/aws/Dockerrun.aws.json.template \
