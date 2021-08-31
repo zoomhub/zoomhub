@@ -146,27 +146,22 @@ jobs:
     needs: build
     # if: github.ref == 'refs/heads/master'
     steps:
-      - uses: actions/checkout@v2
-
       - name: Download workspace
         uses: actions/download-artifact@v2
         with:
           name: workspace
 
-      - name: pwd
-        run: pwd
-
       - name: List files
-        run: ls -laR
+        run: ls -laR workspace
 
       - name: Create version
-        run: echo $GITHUB_SHA > version.txt
+        run: echo $GITHUB_SHA > workspace/version.txt
 
       - name: Build Docker image
-        run: ./build-web.sh $GITHUB_SHA
+        run: cd workspace && ./build-web.sh $GITHUB_SHA
 
       - name: Deploy 'web' Docker image to AWS Elastic Beanstalk
-        run: ./deploy-web.sh $GITHUB_SHA
+        run: cd workspace && ./deploy-web.sh $GITHUB_SHA
 
       - name: Deploy 'processContent' to AWS Lambda
-        run: ./deploy-processContent.sh
+        run: cd workspace && ./deploy-processContent.sh
