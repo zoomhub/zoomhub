@@ -148,8 +148,11 @@ jobs:
       - name: Create version
         run: echo $GITHUB_SHA > workspace/version.txt
 
+      - name: "Debug: List files"
+        run: ls -laR workspace
+
       - name: Build Docker image
         run: cd workspace && bash build-web.sh $GITHUB_SHA
 
-      - name: Deploy 'web' Docker image to AWS Elastic Beanstalk
-        run: cd workspace && bash deploy-web.sh $GITHUB_SHA
+      # - name: Deploy 'web' Docker image to AWS Elastic Beanstalk
+      #   run: cd workspace && bash deploy-web.sh $GITHUB_SHA
