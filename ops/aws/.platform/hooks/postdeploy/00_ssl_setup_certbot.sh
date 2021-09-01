@@ -58,6 +58,9 @@ if [ -z "$CERTBOT_NAME" ] || [ -z "$CERTBOT_EMAIL" ] || [ -z "$CERTBOT_DOMAINS" 
     exit 1
 fi
 
+# WORKAROUND: Stderr:Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+yum makecache fast
+
 # Install EPEL
 # Source: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-linux-ami-basics.html
 log_debug "yum: Install EPEL"
