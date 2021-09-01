@@ -106,6 +106,7 @@ jobs:
           cp -R \
             ops/aws/.ebextensions \
             ops/aws/.platform \
+            ops/aws/bingo.sh \
             ops/aws/build-web.sh \
             ops/aws/deploy-web.sh \
             ops/aws/Dockerfile.deploy \
@@ -156,6 +157,12 @@ jobs:
 
       - name: Create version
         run: echo $GITHUB_SHA > workspace/version.txt
+
+      - name: Test command (direct)
+        run: workspace/bingo.sh
+
+      - name: Test command (with `cd`)
+        run: cd workspace && ./bingo.sh
 
       - name: Build Docker image
         run: cd workspace && ./build-web.sh $GITHUB_SHA
