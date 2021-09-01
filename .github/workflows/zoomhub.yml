@@ -103,7 +103,7 @@ jobs:
 
       - name: Copy AWS ops files to workspace
         run: |
-          cp --recursive \
+          cp --recursive --preserve \
             ops/aws/.ebextensions \
             ops/aws/.platform \
             ops/aws/build-web.sh \
