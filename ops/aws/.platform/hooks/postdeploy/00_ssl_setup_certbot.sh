@@ -75,6 +75,9 @@ if yum list installed epel-release && ! command -v certbot &>/dev/null; then
 fi
 
 
+log_debug "nginx: Print configuration"
+cat /etc/nginx/nginx.conf
+
 # HTTP_STRING='^http\s*{$'
 # NAME_LIMIT='http {\nserver_names_hash_bucket_size 192;\n'
 
