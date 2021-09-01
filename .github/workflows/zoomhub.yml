@@ -126,20 +126,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: workspace
-          path: |
-            workspace
-            # deployment
-            .ebextensions
-            .platform
-            run.sh
-            deploy-web.sh
-            Dockerfile.deploy
-            Dockerrun.aws.json.template
-            # migration
-            migrate-database
-            # app
-            public
-            zoomhub
+          path: workspace
 
   deploy:
     runs-on: ubuntu-latest
