@@ -122,11 +122,15 @@ jobs:
       - name: Copy database migration binary to workspace
         run: cp "$(find .stack-work/dist -type f -name migrate-database)" workspace
 
+      - name: "WORKAROUND: Create tar archive (preserves file permissions on GitHub Actions)"
+        # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
+        run: tar -cvf workspace.tar workspace
+
       - name: Upload workspace
         uses: actions/upload-artifact@v2
         with:
           name: workspace
-          path: workspace
+          path: workspace.tar
 
   deploy:
     runs-on: ubuntu-latest
@@ -144,6 +148,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: workspace
+
+      - name: "WORKAROUND: Extract tar archive (preserves file permissions on GitHub Actions)"
+        # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
+        run: tar -xvf workspace.tar workspace
 
       - name: Create version
         run: echo $GITHUB_SHA > workspace/version.txt
