@@ -103,7 +103,7 @@ jobs:
 
       - name: Copy AWS ops files to workspace
         run: |
-          cp -R \
+          cp --recursive \
             ops/aws/.ebextensions \
             ops/aws/.platform \
             ops/aws/build-web.sh \
@@ -114,7 +114,7 @@ jobs:
             workspace
 
       - name: Copy public files to workspace
-        run: cp -R public workspace
+        run: cp --recursive public workspace
 
       - name: Copy zoomhub app binary to workspace
         run: cp "$(find .stack-work/dist -type f -name zoomhub | tr -d '\n')" workspace
