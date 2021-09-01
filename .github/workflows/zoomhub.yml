@@ -151,7 +151,7 @@ jobs:
 
       - name: "WORKAROUND: Extract tar archive (preserves file permissions on GitHub Actions)"
         # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
-        run: tar --extract --verbose --gzip --file workspace.tar.gz
+        run: tar --extract --verbose --gzip --file workspace.tar.gz --directory .
 
       - name: Create version
         shell: bash
