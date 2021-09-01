@@ -75,19 +75,19 @@ if yum list installed epel-release && ! command -v certbot &>/dev/null; then
 fi
 
 
-HTTP_STRING='^http\s*{$'
-NAME_LIMIT='http {\nserver_names_hash_bucket_size 192;\n'
+# HTTP_STRING='^http\s*{$'
+# NAME_LIMIT='http {\nserver_names_hash_bucket_size 192;\n'
 
-# Prevent replace if not clean sample app
-if ! grep -Fxq "$NAME_LIMIT" /etc/nginx/nginx.conf; then
-    # Increase size of string name for --domains (for default EB configs)
+# # Prevent replace if not clean sample app
+# if ! grep -Fxq "$NAME_LIMIT" /etc/nginx/nginx.conf; then
+#     # Increase size of string name for --domains (for default EB configs)
 
-    log_debug "nginx: Increase name limit"
-    if ! sed -i "s/$HTTP_STRING/$NAME_LIMIT/g" /etc/nginx/nginx.conf; then
-        log_error 'Changing server name limit failed'
-        exit 1
-    fi
-fi
+#     log_debug "nginx: Increase name limit"
+#     if ! sed -i "s/$HTTP_STRING/$NAME_LIMIT/g" /etc/nginx/nginx.conf; then
+#         log_error 'Changing server name limit failed'
+#         exit 1
+#     fi
+# fi
 
 # Set up certificates
 if command -v certbot &>/dev/null; then
