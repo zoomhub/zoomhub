@@ -158,17 +158,13 @@ jobs:
           name: workspace
 
       - name: Create version
-        shell: bash
         run: echo $GITHUB_SHA > workspace/version.txt
 
       - name: Build Docker image
-        shell: bash
-        run: cd workspace && ./build-web.sh $GITHUB_SHA
+        run: cd workspace && bash build-web.sh $GITHUB_SHA
 
       - name: Deploy 'web' Docker image to AWS Elastic Beanstalk
-        shell: bash
-        run: cd workspace && ./deploy-web.sh $GITHUB_SHA
+        run: cd workspace && bash deploy-web.sh $GITHUB_SHA
 
       - name: Deploy 'processContent' to AWS Lambda
-        shell: bash
-        run: cd workspace && ./deploy-processContent.sh
+        run: cd workspace && bash deploy-processContent.sh
