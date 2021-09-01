@@ -153,6 +153,9 @@ jobs:
         # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
         run: tar --extract --verbose --gzip --file workspace.tar.gz --directory .
 
+      - name: "DEBUG: List files"
+        run: ls -laR .
+
       - name: Create version
         shell: bash
         run: echo $GITHUB_SHA > version.txt
