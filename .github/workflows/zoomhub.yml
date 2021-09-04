@@ -44,7 +44,7 @@ jobs:
           stack-version: "latest"
 
       - name: Cache ~/.stack
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         env:
           cache-name: cache-stack
         with:
@@ -56,7 +56,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Cache .stack-work
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         env:
           cache-name: cache-stack-work
         with:
