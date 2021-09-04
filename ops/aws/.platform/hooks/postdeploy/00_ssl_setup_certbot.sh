@@ -81,7 +81,7 @@ cat /etc/nginx/nginx.conf
 log_debug "+++"
 
 HTTP_STRING='^http\s*{$'
-NAME_LIMIT='http {\nserver_names_hash_bucket_size 192;\n'
+NAME_LIMIT='http {\n    server_names_hash_bucket_size 128;\n'
 
 # Prevent replace if not clean sample app
 if ! grep --fixed-strings --line-regexp --quiet "$NAME_LIMIT" /etc/nginx/nginx.conf; then
