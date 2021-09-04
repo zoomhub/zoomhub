@@ -67,21 +67,21 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
-      - name: Cache binaries
-        id: cache-stack-binaries
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-stack-binaries
-        with:
-          path: |
-            bin/zoomhub
-            bin/migrate-database
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
+      # - name: Cache binaries
+      #   id: cache-stack-binaries
+      #   uses: actions/cache@v2
+      #   env:
+      #     cache-name: cache-stack-binaries
+      #   with:
+      #     path: |
+      #       bin/zoomhub
+      #       bin/migrate-database
+      #     key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
 
       - name: Build
-        if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
+        # if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
           mkdir bin
           stack build \
