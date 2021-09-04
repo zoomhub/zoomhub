@@ -112,7 +112,8 @@ if command -v certbot &>/dev/null; then
           --agree-tos \
           --no-eff-email \
           --keep-until-expiring \
-          --non-interactive
+          --non-interactive \
+          -vvv
     else
         log_error 'Nginx configuration is invalid.'
         exit 1
