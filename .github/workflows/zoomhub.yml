@@ -81,7 +81,7 @@ jobs:
       #       ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
 
       - name: Build
-        # if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
+        if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
           mkdir bin
           stack build \
