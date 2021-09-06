@@ -85,6 +85,9 @@ NAME_LIMIT='http {\n    server_names_hash_bucket_size 128;\n'
 
 # Prevent replace if not clean sample app
 if ! grep --fixed-strings --line-regexp --quiet "$NAME_LIMIT" /etc/nginx/nginx.conf; then
+    log_debug 'nginx: Delete previous `server_names_hash_bucket_size` entries'
+    sed -i '/server_names_hash_bucket_size/d' /etc/nginx/nginx.conf
+
     # Increase size of string name for --domains (for default EB configs)
     log_debug "nginx: Increase name limit"
     if ! sed -i "s/$HTTP_STRING/$NAME_LIMIT/g" /etc/nginx/nginx.conf; then
