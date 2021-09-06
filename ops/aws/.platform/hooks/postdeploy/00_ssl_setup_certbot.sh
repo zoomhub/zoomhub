@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # MIT License
 #
@@ -25,8 +26,6 @@
 # IMPORTANT: use this bash otherwise following error: "failed with error exit status 127. Stderr:/usr/bin/env: bash: No such file or directory"
 # IMPORTANT: use LF instead of CRLF for .sh files, otherwise following error: "00_ssl_setup_certbot.sh: no such file or directory"
 # IMPORTANT: for LF: also set "* text eol=lf" in ".gitattributes" file otherwise git will convert it into CRLF again on Windows :(
-
-set -euo pipefail
 
 # Postdeploy script for enabling SSL (single instance)
 # Compatible only with Amazon Linux 2 EC2 instances
