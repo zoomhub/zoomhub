@@ -30,9 +30,6 @@ set -euo pipefail
 # Postdeploy script for enabling SSL (single instance)
 # Compatible only with Amazon Linux 2 EC2 instances
 
-LOG_PATH=$(find /var/log/ -type f -iname 'eb-hooks.log')
-DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
 # IMPORTANT: no whitespaces in CERTBOT_NAME, otherwise following error: "invalid number of arguments in "ssl_certificate" directive in /etc/nginx/nginx.conf:81"
 CERTBOT_NAME="$CERTBOT_NAME"
 CERTBOT_EMAIL="$CERTBOT_EMAIL"
