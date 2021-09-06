@@ -128,6 +128,6 @@ cat >> /etc/cron.d/certbot_renew << END_CRON
 MAILTO="$CERTBOT_EMAIL"
 42 2,14 * * * root certbot renew --quiet --no-self-upgrade --deploy-hook "service nginx reload && service nginx restart"
 END_CRON
-chmod +x /etc/cron.d/certbot_renew
+chmod 0644 /etc/cron.d/certbot_renew
 
 log_info 'Script ran successfully.'
