@@ -31,7 +31,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          # Maps tcp port 5432 on service container to the host
+          # Maps TCP port 5432 on service container to the host
           - 5432:5432
 
     steps:
@@ -49,11 +49,10 @@ jobs:
           cache-name: cache-stack
         with:
           path: ~/.stack
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
+          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
+            web-build-v1-${{ runner.os }}-
 
       - name: Cache .stack-work
         uses: actions/cache@v2
@@ -61,11 +60,10 @@ jobs:
           cache-name: cache-stack-work
         with:
           path: .stack-work
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
+          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
+            web-build-v1-${{ runner.os }}-
 
       - name: Cache binaries
         id: cache-stack-binaries
@@ -76,9 +74,9 @@ jobs:
           path: |
             bin/zoomhub
             bin/migrate-database
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}
+          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}
+            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}
 
       - name: Build
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
@@ -149,10 +147,10 @@ jobs:
           cache-name: process-content-node-dependencies
         with:
           path: process-content/.npm
-          key: process-content-build-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('process-content/package-lock.json') }}
+          key: process-content-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('process-content/package-lock.json') }}
           restore-keys: |
-            process-content-build-${{ runner.os }}-${{ env.cache-name }}-
-            process-content-build-${{ runner.os }}-
+            process-content-build-v1-${{ runner.os }}-${{ env.cache-name }}-
+            process-content-build-v1-${{ runner.os }}-
 
       - name: Install Node.js dependencies
         run: cd process-content && npm ci --cache .npm --prefer-offline
