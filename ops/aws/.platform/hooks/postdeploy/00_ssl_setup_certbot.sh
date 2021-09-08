@@ -71,12 +71,6 @@ if yum list installed epel-release && ! command -v certbot &>/dev/null; then
     yum install -y certbot python2-certbot-nginx
 fi
 
-
-log_debug "+++"
-log_debug "nginx: PRE: Print configuration"
-cat /etc/nginx/nginx.conf
-log_debug "+++"
-
 HTTP_STRING='^http\s*{$'
 NAME_LIMIT='http {\n    server_names_hash_bucket_size 128;\n'
 
@@ -92,11 +86,6 @@ if ! grep --fixed-strings --line-regexp --quiet "$NAME_LIMIT" /etc/nginx/nginx.c
         exit 1
     fi
 fi
-
-log_debug "+++"
-log_debug "nginx: POST: Print configuration"
-cat /etc/nginx/nginx.conf
-log_debug "+++"
 
 # Set up certificates
 if command -v certbot &>/dev/null; then
