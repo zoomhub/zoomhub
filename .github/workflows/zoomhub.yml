@@ -9,7 +9,7 @@ on: push
 
 jobs:
   web-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env:
       PGHOST: "localhost"
       PGPORT: "5432"
@@ -69,7 +69,7 @@ jobs:
         id: cache-stack-binaries
         uses: actions/cache@v2
         env:
-          cache-name: cache-stack-binaries-v2
+          cache-name: cache-stack-binaries-v3
         with:
           path: |
             bin/zoomhub
@@ -138,7 +138,7 @@ jobs:
           path: web-workspace.tar.gz
 
   process-content-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - name: Cache process-content Node.js dependencies
@@ -178,7 +178,7 @@ jobs:
           path: process-content-workspace.tar.gz
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     needs: [process-content-build, web-build]
     if: github.ref == 'refs/heads/migrate-from-circleci-to-github-actions'
     env:
