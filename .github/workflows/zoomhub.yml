@@ -69,7 +69,7 @@ jobs:
         id: cache-stack-binaries
         uses: actions/cache@v2
         env:
-          cache-name: cache-stack-binaries
+          cache-name: cache-stack-binaries-v2
         with:
           path: |
             bin/zoomhub
