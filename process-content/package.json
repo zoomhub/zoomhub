@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "amazon-s3-uri": "^0.1.0",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "file-type": "^16.0.1",
     "p-limit": "^3.0.2",
     "recursive-readdir": "^2.2.2",
