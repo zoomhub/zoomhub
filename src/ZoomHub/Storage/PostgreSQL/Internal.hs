@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -O0 #-}
-{-# OPTIONS_GHC -fomit-interface-pragmas -fno-specialise -fno-full-laziness #-}
+{-# OPTIONS_GHC -fomit-interface-pragmas #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}

@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
-{-# OPTIONS_GHC -fomit-interface-pragmas -fno-specialise -fno-full-laziness #-}
+{-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 module ZoomHub.Storage.PostgreSQL.Schema.Schema1
   ( migration,
