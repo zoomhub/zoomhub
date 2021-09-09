@@ -30,7 +30,8 @@ data Content
         contentNumViews :: Int64,
         contentError :: Maybe Text,
         contentDZI :: Maybe DeepZoomImage,
-        contentSubmitterEmail :: Maybe Text -- TODO: Introduce `Email` type
+        contentSubmitterEmail :: Maybe Text, -- TODO: Introduce `Email` type
+        contentVerificationToken :: Maybe Text -- TODO: Introduce `EmailVerificationToken` type
       }
   deriving (Eq, GHC.Generic, Show)
 
@@ -50,7 +51,8 @@ mkContent type_ cId uri initializedAt =
       contentNumViews = 0,
       contentError = Nothing,
       contentDZI = Nothing,
-      contentSubmitterEmail = Nothing
+      contentSubmitterEmail = Nothing,
+      contentVerificationToken = Nothing
     }
 
 -- PostgreSQL / Squeal

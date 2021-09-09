@@ -50,6 +50,7 @@ library
     , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Storage.PostgreSQL.Schema.Schema0
     , ZoomHub.Storage.PostgreSQL.Schema.Schema1
+    , ZoomHub.Storage.PostgreSQL.Schema.Schema2
     , ZoomHub.Types.APIUser
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
@@ -144,6 +145,7 @@ library
     , unordered-containers
     , uri-encode
     , utf8-string
+    , uuid
     , wai
     , wai-app-static
     , wai-cors

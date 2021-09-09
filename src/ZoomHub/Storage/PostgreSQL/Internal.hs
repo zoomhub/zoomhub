@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
@@ -11,7 +12,6 @@
 
 -- Simplify Squeal query type signatures
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module ZoomHub.Storage.PostgreSQL.Internal
   ( module ZoomHub.Storage.PostgreSQL.Internal
@@ -170,6 +170,7 @@ selectContentBy clauses = select_
     #content ! #num_views `as` #cirNumViews :*
     #content ! #version `as` #cirVersion :*
     #content ! #submitter_email `as` #cirSubmitterEmail :*
+    #content ! #verification_token `as` #cirVerificationToken :*
     #image ! #width `as` #cirWidth :*
     #image ! #height `as` #cirHeight :*
     #image ! #tile_size `as` #cirTileSize :*
@@ -211,6 +212,7 @@ selectImageBy condition = select_
 
 -- TODO: How can we avoid this duplication between `ContentRow`,
 -- `ContentImageRow`, and `ImageRow`?
+-- TODO: Look into Squeal’s `Join`.
 data ContentImageRow = ContentImageRow
   { -- content
     cirHashId :: ContentId
@@ -232,6 +234,7 @@ data ContentImageRow = ContentImageRow
   , cirNumViews :: Int64
   , cirVersion :: Int32
   , cirSubmitterEmail :: Maybe Text -- TODO: Introduce `Email` type
+  , cirVerificationToken :: Maybe Text -- TODO: Introduce `VerificationToken` type
     -- image
   , cirWidth :: Maybe Int64
   , cirHeight :: Maybe Int64
@@ -269,6 +272,7 @@ contentImageRowToContent cr = Content
     , contentError = cirError cr
     , contentDZI = mDZI
     , contentSubmitterEmail = cirSubmitterEmail cr
+    , contentVerificationToken = cirVerificationToken cr
     }
   where
     mDZI = mkDeepZoomImage <$>
@@ -303,34 +307,36 @@ contentRowToContent result =
   , contentError = crError result
   , contentDZI = Nothing
   , contentSubmitterEmail = crSubmitterEmail result
+  , contentVerificationToken = crVerificationToken result
   }
 
 data ContentRow =
   ContentRow
-  { crHashId :: ContentId           --  1
-  , crTypeId :: ContentType         --  2
-  , crURL :: ContentURI             --  3
-  , crState :: ContentState         --  4
-  , crInitializedAt :: UTCTime      --  5
-  , crActiveAt :: Maybe UTCTime     --  6
-  , crCompletedAt :: Maybe UTCTime  --  7
-  , crTitle :: Maybe Text           --  8
-  , crAttributionText :: Maybe Text --  9
-  , crAttributionLink :: Maybe Text -- 10
-  , crMIME :: Maybe ContentMIME     -- 11
-  , crSize :: Maybe Int64           -- 12
-  , crError :: Maybe Text           -- 13
-  , crProgress :: Double            -- 14
-  , crAbuseLevelId :: Int32         -- 15
-  , crNumAbuseReports :: Int64      -- 16
-  , crNumViews :: Int64             -- 17
-  , crVersion :: Int32              -- 18
-  , crSubmitterEmail :: Maybe Text  -- 19
+  { crHashId :: ContentId             --  1
+  , crTypeId :: ContentType           --  2
+  , crURL :: ContentURI               --  3
+  , crState :: ContentState           --  4
+  , crInitializedAt :: UTCTime        --  5
+  , crActiveAt :: Maybe UTCTime       --  6
+  , crCompletedAt :: Maybe UTCTime    --  7
+  , crTitle :: Maybe Text             --  8
+  , crAttributionText :: Maybe Text   --  9
+  , crAttributionLink :: Maybe Text   -- 10
+  , crMIME :: Maybe ContentMIME       -- 11
+  , crSize :: Maybe Int64             -- 12
+  , crError :: Maybe Text             -- 13
+  , crProgress :: Double              -- 14
+  , crAbuseLevelId :: Int32           -- 15
+  , crNumAbuseReports :: Int64        -- 16
+  , crNumViews :: Int64               -- 17
+  , crVersion :: Int32                -- 18
+  , crSubmitterEmail :: Maybe Text    -- 19
+  , crVerificationToken :: Maybe Text -- 20
   } deriving (Show, GHC.Generic)
 instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
 
-insertContent :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
+insertContent :: Manipulation_ Schemas (Text, Maybe Text, Maybe Text) ContentRow
 insertContent = insertInto #content
   ( Values_
     ( Default `as` #id :*
@@ -352,7 +358,8 @@ insertContent = insertInto #content
       Default `as` #num_abuse_reports :*
       Default `as` #num_views :*
       Default `as` #version :*
-      Set (param @2) `as` #submitter_email
+      Set (param @2) `as` #submitter_email :*
+      Set (param @3) `as` #verification_token
     )
   ) OnConflictDoRaise
   ( Returning_
@@ -374,7 +381,8 @@ insertContent = insertInto #content
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
       #version `as` #crVersion :*
-      #submitter_email `as` #crSubmitterEmail
+      #submitter_email `as` #crSubmitterEmail :*
+      #verification_token `as` #crVerificationToken
     )
   )
 
@@ -412,7 +420,8 @@ markContentAsActive = update #content
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
       #version `as` #crVersion :*
-      #submitter_email `as` #crSubmitterEmail
+      #submitter_email `as` #crSubmitterEmail :*
+      #verification_token `as` #crVerificationToken
     )
   )
 
@@ -449,7 +458,8 @@ markContentAsFailure = update #content
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
       #version `as` #crVersion :*
-      #submitter_email `as` #crSubmitterEmail
+      #submitter_email `as` #crSubmitterEmail :*
+      #verification_token `as` #crVerificationToken
     )
   )
 
@@ -486,7 +496,8 @@ markContentAsSuccess = update #content
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
       #version `as` #crVersion :*
-      #submitter_email `as` #crSubmitterEmail
+      #submitter_email `as` #crSubmitterEmail :*
+      #verification_token `as` #crVerificationToken
     )
   )
 
@@ -521,7 +532,8 @@ resetContentAsInitialized = update #content
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
       #version `as` #crVersion :*
-      #submitter_email `as` #crSubmitterEmail
+      #submitter_email `as` #crSubmitterEmail :*
+      #verification_token `as` #crVerificationToken
     )
   )
 
@@ -604,7 +616,8 @@ unsafeInsertContent = insertInto #content
       Set (param @16) `as` #num_abuse_reports :*
       Set (param @17) `as` #num_views :*
       Set (param @18) `as` #version :*
-      Set (param @19) `as` #submitter_email
+      Set (param @19) `as` #submitter_email :*
+      Set (param @20) `as` #verification_token
     )
   ) OnConflictDoRaise
   ( Returning_
@@ -626,7 +639,8 @@ unsafeInsertContent = insertInto #content
       #num_abuse_reports `as` #crNumAbuseReports :*
       #num_views `as` #crNumViews :*
       #version `as` #crVersion :*
-      #submitter_email `as` #crSubmitterEmail
+      #submitter_email `as` #crSubmitterEmail :*
+      #verification_token `as` #crVerificationToken
     )
   )
 
@@ -651,6 +665,7 @@ contentToRow c = ContentRow
   , crNumViews = contentNumViews c
   , crVersion = 4 -- TODO: Replace hard-coded value
   , crSubmitterEmail = contentSubmitterEmail c
+  , crVerificationToken = contentVerificationToken c
   }
 
 toNominalDiffTime :: TimeUnit a => a -> NominalDiffTime
