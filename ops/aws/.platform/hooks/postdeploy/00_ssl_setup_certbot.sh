@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # MIT License
 #
@@ -22,17 +23,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set -euo pipefail
+# IMPORTANT: use this bash otherwise following error: "failed with error exit status 127. Stderr:/usr/bin/env: bash: No such file or directory"
+# IMPORTANT: use LF instead of CRLF for .sh files, otherwise following error: "00_ssl_setup_certbot.sh: no such file or directory"
+# IMPORTANT: for LF: also set "* text eol=lf" in ".gitattributes" file otherwise git will convert it into CRLF again on Windows :(
 
 # Postdeploy script for enabling SSL (single instance)
 # Compatible only with Amazon Linux 2 EC2 instances
 
+# IMPORTANT: no whitespaces in CERTBOT_NAME, otherwise following error: "invalid number of arguments in "ssl_certificate" directive in /etc/nginx/nginx.conf:81"
 CERTBOT_NAME="$CERTBOT_NAME"
 CERTBOT_EMAIL="$CERTBOT_EMAIL"
 # Multiple domain example: CERTBOT_DOMAINS='bort.com,www.bort.com,bort-env.eba-2kg3gsq2.us-east-2.elasticbeanstalk.com'
 CERTBOT_DOMAINS="$CERTBOT_DOMAINS"
-
-# ---
 
 LOG_PATH=$(find /var/log/ -type f -iname 'eb-hooks.log')
 log_level() {
@@ -53,34 +55,31 @@ if [ -z "$CERTBOT_NAME" ] || [ -z "$CERTBOT_EMAIL" ] || [ -z "$CERTBOT_DOMAINS" 
     exit 1
 fi
 
-# Auto allow yes for all yum install
-# SUGGESTION: Remove after deployment
-log_debug "yum: assumeyes=1"
-if ! grep -q 'assumeyes=1' /etc/yum.conf; then
-    echo 'assumeyes=1' | tee -a /etc/yum.conf
-fi
+# WORKAROUND: Stderr:Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+yum makecache fast
 
 # Install EPEL
 # Source: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-linux-ami-basics.html
 log_debug "yum: Install EPEL"
 if ! yum list installed epel-release; then
-    yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 fi
 
 # Install certbot
 log_debug "yum: Install certbot"
 if yum list installed epel-release && ! command -v certbot &>/dev/null; then
-    yum install certbot python2-certbot-nginx
+    yum install -y certbot python2-certbot-nginx
 fi
 
-
 HTTP_STRING='^http\s*{$'
-NAME_LIMIT='http {\nserver_names_hash_bucket_size 192;\n'
+NAME_LIMIT='http {\n    server_names_hash_bucket_size 128;\n'
 
 # Prevent replace if not clean sample app
-if ! grep -Fxq "$NAME_LIMIT" /etc/nginx/nginx.conf; then
-    # Increase size of string name for --domains (for default EB configs)
+if ! grep --fixed-strings --line-regexp --quiet "$NAME_LIMIT" /etc/nginx/nginx.conf; then
+    log_debug 'nginx: Delete previous `server_names_hash_bucket_size` entries'
+    sed -i '/server_names_hash_bucket_size/d' /etc/nginx/nginx.conf
 
+    # Increase size of string name for --domains (for default EB configs)
     log_debug "nginx: Increase name limit"
     if ! sed -i "s/$HTTP_STRING/$NAME_LIMIT/g" /etc/nginx/nginx.conf; then
         log_error 'Changing server name limit failed'
@@ -93,7 +92,8 @@ if command -v certbot &>/dev/null; then
     log_debug "nginx: Check configuration"
     if nginx -t; then
         log_debug "certbot: Install nginx configuration"
-        certbot --nginx \
+        certbot \
+          --nginx \
           --cert-name "$CERTBOT_NAME" \
           --email "$CERTBOT_EMAIL" \
           --domains "$CERTBOT_DOMAINS" \
@@ -101,9 +101,10 @@ if command -v certbot &>/dev/null; then
           --agree-tos \
           --no-eff-email \
           --keep-until-expiring \
-          --non-interactive
+          --non-interactive \
+          -vvv
     else
-        log_error 'nginx configuration is invalid.'
+        log_error 'Nginx configuration is invalid.'
         exit 1
     fi
 else
@@ -116,6 +117,6 @@ cat >> /etc/cron.d/certbot_renew << END_CRON
 MAILTO="$CERTBOT_EMAIL"
 42 2,14 * * * root certbot renew --quiet --no-self-upgrade --deploy-hook "service nginx reload && service nginx restart"
 END_CRON
-chmod +x /etc/cron.d/certbot_renew
+chmod 0644 /etc/cron.d/certbot_renew
 
 log_info 'Script ran successfully.'

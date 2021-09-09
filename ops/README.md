@@ -31,7 +31,7 @@ Saving changes will mark the vault as dirty in your repository, simply `git add`
 and `git commit` as with any other file. Whenever you run any of the `./zh ops`
 commands you’ll be prompted for the vault password.
 
-### Local Overrides
+### Local overrides
 
 If you want to override any ansible variables without having to edit configs,
 you can put a value in `vars.yml`, which is in `.gitignore` so you can’t commit

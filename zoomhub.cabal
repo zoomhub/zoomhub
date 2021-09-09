@@ -7,7 +7,7 @@ license:             MIT
 license-file:        LICENSE
 author:              ZoomHub
 maintainer:          zoomhub@googlegroups.com
-copyright:           2013–2020 ZoomHub
+copyright:           2013–2021 ZoomHub
 category:            Web
 build-type:          Simple
 -- extra-source-files:
