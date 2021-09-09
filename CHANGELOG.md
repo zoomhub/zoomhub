@@ -1,12 +1,15 @@
 # ZoomHub
 
+## 2021-09-09
+
+- Generate verification token for each new submission. This will be used to
+  send an email verification link to the submitter.
+
 ## 2021-02-28
 
 - Require email for each submission:
   - `/v1/content/upload?email=<email>`
   - `/v1/content?email=<email>&url=<url>`
-- Generate verification token for each new submission. This will be used to
-  send an email verification link to the submitter.
 
 ## 3.1.0-alpha.1 – January 18, 2021
 
