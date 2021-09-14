@@ -49,7 +49,8 @@ import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVerificationToken)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import ZoomHub.Types.ContentId (ContentId, fromString, unContentId)
+import ZoomHub.Types.ContentId (ContentId, unContentId)
+import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath (TempPath))
 
@@ -65,7 +66,7 @@ toURI s =
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( fromString "yQ4",
+  ( ContentId.fromString "yQ4",
     "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
 
@@ -216,10 +217,10 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           `shouldRespondWith` invalidURL
       it "should accept new HTTP URLs" do
         get ("/v1/content?email=" <> BC.pack testEmail <> "&url=" <> BC.pack newContentURL)
-          `shouldRespondWith` restRedirect (fromString newContentId)
+          `shouldRespondWith` restRedirect (ContentId.fromString newContentId)
         liftIO do
           let pool = Config.dbConnPool config
-          mContent <- runPoolPQ (getById $ fromString newContentId) pool
+          mContent <- runPoolPQ (getById $ ContentId.fromString newContentId) pool
           (mContent >>= contentSubmitterEmail) `shouldBe` (Just $ T.pack testEmail)
           (mContent >>= \c -> fromIntegral . length . show <$> contentVerificationToken c) `shouldBe` (Just (36 :: Integer))
         get ("/v1/content/" <> BC.pack newContentId)
@@ -331,7 +332,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content/yQ4" `shouldRespondWith` 200
         liftIO do
           let pool = Config.dbConnPool config
-          maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
+          maybeContent <- runPoolPQ (getById $ ContentId.fromString "yQ4") pool
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
   where
