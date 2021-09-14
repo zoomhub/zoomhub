@@ -195,9 +195,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "List (GET /v1/content)" do
       it "should be interpreted as a ‘get by URL’, with no URL given" $
         get "/v1/content"
-          `shouldRespondWith` "Missing ID or URL.\
-                              \ Please provide ID, e.g. `/v1/content/<id>`,\
-                              \ or URL via `/v1/content?url=<url>` query parameter."
+          `shouldRespondWith` [r|Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.|]
             { matchStatus = 400,
               matchHeaders = [plainTextUTF8]
             }
@@ -223,13 +221,9 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           let pool = Config.dbConnPool config
           mContent <- runPoolPQ (getById $ fromString newContentId) pool
           (mContent >>= contentSubmitterEmail) `shouldBe` (Just $ T.pack testEmail)
-          (mContent >>= \c -> T.length <$> contentVerificationToken c) `shouldBe` (Just 36)
+          (mContent >>= \c -> fromIntegral . length . show <$> contentVerificationToken c) `shouldBe` (Just (36 :: Integer))
         get ("/v1/content/" <> BC.pack newContentId)
-          `shouldRespondWith` "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
-                              \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/Xar\
-                              \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
-                              \:\"http://localhost:8000/Xar\",\"id\"\
-                              \:\"Xar\",\"ready\":false,\"failed\":false}"
+          `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":false,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -240,14 +234,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "Get by ID (GET /v1/content/:id)" do
       it "should return correct data for existing content" $
         get "/v1/content/yQ4"
-          `shouldRespondWith` "{\"dzi\":{\"height\":3750,\"url\":\
-                              \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
-                              \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
-                              \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
-                              \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
-                              \\"<script src=\\\"http://localhost:8000/yQ4.js?width=auto&\
-                              \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:8000\
-                              \/yQ4\",\"id\":\"yQ4\",\"ready\":true,\"failed\":false}"
+          `shouldRespondWith` [r|{"dzi":{"height":3750,"url":"http://localhost:9000/_dzis_/yQ4.dzi","width":5058,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":true,"failed":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -284,13 +271,13 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             "/v1/content/X75/completion"
             authorizedUser
             [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
-            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
+            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
         it "should accept failure" $
           authPutJSON
             "/v1/content/yQ4/completion"
             authorizedUser
             [r|{"type": "failure", "error": "FAIL!"}|]
-            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
+            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
     describe "POST /v1/content?url=…" do
       it "should be rejected" $
         post "/v1/content?url=http://example.com" ""
@@ -303,18 +290,14 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "GET /v1/content?url=…&callback=…" do
       it "should accept `callback` query parameter" $
         get "/v1/content?callback=handleContent"
-          `shouldRespondWith` "/**/ typeof handleContent === 'function' &&\
-                              \ handleContent({\"status\":400,\"error\":\"Missing ID or URL.\
-                              \ Please provide ID, e.g. `/v1/content/<id>`, or URL via\
-                              \ `/v1/content?url=<url>` query parameter.\",\"statusText\":\
-                              \\"Bad Request\",\"redirectLocation\":null});"
+          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":400,"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","statusText":"Bad Request","redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
     describe "GET /v1/content/:id?callback=…" do
       it "should accept `callback` query parameter" do
         get "/v1/content/yQ4?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
