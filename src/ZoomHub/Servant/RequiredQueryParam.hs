@@ -37,7 +37,6 @@ instance
   (KnownSymbol sym, FromHttpApiData a, HasServer api context) =>
   HasServer (RequiredQueryParam sym a :> api) context
   where
-
   type
     ServerT (RequiredQueryParam sym a :> api) m =
       a -> ServerT api m

@@ -15,24 +15,23 @@ import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 
 -- Content
-data Content
-  = Content
-      { contentId :: ContentId,
-        contentType :: ContentType,
-        contentURL :: ContentURI,
-        contentState :: ContentState,
-        contentInitializedAt :: UTCTime,
-        contentActiveAt :: Maybe UTCTime,
-        contentCompletedAt :: Maybe UTCTime,
-        contentMIME :: Maybe ContentMIME,
-        contentSize :: Maybe Int64,
-        contentProgress :: Double,
-        contentNumViews :: Int64,
-        contentError :: Maybe Text,
-        contentDZI :: Maybe DeepZoomImage,
-        contentSubmitterEmail :: Maybe Text, -- TODO: Introduce `Email` type
-        contentVerificationToken :: Maybe Text -- TODO: Introduce `EmailVerificationToken` type
-      }
+data Content = Content
+  { contentId :: ContentId,
+    contentType :: ContentType,
+    contentURL :: ContentURI,
+    contentState :: ContentState,
+    contentInitializedAt :: UTCTime,
+    contentActiveAt :: Maybe UTCTime,
+    contentCompletedAt :: Maybe UTCTime,
+    contentMIME :: Maybe ContentMIME,
+    contentSize :: Maybe Int64,
+    contentProgress :: Double,
+    contentNumViews :: Int64,
+    contentError :: Maybe Text,
+    contentDZI :: Maybe DeepZoomImage,
+    contentSubmitterEmail :: Maybe Text, -- TODO: Introduce `Email` type
+    contentVerificationToken :: Maybe Text -- TODO: Introduce `EmailVerificationToken` type
+  }
   deriving (Eq, GHC.Generic, Show)
 
 mkContent :: ContentType -> ContentId -> ContentURI -> UTCTime -> Content

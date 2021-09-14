@@ -23,13 +23,14 @@ fromEnv dbName = do
       defaultDBPort = connectPort defaultConnectInfo
       defaultDBUser = connectUser defaultConnectInfo
       defaultDBPassword = connectPassword defaultConnectInfo
-  return $ ConnectInfo
-    { connectHost = fromMaybe defaultDBHost (lookup "PGHOST" env),
-      connectPort = fromMaybe defaultDBPort (lookup "PGPORT" env >>= readMaybe),
-      connectUser = fromMaybe defaultDBUser (lookup "PGUSER" env),
-      connectPassword = fromMaybe defaultDBPassword (lookup "PGPASSWORD" env),
-      connectDatabase = fromMaybe dbName (lookup "PGDATABASE" env)
-    }
+  return $
+    ConnectInfo
+      { connectHost = fromMaybe defaultDBHost (lookup "PGHOST" env),
+        connectPort = fromMaybe defaultDBPort (lookup "PGPORT" env >>= readMaybe),
+        connectUser = fromMaybe defaultDBUser (lookup "PGUSER" env),
+        connectPassword = fromMaybe defaultDBPassword (lookup "PGPASSWORD" env),
+        connectDatabase = fromMaybe dbName (lookup "PGDATABASE" env)
+      }
 
 connectionString :: ConnectInfo -> ByteString
 connectionString = postgreSQLConnectionString

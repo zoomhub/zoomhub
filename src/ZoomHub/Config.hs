@@ -8,7 +8,7 @@ module ZoomHub.Config
   )
 where
 
-import Data.Aeson ((.=), ToJSON, object, toJSON)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
 import qualified Data.ByteString.Lazy as BL
 import Data.Time.Units (Second)
 import Data.Time.Units.Instances ()
@@ -30,28 +30,27 @@ import ZoomHub.Types.TempPath (TempPath)
 defaultPort :: Integer
 defaultPort = 8000
 
-data Config
-  = Config
-      { apiUser :: APIUser,
-        aws :: AWS.Config,
-        baseURI :: BaseURI,
-        contentBaseURI :: ContentBaseURI,
-        dbConnInfo :: PGS.ConnectInfo,
-        dbConnPool :: Pool Connection,
-        dbConnPoolIdleTime :: Second,
-        dbConnPoolMaxResourcesPerStripe :: Integer,
-        dbConnPoolNumStripes :: Integer,
-        error404 :: BL.ByteString,
-        logger :: Middleware,
-        openSeadragonScript :: String,
-        port :: Integer,
-        processContent :: ProcessContent,
-        publicPath :: FilePath,
-        staticBaseURI :: StaticBaseURI,
-        tempPath :: TempPath,
-        uploads :: Uploads,
-        version :: String
-      }
+data Config = Config
+  { apiUser :: APIUser,
+    aws :: AWS.Config,
+    baseURI :: BaseURI,
+    contentBaseURI :: ContentBaseURI,
+    dbConnInfo :: PGS.ConnectInfo,
+    dbConnPool :: Pool Connection,
+    dbConnPoolIdleTime :: Second,
+    dbConnPoolMaxResourcesPerStripe :: Integer,
+    dbConnPoolNumStripes :: Integer,
+    error404 :: BL.ByteString,
+    logger :: Middleware,
+    openSeadragonScript :: String,
+    port :: Integer,
+    processContent :: ProcessContent,
+    publicPath :: FilePath,
+    staticBaseURI :: StaticBaseURI,
+    tempPath :: TempPath,
+    uploads :: Uploads,
+    version :: String
+  }
 
 instance ToJSON Config where
   toJSON Config {..} =

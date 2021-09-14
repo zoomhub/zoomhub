@@ -36,11 +36,12 @@ spec = do
         let dzi = mkDeepZoomImage 456 789 TileSize254 TileOverlap1 PNG
             mMIME = ContentMIME.fromText "image/png"
          in (decode successCompletionJSON :: Maybe ContentCompletion)
-              `shouldBe` ( Just . Success $ SuccessCompletion
-                             { scSize = 1234,
-                               scMIME = mMIME,
-                               scDZI = dzi
-                             }
+              `shouldBe` ( Just . Success $
+                             SuccessCompletion
+                               { scSize = 1234,
+                                 scMIME = mMIME,
+                                 scDZI = dzi
+                               }
                          )
     describe "FailureCompletion" do
       it "should decode from JSON" $

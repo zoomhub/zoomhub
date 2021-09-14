@@ -29,16 +29,15 @@ import ZoomHub.Web.Types.EmbedDimension (EmbedDimension (..), toCSSValue)
 import ZoomHub.Web.Types.OpenSeadragonTileSource (fromDeepZoomImage)
 import ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
 
-data Embed
-  = Embed
-      { embedBaseURI :: BaseURI,
-        embedStaticBaseURI :: StaticBaseURI,
-        embedBody :: String,
-        embedContainerId :: String,
-        embedContent :: Content,
-        embedHeight :: Maybe EmbedDimension,
-        embedWidth :: Maybe EmbedDimension
-      }
+data Embed = Embed
+  { embedBaseURI :: BaseURI,
+    embedStaticBaseURI :: StaticBaseURI,
+    embedBody :: String,
+    embedContainerId :: String,
+    embedContent :: Content,
+    embedHeight :: Maybe EmbedDimension,
+    embedWidth :: Maybe EmbedDimension
+  }
   deriving (Eq, Generic, Show)
 
 mkEmbed ::

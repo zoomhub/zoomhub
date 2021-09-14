@@ -4,7 +4,7 @@
 
 module Database.PostgreSQL.Simple.Instances where
 
-import Data.Aeson ((.=), ToJSON, object, toJSON)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
 import Data.Text (Text)
 import Database.PostgreSQL.Simple (ConnectInfo (..))
 

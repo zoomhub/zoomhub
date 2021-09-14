@@ -39,11 +39,10 @@ import ZoomHub.API.Types.Content (Content, contentId, contentUrl)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import ZoomHub.Types.ContentId (unContentId)
 
-data ViewContent
-  = ViewContent
-      { vcContent :: Content,
-        vcBaseURI :: BaseURI
-      }
+data ViewContent = ViewContent
+  { vcContent :: Content,
+    vcBaseURI :: BaseURI
+  }
   deriving (Eq, Show)
 
 mkViewContent :: BaseURI -> Content -> ViewContent
@@ -104,7 +103,6 @@ analyticsScript =
     ]
 
 instance ToHtml ViewContent where
-
   toHtml vc =
     doctypehtml_ $
       do

@@ -10,13 +10,12 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import System.Environment (getEnvironment)
 
-data Config
-  = Config
-      { configAccessKeyId :: Text,
-        configSecretAccessKey :: Text,
-        configContentS3Bucket :: Text,
-        configSourcesS3Bucket :: Text
-      }
+data Config = Config
+  { configAccessKeyId :: Text,
+    configSecretAccessKey :: Text,
+    configContentS3Bucket :: Text,
+    configSourcesS3Bucket :: Text
+  }
 
 fromEnv :: IO (Maybe Config)
 fromEnv = do

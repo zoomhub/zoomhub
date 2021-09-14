@@ -6,7 +6,7 @@ module ZoomHub.Web.Types.OpenSeadragonTileSource
   )
 where
 
-import Data.Aeson ((.=), ToJSON, object, toJSON)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
 import qualified Data.Text as T
 import System.FilePath (dropExtension)
 import ZoomHub.API.Types.DeepZoomImage
@@ -19,9 +19,8 @@ import ZoomHub.API.Types.DeepZoomImage
     dziWidth,
   )
 
-newtype OpenSeadragonTileSource
-  = OpenSeadragonTileSource
-      {unOpenSeadragonTileSource :: DeepZoomImage}
+newtype OpenSeadragonTileSource = OpenSeadragonTileSource
+  {unOpenSeadragonTileSource :: DeepZoomImage}
   deriving (Eq, Show)
 
 fromDeepZoomImage :: DeepZoomImage -> OpenSeadragonTileSource

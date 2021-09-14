@@ -9,11 +9,11 @@ where
 
 import Control.Monad ()
 import Data.Aeson.Types
-  ( (.:),
-    FromJSON (parseJSON),
+  ( FromJSON (parseJSON),
     Object,
     Parser,
     withObject,
+    (.:),
   )
 import Data.Int (Int64)
 import Data.Text (Text)
@@ -26,18 +26,16 @@ data ContentCompletion
   | Failure FailureCompletion
   deriving (Eq, Show)
 
-data SuccessCompletion
-  = SuccessCompletion
-      { scDZI :: DeepZoomImage,
-        scSize :: Int64,
-        scMIME :: Maybe ContentMIME
-      }
+data SuccessCompletion = SuccessCompletion
+  { scDZI :: DeepZoomImage,
+    scSize :: Int64,
+    scMIME :: Maybe ContentMIME
+  }
   deriving (Eq, Show)
 
-newtype FailureCompletion
-  = FailureCompletion
-      { fcErrorMessage :: Text
-      }
+newtype FailureCompletion = FailureCompletion
+  { fcErrorMessage :: Text
+  }
   deriving (Eq, Show)
 
 -- JSON
@@ -49,11 +47,12 @@ parseSuccessCompletion obj = do
   mime <- obj .: "mime"
   size <- obj .: "size"
   dzi <- obj .: "dzi"
-  pure $ SuccessCompletion
-    { scDZI = dzi,
-      scSize = size,
-      scMIME = ContentMIME.fromText mime
-    }
+  pure $
+    SuccessCompletion
+      { scDZI = dzi,
+        scSize = size,
+        scMIME = ContentMIME.fromText mime
+      }
 
 instance FromJSON FailureCompletion where
   parseJSON = withObject "FailureCompletion" parseFailureCompletion

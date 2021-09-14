@@ -22,12 +22,7 @@ where
 import qualified Control.Category as Category
 import Data.String (IsString)
 import Squeal.PostgreSQL
-  ( (&),
-    (.==),
-    (:::),
-    (:=>),
-    (>>>),
-    AlignedList ((:>>), Done),
+  ( AlignedList (Done, (:>>)),
     ColumnConstraint (Def, NoDef),
     Definition,
     Manipulation (UnsafeManipulation),
@@ -63,6 +58,11 @@ import Squeal.PostgreSQL
     text,
     timestampWithTimeZone,
     unique,
+    (&),
+    (.==),
+    (:::),
+    (:=>),
+    (>>>),
   )
 import Squeal.PostgreSQL.Manipulation (pattern Values_)
 import Squeal.PostgreSQL.Migration (Migration (..))
@@ -171,18 +171,20 @@ migrations hashidsSecret =
     :>> Done
 
 installPLpgSQLExtension :: Migration Definition (Public '[]) (Public '[])
-installPLpgSQLExtension = Migration
-  { name = "2019-11-11-1: Install V8 extension",
-    up = manipDefinition . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;",
-    down = manipDefinition . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
-  }
+installPLpgSQLExtension =
+  Migration
+    { name = "2019-11-11-1: Install V8 extension",
+      up = manipDefinition . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;",
+      down = manipDefinition . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
+    }
 
 initializeHashidsEncode :: Migration Definition (Public '[]) (Public '[])
-initializeHashidsEncode = Migration
-  { name = "2019-11-11-2: Initialize Hashids encode function",
-    up = concatDefinitions $ manipDefinition . UnsafeManipulation <$> createHashidsFunctions,
-    down = manipDefinition . UnsafeManipulation $ dropHashidsEncode
-  }
+initializeHashidsEncode =
+  Migration
+    { name = "2019-11-11-2: Initialize Hashids encode function",
+      up = concatDefinitions $ manipDefinition . UnsafeManipulation <$> createHashidsFunctions,
+      down = manipDefinition . UnsafeManipulation $ dropHashidsEncode
+    }
   where
     dropHashidsEncode :: IsString a => a
     dropHashidsEncode =
@@ -191,11 +193,12 @@ initializeHashidsEncode = Migration
     |]
 
 initialSchema :: Migration Definition (Public '[]) Schemas0
-initialSchema = Migration
-  { name = "2019-11-11-3: Initial setup",
-    up = setup,
-    down = teardown
-  }
+initialSchema =
+  Migration
+    { name = "2019-11-11-3: Initial setup",
+      up = setup,
+      down = teardown
+    }
   where
     setup :: Definition (Public '[]) Schemas0
     setup =
@@ -295,37 +298,39 @@ initialSchema = Migration
         >>> dropTable #config
 
 insertHashidsSecret :: String -> Migration Definition Schemas0 Schemas0
-insertHashidsSecret secret = Migration
-  { name = "2019-11-11-4: Insert Hashids secret",
-    up =
-      manipDefinition $
-        insertInto_
-          #config
-          ( Values_
-              ( Default `as` #id
-                  :* Set "hashids_salt" `as` #key
-                  :* Set (literal secret) `as` #value
-              )
-          ),
-    down =
-      manipDefinition $
-        deleteFrom_ #config (#key .== "hashids_salt")
-  }
+insertHashidsSecret secret =
+  Migration
+    { name = "2019-11-11-4: Insert Hashids secret",
+      up =
+        manipDefinition $
+          insertInto_
+            #config
+            ( Values_
+                ( Default `as` #id
+                    :* Set "hashids_salt" `as` #key
+                    :* Set (literal secret) `as` #value
+                )
+            ),
+      down =
+        manipDefinition $
+          deleteFrom_ #config (#key .== "hashids_salt")
+    }
 
 createContentHashIdTrigger :: Migration Definition Schemas0 Schemas0
-createContentHashIdTrigger = Migration
-  { name = "2019-11-11-5: Create content hash_id trigger",
-    up =
-      concatDefinitions
-        [ manipDefinition . UnsafeManipulation $ createContentBeforeInsert,
-          manipDefinition . UnsafeManipulation $ createTriggerContentBeforeInsert
-        ],
-    down =
-      concatDefinitions
-        [ manipDefinition . UnsafeManipulation $ dropTriggerContentBeforeInsert,
-          manipDefinition . UnsafeManipulation $ dropContentBeforeInsert
-        ]
-  }
+createContentHashIdTrigger =
+  Migration
+    { name = "2019-11-11-5: Create content hash_id trigger",
+      up =
+        concatDefinitions
+          [ manipDefinition . UnsafeManipulation $ createContentBeforeInsert,
+            manipDefinition . UnsafeManipulation $ createTriggerContentBeforeInsert
+          ],
+      down =
+        concatDefinitions
+          [ manipDefinition . UnsafeManipulation $ dropTriggerContentBeforeInsert,
+            manipDefinition . UnsafeManipulation $ dropContentBeforeInsert
+          ]
+    }
   where
     createContentBeforeInsert :: IsString a => a
     createContentBeforeInsert =

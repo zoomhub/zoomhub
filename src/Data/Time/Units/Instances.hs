@@ -3,7 +3,7 @@
 
 module Data.Time.Units.Instances where
 
-import Data.Aeson ((.=), ToJSON, object, toJSON)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
 import Data.Text (Text)
 import Data.Time.Units (Millisecond, Minute, Second)
 

@@ -15,7 +15,7 @@ import Control.Lens ((^.))
 import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.Trans.AWS as AWST
-import Data.Aeson ((.=), encode, object)
+import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Lazy (toStrict)
 import Data.Text (Text)
 import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
@@ -54,10 +54,11 @@ processExistingContent Config {..} workerId = forever $ do
   where
     go = do
       maybeContent <-
-        logT "Get next unprocessed content and mark as active" []
-          $ liftIO
+        logT "Get next unprocessed content and mark as active" [] $
+          liftIO
           -- TODO: Only dequeue eligible (email verified) content:
-          $ runPoolPQ dequeueNextUnprocessed dbConnPool
+          $
+            runPoolPQ dequeueNextUnprocessed dbConnPool
       case maybeContent of
         Just content -> do
           -- TODO: Move `env` into `Config`:

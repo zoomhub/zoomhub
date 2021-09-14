@@ -3,7 +3,7 @@
 
 module Network.HTTP.Client.Instances where
 
-import Data.Aeson ((.=), ToJSON, Value (String), object, toJSON)
+import Data.Aeson (ToJSON, Value (String), object, toJSON, (.=))
 import qualified Data.ByteString as BS
 import Data.CaseInsensitive (original)
 import qualified Data.HashMap.Strict as HM

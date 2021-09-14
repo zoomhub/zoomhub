@@ -23,8 +23,7 @@ import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
-  ( (<:>),
-    MatchHeader,
+  ( MatchHeader,
     ResponseMatcher,
     get,
     liftIO,
@@ -35,6 +34,7 @@ import Test.Hspec.Wai
     request,
     shouldRespondWith,
     with,
+    (<:>),
   )
 import Text.RawString.QQ (r)
 import ZoomHub.API (app)
@@ -141,29 +141,30 @@ authorizedUser = APIUser {username = "worker", password = "secr3t"}
 
 {-# NOINLINE config #-}
 config :: Config
-config = Config
-  { apiUser = authorizedUser,
-    aws = undefined, -- TODO: Test AWS functionality
-    baseURI = BaseURI (toURI "http://localhost:8000"),
-    contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
-      Just uri -> uri
-      _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`.",
-    dbConnInfo = dbConnInfo',
-    dbConnPool = dbConnPool',
-    dbConnPoolIdleTime = dbConnPoolIdleTime',
-    dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe',
-    dbConnPoolNumStripes = dbConnPoolNumStripes',
-    error404 = "404",
-    logger = nullLogger,
-    openSeadragonScript = "osd",
-    port = 8000,
-    processContent = ProcessExistingAndNewContent,
-    publicPath = "./public",
-    staticBaseURI = StaticBaseURI (toURI "https://static.zoomhub.net"),
-    tempPath = TempPath "./data/temp",
-    uploads = UploadsDisabled,
-    version = "test"
-  }
+config =
+  Config
+    { apiUser = authorizedUser,
+      aws = undefined, -- TODO: Test AWS functionality
+      baseURI = BaseURI (toURI "http://localhost:8000"),
+      contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
+        Just uri -> uri
+        _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`.",
+      dbConnInfo = dbConnInfo',
+      dbConnPool = dbConnPool',
+      dbConnPoolIdleTime = dbConnPoolIdleTime',
+      dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe',
+      dbConnPoolNumStripes = dbConnPoolNumStripes',
+      error404 = "404",
+      logger = nullLogger,
+      openSeadragonScript = "osd",
+      port = 8000,
+      processContent = ProcessExistingAndNewContent,
+      publicPath = "./public",
+      staticBaseURI = StaticBaseURI (toURI "https://static.zoomhub.net"),
+      tempPath = TempPath "./data/temp",
+      uploads = UploadsDisabled,
+      version = "test"
+    }
   where
     numSpindles = 1
     -- TODO: How can we avoid `unsafePerformIO`?

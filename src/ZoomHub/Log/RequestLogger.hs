@@ -9,7 +9,7 @@ module ZoomHub.Log.RequestLogger
 where
 
 import qualified Blaze.ByteString.Builder as BB
-import Data.Aeson ((.=), ToJSON, Value (String), object, toJSON)
+import Data.Aeson (ToJSON, Value (String), object, toJSON, (.=))
 import qualified Data.ByteString.Char8 as BC
 import Data.CaseInsensitive (original)
 import qualified Data.HashMap.Strict as HM
