@@ -50,6 +50,7 @@ library
     , ZoomHub.Storage.PostgreSQL.Schema.Schema0
     , ZoomHub.Storage.PostgreSQL.Schema.Schema1
     , ZoomHub.Storage.PostgreSQL.Schema.Schema2
+    , ZoomHub.Storage.PostgreSQL.Schema.Schema3
     , ZoomHub.Types.APIUser
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
@@ -66,6 +67,8 @@ library
     , ZoomHub.Types.DeepZoomImage.TileSize
     , ZoomHub.Types.StaticBaseURI
     , ZoomHub.Types.TempPath
+    , ZoomHub.Types.VerificationError
+    , ZoomHub.Types.VerificationToken
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Main
@@ -87,6 +90,7 @@ library
     , aeson-pretty
     , amazonka
     , amazonka-lambda
+    , amazonka-ses
     , async
     , atomic-write
     , blaze-builder

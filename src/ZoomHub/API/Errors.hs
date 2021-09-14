@@ -2,16 +2,20 @@
 
 module ZoomHub.API.Errors
   ( error400,
+    error401,
     error404,
     error503,
   )
 where
 
 import qualified Data.ByteString.Lazy.UTF8 as BU
-import Servant (ServerError, err400, err404, err503, errBody, errHeaders)
+import Servant (ServerError, err400, err401, err404, err503, errBody, errHeaders)
 
 error400 :: String -> ServerError
 error400 = mkError err400
+
+error401 :: String -> ServerError
+error401 = mkError err401
 
 error404 :: String -> ServerError
 error404 = mkError err404

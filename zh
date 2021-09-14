@@ -82,9 +82,12 @@ test)
     createdb "$TEST_DB_NAME"
 
     PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
-      stack build --test --no-run-tests \
-                  --ghc-options='-Wall' \
-                  --exec "migrate-database $TEST_DB_NAME migrate"
+      stack build \
+        --fast \
+        --test \
+        --no-run-tests \
+        --ghc-options='-Wall' \
+        --exec "migrate-database $TEST_DB_NAME migrate"
 
     psql --output /dev/null --quiet "$TEST_DB_NAME" < ./data/zoomhub_data.sql
     psql --output /dev/null --quiet "$TEST_DB_NAME" < ./data/zoomhub_sequences.sql
@@ -92,8 +95,10 @@ test)
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"
     PGUSER="$(whoami)" PGDATABASE="$TEST_DB_NAME" \
-      stack test --ghc-options='-Wall' \
-                 --test-arguments '--match "'"$MODULES"'"'
+      stack test \
+        --fast \
+        --ghc-options='-Wall' \
+        --test-arguments '--match "'"$MODULES"'"'
     ;;
 db)
     case "$2" in

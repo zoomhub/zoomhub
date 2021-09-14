@@ -257,7 +257,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
-    describe "Complete content by ID (PUT /v1/content/:id/completion " do
+    describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
         it "should reject request" $
           putJSON

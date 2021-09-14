@@ -15,6 +15,7 @@ module ZoomHub.Types.Content
     contentDZI,
     contentSubmitterEmail,
     contentVerificationToken,
+    contentVerifiedAt,
   )
 where
 
@@ -35,4 +36,5 @@ import ZoomHub.Types.Content.Internal
     contentType,
     contentURL,
     contentVerificationToken,
+    contentVerifiedAt,
   )

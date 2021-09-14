@@ -18,7 +18,7 @@ where
 import Control.Monad (join)
 import Data.Aeson (ToJSON, Value (String), genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isJust)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Network.URI (URI, parseRelativeReference, relativeTo)
@@ -39,6 +39,7 @@ data Content = Content
     contentUrl :: ContentURI,
     contentReady :: Bool,
     contentFailed :: Bool,
+    contentVerified :: Bool,
     contentProgress :: Double,
     contentShareUrl :: ContentShareURI,
     contentEmbedHtml :: String,
@@ -54,6 +55,7 @@ fromInternal baseURI contentBaseURI c =
       contentUrl = Internal.contentURL c,
       contentReady = Internal.contentState c == CompletedSuccess,
       contentFailed = Internal.contentState c == CompletedFailure,
+      contentVerified = isJust $ Internal.contentVerifiedAt c,
       contentProgress = Internal.contentProgress c,
       contentShareUrl = shareURI,
       contentEmbedHtml = embedHTML,

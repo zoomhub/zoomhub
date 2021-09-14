@@ -84,6 +84,7 @@ import ZoomHub.Types.DeepZoomImage (DeepZoomImage (..), mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
+import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Connection
 type Connection = K PQ.Connection Schemas
@@ -179,6 +180,7 @@ selectContentBy clauses =
         :* #content ! #version `as` #cirVersion
         :* #content ! #submitter_email `as` #cirSubmitterEmail
         :* #content ! #verification_token `as` #cirVerificationToken
+        :* #content ! #verified_at `as` #cirVerifiedAt
         :* #image ! #width `as` #cirWidth
         :* #image ! #height `as` #cirHeight
         :* #image ! #tile_size `as` #cirTileSize
@@ -244,7 +246,8 @@ data ContentImageRow = ContentImageRow
     cirNumViews :: Int64,
     cirVersion :: Int32,
     cirSubmitterEmail :: Maybe Text, -- TODO: Introduce `Email` type
-    cirVerificationToken :: Maybe Text, -- TODO: Introduce `VerificationToken` type
+    cirVerificationToken :: Maybe VerificationToken,
+    cirVerifiedAt :: Maybe UTCTime,
     -- image
     cirWidth :: Maybe Int64,
     cirHeight :: Maybe Int64,
@@ -289,7 +292,8 @@ contentImageRowToContent cr =
       contentError = cirError cr,
       contentDZI = mDZI,
       contentSubmitterEmail = cirSubmitterEmail cr,
-      contentVerificationToken = cirVerificationToken cr
+      contentVerificationToken = cirVerificationToken cr,
+      contentVerifiedAt = cirVerifiedAt cr
     }
   where
     mDZI =
@@ -326,7 +330,8 @@ contentRowToContent result =
       contentError = crError result,
       contentDZI = Nothing,
       contentSubmitterEmail = crSubmitterEmail result,
-      contentVerificationToken = crVerificationToken result
+      contentVerificationToken = crVerificationToken result,
+      contentVerifiedAt = crVerifiedAt result
     }
 
 data ContentRow = ContentRow
@@ -349,7 +354,8 @@ data ContentRow = ContentRow
     crNumViews :: Int64, -- 17
     crVersion :: Int32, -- 18
     crSubmitterEmail :: Maybe Text, -- 19
-    crVerificationToken :: Maybe Text -- 20
+    crVerificationToken :: Maybe VerificationToken, -- 20
+    crVerifiedAt :: Maybe UTCTime -- 21
   }
   deriving (Show, GHC.Generic)
 
@@ -383,6 +389,7 @@ insertContent =
             :* Default `as` #version
             :* Set (param @2) `as` #submitter_email
             :* Set (param @3) `as` #verification_token
+            :* Default `as` #verified_at
         )
     )
     OnConflictDoRaise
@@ -407,6 +414,7 @@ insertContent =
             :* #version `as` #crVersion
             :* #submitter_email `as` #crSubmitterEmail
             :* #verification_token `as` #crVerificationToken
+            :* #verified_at `as` #crVerifiedAt
         )
     )
 
@@ -448,6 +456,7 @@ markContentAsActive =
             :* #version `as` #crVersion
             :* #submitter_email `as` #crSubmitterEmail
             :* #verification_token `as` #crVerificationToken
+            :* #verified_at `as` #crVerifiedAt
         )
     )
 
@@ -488,6 +497,7 @@ markContentAsFailure =
             :* #version `as` #crVersion
             :* #submitter_email `as` #crSubmitterEmail
             :* #verification_token `as` #crVerificationToken
+            :* #verified_at `as` #crVerifiedAt
         )
     )
 
@@ -529,6 +539,39 @@ markContentAsSuccess =
             :* #version `as` #crVersion
             :* #submitter_email `as` #crSubmitterEmail
             :* #verification_token `as` #crVerificationToken
+            :* #verified_at `as` #crVerifiedAt
+        )
+    )
+
+markContentAsVerified :: Manipulation_ Schemas (Only Text) ContentRow
+markContentAsVerified =
+  update
+    #content
+    ( Set currentTimestamp `as` #verified_at
+    )
+    (#hash_id .== param @1)
+    ( Returning_
+        ( #hash_id `as` #crHashId
+            :* #type_id `as` #crTypeId
+            :* #url `as` #crURL
+            :* #state `as` #crState
+            :* #initialized_at `as` #crInitializedAt
+            :* #active_at `as` #crActiveAt
+            :* #completed_at `as` #crCompletedAt
+            :* #title `as` #crTitle
+            :* #attribution_text `as` #crAttributionText
+            :* #attribution_link `as` #crAttributionLink
+            :* #mime `as` #crMIME
+            :* #size `as` #crSize
+            :* #error `as` #crError
+            :* #progress `as` #crProgress
+            :* #abuse_level_id `as` #crAbuseLevelId
+            :* #num_abuse_reports `as` #crNumAbuseReports
+            :* #num_views `as` #crNumViews
+            :* #version `as` #crVersion
+            :* #submitter_email `as` #crSubmitterEmail
+            :* #verification_token `as` #crVerificationToken
+            :* #verified_at `as` #crVerifiedAt
         )
     )
 
@@ -567,6 +610,7 @@ resetContentAsInitialized =
             :* #version `as` #crVersion
             :* #submitter_email `as` #crSubmitterEmail
             :* #verification_token `as` #crVerificationToken
+            :* #verified_at `as` #crVerifiedAt
         )
     )
 
@@ -660,6 +704,7 @@ unsafeInsertContent =
             :* Set (param @18) `as` #version
             :* Set (param @19) `as` #submitter_email
             :* Set (param @20) `as` #verification_token
+            :* Set (param @21) `as` #verified_at
         )
     )
     OnConflictDoRaise
@@ -684,6 +729,7 @@ unsafeInsertContent =
             :* #version `as` #crVersion
             :* #submitter_email `as` #crSubmitterEmail
             :* #verification_token `as` #crVerificationToken
+            :* #verified_at `as` #crVerifiedAt
         )
     )
 
@@ -709,7 +755,8 @@ contentToRow c =
       crNumViews = contentNumViews c,
       crVersion = 4, -- TODO: Replace hard-coded value
       crSubmitterEmail = contentSubmitterEmail c,
-      crVerificationToken = contentVerificationToken c
+      crVerificationToken = contentVerificationToken c,
+      crVerifiedAt = contentVerifiedAt c
     }
 
 toNominalDiffTime :: TimeUnit a => a -> NominalDiffTime
