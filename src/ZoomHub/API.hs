@@ -187,6 +187,13 @@ type API =
       :> "verification"
       :> Capture "token" VerificationToken
       :> Get '[JSON] Content
+    -- API: RESTful: Error: Invalid verification token
+    :<|> "v1"
+      :> "content"
+      :> Capture "id" ContentId
+      :> "verification"
+      :> Capture "token" String
+      :> Get '[JSON] Content
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] AuthenticatedUser
       :> "v1"
@@ -242,6 +249,7 @@ server config =
     :<|> restUpload baseURI awsConfig uploads
     :<|> restUploadWithoutEmail uploads
     :<|> restContentVerificationById baseURI contentBaseURI dbConnPool
+    :<|> restContentInvalidVerificationToken
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
@@ -435,6 +443,13 @@ restContentVerificationById baseURI contentBaseURI dbConnPool contentId verifica
       throwError . API.error401 $ "Unauthorized verification token: " <> show verificationToken
     Left VerificationError.ContentNotFound ->
       throwError . API.error404 $ contentNotFoundMessage contentId
+
+restContentInvalidVerificationToken ::
+  ContentId ->
+  String -> -- VerificationToken
+  Handler Content
+restContentInvalidVerificationToken _contentId verificationToken = do
+  throwError . API.error401 $ "Invalid verification token: " <> verificationToken
 
 restContentCompletionById ::
   BaseURI ->
