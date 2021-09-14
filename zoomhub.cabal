@@ -41,7 +41,6 @@ library
     , ZoomHub.Debug
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
-    , ZoomHub.Rackspace.CloudFiles
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.PostgreSQL
