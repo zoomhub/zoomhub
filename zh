@@ -82,7 +82,7 @@ test)
     createdb "$TEST_DB_NAME"
 
     PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
-      stack build --no-run-tests \
+      stack build --test --no-run-tests \
                   --ghc-options='-Wall' \
                   --exec "migrate-database $TEST_DB_NAME migrate"
 
