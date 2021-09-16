@@ -259,7 +259,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           { matchStatus = 401,
             matchHeaders = [plainTextUTF8]
           }
-    it "should return correct data for existing content" do
+    it "should verify content" do
       maybeContent <- liftIO $ runPoolPQ (getById $ ContentId.fromString "Xar") (Config.dbConnPool config)
       let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
       liftIO $ print verificationToken
