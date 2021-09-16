@@ -74,6 +74,7 @@ import System.Random (randomRIO)
 import UnliftIO (MonadUnliftIO (..), liftIO)
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
+import qualified ZoomHub.Types.Content as Content
 import ZoomHub.Types.Content.Internal (Content (..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
@@ -753,7 +754,7 @@ contentToRow c =
       crAbuseLevelId = 0, -- TODO: Replace hard-coded value
       crNumAbuseReports = 0,
       crNumViews = contentNumViews c,
-      crVersion = 4, -- TODO: Replace hard-coded value
+      crVersion = fromIntegral Content.version,
       crSubmitterEmail = contentSubmitterEmail c,
       crVerificationToken = contentVerificationToken c,
       crVerifiedAt = contentVerifiedAt c
