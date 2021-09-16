@@ -64,14 +64,14 @@ jobs:
         id: cache-stack-binaries
         uses: actions/cache@v2
         env:
-          cache-name: cache-stack-binaries-v3
+          cache-name: cache-stack-binaries-v4
         with:
           path: |
             bin/zoomhub
             bin/migrate-database
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}
+          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
-            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}
+            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}-${{ hashFiles('**/*.hs') }}
 
       - name: Build
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
