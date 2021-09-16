@@ -80,7 +80,7 @@ type ContentTable3 =
 migration :: Migration Definition _ Schemas3
 migration =
   Migration
-    { name = "2021-09-13-1: Add verified flag",
+    { name = "2021-09-13-1: Add `verified_at`",
       up = setup,
       down = teardown
     }
