@@ -176,6 +176,7 @@ type API =
       :> "upload"
       :> RequiredQueryParam "email" Text -- TODO: Introduce `Email` type
       :> Get '[JSON] (HashMap Text Text)
+    -- API: Error: RESTful: Upload without email
     :<|> "v1"
       :> "content"
       :> "upload"
