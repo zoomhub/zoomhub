@@ -14,7 +14,6 @@ import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
-import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (fold)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
@@ -59,8 +58,6 @@ import Servant
     Server,
     ServerError,
     err301,
-    err401,
-    errBody,
     errHeaders,
     serveWithContext,
     (:<|>) (..),
@@ -86,7 +83,8 @@ import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
 import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
 import ZoomHub.API.Types.Callback (Callback)
-import ZoomHub.API.Types.Content (Content, fromInternal)
+import ZoomHub.API.Types.Content (Content)
+import qualified ZoomHub.API.Types.Content as Content
 import ZoomHub.API.Types.ContentCompletion (ContentCompletion (..))
 import qualified ZoomHub.API.Types.ContentCompletion as Completion
 import qualified ZoomHub.API.Types.DeepZoomImageWithoutURL as DeepZoomImage
@@ -115,6 +113,7 @@ import ZoomHub.Storage.PostgreSQL as PG
     initialize,
     markAsFailure,
     markAsSuccess,
+    markAsVerified,
   )
 import ZoomHub.Types.APIUser (APIUser)
 import qualified ZoomHub.Types.APIUser as APIUser
@@ -124,6 +123,8 @@ import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
+import qualified ZoomHub.Types.VerificationError as VerificationError
+import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Static (serveDirectory)
@@ -179,6 +180,20 @@ type API =
       :> "content"
       :> "upload"
       :> Get '[JSON] (HashMap Text Text)
+    -- API: RESTful: Verification
+    :<|> "v1"
+      :> "content"
+      :> Capture "id" ContentId
+      :> "verification"
+      :> Capture "token" VerificationToken
+      :> Get '[JSON] Content
+    -- API: RESTful: Error: Invalid verification token
+    :<|> "v1"
+      :> "content"
+      :> Capture "id" ContentId
+      :> "verification"
+      :> Capture "token" String
+      :> Get '[JSON] Content
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] AuthenticatedUser
       :> "v1"
@@ -233,6 +248,8 @@ server config =
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
     :<|> restUploadWithoutEmail uploads
+    :<|> restContentVerificationById baseURI contentBaseURI dbConnPool
+    :<|> restContentInvalidVerificationToken
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
@@ -310,7 +327,7 @@ jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
             mkNonRESTful404 $
               contentNotFoundMessage contentId
     Just content -> do
-      let publicContent = fromInternal baseURI contentBaseURI content
+      let publicContent = Content.fromInternal baseURI contentBaseURI content
       return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
 
 jsonpContentByURL ::
@@ -327,7 +344,7 @@ jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
       throwError . JSONP.mkError $
         mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
     Just content -> do
-      let publicContent = fromInternal baseURI contentBaseURI content
+      let publicContent = Content.fromInternal baseURI contentBaseURI content
           redirectLocation = apiRedirectURI baseURI contentId
           contentId = Internal.contentId content
       return $
@@ -410,6 +427,30 @@ restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
 restUploadWithoutEmail UploadsDisabled = noNewContentErrorAPI
 restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
 
+restContentVerificationById ::
+  BaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  ContentId ->
+  VerificationToken ->
+  Handler Content
+restContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
+  result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
+  case result of
+    Right content ->
+      return $ Content.fromInternal baseURI contentBaseURI content
+    Left VerificationError.TokenMismatch ->
+      throwError . API.error401 $ "Unauthorized verification token: " <> show verificationToken
+    Left VerificationError.ContentNotFound ->
+      throwError . API.error404 $ contentNotFoundMessage contentId
+
+restContentInvalidVerificationToken ::
+  ContentId ->
+  String -> -- VerificationToken
+  Handler Content
+restContentInvalidVerificationToken _contentId verificationToken = do
+  throwError . API.error401 $ "Invalid verification token: " <> verificationToken
+
 restContentCompletionById ::
   BaseURI ->
   ContentBaseURI ->
@@ -435,13 +476,13 @@ restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId
         Nothing ->
           throwError . API.error404 $ contentNotFoundMessage contentId
         Just content ->
-          return $ fromInternal baseURI contentBaseURI content
+          return $ Content.fromInternal baseURI contentBaseURI content
     NoSuchUser ->
-      throwError err401 {errBody = BL.fromStrict . BC.pack $ "Invalid auth"}
+      throwError . API.error401 $ "Invalid auth"
     BadPassword ->
-      throwError err401 {errBody = BL.fromStrict . BC.pack $ "Invalid auth"}
+      throwError . API.error401 $ "Invalid auth"
     Indefinite ->
-      throwError err401 {errBody = BL.fromStrict . BC.pack $ "Missing 'Authorization' header"}
+      throwError . API.error401 $ "Missing 'Authorization' header"
 
 restContentById ::
   BaseURI ->
@@ -453,7 +494,7 @@ restContentById baseURI contentBaseURI dbConnPool contentId = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing -> throwError . API.error404 $ contentNotFoundMessage contentId
-    Just content -> return $ fromInternal baseURI contentBaseURI content
+    Just content -> return $ Content.fromInternal baseURI contentBaseURI content
 
 restInvalidContentId :: String -> Handler Content
 restInvalidContentId contentId =
@@ -519,7 +560,7 @@ webEmbed
         let randomIdRange = (100000, 999999) :: (Int, Int)
         randomId <- liftIO $ randomRIO randomIdRange
         let containerId = fromMaybe (defaultContainerId randomId) maybeId
-            pContent = fromInternal baseURI contentBaseURI content
+            pContent = Content.fromInternal baseURI contentBaseURI content
         return $
           mkEmbed
             baseURI
@@ -545,7 +586,7 @@ webContentById baseURI contentBaseURI dbConnPool contentId = do
   case maybeContent of
     Nothing -> throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c -> do
-      let content = fromInternal baseURI contentBaseURI c
+      let content = Content.fromInternal baseURI contentBaseURI c
       return $ mkViewContent baseURI content
 
 -- TODO: Add support for submission, i.e. create content in the background:
@@ -630,8 +671,5 @@ redirectURI pathPrefix baseURI contentId =
 -- permanent HTTP 301 redirects:
 redirect :: URI -> Handler a
 redirect location =
-  throwError $
-    err301
-      { -- HACK: Redirect using error: http://git.io/vBCz9
-        errHeaders = [("Location", BC.pack (show location))]
-      }
+  -- HACK: Redirect using error: http://git.io/vBCz9
+  throwError $ err301 {errHeaders = [("Location", BC.pack (show location))]}

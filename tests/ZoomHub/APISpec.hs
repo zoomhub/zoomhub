@@ -11,6 +11,7 @@ where
 
 import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
+import Data.Maybe (fromJust)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -49,7 +50,8 @@ import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVerificationToken)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
-import ZoomHub.Types.ContentId (ContentId, fromString, unContentId)
+import ZoomHub.Types.ContentId (ContentId, unContentId)
+import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath (TempPath))
 
@@ -65,7 +67,7 @@ toURI s =
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( fromString "yQ4",
+  ( ContentId.fromString "yQ4",
     "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
 
@@ -195,9 +197,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "List (GET /v1/content)" do
       it "should be interpreted as a ‘get by URL’, with no URL given" $
         get "/v1/content"
-          `shouldRespondWith` "Missing ID or URL.\
-                              \ Please provide ID, e.g. `/v1/content/<id>`,\
-                              \ or URL via `/v1/content?url=<url>` query parameter."
+          `shouldRespondWith` [r|Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.|]
             { matchStatus = 400,
               matchHeaders = [plainTextUTF8]
             }
@@ -218,18 +218,14 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           `shouldRespondWith` invalidURL
       it "should accept new HTTP URLs" do
         get ("/v1/content?email=" <> BC.pack testEmail <> "&url=" <> BC.pack newContentURL)
-          `shouldRespondWith` restRedirect (fromString newContentId)
+          `shouldRespondWith` restRedirect (ContentId.fromString newContentId)
         liftIO do
           let pool = Config.dbConnPool config
-          mContent <- runPoolPQ (getById $ fromString newContentId) pool
+          mContent <- runPoolPQ (getById $ ContentId.fromString newContentId) pool
           (mContent >>= contentSubmitterEmail) `shouldBe` (Just $ T.pack testEmail)
-          (mContent >>= \c -> T.length <$> contentVerificationToken c) `shouldBe` (Just 36)
+          (mContent >>= \c -> fromIntegral . length . show <$> contentVerificationToken c) `shouldBe` (Just (36 :: Integer))
         get ("/v1/content/" <> BC.pack newContentId)
-          `shouldRespondWith` "{\"dzi\":null,\"progress\":0,\"url\":\"http://example.com\"\
-                              \,\"embedHtml\":\"<script src=\\\"http://localhost:8000/Xar\
-                              \.js?width=auto&height=400px\\\"></script>\",\"shareUrl\"\
-                              \:\"http://localhost:8000/Xar\",\"id\"\
-                              \:\"Xar\",\"ready\":false,\"failed\":false}"
+          `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":false,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -240,14 +236,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "Get by ID (GET /v1/content/:id)" do
       it "should return correct data for existing content" $
         get "/v1/content/yQ4"
-          `shouldRespondWith` "{\"dzi\":{\"height\":3750,\"url\":\
-                              \\"http://localhost:9000/_dzis_/yQ4.dzi\",\"width\":5058,\
-                              \\"tileOverlap\":1,\"tileFormat\":\"jpg\",\"tileSize\":254},\
-                              \\"progress\":1,\"url\":\"http://media.stenaline.com/media_SE/\
-                              \lalandia-map-zoomit/lalandia-map.jpg\",\"embedHtml\":\
-                              \\"<script src=\\\"http://localhost:8000/yQ4.js?width=auto&\
-                              \height=400px\\\"></script>\",\"shareUrl\":\"http://localhost:8000\
-                              \/yQ4\",\"id\":\"yQ4\",\"ready\":true,\"failed\":false}"
+          `shouldRespondWith` [r|{"dzi":{"height":3750,"url":"http://localhost:9000/_dzis_/yQ4.dzi","width":5058,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":true,"failed":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -257,7 +246,29 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
-    describe "Complete content by ID (PUT /v1/content/:id/completion " do
+    describe "Verify content by ID (GET /v1/content/:id/verification/:token)" do
+      it "should return 404 non-existent content" $
+        get "/v1/content/nonExistentContent/verification/00000000-0000-0000-0000-000000000000"
+          `shouldRespondWith` "No content with ID: nonExistentContent"
+            { matchStatus = 404,
+              matchHeaders = [plainTextUTF8]
+            }
+    it "should return 401 invalid verification token" $
+      get "/v1/content/yQ4/verification/invalid-token"
+        `shouldRespondWith` "Invalid verification token: invalid-token"
+          { matchStatus = 401,
+            matchHeaders = [plainTextUTF8]
+          }
+    it "should verify content" do
+      maybeContent <- liftIO $ runPoolPQ (getById $ ContentId.fromString "Xar") (Config.dbConnPool config)
+      let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
+      liftIO $ print verificationToken
+      get ("/v1/content/Xar/verification/" <> (BC.pack $ show verificationToken))
+        `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":true,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
+          { matchStatus = 200,
+            matchHeaders = [applicationJSON]
+          }
+    describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
         it "should reject request" $
           putJSON
@@ -284,13 +295,13 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             "/v1/content/X75/completion"
             authorizedUser
             [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
-            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
+            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
         it "should accept failure" $
           authPutJSON
             "/v1/content/yQ4/completion"
             authorizedUser
             [r|{"type": "failure", "error": "FAIL!"}|]
-            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
+            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
     describe "POST /v1/content?url=…" do
       it "should be rejected" $
         post "/v1/content?url=http://example.com" ""
@@ -303,18 +314,14 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "GET /v1/content?url=…&callback=…" do
       it "should accept `callback` query parameter" $
         get "/v1/content?callback=handleContent"
-          `shouldRespondWith` "/**/ typeof handleContent === 'function' &&\
-                              \ handleContent({\"status\":400,\"error\":\"Missing ID or URL.\
-                              \ Please provide ID, e.g. `/v1/content/<id>`, or URL via\
-                              \ `/v1/content?url=<url>` query parameter.\",\"statusText\":\
-                              \\"Bad Request\",\"redirectLocation\":null});"
+          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":400,"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","statusText":"Bad Request","redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
     describe "GET /v1/content/:id?callback=…" do
       it "should accept `callback` query parameter" do
         get "/v1/content/yQ4?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
@@ -348,7 +355,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content/yQ4" `shouldRespondWith` 200
         liftIO do
           let pool = Config.dbConnPool config
-          maybeContent <- runPoolPQ (getById $ fromString "yQ4") pool
+          maybeContent <- runPoolPQ (getById $ ContentId.fromString "yQ4") pool
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
   where

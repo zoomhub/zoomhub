@@ -13,6 +13,7 @@ import ZoomHub.Types.ContentState (ContentState (Initialized))
 import ZoomHub.Types.ContentType (ContentType)
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
+import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Content
 data Content = Content
@@ -30,7 +31,8 @@ data Content = Content
     contentError :: Maybe Text,
     contentDZI :: Maybe DeepZoomImage,
     contentSubmitterEmail :: Maybe Text, -- TODO: Introduce `Email` type
-    contentVerificationToken :: Maybe Text -- TODO: Introduce `EmailVerificationToken` type
+    contentVerificationToken :: Maybe VerificationToken,
+    contentVerifiedAt :: Maybe UTCTime
   }
   deriving (Eq, GHC.Generic, Show)
 
@@ -51,7 +53,8 @@ mkContent type_ cId uri initializedAt =
       contentError = Nothing,
       contentDZI = Nothing,
       contentSubmitterEmail = Nothing,
-      contentVerificationToken = Nothing
+      contentVerificationToken = Nothing,
+      contentVerifiedAt = Nothing
     }
 
 -- PostgreSQL / Squeal

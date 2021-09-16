@@ -15,6 +15,8 @@ module ZoomHub.Types.Content
     contentDZI,
     contentSubmitterEmail,
     contentVerificationToken,
+    contentVerifiedAt,
+    version,
   )
 where
 
@@ -35,4 +37,20 @@ import ZoomHub.Types.Content.Internal
     contentType,
     contentURL,
     contentVerificationToken,
+    contentVerifiedAt,
   )
+
+-- Content versions
+--
+-- Version 3: From 2009-09-10 until 2016-04-04
+--
+-- Version 4: From 2009-11-14 until 2014-09-03
+--
+-- Version 5: From 2021-09-16
+-- - Introduces
+--   - `submitter_email`
+--   - `verification_token`
+--   - `verified_at`
+--   for tracking the author of a submission or upload.
+version :: Int
+version = 5

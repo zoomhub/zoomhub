@@ -29,6 +29,7 @@ module ZoomHub.Storage.PostgreSQL
     markAsActive,
     markAsFailure,
     markAsSuccess,
+    markAsVerified,
     resetAsInitialized,
     dequeueNextUnprocessed,
     module ZoomHub.Storage.PostgreSQL.ConnectInfo,
@@ -82,6 +83,7 @@ import ZoomHub.Storage.PostgreSQL.Internal
     markContentAsActive,
     markContentAsFailure,
     markContentAsSuccess,
+    markContentAsVerified,
     resetContentAsInitialized,
     selectContentBy,
     toNominalDiffTime,
@@ -93,6 +95,9 @@ import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentState (ContentState (Active, Initialized))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
+import ZoomHub.Types.VerificationError (VerificationError)
+import qualified ZoomHub.Types.VerificationError as VerificationError
+import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Public API
 
@@ -199,6 +204,28 @@ markAsSuccess cId dzi mMIME mSize =
         Just content {contentDZI = Just dzi}
       Nothing ->
         Nothing
+
+markAsVerified ::
+  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  ContentId ->
+  VerificationToken ->
+  m (Either VerificationError Content)
+markAsVerified cId verificationToken =
+  transactionally_ $ do
+    mContent <- getById cId
+    case mContent >>= contentVerificationToken of
+      Just token | token == verificationToken -> do
+        contentResult <- manipulateParams markContentAsVerified (Only cId)
+        mContentRow <- firstRow contentResult
+        case mContentRow of
+          Just contentRow ->
+            return $ Right $ contentRowToContent contentRow
+          Nothing ->
+            return $ Left VerificationError.ContentNotFound
+      Just _ ->
+        return $ Left VerificationError.TokenMismatch
+      Nothing ->
+        return $ Left VerificationError.ContentNotFound
 
 resetAsInitialized ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>

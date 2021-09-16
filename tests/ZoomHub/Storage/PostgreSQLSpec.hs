@@ -85,6 +85,7 @@ import ZoomHub.Types.Content
     contentType,
     contentURL,
     contentVerificationToken,
+    contentVerifiedAt,
   )
 import qualified ZoomHub.Types.Content.Internal as I
 import qualified ZoomHub.Types.ContentId as ContentId
@@ -443,7 +444,8 @@ spec =
           contentError = Nothing,
           contentDZI = Nothing,
           contentSubmitterEmail = Nothing,
-          contentVerificationToken = Nothing
+          contentVerificationToken = Nothing,
+          contentVerifiedAt = Nothing
         }
     mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkActiveContent id_ currentTime age =
@@ -462,7 +464,8 @@ spec =
           contentError = Nothing,
           contentDZI = Nothing,
           contentSubmitterEmail = Nothing,
-          contentVerificationToken = Nothing
+          contentVerificationToken = Nothing,
+          contentVerifiedAt = Nothing
         }
       where
         activeAt = addUTCTime (-age) currentTime
@@ -486,7 +489,8 @@ spec =
               contentError = Nothing,
               contentDZI = Just dzi,
               contentSubmitterEmail = Nothing,
-              contentVerificationToken = Nothing
+              contentVerificationToken = Nothing,
+              contentVerifiedAt = Nothing
             }
       where
         activeAt = addUTCTime (-age) currentTime
