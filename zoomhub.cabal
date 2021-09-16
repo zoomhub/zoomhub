@@ -91,6 +91,7 @@ library
     , aeson-pretty
     , amazonka
     , amazonka-lambda
+    , amazonka-ses
     , async
     , atomic-write
     , blaze-builder
