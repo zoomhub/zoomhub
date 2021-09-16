@@ -30,15 +30,14 @@ import ZoomHub.Types.ContentBaseURI
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.DeepZoomImage as Internal
 
-data DeepZoomImage
-  = DeepZoomImage
-      { dziUrl :: DeepZoomImageURI,
-        dziWidth :: Integer,
-        dziHeight :: Integer,
-        dziTileSize :: Internal.TileSize,
-        dziTileOverlap :: Internal.TileOverlap,
-        dziTileFormat :: Internal.TileFormat
-      }
+data DeepZoomImage = DeepZoomImage
+  { dziUrl :: DeepZoomImageURI,
+    dziWidth :: Integer,
+    dziHeight :: Integer,
+    dziTileSize :: Internal.TileSize,
+    dziTileOverlap :: Internal.TileOverlap,
+    dziTileFormat :: Internal.TileFormat
+  }
   deriving (Eq, Show, Generic)
 
 fromInternal ::
@@ -49,14 +48,15 @@ fromInternal ::
 fromInternal baseURI cId dzi = do
   namePath <- parseRelativeReference name
   let url = namePath `relativeTo` unContentBaseURI baseURI
-  pure DeepZoomImage
-    { dziUrl = DeepZoomImageURI url,
-      dziWidth = Internal.dziWidth dzi,
-      dziHeight = Internal.dziHeight dzi,
-      dziTileSize = Internal.dziTileSize dzi,
-      dziTileOverlap = Internal.dziTileOverlap dzi,
-      dziTileFormat = Internal.dziTileFormat dzi
-    }
+  pure
+    DeepZoomImage
+      { dziUrl = DeepZoomImageURI url,
+        dziWidth = Internal.dziWidth dzi,
+        dziHeight = Internal.dziHeight dzi,
+        dziTileSize = Internal.dziTileSize dzi,
+        dziTileOverlap = Internal.dziTileOverlap dzi,
+        dziTileFormat = Internal.dziTileFormat dzi
+      }
   where
     name = unContentId cId <.> "dzi"
 
@@ -77,14 +77,15 @@ mkDeepZoomImage ::
   Internal.TileOverlap ->
   Internal.TileFormat ->
   DeepZoomImage
-mkDeepZoomImage uri width height tileSize tileOverlap tileFormat = DeepZoomImage
-  { dziUrl = uri,
-    dziWidth = width,
-    dziHeight = height,
-    dziTileSize = tileSize,
-    dziTileOverlap = tileOverlap,
-    dziTileFormat = tileFormat
-  }
+mkDeepZoomImage uri width height tileSize tileOverlap tileFormat =
+  DeepZoomImage
+    { dziUrl = uri,
+      dziWidth = width,
+      dziHeight = height,
+      dziTileSize = tileSize,
+      dziTileOverlap = tileOverlap,
+      dziTileFormat = tileFormat
+    }
 
 -- JSON
 instance ToJSON DeepZoomImage where

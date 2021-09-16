@@ -17,14 +17,13 @@ import Data.Aeson.Casing (aesonPrefix, camelCase)
 import GHC.Generics (Generic)
 import qualified ZoomHub.Types.DeepZoomImage as Internal
 
-data DeepZoomImage
-  = DeepZoomImage
-      { dziWidth :: Integer,
-        dziHeight :: Integer,
-        dziTileSize :: Internal.TileSize,
-        dziTileOverlap :: Internal.TileOverlap,
-        dziTileFormat :: Internal.TileFormat
-      }
+data DeepZoomImage = DeepZoomImage
+  { dziWidth :: Integer,
+    dziHeight :: Integer,
+    dziTileSize :: Internal.TileSize,
+    dziTileOverlap :: Internal.TileOverlap,
+    dziTileFormat :: Internal.TileFormat
+  }
   deriving (Eq, Show, Generic)
 
 toInternal :: DeepZoomImage -> Internal.DeepZoomImage
@@ -43,13 +42,14 @@ mkDeepZoomImage ::
   Internal.TileOverlap ->
   Internal.TileFormat ->
   DeepZoomImage
-mkDeepZoomImage width height tileSize tileOverlap tileFormat = DeepZoomImage
-  { dziWidth = width,
-    dziHeight = height,
-    dziTileSize = tileSize,
-    dziTileOverlap = tileOverlap,
-    dziTileFormat = tileFormat
-  }
+mkDeepZoomImage width height tileSize tileOverlap tileFormat =
+  DeepZoomImage
+    { dziWidth = width,
+      dziHeight = height,
+      dziTileSize = tileSize,
+      dziTileOverlap = tileOverlap,
+      dziTileFormat = tileFormat
+    }
 
 -- JSON
 instance ToJSON DeepZoomImage where

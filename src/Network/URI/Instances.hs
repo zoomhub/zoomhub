@@ -6,7 +6,6 @@ import Network.URI (URI, parseURIReference)
 import System.Envy (Var, fromVar, toVar)
 
 instance Var URI where
-
   toVar = show
 
   fromVar = parseURIReference

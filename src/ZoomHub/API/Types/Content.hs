@@ -34,31 +34,31 @@ import ZoomHub.Types.ContentState
 import ZoomHub.Types.ContentURI (ContentURI)
 
 -- Content
-data Content
-  = Content
-      { contentId :: ContentId,
-        contentUrl :: ContentURI,
-        contentReady :: Bool,
-        contentFailed :: Bool,
-        contentProgress :: Double,
-        contentShareUrl :: ContentShareURI,
-        contentEmbedHtml :: String,
-        contentDzi :: Maybe DeepZoomImage
-      }
+data Content = Content
+  { contentId :: ContentId,
+    contentUrl :: ContentURI,
+    contentReady :: Bool,
+    contentFailed :: Bool,
+    contentProgress :: Double,
+    contentShareUrl :: ContentShareURI,
+    contentEmbedHtml :: String,
+    contentDzi :: Maybe DeepZoomImage
+  }
   deriving (Eq, Show, Generic)
 
 -- Constructor
 fromInternal :: BaseURI -> ContentBaseURI -> Internal.Content -> Content
-fromInternal baseURI contentBaseURI c = Content
-  { contentId = cId,
-    contentUrl = Internal.contentURL c,
-    contentReady = Internal.contentState c == CompletedSuccess,
-    contentFailed = Internal.contentState c == CompletedFailure,
-    contentProgress = Internal.contentProgress c,
-    contentShareUrl = shareURI,
-    contentEmbedHtml = embedHTML,
-    contentDzi = join dzi
-  }
+fromInternal baseURI contentBaseURI c =
+  Content
+    { contentId = cId,
+      contentUrl = Internal.contentURL c,
+      contentReady = Internal.contentState c == CompletedSuccess,
+      contentFailed = Internal.contentState c == CompletedFailure,
+      contentProgress = Internal.contentProgress c,
+      contentShareUrl = shareURI,
+      contentEmbedHtml = embedHTML,
+      contentDzi = join dzi
+    }
   where
     cId = Internal.contentId c
     shareURI = ContentShareURI $ sharePathURI `relativeTo` unBaseURI baseURI

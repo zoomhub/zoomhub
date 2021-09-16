@@ -19,7 +19,7 @@ module ZoomHub.Log.Logger
 where
 
 import Control.Exception (SomeException)
-import Data.Aeson ((.=), Value, object)
+import Data.Aeson (Value, object, (.=))
 import Data.Aeson.Encode.Pretty
   ( Config,
     Indent (Spaces),

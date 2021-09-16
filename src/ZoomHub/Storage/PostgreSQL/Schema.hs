@@ -15,16 +15,16 @@ module ZoomHub.Storage.PostgreSQL.Schema
 where
 
 import Squeal.PostgreSQL
-  ( (>>>),
-    AlignedList ((:>>), Done),
+  ( AlignedList (Done, (:>>)),
     Definition,
     Public,
+    (>>>),
   )
 import Squeal.PostgreSQL.Migration (Migration (..))
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema0 as Schema0
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema1 as Schema1
-import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema2 as Schema2
 import ZoomHub.Storage.PostgreSQL.Schema.Schema2 (Schema2)
+import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema2 as Schema2
 
 type Schemas = Public Schema2
 

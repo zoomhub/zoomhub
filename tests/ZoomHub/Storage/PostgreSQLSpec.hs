@@ -433,7 +433,7 @@ spec =
           contentType = Unknown,
           contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
           contentState = Initialized,
-          contentInitializedAt = addUTCTime (- age) currentTime,
+          contentInitializedAt = addUTCTime (-age) currentTime,
           contentActiveAt = Nothing,
           contentCompletedAt = Nothing,
           contentMIME = Nothing,
@@ -465,7 +465,7 @@ spec =
           contentVerificationToken = Nothing
         }
       where
-        activeAt = addUTCTime (- age) currentTime
+        activeAt = addUTCTime (-age) currentTime
     mkSucceededContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkSucceededContent id_ currentTime age =
       let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
@@ -489,7 +489,7 @@ spec =
               contentVerificationToken = Nothing
             }
       where
-        activeAt = addUTCTime (- age) currentTime
+        activeAt = addUTCTime (-age) currentTime
     testURL :: ContentURI
     testURL = ContentURI "https://example.com/1"
     testEmail :: Text
@@ -497,7 +497,7 @@ spec =
     isWithinSecondsOf :: UTCTime -> NominalDiffTime -> UTCTime -> Bool
     isWithinSecondsOf pivot interval t =
       let upperBound = addUTCTime interval pivot
-          lowerBound = addUTCTime (- interval) pivot
+          lowerBound = addUTCTime (-interval) pivot
        in lowerBound <= t && t <= upperBound
     safeGetCurrentTime :: IO UTCTime
     safeGetCurrentTime = do

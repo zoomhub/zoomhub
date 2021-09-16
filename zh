@@ -45,7 +45,7 @@ format)
         echo "Unknown command: $0 $@. Try $0 $1 [check|install]"
         exit 1
     esac
-    files=$(git ls-files | grep --invert 'vendor/' | grep '.hs$' | grep --invert 'src/ZoomHub/Storage/PostgreSQL/Internal.hs')
+    files=$(git ls-files '*.hs' | grep --invert 'vendor/')
     set +e
     ormolu --mode "$mode" $files
     ormolu_status=$?

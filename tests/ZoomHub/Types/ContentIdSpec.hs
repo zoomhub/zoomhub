@@ -12,7 +12,7 @@ where
 
 import Data.Aeson (decode, encode)
 import Test.Hspec (Spec, context, describe, hspec, it)
-import Test.QuickCheck ((==>), Property, elements, listOf, property, suchThat)
+import Test.QuickCheck (Property, elements, listOf, property, suchThat, (==>))
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Instances ()
 import ZoomHub.Types.ContentId

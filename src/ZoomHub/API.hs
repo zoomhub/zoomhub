@@ -46,11 +46,9 @@ import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
-  ( (:<|>) (..),
-    (:>),
-    BasicAuthData (BasicAuthData),
+  ( BasicAuthData (BasicAuthData),
     Capture,
-    Context ((:.), EmptyContext),
+    Context (EmptyContext, (:.)),
     Get,
     Handler,
     JSON,
@@ -65,6 +63,8 @@ import Servant
     errBody,
     errHeaders,
     serveWithContext,
+    (:<|>) (..),
+    (:>),
   )
 import Servant.Auth.Server
   ( Auth,
@@ -106,6 +106,7 @@ import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
+import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Storage.PostgreSQL as PG
   ( getById,
     getById',
@@ -115,7 +116,6 @@ import ZoomHub.Storage.PostgreSQL as PG
     markAsFailure,
     markAsSuccess,
   )
-import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.APIUser (APIUser)
 import qualified ZoomHub.Types.APIUser as APIUser
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
@@ -304,11 +304,11 @@ jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing ->
-      throwError
-        $ JSONP.mkError
-        $ mkJSONP callback
-        $ mkNonRESTful404
-        $ contentNotFoundMessage contentId
+      throwError $
+        JSONP.mkError $
+          mkJSONP callback $
+            mkNonRESTful404 $
+              contentNotFoundMessage contentId
     Just content -> do
       let publicContent = fromInternal baseURI contentBaseURI content
       return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
@@ -330,9 +330,9 @@ jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
       let publicContent = fromInternal baseURI contentBaseURI content
           redirectLocation = apiRedirectURI baseURI contentId
           contentId = Internal.contentId content
-      return
-        $ mkJSONP callback
-        $ mkNonRESTful301 "content" publicContent redirectLocation
+      return $
+        mkJSONP callback $
+          mkNonRESTful301 "content" publicContent redirectLocation
 
 jsonpInvalidContentId ::
   String ->
@@ -421,15 +421,16 @@ restContentCompletionById ::
 restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion = do
   case authResult of
     Authenticated _ -> do
-      maybeContent <- liftIO $ flip runPoolPQ dbConnPool $ case completion of
-        Completion.Success sc ->
-          PG.markAsSuccess
-            contentId
-            (DeepZoomImage.toInternal $ Completion.scDZI sc)
-            (Completion.scMIME sc)
-            (Just $ Completion.scSize sc)
-        Completion.Failure fc ->
-          PG.markAsFailure contentId (Just $ Completion.fcErrorMessage fc)
+      maybeContent <- liftIO $
+        flip runPoolPQ dbConnPool $ case completion of
+          Completion.Success sc ->
+            PG.markAsSuccess
+              contentId
+              (DeepZoomImage.toInternal $ Completion.scDZI sc)
+              (Completion.scMIME sc)
+              (Just $ Completion.scSize sc)
+          Completion.Failure fc ->
+            PG.markAsFailure contentId (Just $ Completion.fcErrorMessage fc)
       case maybeContent of
         Nothing ->
           throwError . API.error404 $ contentNotFoundMessage contentId

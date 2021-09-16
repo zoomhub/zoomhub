@@ -33,7 +33,6 @@ instance
   (KnownSymbol capture, FromHttpApiData a, HasServer api context) =>
   HasServer (RawCapture capture a :> api) context
   where
-
   type
     ServerT (RawCapture capture a :> api) m =
       a -> ServerT api m

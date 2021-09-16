@@ -41,12 +41,7 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
-  ( (!),
-    (&),
-    (.&&),
-    (.<),
-    (.==),
-    MonadPQ,
+  ( MonadPQ,
     Only (Only),
     SortExpression (Asc, Desc),
     firstRow,
@@ -60,6 +55,11 @@ import Squeal.PostgreSQL
     runQueryParams,
     transactionally_,
     where_,
+    (!),
+    (&),
+    (.&&),
+    (.<),
+    (.==),
   )
 import UnliftIO (MonadUnliftIO, liftIO)
 import ZoomHub.Storage.PostgreSQL.ConnectInfo
@@ -123,7 +123,7 @@ getExpiredActive ::
   (MonadUnliftIO m, MonadPQ Schemas m, TimeUnit t) => t -> m [Content]
 getExpiredActive ttl = do
   currentTime <- liftIO getCurrentTime
-  let earliestAllowed = addUTCTime (- (toNominalDiffTime ttl)) currentTime
+  let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
   result <-
     runQueryParams
       ( selectContentBy

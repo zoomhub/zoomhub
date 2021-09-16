@@ -8,7 +8,7 @@ module ZoomHub.Types.ContentBaseURI
   )
 where
 
-import Data.Aeson ((.=), ToJSON, object, toJSON)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
 import Data.List (isSuffixOf)
 import Network.URI (URI, uriIsAbsolute, uriPath)
 
