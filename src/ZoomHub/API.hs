@@ -393,7 +393,7 @@ restUpload baseURI awsConfig uploads email =
                 PPCEquals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
-                  ( fold $
+                  ( fold
                       [ T.pack $ show baseURI,
                         "/v1/content",
                         "?email=",
@@ -417,7 +417,7 @@ restUpload baseURI awsConfig uploads email =
               case result of
                 Left minioErr ->
                   return $ HS.singleton "error" (T.pack $ show minioErr)
-                Right (_url, formData) -> do
+                Right (_url, formData) ->
                   return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
@@ -449,7 +449,7 @@ restContentInvalidVerificationToken ::
   ContentId ->
   String -> -- VerificationToken
   Handler Content
-restContentInvalidVerificationToken _contentId verificationToken = do
+restContentInvalidVerificationToken _contentId verificationToken =
   throwError . API.error401 $ "Invalid verification token: " <> verificationToken
 
 restContentCompletionById ::
@@ -460,7 +460,7 @@ restContentCompletionById ::
   ContentId ->
   ContentCompletion ->
   Handler Content
-restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion = do
+restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion =
   case authResult of
     Authenticated _ -> do
       maybeContent <- liftIO $
@@ -511,7 +511,7 @@ restContentByURL ::
 restContentByURL baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case (maybeContent, mEmail) of
-    (Nothing, Nothing) -> do
+    (Nothing, Nothing) ->
       missingEmailErrorAPI
     (Nothing, Just email) -> do
       mNewContent <- case processContent of
