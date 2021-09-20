@@ -40,6 +40,8 @@ library
     , ZoomHub.Config.ProcessContent
     , ZoomHub.Config.Uploads
     , ZoomHub.Debug
+    , ZoomHub.Email
+    , ZoomHub.Email.Verification
     , ZoomHub.Log.Logger
     , ZoomHub.Log.RequestLogger
     , ZoomHub.Servant.RawCapture
