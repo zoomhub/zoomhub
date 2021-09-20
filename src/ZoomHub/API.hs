@@ -421,7 +421,7 @@ restUpload baseURI awsConfig uploads email =
                   return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
-        maxUploadSizeBytes = 512 * 1024 * 1024
+        maxUploadSizeBytes = 512 * 1024 * 1024 -- 512MB
         s3Bucket = AWS.configSourcesS3Bucket awsConfig
 
 restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
