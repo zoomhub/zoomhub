@@ -14,9 +14,9 @@ import Control.Exception.Enclosed (catchAny)
 import Control.Lens ((^.))
 import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
-import qualified Control.Monad.Trans.AWS as AWST
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Lazy (toStrict)
+import Data.Foldable (for_)
 import Data.Text (Text)
 import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
@@ -24,6 +24,7 @@ import qualified Network.AWS as AWS
 import qualified Network.AWS.Lambda as AWS
 import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
+import qualified ZoomHub.AWS as ZHAWS
 import ZoomHub.Config (Config (..))
 import ZoomHub.Log.Logger (logException, logInfo, logInfoT)
 import ZoomHub.Storage.PostgreSQL
@@ -59,36 +60,26 @@ processExistingContent Config {..} workerId = forever $ do
           -- TODO: Only dequeue eligible (email verified) content:
           $
             runPoolPQ dequeueNextUnprocessed dbConnPool
-      case maybeContent of
-        Just content -> do
-          -- TODO: Move `env` into `Config`:
-          env <- AWS.newEnv AWS.Discover
-          -- TODO: Move `region` into `Config`:
-          let region = AWS.Ohio
-          logInfo
-            "worker:lambda:start"
-            [ "wwwURL" .= wwwURL content,
-              "apiURL" .= apiURL content
-            ]
-          AWS.runResourceT . AWST.runAWST env . AWS.within region $ do
-            response <-
-              AWS.send $
-                AWS.invoke
-                  "processContent"
-                  (toStrict . encode $ object ["contentURL" .= apiURL content])
-            case response ^. AWS.irsPayload of
-              Just output ->
-                liftIO $
-                  logInfo
-                    "worker:lambda:response"
-                    [ "output" .= lenientDecodeUtf8 output,
-                      "wwwURL" .= wwwURL content,
-                      "apiURL" .= apiURL content
-                    ]
-              Nothing ->
-                return ()
-        Nothing ->
-          return ()
+      for_ maybeContent $ \content -> do
+        logInfo
+          "worker:lambda:start"
+          [ "wwwURL" .= wwwURL content,
+            "apiURL" .= apiURL content
+          ]
+        ZHAWS.run aws $ do
+          response <-
+            AWS.send $
+              AWS.invoke
+                "processContent"
+                (toStrict . encode $ object ["contentURL" .= apiURL content])
+          for_ (response ^. AWS.irsPayload) $ \output ->
+            liftIO $
+              logInfo
+                "worker:lambda:response"
+                [ "output" .= lenientDecodeUtf8 output,
+                  "wwwURL" .= wwwURL content,
+                  "apiURL" .= apiURL content
+                ]
     sleepBase = processExistingContentInterval
     -- TODO: Split `BASE_URI` into `WWW_BASE_URI` and `API_BASE_URI`:
     wwwURL c = mconcat [show baseURI, "/", unContentId (contentId c)]
