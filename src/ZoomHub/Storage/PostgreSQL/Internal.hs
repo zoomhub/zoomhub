@@ -387,7 +387,7 @@ insertContent =
             :* Default `as` #abuse_level_id
             :* Default `as` #num_abuse_reports
             :* Default `as` #num_views
-            :* Default `as` #version
+            :* Set (literal Content.version) `as` #version
             :* Set (param @2) `as` #submitter_email
             :* Set (param @3) `as` #verification_token
             :* Default `as` #verified_at
@@ -754,7 +754,7 @@ contentToRow c =
       crAbuseLevelId = 0, -- TODO: Replace hard-coded value
       crNumAbuseReports = 0,
       crNumViews = contentNumViews c,
-      crVersion = fromIntegral Content.version,
+      crVersion = Content.version,
       crSubmitterEmail = contentSubmitterEmail c,
       crVerificationToken = contentVerificationToken c,
       crVerifiedAt = contentVerifiedAt c
