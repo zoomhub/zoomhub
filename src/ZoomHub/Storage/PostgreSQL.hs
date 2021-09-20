@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -O0 #-}
@@ -47,6 +46,7 @@ import Squeal.PostgreSQL
     SortExpression (Asc, Desc),
     firstRow,
     getRows,
+    isNotNull,
     limit,
     literal,
     manipulateParams,
@@ -61,6 +61,7 @@ import Squeal.PostgreSQL
     (.&&),
     (.<),
     (.==),
+    (.>=),
   )
 import UnliftIO (MonadUnliftIO, liftIO)
 import ZoomHub.Storage.PostgreSQL.ConnectInfo
@@ -115,8 +116,14 @@ getNextUnprocessed = do
       ( selectContentBy $
           \t ->
             t
-              & where_ ((#content ! #state) .== param @1)
+              & where_
+                ( (#content ! #state) .== param @1
+                    .&& ( #content ! #version .>= 5
+                            .&& isNotNull (#content ! #verified_at)
+                        )
+                )
               & orderBy [#content ! #initialized_at & Asc]
+              & orderBy [#content ! #version & Desc]
               & orderBy [#content ! #num_views & Desc]
               & limit 1
       )
@@ -160,7 +167,13 @@ initialize ::
 initialize uri email = do
   verificationToken <- show <$> liftIO UUIDV4.nextRandom
   transactionally_ $ do
-    result <- manipulateParams insertContent (uri, Just email, Just verificationToken)
+    result <-
+      manipulateParams
+        insertContent
+        ( uri,
+          Just email,
+          Just verificationToken
+        )
     mRow <- firstRow result
     return $ contentRowToContent <$> mRow
 

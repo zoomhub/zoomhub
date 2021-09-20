@@ -10,11 +10,11 @@ module ZoomHub.API
   )
 where
 
-import Control.Monad.Except (throwError)
+import Control.Monad.Except (throwError, void)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
-import Data.Foldable (fold)
+import Data.Foldable (fold, for_)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
@@ -102,6 +102,8 @@ import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
+import qualified ZoomHub.Email as Email
+import qualified ZoomHub.Email.Verification as Verification
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL (Connection)
@@ -254,7 +256,7 @@ server config =
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbConnPool processContent
+    :<|> restContentByURL awsConfig baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -502,21 +504,39 @@ restInvalidContentId contentId =
   throwError . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL ::
+  AWS.Config ->
   BaseURI ->
   Pool Connection ->
   ProcessContent ->
   ContentURI ->
   Maybe Text -> -- Email
   Handler Content
-restContentByURL baseURI dbConnPool processContent url mEmail = do
+restContentByURL config baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case (maybeContent, mEmail) of
     (Nothing, Nothing) ->
       missingEmailErrorAPI
     (Nothing, Just email) -> do
       mNewContent <- case processContent of
-        ProcessExistingAndNewContent ->
-          liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
+        ProcessExistingAndNewContent -> do
+          maybeNewContent <- liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
+          for_ maybeNewContent $ \newContent -> do
+            case ( Internal.contentSubmitterEmail newContent,
+                   Internal.contentVerificationToken newContent
+                 ) of
+              (Just submitterEmail, Just verificationToken) ->
+                void $
+                  liftIO $
+                    Email.send config $
+                      Verification.request
+                        baseURI
+                        (Internal.contentId newContent)
+                        verificationToken
+                        (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
+                        (Email.To submitterEmail)
+              _ ->
+                pure ()
+          pure maybeNewContent
         _ ->
           noNewContentErrorAPI
       case mNewContent of
