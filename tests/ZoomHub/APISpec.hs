@@ -250,26 +250,24 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             }
     describe "Verify content by ID (GET /v1/content/:id/verification/:token)" do
       it "should return 404 non-existent content" $
-        get "/v1/content/nonExistentContent/verification/00000000-0000-0000-0000-000000000000"
+        put "/v1/content/nonExistentContent/verification/00000000-0000-0000-0000-000000000000" ""
           `shouldRespondWith` "No content with ID: nonExistentContent"
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
     it "should return 401 invalid verification token" $
-      get "/v1/content/yQ4/verification/invalid-token"
+      put "/v1/content/yQ4/verification/invalid-token" ""
         `shouldRespondWith` "Invalid verification token: invalid-token"
           { matchStatus = 401,
             matchHeaders = [plainTextUTF8]
           }
     it "should verify content" do
-      maybeContent <- liftIO $ runPoolPQ (getById $ ContentId.fromString "Xar") (Config.dbConnPool config)
+      let cId = ContentId.fromString newContentId
+      maybeContent <- liftIO $ runPoolPQ (getById cId) (Config.dbConnPool config)
       let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
       liftIO $ print verificationToken
-      get ("/v1/content/Xar/verification/" <> (BC.pack $ show verificationToken))
-        `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":true,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
-          { matchStatus = 200,
-            matchHeaders = [applicationJSON]
-          }
+      put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
+        `shouldRespondWith` restRedirect cId
     describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
         it "should reject request" $

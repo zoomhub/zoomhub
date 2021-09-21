@@ -189,14 +189,14 @@ type API =
       :> Capture "id" ContentId
       :> "verification"
       :> Capture "token" VerificationToken
-      :> Get '[JSON] Content
+      :> Put '[JSON] Content
     -- API: RESTful: Error: Invalid verification token
     :<|> "v1"
       :> "content"
       :> Capture "id" ContentId
       :> "verification"
       :> Capture "token" String
-      :> Get '[JSON] Content
+      :> Put '[JSON] Content
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] AuthenticatedUser
       :> "v1"
@@ -251,7 +251,7 @@ server config =
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
     :<|> restUploadWithoutEmail uploads
-    :<|> restContentVerificationById baseURI contentBaseURI dbConnPool
+    :<|> restContentVerificationById baseURI dbConnPool
     :<|> restContentInvalidVerificationToken
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
@@ -432,16 +432,15 @@ restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
 
 restContentVerificationById ::
   BaseURI ->
-  ContentBaseURI ->
   Pool Connection ->
   ContentId ->
   VerificationToken ->
   Handler Content
-restContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
+restContentVerificationById baseURI dbConnPool contentId verificationToken = do
   result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
   case result of
     Right content ->
-      return $ Content.fromInternal baseURI contentBaseURI content
+      redirectToAPI baseURI $ Internal.contentId content
     Left VerificationError.TokenMismatch ->
       throwError . API.error401 $ "Unauthorized verification token: " <> show verificationToken
     Left VerificationError.ContentNotFound ->
