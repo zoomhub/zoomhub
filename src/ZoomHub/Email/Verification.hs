@@ -27,7 +27,8 @@ request baseURI contentId verificationToken from to =
         <> verificationURL
         <> "\n\nIf you haven’t submitted anything to ZoomHub, just ignore this email.\n\n\
            \Thanks,\n\
-           \Daniel from ZoomHub\n"
+           \Daniel from ZoomHub\n\n\
+           \P.S. If you have questions or feedback, simply reply to this email. I read each and every one."
     verificationURL =
       T.pack (show baseURI)
         <> "/v1/content/"
