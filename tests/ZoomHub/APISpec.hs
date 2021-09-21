@@ -52,6 +52,7 @@ import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVer
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
+import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath (TempPath))
 
@@ -156,6 +157,7 @@ config =
       dbConnPoolIdleTime = dbConnPoolIdleTime',
       dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe',
       dbConnPoolNumStripes = dbConnPoolNumStripes',
+      environment = Environment.Test,
       error404 = "404",
       logger = nullLogger,
       openSeadragonScript = "osd",

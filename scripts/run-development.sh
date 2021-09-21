@@ -18,6 +18,7 @@ if [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
   exit 1
 fi
 
+ZH_ENV='development' \
 BASE_URI="${BASE_URI:-http://localhost:8000}" \
 CONTENT_BASE_URI='http://cache-development.zoomhub.net/content' \
 PGDATABASE='zoomhub_development' \

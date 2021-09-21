@@ -65,6 +65,7 @@ library
     , ZoomHub.Types.DeepZoomImage.TileFormat
     , ZoomHub.Types.DeepZoomImage.TileOverlap
     , ZoomHub.Types.DeepZoomImage.TileSize
+    , ZoomHub.Types.Environment
     , ZoomHub.Types.StaticBaseURI
     , ZoomHub.Types.TempPath
     , ZoomHub.Types.VerificationError
