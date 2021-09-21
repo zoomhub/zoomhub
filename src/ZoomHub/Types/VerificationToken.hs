@@ -11,10 +11,12 @@ module ZoomHub.Types.VerificationToken
     VerificationToken' (VerificationToken),
     -- TODO: Can we test this without exporting it?
     unVerificationToken,
+    fromText,
   )
 where
 
 import Data.Maybe (fromJust)
+import Data.Text (Text)
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Servant (FromHttpApiData, parseUrlPiece)
@@ -27,6 +29,9 @@ type VerificationToken = VerificationToken' UUID
 
 instance Show VerificationToken where
   show = UUID.toString . unVerificationToken
+
+fromText :: Text -> Maybe VerificationToken
+fromText t = VerificationToken <$> UUID.fromText t
 
 -- Text
 instance FromHttpApiData VerificationToken where

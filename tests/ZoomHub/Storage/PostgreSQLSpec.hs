@@ -97,6 +97,8 @@ import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat (JPEG))
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap (TileOverlap1))
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize (TileSize254))
+import ZoomHub.Types.VerificationToken (VerificationToken)
+import qualified ZoomHub.Types.VerificationToken as VerificationToken
 
 main :: IO ()
 main = hspec spec
@@ -434,7 +436,7 @@ spec =
           contentType = Unknown,
           contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
           contentState = Initialized,
-          contentInitializedAt = addUTCTime (-age) currentTime,
+          contentInitializedAt = initializedAt,
           contentActiveAt = Nothing,
           contentCompletedAt = Nothing,
           contentMIME = Nothing,
@@ -444,9 +446,11 @@ spec =
           contentError = Nothing,
           contentDZI = Nothing,
           contentSubmitterEmail = Nothing,
-          contentVerificationToken = Nothing,
-          contentVerifiedAt = Nothing
+          contentVerificationToken = Just nullVerificationToken,
+          contentVerifiedAt = Just initializedAt
         }
+      where
+        initializedAt = addUTCTime (-age) currentTime
     mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkActiveContent id_ currentTime age =
       I.Content
@@ -464,10 +468,11 @@ spec =
           contentError = Nothing,
           contentDZI = Nothing,
           contentSubmitterEmail = Nothing,
-          contentVerificationToken = Nothing,
-          contentVerifiedAt = Nothing
+          contentVerificationToken = Just nullVerificationToken,
+          contentVerifiedAt = Just initializedAt
         }
       where
+        initializedAt = addUTCTime (-1) activeAt
         activeAt = addUTCTime (-age) currentTime
     mkSucceededContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkSucceededContent id_ currentTime age =
@@ -479,7 +484,7 @@ spec =
               contentType = Image,
               contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
               contentState = CompletedSuccess,
-              contentInitializedAt = addUTCTime (-1) activeAt,
+              contentInitializedAt = initializedAt,
               contentActiveAt = Just activeAt,
               contentCompletedAt = Just (addUTCTime 1 activeAt),
               contentMIME = mMIME,
@@ -489,20 +494,25 @@ spec =
               contentError = Nothing,
               contentDZI = Just dzi,
               contentSubmitterEmail = Nothing,
-              contentVerificationToken = Nothing,
-              contentVerifiedAt = Nothing
+              contentVerificationToken = Just nullVerificationToken,
+              contentVerifiedAt = Just initializedAt
             }
       where
         activeAt = addUTCTime (-age) currentTime
+        initializedAt = addUTCTime (-1) activeAt
+
     testURL :: ContentURI
     testURL = ContentURI "https://example.com/1"
+
     testEmail :: Text
     testEmail = "test@example.com"
+
     isWithinSecondsOf :: UTCTime -> NominalDiffTime -> UTCTime -> Bool
     isWithinSecondsOf pivot interval t =
       let upperBound = addUTCTime interval pivot
           lowerBound = addUTCTime (-interval) pivot
        in lowerBound <= t && t <= upperBound
+
     safeGetCurrentTime :: IO UTCTime
     safeGetCurrentTime = do
       ct@UTCTime {utctDayTime} <- getCurrentTime
@@ -510,3 +520,7 @@ spec =
             picosecondsToDiffTime $
               (diffTimeToPicoseconds utctDayTime `div` 1000000) * 1000000
       return $ ct {utctDayTime = newDayTime}
+
+    nullVerificationToken :: VerificationToken
+    nullVerificationToken =
+      fromJust $ VerificationToken.fromText "00000000-0000-0000-0000-000000000000"
