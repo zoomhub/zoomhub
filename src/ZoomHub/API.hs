@@ -537,6 +537,7 @@ restContentByURL awsConfig baseURI dbConnPool processContent url mEmail = do
                         (Email.To submitterEmail)
               _ ->
                 pure ()
+          -- TODO: Redirect to content:
           pure maybeNewContent
         _ ->
           noNewContentErrorAPI
