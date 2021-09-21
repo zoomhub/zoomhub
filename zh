@@ -97,12 +97,8 @@ test)
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"
 
-    ZH_ENV='test' \
     PGUSER="$(whoami)" \
     PGDATABASE="$TEST_DB_NAME" \
-    AWS_ACCESS_KEY_ID='<TEST>' \
-    AWS_SECRET_ACCESS_KEY='<TEST>' \
-    S3_SOURCES_BUCKET='<TEST>' \
       stack test \
         --fast \
         --ghc-options='-Wall' \
