@@ -268,7 +268,6 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
       let cId = ContentId.fromString newContentId
       maybeContent <- liftIO $ runPoolPQ (getById cId) (Config.dbConnPool config)
       let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
-      liftIO $ print verificationToken
       put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
         `shouldRespondWith` restRedirect cId
     describe "Complete content by ID (PUT /v1/content/:id/completion)" do
