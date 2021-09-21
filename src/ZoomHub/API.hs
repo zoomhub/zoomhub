@@ -124,6 +124,7 @@ import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Types.ContentURI (ContentURI)
+import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
@@ -256,7 +257,7 @@ server config =
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL awsConfig baseURI dbConnPool processContent
+    :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -503,14 +504,14 @@ restInvalidContentId contentId =
   throwError . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL ::
-  AWS.Config ->
+  Config ->
   BaseURI ->
   Pool Connection ->
   ProcessContent ->
   ContentURI ->
   Maybe Text -> -- Email
   Handler Content
-restContentByURL awsConfig baseURI dbConnPool processContent url mEmail = do
+restContentByURL config baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case (maybeContent, mEmail) of
     (Nothing, Nothing) ->
@@ -518,27 +519,24 @@ restContentByURL awsConfig baseURI dbConnPool processContent url mEmail = do
     (Nothing, Just email) -> do
       mNewContent <- case processContent of
         ProcessExistingAndNewContent -> do
-          maybeNewContent <- liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
-          for_ maybeNewContent $ \newContent -> do
-            -- HACK: Avoid calling SES during tests:
+          mNewContent <- liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
+          for_ mNewContent $ \newContent -> do
             case ( Internal.contentSubmitterEmail newContent,
-                   Internal.contentVerificationToken newContent,
-                   AWS.isTest awsConfig
+                   Internal.contentVerificationToken newContent
                  ) of
-              (Just submitterEmail, Just verificationToken, False) ->
-                void $
-                  liftIO $
-                    Email.send awsConfig $
-                      Verification.request
-                        baseURI
-                        (Internal.contentId newContent)
-                        verificationToken
-                        (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
-                        (Email.To submitterEmail)
+              (Just submitterEmail, Just verificationToken) ->
+                case environment of
+                  Environment.Development ->
+                    sendEmail (Internal.contentId newContent) submitterEmail verificationToken
+                  Environment.Production ->
+                    sendEmail (Internal.contentId newContent) submitterEmail verificationToken
+                  -- NOTE: Do not send email in test environment
+                  Environment.Test ->
+                    pure ()
               _ ->
                 pure ()
           -- TODO: Redirect to content:
-          pure maybeNewContent
+          pure mNewContent
         _ ->
           noNewContentErrorAPI
       case mNewContent of
@@ -548,6 +546,19 @@ restContentByURL awsConfig baseURI dbConnPool processContent url mEmail = do
           throwError . API.error503 $ failedToCreateContentErrorMessage
     (Just content, _) ->
       redirectToAPI baseURI (Internal.contentId content)
+  where
+    awsConfig = Config.aws config
+    environment = Config.environment config
+    sendEmail contentId submitterEmail verificationToken =
+      void $
+        liftIO $
+          Email.send awsConfig $
+            Verification.request
+              baseURI
+              contentId
+              verificationToken
+              (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
+              (Email.To submitterEmail)
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
