@@ -14,7 +14,6 @@ import System.Environment (getEnvironment)
 data Config = Config
   { configAccessKeyId :: Text,
     configSecretAccessKey :: Text,
-    configContentS3Bucket :: Text,
     configSourcesS3Bucket :: Text,
     configRegion :: AWS.Region
   }
@@ -27,6 +26,5 @@ fromEnv region = do
     Config
       <$> (T.pack <$> lookup "AWS_ACCESS_KEY_ID" env)
       <*> (T.pack <$> lookup "AWS_SECRET_ACCESS_KEY" env)
-      <*> (T.pack <$> lookup "S3_CACHE_BUCKET" env)
       <*> (T.pack <$> lookup "S3_SOURCES_BUCKET" env)
       <*> Just region

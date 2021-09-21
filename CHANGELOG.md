@@ -1,5 +1,9 @@
 # ZoomHub
 
+## Unreleased
+
+- Remove unused `S3_CACHE_BUCKET` from Haskell web server.
+
 ## 2021-09-09
 
 - Generate verification token for each new submission. This will be used to
