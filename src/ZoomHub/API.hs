@@ -510,7 +510,7 @@ restContentByURL ::
   ContentURI ->
   Maybe Text -> -- Email
   Handler Content
-restContentByURL config baseURI dbConnPool processContent url mEmail = do
+restContentByURL awsConfig baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case (maybeContent, mEmail) of
     (Nothing, Nothing) ->
@@ -520,13 +520,15 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
         ProcessExistingAndNewContent -> do
           maybeNewContent <- liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
           for_ maybeNewContent $ \newContent -> do
+            -- HACK: Avoid calling SES during tests:
             case ( Internal.contentSubmitterEmail newContent,
-                   Internal.contentVerificationToken newContent
+                   Internal.contentVerificationToken newContent,
+                   AWS.isTest awsConfig
                  ) of
-              (Just submitterEmail, Just verificationToken) ->
+              (Just submitterEmail, Just verificationToken, False) ->
                 void $
                   liftIO $
-                    Email.send config $
+                    Email.send awsConfig $
                       Verification.request
                         baseURI
                         (Internal.contentId newContent)

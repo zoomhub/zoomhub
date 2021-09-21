@@ -17,6 +17,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
+import qualified Network.AWS as AWS
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
@@ -41,6 +42,7 @@ import Text.RawString.QQ (r)
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
+import qualified ZoomHub.Config.AWS as AWSConfig
 import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
 import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
@@ -147,7 +149,8 @@ config :: Config
 config =
   Config
     { apiUser = authorizedUser,
-      aws = undefined, -- TODO: Test AWS functionality
+      -- TODO: How can we avoid `unsafePerformIO`?
+      aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv AWS.Ohio,
       baseURI = BaseURI (toURI "http://localhost:8000"),
       contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
         Just uri -> uri

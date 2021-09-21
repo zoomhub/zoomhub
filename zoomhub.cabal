@@ -197,6 +197,7 @@ test-suite tests
   build-depends:
       base
     , aeson
+    , amazonka
     , base64
     , bytestring
     , generics-sop
