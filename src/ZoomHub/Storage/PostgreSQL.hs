@@ -123,7 +123,6 @@ getNextUnprocessed = do
                         )
                 )
               & orderBy [#content ! #initialized_at & Asc]
-              & orderBy [#content ! #version & Desc]
               & orderBy [#content ! #num_views & Desc]
               & limit 1
       )
