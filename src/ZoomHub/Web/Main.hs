@@ -57,6 +57,7 @@ import ZoomHub.Types.APIUser (APIUser (APIUser))
 import qualified ZoomHub.Types.APIUser as APIUser
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
+import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
 import ZoomHub.Types.TempPath (TempPath (TempPath), unTempPath)
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
@@ -96,6 +97,10 @@ main = do
   -- https://hackage.haskell.org/package/configurator
   env <- getEnvironment
   hostname <- getHostName
+  environment <-
+    fromMaybe
+      (error "ZoomHub.Main: Missing `ZH_ENV`")
+      <$> Environment.fromEnv
   currentDirectory <- getCurrentDirectory
   openSeadragonScript <-
     readFile $
@@ -109,7 +114,10 @@ main = do
   logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
-  mAWS <- AWS.fromEnv
+  aws <-
+    fromMaybe
+      (error "ZoomHub.Main: Failed to parse AWS configuration.")
+      <$> AWS.fromEnv
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup processContentEnvName env
       processContent = fromMaybe ProcessNoContent maybeProcessContent
@@ -137,11 +145,18 @@ main = do
       dbConnPoolNumStripes = 1
       dbConnPoolIdleTime = 10 :: Second
       dbConnPoolMaxResourcesPerStripe = fromIntegral $ (numCapabilities * 2) + numSpindles
-      mContentBaseURI = mkContentBaseURI =<< parseAbsoluteURI =<< lookup contentBaseURIEnvName env
-      mAPIUser = do
-        username <- T.pack <$> lookup "API_USERNAME" env
-        password <- T.pack <$> lookup "API_PASSWORD" env
-        pure $ APIUser {..}
+      contentBaseURI =
+        fromMaybe
+          (error $ "ZoomHub.Main: Failed to parse content base URI. Please check '" <> contentBaseURIEnvName <> "'.")
+          (mkContentBaseURI =<< parseAbsoluteURI =<< lookup contentBaseURIEnvName env)
+      apiUser =
+        fromMaybe
+          (error "ZoomHub.Main: Missing API user. Please set 'API_USERNAME' and/or 'API_PASSWORD'.")
+          ( do
+              username <- T.pack <$> lookup "API_USERNAME" env
+              password <- T.pack <$> lookup "API_PASSWORD" env
+              pure $ APIUser {..}
+          )
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-
     createConnectionPool
@@ -149,56 +164,48 @@ main = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
-  case (mAWS, mContentBaseURI, mAPIUser) of
-    (Nothing, _, _) ->
-      error "ZoomHub.Main: Failed to parse AWS configuration."
-    (_, Nothing, _) ->
-      error $ "ZoomHub.Main: Failed to parse content base URI. Please check '" <> contentBaseURIEnvName <> "'."
-    (_, _, Nothing) ->
-      error "ZoomHub.Main: Missing API user. Please set 'API_USERNAME' and/or 'API_PASSWORD'."
-    (Just aws, Just contentBaseURI, Just apiUser) -> do
-      let config = Config {..}
-      ensureTempPathExists tempPath
-      logInfo_ $
-        "Welcome to ZoomHub.\
-        \ Go to <"
-          ++ show baseURI
-          ++ "> and have fun!"
-      logInfo
-        "Config: App"
-        ["config" .= config]
-      -- Workers
-      logInfo
-        "Config: Worker"
-        [ "numProcessors" .= numProcessors,
-          "numCapabilities" .= numCapabilities,
-          "numProcessingWorkers" .= numProcessingWorkers,
-          "numProcessExpiredActiveWorkers" .= (1 :: Integer)
-        ]
-      _ <- async $ do
-        let delay = 30 :: Second
-        logInfo
-          "Worker: Schedule resetting expired active content"
-          ["delay" .= delay]
-        threadDelay (fromIntegral $ toMicroseconds delay)
-        processExpiredActiveContent config
-      case processContent of
-        ProcessExistingContent ->
-          startProcessingWorkers config numProcessingWorkers
-        ProcessExistingAndNewContent ->
-          startProcessingWorkers config numProcessingWorkers
-        ProcessNoContent ->
-          return ()
-      -- Web server
-      logInfo
-        "Start web server"
-        ["port" .= port]
-      let waiSettings =
-            setPort (fromIntegral port)
-              . setOnException serverExceptionHandler
-              $ defaultSettings
-      waiApp <- app config
-      runSettings waiSettings waiApp
+  let config = Config {..}
+  ensureTempPathExists tempPath
+  logInfo_ $
+    "Welcome to ZoomHub.\
+    \ Go to <"
+      ++ show baseURI
+      ++ "> and have fun!"
+  logInfo
+    "Config: App"
+    ["config" .= config]
+  -- Workers
+  logInfo
+    "Config: Worker"
+    [ "numProcessors" .= numProcessors,
+      "numCapabilities" .= numCapabilities,
+      "numProcessingWorkers" .= numProcessingWorkers,
+      "numProcessExpiredActiveWorkers" .= (1 :: Integer)
+    ]
+  _ <- async $ do
+    let delay = 30 :: Second
+    logInfo
+      "Worker: Schedule resetting expired active content"
+      ["delay" .= delay]
+    threadDelay (fromIntegral $ toMicroseconds delay)
+    processExpiredActiveContent config
+  case processContent of
+    ProcessExistingContent ->
+      startProcessingWorkers config numProcessingWorkers
+    ProcessExistingAndNewContent ->
+      startProcessingWorkers config numProcessingWorkers
+    ProcessNoContent ->
+      return ()
+  -- Web server
+  logInfo
+    "Start web server"
+    ["port" .= port]
+  let waiSettings =
+        setPort (fromIntegral port)
+          . setOnException serverExceptionHandler
+          $ defaultSettings
+  waiApp <- app config
+  runSettings waiSettings waiApp
   where
     startProcessingWorkers :: Config -> Integer -> IO ()
     startProcessingWorkers config numProcessingWorkers = do

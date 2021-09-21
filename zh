@@ -94,7 +94,10 @@ test)
 
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"
-    PGUSER="$(whoami)" PGDATABASE="$TEST_DB_NAME" \
+
+    ZH_ENV='test' \
+    PGUSER="$(whoami)" \
+    PGDATABASE="$TEST_DB_NAME" \
       stack test \
         --fast \
         --ghc-options='-Wall' \

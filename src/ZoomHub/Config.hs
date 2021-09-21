@@ -24,6 +24,7 @@ import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.APIUser (APIUser)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
+import ZoomHub.Types.Environment (Environment)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import ZoomHub.Types.TempPath (TempPath)
 
@@ -40,6 +41,7 @@ data Config = Config
     dbConnPoolIdleTime :: Second,
     dbConnPoolMaxResourcesPerStripe :: Integer,
     dbConnPoolNumStripes :: Integer,
+    environment :: Environment,
     error404 :: BL.ByteString,
     logger :: Middleware,
     openSeadragonScript :: String,
