@@ -187,7 +187,7 @@ config =
           dbConnPoolIdleTime'
           dbConnPoolMaxResourcesPerStripe'
     dbConnPoolIdleTime' = 10 :: Second
-    dbConnPoolMaxResourcesPerStripe' = (numCapabilities * 2) + numSpindles
+    dbConnPoolMaxResourcesPerStripe' = numCapabilities * 2 + numSpindles
     dbConnPoolNumStripes' = 1
 
 closeDatabaseConnection :: Config -> IO ()
@@ -227,8 +227,8 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         liftIO do
           let pool = Config.dbConnPool config
           mContent <- runPoolPQ (getById $ ContentId.fromString newContentId) pool
-          (mContent >>= contentSubmitterEmail) `shouldBe` (Just $ T.pack testEmail)
-          (mContent >>= \c -> fromIntegral . length . show <$> contentVerificationToken c) `shouldBe` (Just (36 :: Integer))
+          (mContent >>= contentSubmitterEmail) `shouldBe` Just (T.pack testEmail)
+          (mContent >>= (fmap (fromIntegral . length . show) . contentVerificationToken)) `shouldBe` Just (36 :: Integer)
         get ("/v1/content/" <> BC.pack newContentId)
           `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":false,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
             { matchStatus = 200,
