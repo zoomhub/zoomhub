@@ -21,14 +21,14 @@ request baseURI contentId verificationToken from to =
     body =
       "Hi,\n\
       \\n\
-      \Thanks for your submission to ZoomHub (formerly zoom.it).\n\
+      \Thank you for your submission to ZoomHub (formerly zoom.it).\n\
       \\n\
-      \To view it, please follow this link:\n"
+      \To view it, please follow this link: "
         <> verificationURL
-        <> "\n\nIf you haven’t submitted anything to ZoomHub, just ignore this email.\n\n\
+        <> "\n\nIf you haven’t submitted anything to ZoomHub, please ignore this email.\n\n\
            \Thanks,\n\
-           \Daniel from ZoomHub\n\n\
-           \P.S. If you have questions or feedback, simply reply to this email. I read each and every one."
+           \Daniel from ZoomHub\n\n\n\
+           \P.S. If you have any questions or feedback, simply reply to this email. I read each and every message."
     verificationURL =
       T.pack (show baseURI)
         <> "/v1/content/"
