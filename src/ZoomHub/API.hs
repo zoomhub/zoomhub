@@ -130,11 +130,13 @@ import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
+import qualified ZoomHub.Web.Page.VerifyContent as Page
+import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
+import qualified ZoomHub.Web.Page.ViewContent as Page
 import ZoomHub.Web.Static (serveDirectory)
 import ZoomHub.Web.Types.Embed (Embed, mkEmbed)
 import ZoomHub.Web.Types.EmbedDimension (EmbedDimension)
 import ZoomHub.Web.Types.EmbedId (EmbedId, unEmbedId)
-import ZoomHub.Web.Types.ViewContent (ViewContent, mkViewContent)
 
 data AuthenticatedUser = AuthenticatedUser
   deriving (Show, Generic)
@@ -225,13 +227,18 @@ type API =
       :> QueryParam "width" EmbedDimension
       :> QueryParam "height" EmbedDimension
       :> Get '[JavaScript] Embed
+    -- Web: Verification
+    :<|> Capture "viewId" ContentId
+      :> "verify"
+      :> Capture "token" VerificationToken
+      :> Get '[HTML] Page.VerifyContent
     -- Web: View
-    :<|> Capture "viewId" ContentId :> Get '[HTML] ViewContent
-    :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] ViewContent
+    :<|> Capture "viewId" ContentId :> Get '[HTML] Page.ViewContent
+    :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] Page.ViewContent
     -- Web: View: Error: Invalid URL
-    :<|> RequiredQueryParam "url" String :> Get '[HTML] ViewContent
+    :<|> RequiredQueryParam "url" String :> Get '[HTML] Page.ViewContent
     -- Web: Shortcut: `http://zoomhub.net/http://example.com`:
-    :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] ViewContent
+    :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] Page.ViewContent
     -- Static files
     :<|> Raw
 
@@ -262,6 +269,7 @@ server config =
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
     -- Web: View
+    :<|> webContentVerificationById baseURI contentBaseURI dbConnPool
     :<|> webContentById baseURI contentBaseURI dbConnPool
     :<|> webContentByURL baseURI dbConnPool
     :<|> webInvalidURLParam
@@ -608,34 +616,55 @@ webEmbed
       contentId = unEmbedId embedId
       defaultContainerId n = "zoomhub-embed-" ++ show n
 
+-- Web: Verification
+-- TODO: Refactor to call API or extract implementation from API:
+webContentVerificationById ::
+  BaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  ContentId ->
+  VerificationToken ->
+  Handler Page.VerifyContent
+webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
+  result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
+  case result of
+    Right internalContent -> do
+      let content = Content.fromInternal baseURI contentBaseURI internalContent
+      return $ Page.mkVerifyContent baseURI (VerificationResult.Success $ content)
+    Left VerificationError.TokenMismatch ->
+      return $ Page.mkVerifyContent baseURI (VerificationResult.Error "Cannot verify submission :(")
+    Left VerificationError.ContentNotFound ->
+      throwError . Web.error404 $ contentNotFoundMessage contentId
+
 -- Web: View
 webContentById ::
   BaseURI ->
   ContentBaseURI ->
   Pool Connection ->
   ContentId ->
-  Handler ViewContent
+  Handler Page.ViewContent
 webContentById baseURI contentBaseURI dbConnPool contentId = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
   case maybeContent of
-    Nothing -> throwError . Web.error404 $ contentNotFoundMessage contentId
+    Nothing ->
+      throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c -> do
       let content = Content.fromInternal baseURI contentBaseURI c
-      return $ mkViewContent baseURI content
+      return $ Page.mkViewContent baseURI content
 
 -- TODO: Add support for submission, i.e. create content in the background:
 webContentByURL ::
   BaseURI ->
   Pool Connection ->
   ContentURI ->
-  Handler ViewContent
+  Handler Page.ViewContent
 webContentByURL baseURI dbConnPool contentURI = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL contentURI) dbConnPool
   case maybeContent of
     Nothing -> noNewContentErrorWeb
     Just c -> redirectToView baseURI (Internal.contentId c)
 
-webInvalidURLParam :: String -> Handler ViewContent
+webInvalidURLParam :: String -> Handler Page.ViewContent
 webInvalidURLParam _ = throwError . Web.error400 $ invalidURLErrorMessage
 
 -- Helpers
@@ -646,7 +675,7 @@ contentNotFoundMessage contentId =
 noContentWithIdMessage :: String -> String
 noContentWithIdMessage contentId = "No content with ID: " ++ contentId
 
-noNewContentErrorWeb :: Handler ViewContent
+noNewContentErrorWeb :: Handler Page.ViewContent
 noNewContentErrorWeb = noNewContentError Web.error503
 
 noNewContentErrorAPI :: Handler a
@@ -680,7 +709,7 @@ invalidURLErrorMessage :: String
 invalidURLErrorMessage =
   "Please give us the full URL, including ‘http://’ or ‘https://’."
 
-redirectToView :: BaseURI -> ContentId -> Handler ViewContent
+redirectToView :: BaseURI -> ContentId -> Handler Page.ViewContent
 redirectToView baseURI contentId =
   -- TODO: Look into Servant ‘Links’ for type safe link generation:
   redirect $ webRedirectURI baseURI contentId

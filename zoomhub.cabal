@@ -77,13 +77,15 @@ library
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Main
+    , ZoomHub.Web.Page
+    , ZoomHub.Web.Page.VerifyContent
+    , ZoomHub.Web.Page.ViewContent
     , ZoomHub.Web.Static
     , ZoomHub.Web.Types.Embed
     , ZoomHub.Web.Types.EmbedDimension
     , ZoomHub.Web.Types.EmbedId
     , ZoomHub.Web.Types.OpenSeadragonTileSource
     , ZoomHub.Web.Types.OpenSeadragonViewerConfig
-    , ZoomHub.Web.Types.ViewContent
     , ZoomHub.Worker
   default-language: Haskell2010
   ghc-options:      -Wall
