@@ -98,6 +98,7 @@ library
     , amazonka-ses
     , async
     , atomic-write
+    , binary
     , blaze-builder
     , bytestring
     , case-insensitive

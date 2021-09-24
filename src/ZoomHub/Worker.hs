@@ -66,7 +66,7 @@ processExistingContent Config {..} workerId = forever $ do
           [ "wwwURL" .= wwwURL content,
             "apiURL" .= apiURL content
           ]
-        ZHAWS.run aws $ do
+        ZHAWS.run aws logLevel $ do
           response <-
             AWS.send $
               AWS.invoke

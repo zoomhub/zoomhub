@@ -547,12 +547,13 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
     (Just content, _) ->
       redirectToAPI baseURI (Internal.contentId content)
   where
+    logLevel = Config.logLevel config
     awsConfig = Config.aws config
     environment = Config.environment config
     sendEmail contentId submitterEmail verificationToken =
       void $
         liftIO $
-          Email.send awsConfig $
+          Email.send awsConfig logLevel $
             Verification.request
               baseURI
               contentId

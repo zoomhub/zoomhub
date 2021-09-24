@@ -15,6 +15,7 @@ import qualified Network.AWS as AWS
 import qualified Network.AWS.SES as SES
 import qualified ZoomHub.AWS as ZHAWS
 import qualified ZoomHub.Config.AWS as AWS
+import ZoomHub.Log.Logger (LogLevel)
 
 data Email = Email
   { from :: From,
@@ -27,9 +28,9 @@ newtype From = From {unFrom :: Text}
 
 newtype To = To {unTo :: Text}
 
-send :: AWS.Config -> Email -> IO SES.SendEmailResponse
-send config Email {..} =
-  ZHAWS.run config $
+send :: AWS.Config -> LogLevel -> Email -> IO SES.SendEmailResponse
+send config logLevel Email {..} =
+  ZHAWS.run config logLevel $
     AWS.send $
       SES.sendEmail (unFrom from) destination message
   where
