@@ -26,10 +26,8 @@ import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
 import qualified ZoomHub.AWS as ZHAWS
 import ZoomHub.Config (Config (..))
-import ZoomHub.Log.Logger (logException, logInfo, logInfoT)
-import ZoomHub.Storage.PostgreSQL
-  ( dequeueNextUnprocessed,
-  )
+import ZoomHub.Log.Logger (logDebug, logDebugT, logException, logInfo)
+import ZoomHub.Storage.PostgreSQL (dequeueNextUnprocessed)
 import ZoomHub.Types.Content (Content (contentId))
 import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Utils (lenientDecodeUtf8)
@@ -41,26 +39,23 @@ processExistingContentInterval = 3
 -- Public API
 processExistingContent :: Config -> String -> IO ()
 processExistingContent Config {..} workerId = forever $ do
-  logInfo "worker:start" ["worker" .= workerId]
+  logDebug "worker:start" ["worker" .= workerId]
   go `catchAny` \ex ->
     -- TODO: Mark as `completed:failure` or `initialized`:
     logException "worker:error" ex extraLogMeta
-  logInfo "worker:end" extraLogMeta
+  logDebug "worker:end" extraLogMeta
   let delta = (2 * toMicroseconds sleepBase) `div` 2
   jitter <- randomRIO (0, delta)
   let sleepDuration = fromMicroseconds $ delta + jitter :: Second
-  logInfo "Wait for next unprocessed content" $
+  logDebug "Wait for next unprocessed content" $
     ("sleepDuration" .= sleepDuration) : extraLogMeta
   threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     go = do
-      maybeContent <-
+      mContent <- do
         logT "Get next unprocessed content and mark as active" [] $
-          liftIO
-          -- TODO: Only dequeue eligible (email verified) content:
-          $
-            runPoolPQ dequeueNextUnprocessed dbConnPool
-      for_ maybeContent $ \content -> do
+          liftIO $ runPoolPQ dequeueNextUnprocessed dbConnPool
+      for_ mContent $ \content -> do
         logInfo
           "worker:lambda:start"
           [ "wwwURL" .= wwwURL content,
@@ -84,7 +79,7 @@ processExistingContent Config {..} workerId = forever $ do
     -- TODO: Split `BASE_URI` into `WWW_BASE_URI` and `API_BASE_URI`:
     wwwURL c = mconcat [show baseURI, "/", unContentId (contentId c)]
     apiURL c = mconcat [show baseURI, "/v1/content/", unContentId (contentId c)]
-    logT msg meta = logInfoT msg (meta ++ extraLogMeta)
+    logT msg meta = logDebugT msg (meta ++ extraLogMeta)
     extraLogMeta =
       [ "worker" .= workerId,
         "topic" .= ("worker:process:existing" :: Text)
