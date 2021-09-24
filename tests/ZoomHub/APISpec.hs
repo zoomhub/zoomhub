@@ -45,6 +45,7 @@ import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWSConfig
 import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
 import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
+import qualified ZoomHub.Log.LogLevel as LogLevel
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
@@ -163,6 +164,7 @@ config =
       environment = Environment.Test,
       error404 = "404",
       logger = nullLogger,
+      logLevel = LogLevel.Debug,
       openSeadragonScript = "osd",
       port = 8000,
       processContent = ProcessExistingAndNewContent,
