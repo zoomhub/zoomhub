@@ -20,6 +20,7 @@ import Squeal.PostgreSQL.Pool (Pool)
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
+import ZoomHub.Log.LogLevel (LogLevel)
 import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Types.APIUser (APIUser)
 import ZoomHub.Types.BaseURI (BaseURI)
@@ -44,6 +45,7 @@ data Config = Config
     environment :: Environment,
     error404 :: BL.ByteString,
     logger :: Middleware,
+    logLevel :: LogLevel,
     openSeadragonScript :: String,
     port :: Integer,
     processContent :: ProcessContent,
@@ -63,6 +65,7 @@ instance ToJSON Config where
         "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
         "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe,
         "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
+        "logLevel" .= show logLevel,
         "port" .= port,
         "processContent" .= processContent,
         "publicPath" .= publicPath,

@@ -20,6 +20,7 @@ module ZoomHub.Types.Content
   )
 where
 
+import Data.Int (Int32)
 import ZoomHub.Types.Content.Internal
   ( Content,
     contentActiveAt,
@@ -52,5 +53,5 @@ import ZoomHub.Types.Content.Internal
 --   - `verification_token`
 --   - `verified_at`
 --   for tracking the author of a submission or upload.
-version :: Int
+version :: Int32
 version = 5

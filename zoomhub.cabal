@@ -34,12 +34,16 @@ library
     , ZoomHub.API.Types.DeepZoomImageWithoutURL
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
+    , ZoomHub.AWS
     , ZoomHub.Config
     , ZoomHub.Config.AWS
     , ZoomHub.Config.ProcessContent
     , ZoomHub.Config.Uploads
     , ZoomHub.Debug
+    , ZoomHub.Email
+    , ZoomHub.Email.Verification
     , ZoomHub.Log.Logger
+    , ZoomHub.Log.LogLevel
     , ZoomHub.Log.RequestLogger
     , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
@@ -91,8 +95,10 @@ library
     , aeson-pretty
     , amazonka
     , amazonka-lambda
+    , amazonka-ses
     , async
     , atomic-write
+    , binary
     , blaze-builder
     , bytestring
     , case-insensitive
@@ -193,6 +199,7 @@ test-suite tests
   build-depends:
       base
     , aeson
+    , amazonka
     , base64
     , bytestring
     , generics-sop

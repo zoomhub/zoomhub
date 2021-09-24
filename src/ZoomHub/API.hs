@@ -10,11 +10,11 @@ module ZoomHub.API
   )
 where
 
-import Control.Monad.Except (throwError)
+import Control.Monad.Except (throwError, void)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
-import Data.Foldable (fold)
+import Data.Foldable (fold, for_)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
@@ -102,6 +102,8 @@ import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
+import qualified ZoomHub.Email as Email
+import qualified ZoomHub.Email.Verification as Verification
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL (Connection)
@@ -122,6 +124,7 @@ import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Types.ContentURI (ContentURI)
+import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
@@ -176,6 +179,7 @@ type API =
       :> "upload"
       :> RequiredQueryParam "email" Text -- TODO: Introduce `Email` type
       :> Get '[JSON] (HashMap Text Text)
+    -- API: Error: RESTful: Upload without email
     :<|> "v1"
       :> "content"
       :> "upload"
@@ -186,14 +190,14 @@ type API =
       :> Capture "id" ContentId
       :> "verification"
       :> Capture "token" VerificationToken
-      :> Get '[JSON] Content
+      :> Put '[JSON] Content
     -- API: RESTful: Error: Invalid verification token
     :<|> "v1"
       :> "content"
       :> Capture "id" ContentId
       :> "verification"
       :> Capture "token" String
-      :> Get '[JSON] Content
+      :> Put '[JSON] Content
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] AuthenticatedUser
       :> "v1"
@@ -248,12 +252,12 @@ server config =
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
     :<|> restUploadWithoutEmail uploads
-    :<|> restContentVerificationById baseURI contentBaseURI dbConnPool
+    :<|> restContentVerificationById baseURI dbConnPool
     :<|> restContentInvalidVerificationToken
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
     :<|> restContentById baseURI contentBaseURI dbConnPool
     :<|> restInvalidContentId
-    :<|> restContentByURL baseURI dbConnPool processContent
+    :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Embed
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
@@ -392,7 +396,7 @@ restUpload baseURI awsConfig uploads email =
                 PPCEquals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
-                  ( fold $
+                  ( fold
                       [ T.pack $ show baseURI,
                         "/v1/content",
                         "?email=",
@@ -416,11 +420,11 @@ restUpload baseURI awsConfig uploads email =
               case result of
                 Left minioErr ->
                   return $ HS.singleton "error" (T.pack $ show minioErr)
-                Right (_url, formData) -> do
+                Right (_url, formData) ->
                   return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
-        maxUploadSizeBytes = 512 * 1024 * 1024
+        maxUploadSizeBytes = 512 * 1024 * 1024 -- 512MB
         s3Bucket = AWS.configSourcesS3Bucket awsConfig
 
 restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
@@ -429,16 +433,15 @@ restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
 
 restContentVerificationById ::
   BaseURI ->
-  ContentBaseURI ->
   Pool Connection ->
   ContentId ->
   VerificationToken ->
   Handler Content
-restContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
+restContentVerificationById baseURI dbConnPool contentId verificationToken = do
   result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
   case result of
     Right content ->
-      return $ Content.fromInternal baseURI contentBaseURI content
+      redirectToAPI baseURI $ Internal.contentId content
     Left VerificationError.TokenMismatch ->
       throwError . API.error401 $ "Unauthorized verification token: " <> show verificationToken
     Left VerificationError.ContentNotFound ->
@@ -448,7 +451,7 @@ restContentInvalidVerificationToken ::
   ContentId ->
   String -> -- VerificationToken
   Handler Content
-restContentInvalidVerificationToken _contentId verificationToken = do
+restContentInvalidVerificationToken _contentId verificationToken =
   throwError . API.error401 $ "Invalid verification token: " <> verificationToken
 
 restContentCompletionById ::
@@ -459,7 +462,7 @@ restContentCompletionById ::
   ContentId ->
   ContentCompletion ->
   Handler Content
-restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion = do
+restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion =
   case authResult of
     Authenticated _ -> do
       maybeContent <- liftIO $
@@ -501,21 +504,39 @@ restInvalidContentId contentId =
   throwError . API.error404 $ noContentWithIdMessage contentId
 
 restContentByURL ::
+  Config ->
   BaseURI ->
   Pool Connection ->
   ProcessContent ->
   ContentURI ->
   Maybe Text -> -- Email
   Handler Content
-restContentByURL baseURI dbConnPool processContent url mEmail = do
+restContentByURL config baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case (maybeContent, mEmail) of
-    (Nothing, Nothing) -> do
+    (Nothing, Nothing) ->
       missingEmailErrorAPI
     (Nothing, Just email) -> do
       mNewContent <- case processContent of
-        ProcessExistingAndNewContent ->
-          liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
+        ProcessExistingAndNewContent -> do
+          mNewContent <- liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
+          for_ mNewContent $ \newContent -> do
+            case ( Internal.contentSubmitterEmail newContent,
+                   Internal.contentVerificationToken newContent
+                 ) of
+              (Just submitterEmail, Just verificationToken) ->
+                case environment of
+                  Environment.Development ->
+                    sendEmail (Internal.contentId newContent) submitterEmail verificationToken
+                  Environment.Production ->
+                    sendEmail (Internal.contentId newContent) submitterEmail verificationToken
+                  -- NOTE: Do not send email in test environment
+                  Environment.Test ->
+                    pure ()
+              _ ->
+                pure ()
+          -- TODO: Redirect to content:
+          pure mNewContent
         _ ->
           noNewContentErrorAPI
       case mNewContent of
@@ -525,6 +546,19 @@ restContentByURL baseURI dbConnPool processContent url mEmail = do
           throwError . API.error503 $ failedToCreateContentErrorMessage
     (Just content, _) ->
       redirectToAPI baseURI (Internal.contentId content)
+  where
+    logLevel = Config.logLevel config
+    awsConfig = Config.aws config
+    environment = Config.environment config
+    sendEmail contentId submitterEmail verificationToken =
+      void . liftIO $
+        Email.send awsConfig logLevel $
+          Verification.request
+            baseURI
+            contentId
+            verificationToken
+            (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
+            (Email.To submitterEmail)
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of

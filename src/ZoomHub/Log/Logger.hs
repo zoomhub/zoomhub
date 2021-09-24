@@ -13,6 +13,10 @@ module ZoomHub.Log.Logger
     logInfo_,
     logWarning,
     logWarning_,
+    log,
+    log_,
+    -- LogLevel
+    LogLevel (..),
     -- Encoding
     encodeLogLine,
   )
@@ -41,16 +45,9 @@ import Data.Time.Units (Millisecond)
 import Data.Time.Units.Instances ()
 import System.IO (hSetEncoding, stderr, stdout, utf8)
 import System.TimeIt (timeItT)
+import ZoomHub.Log.LogLevel (LogLevel (..))
 import ZoomHub.Utils (lenientDecodeUtf8)
 import Prelude hiding (log)
-
-data Level = Debug | Info | Warning | Error deriving (Eq)
-
-instance Show Level where
-  show Debug = "debug"
-  show Info = "info"
-  show Warning = "warning"
-  show Error = "error"
 
 logDebug :: String -> [Pair] -> IO ()
 logDebug = log Debug
@@ -88,10 +85,10 @@ logException msg e meta = logError msg (meta ++ ["error" .= show e])
 logException_ :: String -> SomeException -> IO ()
 logException_ msg e = logException msg e []
 
-log_ :: Level -> String -> IO ()
+log_ :: LogLevel -> String -> IO ()
 log_ level message = log level message []
 
-logT :: Level -> String -> [Pair] -> IO a -> IO a
+logT :: LogLevel -> String -> [Pair] -> IO a -> IO a
 logT level msg meta action = do
   (duration, result) <- timeItT action
   log
@@ -100,7 +97,7 @@ logT level msg meta action = do
     (meta ++ ["duration" .= (round (duration * 1000) :: Millisecond)])
   return result
 
-log :: Level -> String -> [Pair] -> IO ()
+log :: LogLevel -> String -> [Pair] -> IO ()
 log level message meta = do
   now <- getCurrentTime
   -- Force to UTF8 to avoid the dreaded `<stdout>: commitAndReleaseBuffer:

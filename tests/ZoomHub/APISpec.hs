@@ -17,6 +17,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
+import qualified Network.AWS as AWS
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
@@ -41,8 +42,10 @@ import Text.RawString.QQ (r)
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
+import qualified ZoomHub.Config.AWS as AWSConfig
 import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
 import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
+import qualified ZoomHub.Log.LogLevel as LogLevel
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
@@ -147,7 +150,8 @@ config :: Config
 config =
   Config
     { apiUser = authorizedUser,
-      aws = undefined, -- TODO: Test AWS functionality
+      -- TODO: How can we avoid `unsafePerformIO`?
+      aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv AWS.Ohio,
       baseURI = BaseURI (toURI "http://localhost:8000"),
       contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
         Just uri -> uri
@@ -160,6 +164,7 @@ config =
       environment = Environment.Test,
       error404 = "404",
       logger = nullLogger,
+      logLevel = LogLevel.Debug,
       openSeadragonScript = "osd",
       port = 8000,
       processContent = ProcessExistingAndNewContent,
@@ -184,7 +189,7 @@ config =
           dbConnPoolIdleTime'
           dbConnPoolMaxResourcesPerStripe'
     dbConnPoolIdleTime' = 10 :: Second
-    dbConnPoolMaxResourcesPerStripe' = (numCapabilities * 2) + numSpindles
+    dbConnPoolMaxResourcesPerStripe' = numCapabilities * 2 + numSpindles
     dbConnPoolNumStripes' = 1
 
 closeDatabaseConnection :: Config -> IO ()
@@ -224,8 +229,8 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         liftIO do
           let pool = Config.dbConnPool config
           mContent <- runPoolPQ (getById $ ContentId.fromString newContentId) pool
-          (mContent >>= contentSubmitterEmail) `shouldBe` (Just $ T.pack testEmail)
-          (mContent >>= \c -> fromIntegral . length . show <$> contentVerificationToken c) `shouldBe` (Just (36 :: Integer))
+          (mContent >>= contentSubmitterEmail) `shouldBe` Just (T.pack testEmail)
+          (mContent >>= (fmap (fromIntegral . length . show) . contentVerificationToken)) `shouldBe` Just (36 :: Integer)
         get ("/v1/content/" <> BC.pack newContentId)
           `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":false,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
             { matchStatus = 200,
@@ -250,26 +255,23 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             }
     describe "Verify content by ID (GET /v1/content/:id/verification/:token)" do
       it "should return 404 non-existent content" $
-        get "/v1/content/nonExistentContent/verification/00000000-0000-0000-0000-000000000000"
+        put "/v1/content/nonExistentContent/verification/00000000-0000-0000-0000-000000000000" ""
           `shouldRespondWith` "No content with ID: nonExistentContent"
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
     it "should return 401 invalid verification token" $
-      get "/v1/content/yQ4/verification/invalid-token"
+      put "/v1/content/yQ4/verification/invalid-token" ""
         `shouldRespondWith` "Invalid verification token: invalid-token"
           { matchStatus = 401,
             matchHeaders = [plainTextUTF8]
           }
     it "should verify content" do
-      maybeContent <- liftIO $ runPoolPQ (getById $ ContentId.fromString "Xar") (Config.dbConnPool config)
+      let cId = ContentId.fromString newContentId
+      maybeContent <- liftIO $ runPoolPQ (getById cId) (Config.dbConnPool config)
       let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
-      liftIO $ print verificationToken
-      get ("/v1/content/Xar/verification/" <> (BC.pack $ show verificationToken))
-        `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":true,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
-          { matchStatus = 200,
-            matchHeaders = [applicationJSON]
-          }
+      put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
+        `shouldRespondWith` restRedirect cId
     describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
         it "should reject request" $

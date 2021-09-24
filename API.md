@@ -81,6 +81,12 @@ Note that all response objects have a `content`, `dzi`, or `error` object.
 - 400 w/ error message if URL is invalid (e.g. malformed)
 - 503 w/ error message if URL is new and ZoomHub is closed for new content
 
+`PUT /v1/content/:id/verification/:token`
+
+- 3xx to `/v1/content/:id`, w/ `Content` object for convenience, if ID and token are valid
+- 401 w/ error message if verification token is invalid (e.g. malformed)
+- 404 if content is not found
+
 `GET /v1/dzi/:id` (**_TODO_**)
 
 - 3xx to DZI URL, w/ DZI object for convenience, if exists and ready

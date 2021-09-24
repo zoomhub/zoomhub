@@ -18,6 +18,7 @@ import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
+import qualified Network.AWS as AWS
 import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
 import Network.Wai (Request)
@@ -44,11 +45,12 @@ import ZoomHub.Config
   ( Config (..),
     defaultPort,
   )
-import qualified ZoomHub.Config.AWS as AWS
+import qualified ZoomHub.Config.AWS as AWSConfig
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import qualified ZoomHub.Config.ProcessContent as ProcessContent
 import ZoomHub.Config.Uploads (Uploads (..))
 import qualified ZoomHub.Config.Uploads as Uploads
+import qualified ZoomHub.Log.LogLevel as LogLevel
 import ZoomHub.Log.Logger (logException_, logInfo, logInfo_)
 import ZoomHub.Log.RequestLogger (formatAsJSON)
 import ZoomHub.Storage.PostgreSQL (createConnectionPool)
@@ -117,7 +119,8 @@ main = do
   aws <-
     fromMaybe
       (error "ZoomHub.Main: Failed to parse AWS configuration.")
-      <$> AWS.fromEnv
+      <$> AWSConfig.fromEnv AWS.Ohio -- TODO: Grab AWS region from environment?
+  let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup processContentEnvName env
       processContent = fromMaybe ProcessNoContent maybeProcessContent

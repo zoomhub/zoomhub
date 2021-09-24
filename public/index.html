@@ -438,8 +438,9 @@
     <script>
       async function upload(file) {
         // TODO: Handle errors
-        const email = document.querySelector('.upload-form input[name="email"]')
-          .value
+        const email = document.querySelector(
+          '.upload-form input[name="email"]'
+        ).value
         // TODO: Handle errors
         const presignedPostData = await fetch(
           "/v1/content/upload?email=" + email

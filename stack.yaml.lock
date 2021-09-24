@@ -26,6 +26,13 @@ packages:
   original:
     hackage: amazonka-lambda-1.6.1@sha256:395f48418da98b6c8853c7751e08464eee7b9140683c0b6f19b54c4b21699b5d,4231
 - completed:
+    hackage: amazonka-ses-1.6.1@sha256:335796c855121ca34affd35097676587d5ebe0b2e576da42faaedd9d163881b0,6425
+    pantry-tree:
+      size: 18151
+      sha256: 1b4746acac660d5418731b3972c4ff2285ee3435c709dfda67df49665f781d0a
+  original:
+    hackage: amazonka-ses-1.6.1@sha256:335796c855121ca34affd35097676587d5ebe0b2e576da42faaedd9d163881b0,6425
+- completed:
     hackage: mime-0.4.0.2@sha256:208947d9d1a19d08850be67ecb28c6e776db697f3bba05bd9d682e51a59f241f,983
     pantry-tree:
       size: 565
