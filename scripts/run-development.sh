@@ -27,6 +27,6 @@ PROCESS_CONTENT='ProcessExistingAndNewContent' \
 PROCESSING_WORKERS='2' \
 S3_SOURCES_BUCKET='sources-development.zoomhub.net' \
 UPLOADS='true' \
-  stack exec zoomhub &
+  stack exec zoomhub | jq &
 
 echo $! > zoomhub.pid
