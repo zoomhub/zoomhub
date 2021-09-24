@@ -1,7 +1,20 @@
 # ZoomHub
 
-## Unreleased
+## 2021-09-24
 
+- Send submitter an email with a verification link to authenticate the upload.
+  After verification, our background worker picks up unprocessed submissions and
+  processes them via AWS Lambda.
+- Introduce `ZH_ENV = "development" | "test" | "production"` environment
+  variable for controlling certain actions, e.g. not sending emails during
+  testing.
+- Set content version to `5` on new submissions. These are submissions that
+  have a submitter email and verification token.
+- Control logging via `LOG_LEVEL` environment variable. Extract `LogLevel`
+  module and introduce `logLevel` configuration for controlling what level of
+  logs we want to capture.
+- Pipe AWS logs through our own JSON logger.
+- Reduce log level of many worker operations to reduce noise.
 - Remove unused `S3_CACHE_BUCKET` from Haskell web server.
 
 ## 2021-09-09
