@@ -551,15 +551,14 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
     awsConfig = Config.aws config
     environment = Config.environment config
     sendEmail contentId submitterEmail verificationToken =
-      void $
-        liftIO $
-          Email.send awsConfig logLevel $
-            Verification.request
-              baseURI
-              contentId
-              verificationToken
-              (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
-              (Email.To submitterEmail)
+      void . liftIO $
+        Email.send awsConfig logLevel $
+          Verification.request
+            baseURI
+            contentId
+            verificationToken
+            (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
+            (Email.To submitterEmail)
 
 restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
