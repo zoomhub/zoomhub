@@ -17,21 +17,25 @@ request :: BaseURI -> ContentId -> VerificationToken -> From -> To -> Email
 request baseURI contentId verificationToken from to =
   Email {from, to, subject, body}
   where
-    subject = "ZoomHub: View your submission"
+    subject = "ZoomHub: View your upload"
     body =
       "Hi,\n\
       \\n\
-      \Thank you for your submission to ZoomHub (formerly zoom.it).\n\
+      \Thanks for your upload to ZoomHub (formerly zoom.it).\n\
       \\n\
-      \To view it, please follow this link: "
+      \You can now view it at: "
         <> verificationURL
-        <> "\n\nIf you haven’t submitted anything to ZoomHub, please ignore this email.\n\n\
+        <> "\n\n\
+           \If you haven’t uploaded anything to ZoomHub, please ignore this email.\n\
+           \\n\
            \Thanks,\n\
-           \Daniel from ZoomHub\n\n\n\
-           \P.S. If you have any questions or feedback, simply reply to this email. I read each and every message."
+           \Daniel from ZoomHub\n\
+           \\n\
+           \\n\
+           \P.S. If you have any questions or feedback, simply reply to this email. I read each and every message :)"
     verificationURL =
       T.pack (show baseURI)
-        <> "/v1/content/"
+        <> "/"
         <> T.pack (unContentId contentId)
-        <> "/verification/"
+        <> "/verify/"
         <> T.pack (show verificationToken)
