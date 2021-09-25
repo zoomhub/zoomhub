@@ -9,6 +9,7 @@ module ZoomHub.Web.Page.VerifyContent
   )
 where
 
+import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Lucid
@@ -18,12 +19,14 @@ import Lucid
     h2_,
     href_,
     p_,
+    script_,
     style_,
     toHtml,
     toHtmlRaw,
   )
-import ZoomHub.API.Types.Content (Content, contentShareUrl)
+import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
 import ZoomHub.Types.BaseURI (BaseURI)
+import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Web.Page as Page
 
 data VerifyContent = VerifyContent
@@ -39,6 +42,25 @@ data VerificationResult
 
 mkVerifyContent :: BaseURI -> VerificationResult -> VerifyContent
 mkVerifyContent vcBaseURI vcResult = VerifyContent {..}
+
+progressScript :: ContentId -> Text
+progressScript cId =
+  Page.concatPretty
+    [ ";(() => {",
+      "setInterval(async () => {",
+      "    const content = await fetch(\"/v1/content/" <> T.pack (unContentId cId) <> "\").then(",
+      "      (response) => response.json()",
+      "    )",
+      "",
+      "    console.log(\"---\")",
+      "    console.log(content)",
+      "",
+      "    if (content.ready) {",
+      "      location.href = content.shareUrl",
+      "    }",
+      "  }, 2000)",
+      "})()"
+    ]
 
 instance ToHtml VerifyContent where
   toHtml (VerifyContent {..}) =
@@ -57,6 +79,7 @@ instance ToHtml VerifyContent where
         ]
         $ case vcResult of
           Success content -> do
+            script_ $ progressScript (contentId content)
             h2_
               [style_ "color: #fff;"]
               "Your upload is now being processed…"

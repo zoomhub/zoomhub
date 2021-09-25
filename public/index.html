@@ -133,6 +133,39 @@
         font-weight: normal;
         text-decoration: underline;
       }
+
+      /* Upload */
+      .upload-card {
+        border: 4px solid #eee;
+        border-radius: 8px;
+        padding: 1.5em 2em;
+      }
+      .upload-card h2 {
+        margin-top: 0;
+      }
+      .upload-card ol li {
+        padding: 0.4em 0;
+      }
+
+      /* Bootstrap 5*/
+      .form-control {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+
+      p.lead {
+        font-size: 20px;
+        line-height: 1.4em;
+      }
     </style>
 
     <!-- MailChimp -->
@@ -292,7 +325,7 @@
     <script src="/h.js?width=auto&amp;height=340px"></script>
 
     <!-- Begin MailChimp Signup Form -->
-    <div id="mc_embed_signup" class="container">
+    <div id="mc_embed_signup" class="container" style="display: none">
       <form
         action="//zoomhub.us13.list-manage.com/subscribe/post?u=634c214865be13f62c4793888&amp;id=0236bc1b9e"
         method="post"
@@ -342,13 +375,68 @@
     <!--End mc_embed_signup-->
 
     <article class="container">
-      <!--
-      <form class="upload-form">
-        <input type="email" name="email" />
-        <input type="file" name="content" accept="image/png,image/jpeg" />
-        <input type="submit" value="Upload image" name="submit" />
-      </form>
-      -->
+      <div class="upload-card" style="display: none; margin-top: 1em">
+        <div class="instructions">
+          <h2>Create a zoomable image in 3 easy steps…</h2>
+          <form class="upload-form">
+            <ol>
+              <li>
+                Pick an image to upload:<br />
+                <input
+                  class="form-control"
+                  type="file"
+                  name="content"
+                  accept="image/png,image/jpeg"
+                  style="padding: 1em; margin-top: 0.3em"
+                  required
+                />
+              </li>
+              <li>
+                Give us your email so we know you’re human*:<br />
+                <input
+                  class="form-control"
+                  type="email"
+                  name="email"
+                  style="margin-top: 0.3em"
+                  required
+                />
+              </li>
+              <li>
+                <input
+                  type="submit"
+                  value="Upload image"
+                  name="submit"
+                  style="
+                    background-color: #f60;
+                    border-color: #f60;
+                    border-radius: 0.25rem;
+                    color: #fff;
+                    font-size: 16px;
+                    line-height: 1.5;
+                    padding: 0.375rem 0.75rem;
+                  "
+                />
+              </li>
+            </ol>
+
+            <span style="color: #aaa; font-size: 14px">
+              * We won’t spam you or share your email — promise!
+            </span>
+          </form>
+        </div>
+
+        <div class="progress" style="display: none">
+          <h2>⬆️ Uploading…</h2>
+          <p class="lead">Hang tight, we’re uploading your image.</p>
+        </div>
+
+        <div class="thanks" style="display: none">
+          <h2>🎉 Success!</h2>
+          <p class="lead">
+            📩 Check your email. We just sent you the link to view your upload
+          </p>
+        </div>
+      </div>
 
       <h2>What is it?</h2>
       <p>
@@ -436,73 +524,108 @@
       </footer>
     </article>
     <script>
-      async function upload(file) {
-        // TODO: Handle errors
-        const email = document.querySelector(
-          '.upload-form input[name="email"]'
-        ).value
-        // TODO: Handle errors
-        const presignedPostData = await fetch(
-          "/v1/content/upload?email=" + email
-        ).then((response) => response.json())
-        const formData = new FormData()
-        Object.entries(presignedPostData)
-          .filter(([key, _]) => key !== "url")
-          .forEach(([key, value]) => {
-            formData.append(key, value)
-          })
-        formData.append("file", file)
+      ;(async () => {
+        const apiConfig = await fetch("/v1/config").then((_) => _.json())
 
-        let uploadResponse
-        try {
-          uploadResponse = await fetch(presignedPostData.url, {
-            method: "POST",
-            body: formData,
-          })
-        } catch (error) {
-          console.error("Failed upload content:", error)
-          return
-        }
+        console.log("API configuration:", apiConfig)
+        const sectionSelector = apiConfig.uploadsEnabled
+          ? ".upload-card"
+          : "#mc_embed_signup"
+        const sectionElement = document.querySelector(sectionSelector)
+        sectionElement.style.display = "block"
 
-        if (uploadResponse.status != 200) {
-          console.error(
-            `Upload error: ${uploadResponse.status} (${uploadResponse.statusText})`
-          )
-          return
-        }
+        async function upload(file) {
+          // TODO: Handle errors
+          const email = document.querySelector(
+            '.upload-form input[name="email"]'
+          ).value
 
-        // TODO: Handle error cases
-        const contentData = await fetch(uploadResponse.url).then((response) =>
-          response.json()
-        )
+          // TODO: Handle errors
+          const presignedPostData = await fetch(
+            "/v1/content/upload?email=" + email
+          ).then((response) => response.json())
+          const formData = new FormData()
+          Object.entries(presignedPostData)
+            .filter(([key, _]) => key !== "url")
+            .forEach(([key, value]) => {
+              formData.append(key, value)
+            })
+          formData.append("file", file)
 
-        // Redirect to view page
-        location.href = contentData.shareUrl
-      }
-      const fileInput = document.querySelector(
-        ".upload-form > input[type='file']"
-      )
-      const form = document.querySelector(".upload-form")
-
-      let file = null
-      if (fileInput) {
-        fileInput.addEventListener("change", (event) => {
-          if (!event.target.files || event.target.files.length === 0) {
-            alert("Please choose a file")
-          }
-          file = event.target.files[0]
-          event.preventDefault()
-        })
-      }
-      if (form) {
-        form.addEventListener("submit", (event) => {
-          event.preventDefault()
-          if (!file) {
+          let uploadResponse
+          try {
+            uploadResponse = await fetch(presignedPostData.url, {
+              method: "POST",
+              body: formData,
+            })
+          } catch (error) {
+            alert("Oops! Something went wrong. Please try again later.")
+            console.error("Failed upload content:", error)
             return
           }
-          upload(file)
-        })
-      }
+
+          if (uploadResponse.status !== 200) {
+            alert("Oops! Something went wrong. Please try again later.")
+            console.error(
+              `Upload error: ${uploadResponse.status} (${uploadResponse.statusText})`
+            )
+            return
+          }
+
+          // TODO: Handle error cases
+          let contentData
+          try {
+            contentData = await fetch(uploadResponse.url).then((response) =>
+              response.json()
+            )
+          } catch (error) {
+            alert("Oops! Something went wrong. Please try again later.")
+            console.error("Failed to fetch content:", error)
+          }
+
+          // Redirect to view page
+          // location.href = contentData.shareUrl
+          showThanks()
+        }
+
+        const showSection = (section) => {
+          ;["instructions", "progress", "thanks"].forEach((currentSection) => {
+            const sectionElement = document.querySelector(`.${currentSection}`)
+            sectionElement.style.display =
+              section === currentSection ? "block" : "none"
+          })
+        }
+
+        const showProgress = () => showSection("progress")
+        const showThanks = () => showSection("thanks")
+
+        const fileInput = document.querySelector(
+          ".upload-form input[type='file']"
+        )
+        let file = null
+        if (fileInput) {
+          fileInput.addEventListener("change", (event) => {
+            if (!event.target.files || event.target.files.length === 0) {
+              alert("Please choose a file")
+            }
+            file = event.target.files[0]
+            event.preventDefault()
+          })
+        }
+
+        const form = document.querySelector(".upload-form")
+        if (form) {
+          form.addEventListener("submit", (event) => {
+            event.preventDefault()
+            if (!file) {
+              return
+            }
+
+            showProgress()
+            upload(file)
+          })
+        }
+      })()
     </script>
   </body>
 </html>

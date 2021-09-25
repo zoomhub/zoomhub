@@ -28,6 +28,7 @@ library
     , ZoomHub.API.Errors
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
+    , ZoomHub.API.Types.Config
     , ZoomHub.API.Types.Content
     , ZoomHub.API.Types.ContentCompletion
     , ZoomHub.API.Types.DeepZoomImage
