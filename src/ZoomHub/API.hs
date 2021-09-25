@@ -404,7 +404,7 @@ restUpload baseURI awsConfig uploads email =
       s3UploadKey <- (T.pack . show) <$> liftIO UUIDV4.nextRandom
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
           key = "uploads/" <> s3UploadKey
-          s3BucketURL = "http://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
+          s3BucketURL = "https://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
           s3URL = s3BucketURL <> "/" <> key
           ePolicy =
             S3.newPostPolicy

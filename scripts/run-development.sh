@@ -25,7 +25,7 @@ PGDATABASE='zoomhub_development' \
 PGUSER="$(whoami)" \
 PROCESS_CONTENT='ProcessExistingAndNewContent' \
 PROCESSING_WORKERS='2' \
-S3_SOURCES_BUCKET='sources-development.zoomhub.net' \
+S3_SOURCES_BUCKET='zoomhub-sources-development' \
 UPLOADS='true' \
   stack exec zoomhub | jq &
 
