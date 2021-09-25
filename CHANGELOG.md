@@ -1,5 +1,14 @@
 # ZoomHub
 
+## 2021-09-25
+
+- 🎉 MVP
+  - Allow uploads via homepage
+  - Send email verification
+  - Verification landing page
+  - Process image via AWS Lambda
+  - Redirect upon success
+
 ## 2021-09-24
 
 - Send submitter an email with a verification link to authenticate the upload.

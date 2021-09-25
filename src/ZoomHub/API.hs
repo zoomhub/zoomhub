@@ -23,6 +23,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Time as Time
+import qualified Data.UUID.V4 as UUIDV4
 import GHC.Generics (Generic)
 import Network.Minio as Minio
   ( awsCI,
@@ -83,6 +84,7 @@ import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
 import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
 import ZoomHub.API.Types.Callback (Callback)
+import qualified ZoomHub.API.Types.Config as API
 import ZoomHub.API.Types.Content (Content)
 import qualified ZoomHub.API.Types.Content as Content
 import ZoomHub.API.Types.ContentCompletion (ContentCompletion (..))
@@ -155,6 +157,10 @@ type API =
   -- Meta
   "health" :> Get '[HTML] String
     :<|> "version" :> Get '[HTML] String
+    -- Config
+    :<|> "v1"
+      :> "config"
+      :> Get '[JSON] API.Config
     -- JSONP: ID
     :<|> "v1" :> "content"
       :> Capture "id" ContentId
@@ -251,6 +257,7 @@ server config =
   -- Meta
   health
     :<|> version (Config.version config)
+    :<|> restConfig config
     -- API: JSONP
     :<|> jsonpContentById baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidContentId
@@ -321,6 +328,10 @@ health = return "up"
 version :: String -> Handler String
 version = return
 
+restConfig :: Config -> Handler API.Config
+restConfig config =
+  return API.Config {API.configUploadsEnabled = Config.uploads config == UploadsEnabled}
+
 -- API: JSONP
 jsonpContentById ::
   BaseURI ->
@@ -390,8 +401,9 @@ restUpload baseURI awsConfig uploads email =
       noNewContentErrorAPI
     UploadsEnabled -> do
       currentTime <- liftIO Time.getCurrentTime
+      s3UploadKey <- (T.pack . show) <$> liftIO UUIDV4.nextRandom
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
-          key = "uploads/test-" <> T.pack (show currentTime)
+          key = "uploads/" <> s3UploadKey
           s3BucketURL = "http://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
           s3URL = s3BucketURL <> "/" <> key
           ePolicy =
