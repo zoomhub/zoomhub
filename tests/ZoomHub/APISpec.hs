@@ -256,7 +256,8 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 404,
               matchHeaders = [plainTextUTF8]
             }
-    describe "Verify content by ID (GET /v1/content/:id/verification/:token)" do
+
+    describe "Verify content by ID (PUT /v1/content/:id/verification/:token)" do
       it "should return 404 non-existent content" $
         put "/v1/content/nonExistentContent/verification/00000000-0000-0000-0000-000000000000" ""
           `shouldRespondWith` "No content with ID: nonExistentContent"
