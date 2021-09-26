@@ -62,6 +62,7 @@ run)
 
     PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
       stack build \
+        --fast \
         --no-run-tests \
         --ghc-options='-Wall' \
         --exec "migrate-database $DEVELOPMENT_DB_NAME migrate"
