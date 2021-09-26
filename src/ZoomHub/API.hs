@@ -610,7 +610,7 @@ webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificat
   case result of
     Right internalContent -> do
       let content = Content.fromInternal baseURI contentBaseURI internalContent
-      return $ Page.mkVerifyContent baseURI (VerificationResult.Success $ content)
+      return $ Page.mkVerifyContent baseURI (VerificationResult.Success content)
     Left VerificationError.TokenMismatch ->
       return $ Page.mkVerifyContent baseURI (VerificationResult.Error "Cannot verify submission :(")
     Left VerificationError.ContentNotFound ->
