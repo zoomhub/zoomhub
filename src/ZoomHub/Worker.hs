@@ -34,7 +34,7 @@ import ZoomHub.Utils (lenientDecodeUtf8)
 
 -- Constants
 processExistingContentInterval :: Second
-processExistingContentInterval = 3
+processExistingContentInterval = 5
 
 -- Public API
 processExistingContent :: Config -> String -> IO ()

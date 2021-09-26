@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 2021-09-26
+
+- [#172][zh-22] Auto-rotate images based on EXIF data.
+- Worker: Increase poll interval from 3 to 5 seconds.
+
 ## 2021-09-25
 
 - 🎉 MVP
@@ -233,5 +238,6 @@
 [sqlite]: https://www.sqlite.org/index.html
 [squeal]: https://hackage.haskell.org/package/squeal-postgresql
 [vips]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS
+[zh-172]: https://github.com/zoomhub/zoomhub/issues/#172
 [zh-18]: https://github.com/zoomhub/zoomhub/issues/18
 [zh-22]: https://github.com/zoomhub/zoomhub/issues/22

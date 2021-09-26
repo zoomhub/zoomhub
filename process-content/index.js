@@ -25,8 +25,7 @@ exports.handler = async ({ contentURL }) => {
   if (!contentURL) {
     return {
       status: 400,
-      body:
-        "Please specify a content URL to process, i.e. https://www.zoomhub.net/v1/content/:id",
+      body: "Please specify a content URL to process, i.e. https://www.zoomhub.net/v1/content/:id",
     }
   }
 
@@ -104,6 +103,7 @@ const processContent = async ({ contentURL }) => {
   log("file meta", { fileType, isPNG, tileFormat })
 
   await sharp(outputPath, { limitInputPixels: false })
+    .rotate() // auto-rotate based on EXIF
     .toFormat(tileFormat)
     .tile({
       depth: "onepixel",
