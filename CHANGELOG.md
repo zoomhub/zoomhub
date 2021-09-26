@@ -4,6 +4,12 @@
 
 - [#172][zh-22] Auto-rotate images based on EXIF data.
 - Worker: Increase poll interval from 3 to 5 seconds.
+- Add `PUT /v1/content/:id/reset` for admins to reset content, e.g. after it
+  failed or we improved the processing pipeline. An example is for images that
+  were incorrectly rotated but can be reprocessed after fixing that issue
+  [#172][zh-22].
+- Ensure running and testing the app doesn’t cause a full rebuild by matching
+  `stack` (GHC) flags.
 
 ## 2021-09-25
 
