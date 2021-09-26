@@ -586,8 +586,8 @@ resetContentAsInitialized =
         :* Set null_ `as` #completed_at
         :* Set null_ `as` #mime
         :* Set null_ `as` #size
-        :* Set null_ `as` #error
-        :* Set 0.0 `as` #progress -- reset any previous errors
+        :* Set null_ `as` #error -- reset any previous errors
+        :* Set 0.0 `as` #progress
     )
     (#hash_id .== param @1)
     ( Returning_
