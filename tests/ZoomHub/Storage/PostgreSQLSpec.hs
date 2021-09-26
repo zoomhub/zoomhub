@@ -16,7 +16,7 @@ import Control.Monad (forM_, void)
 import qualified Data.ByteString.Char8 as BC
 import Data.Function ((&))
 import Data.Int (Int64)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isJust)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time.Clock
@@ -66,6 +66,7 @@ import ZoomHub.Storage.PostgreSQL
     markAsFailure,
     markAsSuccess,
     resetAsInitialized,
+    unsafeResetAsInitializedWithVerification,
   )
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
 import qualified ZoomHub.Storage.PostgreSQL.Internal as I
@@ -295,6 +296,21 @@ spec =
               void $ runPQ (resetAsInitialized cId) conn
               (result, _) <- runPQ (getById cId) conn
               result `shouldBe` Just content
+            Nothing ->
+              expectationFailure "expected content to be initialized"
+    describe "unsafeResetAsInitializedWithVerification" do
+      it "should reset content as initialized and verify it" do
+        \conn -> do
+          (mContent, _) <- runPQ (initialize testURL testEmail) conn
+          case mContent of
+            Just content -> do
+              let cId = contentId content
+                  errorMessage = Just "test error message"
+              void $ runPQ (markAsFailure cId errorMessage) conn
+              void $ runPQ (unsafeResetAsInitializedWithVerification cId) conn
+              (Just result, _) <- runPQ (getById cId) conn
+              contentVerifiedAt result `shouldSatisfy` isJust
+              result {contentVerifiedAt = Nothing} `shouldBe` content
             Nothing ->
               expectationFailure "expected content to be initialized"
     describe "dequeueNextUnprocessed" do

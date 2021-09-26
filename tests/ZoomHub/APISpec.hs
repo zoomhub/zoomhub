@@ -201,6 +201,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "Upload (GET /v1/content/upload)" do
       it "should return  503" $
         get "/v1/content/upload" `shouldRespondWith` noNewContent
+
     describe "List (GET /v1/content)" do
       it "should be interpreted as a ‘get by URL’, with no URL given" $
         get "/v1/content"
@@ -208,6 +209,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 400,
               matchHeaders = [plainTextUTF8]
             }
+
     describe "Get by URL (GET /v1/content?url=…)" do
       it "should reject empty URLs" $
         get "/v1/content?url="
@@ -240,6 +242,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         let (existingId, existingURL) = existingContent
          in get ("/v1/content?url=" <> BC.pack existingURL)
               `shouldRespondWith` restRedirect existingId
+
     describe "Get by ID (GET /v1/content/:id)" do
       it "should return correct data for existing content" $
         get "/v1/content/yQ4"
@@ -272,6 +275,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
       let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
       put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
         `shouldRespondWith` restRedirect cId
+
     describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
         it "should reject request" $
@@ -306,6 +310,35 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             authorizedUser
             [r|{"type": "failure", "error": "FAIL!"}|]
             `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
+
+    describe "Admin: Reset content by ID (PUT /v1/content/:id/reset)" do
+      context "without auth" do
+        it "should reject request" $
+          putJSON "/v1/content/X75/reset" "" `shouldRespondWith` 401
+      context "with invalid username" do
+        it "should reject request" $
+          authPutJSON
+            "/v1/content/X75/reset"
+            authorizedUser {username = "eve"}
+            ""
+            `shouldRespondWith` 401
+      context "with invalid password" do
+        it "should reject request" $
+          authPutJSON
+            "/v1/content/X75/reset"
+            authorizedUser {password = "eve"}
+            ""
+            `shouldRespondWith` 401
+      context "with valid auth" do
+        it "should reset content" do
+          authPutJSON "/v1/content/X75/reset" authorizedUser ""
+            `shouldRespondWith` restRedirect (ContentId.fromString "X75")
+          get "/v1/content/X75"
+            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":0,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":false,"failed":false}|]
+              { matchStatus = 200,
+                matchHeaders = [applicationJSON]
+              }
+
     describe "POST /v1/content?url=…" do
       it "should be rejected" $
         post "/v1/content?url=http://example.com" ""
@@ -314,6 +347,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
       it "should be rejected" $
         put "/v1/content?url=http://example.com" ""
           `shouldRespondWith` invalidHTTPMethod
+
   describe "JSONP" do
     describe "GET /v1/content?url=…&callback=…" do
       it "should accept `callback` query parameter" $
@@ -329,11 +363,13 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
+
   describe "View by URL (GET /:url)" do
     it "should return correct redirect existing content" do
       let (existingId, existingURL) = existingContent
        in get ("/" <> BC.pack existingURL)
             `shouldRespondWith` viewRedirect existingId
+
   describe "CORS" do
     it "should allow all origins" do
       let getWithHeader path headers = request methodGet path headers ""
@@ -344,6 +380,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
                     applicationJSON
                   ]
               }
+
   describe "Meta" do
     describe "Health (/health)" do
       it "should respond with `up`" do
@@ -351,6 +388,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "Version (/version)" do
       it "should respond with version" do
         get "/version" `shouldRespondWith` "test" {matchStatus = 200}
+
   describe "Number of views" do
     context "when requesting content through REST API" do
       it "should increase `numViews`" do

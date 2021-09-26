@@ -110,6 +110,7 @@ import ZoomHub.Storage.PostgreSQL as PG
     markAsFailure,
     markAsSuccess,
     markAsVerified,
+    unsafeResetAsInitializedWithVerification,
   )
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
@@ -171,6 +172,13 @@ type API =
       :> "content"
       :> "upload"
       :> Get '[JSON] (HashMap Text Text)
+    -- API: RESTful: Reset
+    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+      :> "v1"
+      :> "content"
+      :> Capture "id" ContentId
+      :> "reset"
+      :> Put '[JSON] Content
     -- API: RESTful: Verification
     :<|> "v1"
       :> "content"
@@ -245,6 +253,7 @@ server config =
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
     :<|> restUploadWithoutEmail uploads
+    :<|> restContentResetById baseURI dbConnPool
     :<|> restContentVerificationById baseURI dbConnPool
     :<|> restContentInvalidVerificationToken
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
@@ -418,6 +427,32 @@ restUpload baseURI awsConfig uploads email =
 restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
 restUploadWithoutEmail UploadsDisabled = noNewContentErrorAPI
 restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
+
+restContentResetById ::
+  BaseURI ->
+  Pool Connection ->
+  AuthResult Authentication.AuthenticatedUser ->
+  ContentId ->
+  Handler Content
+restContentResetById baseURI dbConnPool authResult contentId = do
+  case authResult of
+    Authenticated _ -> do
+      maybeContent <-
+        liftIO $
+          runPoolPQ
+            (PG.unsafeResetAsInitializedWithVerification contentId)
+            dbConnPool
+      case maybeContent of
+        Nothing ->
+          throwError . API.error404 $ contentNotFoundMessage contentId
+        Just content ->
+          redirectToAPI baseURI $ Internal.contentId content
+    NoSuchUser ->
+      throwError . API.error401 $ "Invalid auth"
+    BadPassword ->
+      throwError . API.error401 $ "Invalid auth"
+    Indefinite ->
+      throwError . API.error401 $ "Missing 'Authorization' header"
 
 restContentVerificationById ::
   BaseURI ->

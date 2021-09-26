@@ -30,11 +30,13 @@ module ZoomHub.Storage.PostgreSQL
     markAsSuccess,
     markAsVerified,
     resetAsInitialized,
+    unsafeResetAsInitializedWithVerification,
     dequeueNextUnprocessed,
     module ZoomHub.Storage.PostgreSQL.ConnectInfo,
   )
 where
 
+import Control.Monad (void)
 import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
@@ -246,6 +248,17 @@ resetAsInitialized ::
 resetAsInitialized cId =
   transactionally_ $ do
     contentResult <- manipulateParams resetContentAsInitialized (Only cId)
+    mContentRow <- firstRow contentResult
+    return $ contentRowToContent <$> mContentRow
+
+unsafeResetAsInitializedWithVerification ::
+  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  ContentId ->
+  m (Maybe Content)
+unsafeResetAsInitializedWithVerification cId =
+  transactionally_ $ do
+    void $ manipulateParams resetContentAsInitialized (Only cId)
+    contentResult <- manipulateParams markContentAsVerified (Only cId)
     mContentRow <- firstRow contentResult
     return $ contentRowToContent <$> mContentRow
 

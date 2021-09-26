@@ -549,6 +549,7 @@ markContentAsVerified =
   update
     #content
     ( Set currentTimestamp `as` #verified_at
+        :* Set (literal Content.version) `as` #version
     )
     (#hash_id .== param @1)
     ( Returning_
