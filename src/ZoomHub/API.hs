@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -12,7 +11,6 @@ where
 
 import Control.Monad.Except (throwError, void)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
 import Data.Foldable (fold, for_)
 import Data.HashMap.Strict (HashMap)
@@ -24,7 +22,6 @@ import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Time as Time
 import qualified Data.UUID.V4 as UUIDV4
-import GHC.Generics (Generic)
 import Network.Minio as Minio
   ( awsCI,
     fromAWSEnv,
@@ -46,8 +43,7 @@ import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
-  ( BasicAuthData (BasicAuthData),
-    Capture,
+  ( Capture,
     Context (EmptyContext, (:.)),
     Get,
     Handler,
@@ -68,13 +64,8 @@ import Servant.Auth.Server
   ( Auth,
     AuthResult (Authenticated, BadPassword, Indefinite, NoSuchUser),
     BasicAuth,
-    BasicAuthCfg,
-    FromBasicAuthData,
-    FromJWT,
-    ToJWT,
     defaultCookieSettings,
     defaultJWTSettings,
-    fromBasicAuthData,
     generateKey,
   )
 import Servant.HTML.Lucid (HTML)
@@ -99,6 +90,7 @@ import ZoomHub.API.Types.NonRESTfulResponse
     mkNonRESTful404,
     mkNonRESTful503,
   )
+import qualified ZoomHub.Authentication as Authentication
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -118,9 +110,8 @@ import ZoomHub.Storage.PostgreSQL as PG
     markAsFailure,
     markAsSuccess,
     markAsVerified,
+    unsafeResetAsInitializedWithVerification,
   )
-import ZoomHub.Types.APIUser (APIUser)
-import qualified ZoomHub.Types.APIUser as APIUser
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -139,17 +130,6 @@ import ZoomHub.Web.Static (serveDirectory)
 import ZoomHub.Web.Types.Embed (Embed, mkEmbed)
 import ZoomHub.Web.Types.EmbedDimension (EmbedDimension)
 import ZoomHub.Web.Types.EmbedId (EmbedId, unEmbedId)
-
-data AuthenticatedUser = AuthenticatedUser
-  deriving (Show, Generic)
-
-instance ToJSON AuthenticatedUser
-
-instance FromJSON AuthenticatedUser
-
-instance ToJWT AuthenticatedUser
-
-instance FromJWT AuthenticatedUser
 
 -- API
 type API =
@@ -192,6 +172,13 @@ type API =
       :> "content"
       :> "upload"
       :> Get '[JSON] (HashMap Text Text)
+    -- API: RESTful: Reset
+    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+      :> "v1"
+      :> "content"
+      :> Capture "id" ContentId
+      :> "reset"
+      :> Put '[JSON] Content
     -- API: RESTful: Verification
     :<|> "v1"
       :> "content"
@@ -207,7 +194,7 @@ type API =
       :> Capture "token" String
       :> Put '[JSON] Content
     -- API: RESTful: Completion
-    :<|> Auth '[BasicAuth] AuthenticatedUser
+    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
       :> "v1"
       :> "content"
       :> Capture "id" ContentId
@@ -266,6 +253,7 @@ server config =
     -- API: RESTful
     :<|> restUpload baseURI awsConfig uploads
     :<|> restUploadWithoutEmail uploads
+    :<|> restContentResetById baseURI dbConnPool
     :<|> restContentVerificationById baseURI dbConnPool
     :<|> restContentInvalidVerificationToken
     :<|> restContentCompletionById baseURI contentBaseURI dbConnPool
@@ -294,20 +282,6 @@ server config =
     uploads = Config.uploads config
     viewerScript = Config.openSeadragonScript config
 
-type instance BasicAuthCfg = BasicAuthData -> IO (AuthResult AuthenticatedUser)
-
-authCheck :: APIUser -> BasicAuthData -> IO (AuthResult AuthenticatedUser)
-authCheck apiUser (BasicAuthData unverifiedUsername unverifiedPassword) =
-  let username = APIUser.username apiUser
-      password = APIUser.password apiUser
-   in if username == lenientDecodeUtf8 unverifiedUsername
-        && password == lenientDecodeUtf8 unverifiedPassword
-        then pure $ Authenticated AuthenticatedUser
-        else pure NoSuchUser
-
-instance FromBasicAuthData AuthenticatedUser where
-  fromBasicAuthData authData authCheckFunction = authCheckFunction authData
-
 -- App
 app :: Config -> IO Application
 app config = do
@@ -316,7 +290,10 @@ app config = do
   where
     -- TODO: Can we use `BasicAuth` without JWT and cookies?
     cfg jwtKey =
-      defaultJWTSettings jwtKey :. defaultCookieSettings :. authCheck (Config.apiUser config) :. EmptyContext
+      defaultJWTSettings jwtKey
+        :. defaultCookieSettings
+        :. Authentication.check (Config.apiUser config)
+        :. EmptyContext
     logger = Config.logger config
 
 -- Handlers
@@ -401,7 +378,7 @@ restUpload baseURI awsConfig uploads email =
       noNewContentErrorAPI
     UploadsEnabled -> do
       currentTime <- liftIO Time.getCurrentTime
-      s3UploadKey <- (T.pack . show) <$> liftIO UUIDV4.nextRandom
+      s3UploadKey <- T.pack . show <$> liftIO UUIDV4.nextRandom
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
           key = "uploads/" <> s3UploadKey
           s3BucketURL = "https://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
@@ -451,6 +428,32 @@ restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
 restUploadWithoutEmail UploadsDisabled = noNewContentErrorAPI
 restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
 
+restContentResetById ::
+  BaseURI ->
+  Pool Connection ->
+  AuthResult Authentication.AuthenticatedUser ->
+  ContentId ->
+  Handler Content
+restContentResetById baseURI dbConnPool authResult contentId = do
+  case authResult of
+    Authenticated _ -> do
+      maybeContent <-
+        liftIO $
+          runPoolPQ
+            (PG.unsafeResetAsInitializedWithVerification contentId)
+            dbConnPool
+      case maybeContent of
+        Nothing ->
+          throwError . API.error404 $ contentNotFoundMessage contentId
+        Just content ->
+          redirectToAPI baseURI $ Internal.contentId content
+    NoSuchUser ->
+      throwError . API.error401 $ "Invalid auth"
+    BadPassword ->
+      throwError . API.error401 $ "Invalid auth"
+    Indefinite ->
+      throwError . API.error401 $ "Missing 'Authorization' header"
+
 restContentVerificationById ::
   BaseURI ->
   Pool Connection ->
@@ -478,7 +481,7 @@ restContentCompletionById ::
   BaseURI ->
   ContentBaseURI ->
   Pool Connection ->
-  AuthResult AuthenticatedUser ->
+  AuthResult Authentication.AuthenticatedUser ->
   ContentId ->
   ContentCompletion ->
   Handler Content
@@ -642,7 +645,7 @@ webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificat
   case result of
     Right internalContent -> do
       let content = Content.fromInternal baseURI contentBaseURI internalContent
-      return $ Page.mkVerifyContent baseURI (VerificationResult.Success $ content)
+      return $ Page.mkVerifyContent baseURI (VerificationResult.Success content)
     Left VerificationError.TokenMismatch ->
       return $ Page.mkVerifyContent baseURI (VerificationResult.Error "Cannot verify submission :(")
     Left VerificationError.ContentNotFound ->

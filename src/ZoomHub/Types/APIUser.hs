@@ -5,4 +5,7 @@ where
 
 import Data.Text (Text)
 
-data APIUser = APIUser {username :: Text, password :: Text}
+data APIUser = APIUser
+  { username :: Text,
+    password :: Text
+  }
