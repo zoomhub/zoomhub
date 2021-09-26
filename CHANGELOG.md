@@ -3,6 +3,7 @@
 ## 2021-09-26
 
 - [#172][zh-22] Auto-rotate images based on EXIF data.
+- Worker: Increase poll interval from 3 to 5 seconds.
 
 ## 2021-09-25
 
