@@ -215,11 +215,11 @@ main = do
         Just uri -> BaseURI uri
         Nothing ->
           error $
-            "'" ++ uriString
-              ++ "' is not a valid URL. Please\
-                 \ set `"
-              ++ baseURIEnvName
-              ++ "` to override usage of hostname."
+            "'" <> uriString
+              <> "' is not a valid URL.\
+                 \ Please set `"
+              <> baseURIEnvName
+              <> "` to override usage of hostname."
     ensureTempPathExists :: TempPath -> IO ()
     ensureTempPathExists tempPath =
       createDirectoryIfMissing True rawTempPath
