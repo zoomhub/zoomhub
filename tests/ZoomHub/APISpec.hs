@@ -57,7 +57,6 @@ import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
-import ZoomHub.Types.TempPath (TempPath (TempPath))
 
 main :: IO ()
 main = hspec spec
@@ -170,7 +169,6 @@ config =
       processContent = ProcessExistingAndNewContent,
       publicPath = "./public",
       staticBaseURI = StaticBaseURI (toURI "https://static.zoomhub.net"),
-      tempPath = TempPath "./data/temp",
       uploads = UploadsDisabled,
       version = "test"
     }

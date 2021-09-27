@@ -73,7 +73,6 @@ library
     , ZoomHub.Types.DeepZoomImage.TileSize
     , ZoomHub.Types.Environment
     , ZoomHub.Types.StaticBaseURI
-    , ZoomHub.Types.TempPath
     , ZoomHub.Types.VerificationError
     , ZoomHub.Types.VerificationToken
     , ZoomHub.Utils

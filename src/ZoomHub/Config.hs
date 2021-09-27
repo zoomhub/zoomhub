@@ -27,7 +27,6 @@ import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.Environment (Environment)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
-import ZoomHub.Types.TempPath (TempPath)
 
 defaultPort :: Integer
 defaultPort = 8000
@@ -51,7 +50,6 @@ data Config = Config
     processContent :: ProcessContent,
     publicPath :: FilePath,
     staticBaseURI :: StaticBaseURI,
-    tempPath :: TempPath,
     uploads :: Uploads,
     version :: String
   }
@@ -70,7 +68,6 @@ instance ToJSON Config where
         "processContent" .= processContent,
         "publicPath" .= publicPath,
         "staticBaseURI" .= staticBaseURI,
-        "tempPath" .= tempPath,
         "uploads" .= uploads,
         "version" .= version
       ]

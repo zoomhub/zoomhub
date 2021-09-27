@@ -34,7 +34,7 @@ import Network.Wai.Middleware.RequestLogger
     mkRequestLogger,
     outputFormat,
   )
-import System.Directory (createDirectoryIfMissing, getCurrentDirectory)
+import System.Directory (getCurrentDirectory)
 import System.Environment (getEnvironment)
 import System.FilePath ((</>))
 import System.IO.Error (isDoesNotExistError)
@@ -61,7 +61,6 @@ import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
-import ZoomHub.Types.TempPath (TempPath (TempPath), unTempPath)
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 
 -- Environment variables
@@ -110,8 +109,6 @@ main = do
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
       defaultPublicPath = currentDirectory </> "public"
       publicPath = fromMaybe defaultPublicPath (lookup "PUBLIC_PATH" env)
-      defaultTempRootPath = currentDirectory </> "data"
-      tempPath = TempPath $ fromMaybe defaultTempRootPath (lookup "TEMP_PATH" env) </> "temp"
       baseURI = case lookup baseURIEnvName env of
         Just uriString ->
           toBaseURI uriString
@@ -155,7 +152,6 @@ main = do
     ]
 
   let config = Config {..}
-  ensureTempPathExists tempPath
   logInfo_ $ "Welcome to ZoomHub. Go to <" <> show baseURI <> "> and have fun!"
   logInfo
     "Config: App"
@@ -209,6 +205,7 @@ main = do
           ]
         threadDelay (fromIntegral $ toMicroseconds delay)
         processExistingContent config (show index)
+
     toBaseURI :: String -> BaseURI
     toBaseURI uriString =
       case parseAbsoluteURI uriString of
@@ -220,11 +217,7 @@ main = do
                  \ Please set `"
               <> baseURIEnvName
               <> "` to override usage of hostname."
-    ensureTempPathExists :: TempPath -> IO ()
-    ensureTempPathExists tempPath =
-      createDirectoryIfMissing True rawTempPath
-      where
-        rawTempPath = unTempPath tempPath
+
     readVersion :: FilePath -> IO String
     readVersion currentDirectory = do
       r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
@@ -233,6 +226,7 @@ main = do
         Right version -> version
       where
         versionPath = currentDirectory </> "version.txt"
+
     serverExceptionHandler :: Maybe Request -> SomeException -> IO ()
     serverExceptionHandler _ e =
       when (defaultShouldDisplayException e) $

@@ -99,7 +99,7 @@ import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import qualified ZoomHub.Email as Email
 import qualified ZoomHub.Email.Verification as Verification
-import ZoomHub.Log.Logger (logError, logWarning, logWarning_)
+import ZoomHub.Log.Logger (logWarning)
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL (Connection)
