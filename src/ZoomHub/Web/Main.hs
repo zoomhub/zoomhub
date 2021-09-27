@@ -34,7 +34,7 @@ import Network.Wai.Middleware.RequestLogger
     mkRequestLogger,
     outputFormat,
   )
-import System.Directory (createDirectoryIfMissing, getCurrentDirectory)
+import System.Directory (getCurrentDirectory)
 import System.Environment (getEnvironment)
 import System.FilePath ((</>))
 import System.IO.Error (isDoesNotExistError)
@@ -61,7 +61,6 @@ import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
-import ZoomHub.Types.TempPath (TempPath (TempPath), unTempPath)
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 
 -- Environment variables
@@ -70,27 +69,6 @@ baseURIEnvName = "BASE_URI"
 
 contentBaseURIEnvName :: String
 contentBaseURIEnvName = "CONTENT_BASE_URI"
-
-staticBaseURIEnvName :: String
-staticBaseURIEnvName = "STATIC_BASE_URI"
-
-processContentEnvName :: String
-processContentEnvName = "PROCESS_CONTENT"
-
-uploadsEnvName :: String
-uploadsEnvName = "UPLOADS"
-
-numProcessingWorkersEnvName :: String
-numProcessingWorkersEnvName = "PROCESSING_WORKERS"
-
-portEnvName :: String
-portEnvName = "PORT"
-
-publicPathEnvName :: String
-publicPathEnvName = "PUBLIC_PATH"
-
-tempRootPathEnvName :: String
-tempRootPathEnvName = "TEMP_PATH"
 
 -- Main
 main :: IO ()
@@ -121,25 +99,23 @@ main = do
       (error "ZoomHub.Main: Failed to parse AWS configuration.")
       <$> AWSConfig.fromEnv AWS.Ohio -- TODO: Grab AWS region from environment?
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
-  let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
-      maybeProcessContent = ProcessContent.parse <$> lookup processContentEnvName env
+  let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
+      maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env
       processContent = fromMaybe ProcessNoContent maybeProcessContent
-      maybeUploads = Uploads.parse <$> lookup uploadsEnvName env
+      maybeUploads = Uploads.parse <$> lookup "UPLOADS" env
       uploads = fromMaybe UploadsDisabled maybeUploads
       defaultNumProcessingWorkers = 0 :: Integer
-      maybeNumProcessingWorkers = lookup numProcessingWorkersEnvName env >>= readMaybe
+      maybeNumProcessingWorkers = lookup "PROCESSING_WORKERS" env >>= readMaybe
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
       defaultPublicPath = currentDirectory </> "public"
-      publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
-      defaultTempRootPath = currentDirectory </> "data"
-      tempPath = TempPath $ fromMaybe defaultTempRootPath (lookup tempRootPathEnvName env) </> "temp"
+      publicPath = fromMaybe defaultPublicPath (lookup "PUBLIC_PATH" env)
       baseURI = case lookup baseURIEnvName env of
         Just uriString ->
           toBaseURI uriString
         Nothing ->
           toBaseURI $ "http://" <> hostname
       defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "http://static.zoomhub.net"
-      mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup staticBaseURIEnvName env)
+      mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup "STATIC_BASE_URI" env)
       staticBaseURI = fromMaybe defaultStaticBaseURI mStaticBaseURI
       defaultDBName = "zoomhub_development"
       -- Database connection pool:
@@ -160,6 +136,7 @@ main = do
               password <- T.pack <$> lookup "API_PASSWORD" env
               pure $ APIUser {..}
           )
+  -- Database connection pool
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-
     createConnectionPool
@@ -167,13 +144,15 @@ main = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
+  logInfo
+    "Config: Database connection pool"
+    [ "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
+      "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
+      "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
+    ]
+
   let config = Config {..}
-  ensureTempPathExists tempPath
-  logInfo_ $
-    "Welcome to ZoomHub.\
-    \ Go to <"
-      ++ show baseURI
-      ++ "> and have fun!"
+  logInfo_ $ "Welcome to ZoomHub. Go to <" <> show baseURI <> "> and have fun!"
   logInfo
     "Config: App"
     ["config" .= config]
@@ -226,22 +205,19 @@ main = do
           ]
         threadDelay (fromIntegral $ toMicroseconds delay)
         processExistingContent config (show index)
+
     toBaseURI :: String -> BaseURI
     toBaseURI uriString =
       case parseAbsoluteURI uriString of
         Just uri -> BaseURI uri
         Nothing ->
           error $
-            "'" ++ uriString
-              ++ "' is not a valid URL. Please\
-                 \ set `"
-              ++ baseURIEnvName
-              ++ "` to override usage of hostname."
-    ensureTempPathExists :: TempPath -> IO ()
-    ensureTempPathExists tempPath =
-      createDirectoryIfMissing True rawTempPath
-      where
-        rawTempPath = unTempPath tempPath
+            "'" <> uriString
+              <> "' is not a valid URL.\
+                 \ Please set `"
+              <> baseURIEnvName
+              <> "` to override usage of hostname."
+
     readVersion :: FilePath -> IO String
     readVersion currentDirectory = do
       r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
@@ -250,6 +226,7 @@ main = do
         Right version -> version
       where
         versionPath = currentDirectory </> "version.txt"
+
     serverExceptionHandler :: Maybe Request -> SomeException -> IO ()
     serverExceptionHandler _ e =
       when (defaultShouldDisplayException e) $

@@ -247,6 +247,7 @@ resetAsInitialized ::
   m (Maybe Content)
 resetAsInitialized cId =
   transactionally_ $ do
+    manipulateParams_ deleteImage (Only cId)
     contentResult <- manipulateParams resetContentAsInitialized (Only cId)
     mContentRow <- firstRow contentResult
     return $ contentRowToContent <$> mContentRow
@@ -257,6 +258,7 @@ unsafeResetAsInitializedWithVerification ::
   m (Maybe Content)
 unsafeResetAsInitializedWithVerification cId =
   transactionally_ $ do
+    manipulateParams_ deleteImage (Only cId)
     void $ manipulateParams resetContentAsInitialized (Only cId)
     contentResult <- manipulateParams markContentAsVerified (Only cId)
     mContentRow <- firstRow contentResult

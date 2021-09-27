@@ -1,5 +1,13 @@
 # ZoomHub
 
+## 2021-09-28
+
+- When resetting content, delete any associated image.
+- Improve logging for when we try to notify someone about content without a
+  submitter email and/or verification token.
+- Remove unused `TempPath` since we stopped doing image processing on web
+  server.
+
 ## 2021-09-26
 
 - [#172][zh-22] Auto-rotate images based on EXIF data.
