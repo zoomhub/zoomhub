@@ -11,6 +11,7 @@ where
 
 import Control.Monad.Except (throwError, void)
 import Control.Monad.IO.Class (liftIO)
+import Data.Aeson ((.=))
 import qualified Data.ByteString.Char8 as BC
 import Data.Foldable (fold, for_)
 import Data.HashMap.Strict (HashMap)
@@ -98,6 +99,7 @@ import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import qualified ZoomHub.Email as Email
 import qualified ZoomHub.Email.Verification as Verification
+import ZoomHub.Log.Logger (logError, logWarning, logWarning_)
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL (Connection)
@@ -549,18 +551,27 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
                  ) of
               (Just submitterEmail, Just verificationToken) ->
                 case environment of
-                  Environment.Development ->
-                    sendEmail (Internal.contentId newContent) submitterEmail verificationToken
                   Environment.Production ->
                     sendEmail (Internal.contentId newContent) submitterEmail verificationToken
                   -- NOTE: Do not send email in test environment
                   Environment.Test ->
                     pure ()
-              _ ->
+                  Environment.Development ->
+                    sendEmail (Internal.contentId newContent) submitterEmail verificationToken
+              (mSubmitterEmail, mVerificationToken) -> do
+                liftIO $
+                  logWarning
+                    "Cannot notify submitter due to missing email and/or verification token"
+                    [ "contentId" .= Internal.contentId newContent,
+                      "submitterEmail" .= mSubmitterEmail,
+                      "verificationToken" .= mVerificationToken
+                    ]
                 pure ()
           -- TODO: Redirect to content:
           pure mNewContent
-        _ ->
+        ProcessExistingContent ->
+          noNewContentErrorAPI
+        ProcessNoContent ->
           noNewContentErrorAPI
       case mNewContent of
         Just newContent ->

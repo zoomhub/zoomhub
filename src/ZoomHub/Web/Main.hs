@@ -160,6 +160,7 @@ main = do
               password <- T.pack <$> lookup "API_PASSWORD" env
               pure $ APIUser {..}
           )
+  -- Database connection pool
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-
     createConnectionPool
@@ -167,13 +168,16 @@ main = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
+  logInfo
+    "Config: Database connection pool"
+    [ "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
+      "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
+      "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
+    ]
+
   let config = Config {..}
   ensureTempPathExists tempPath
-  logInfo_ $
-    "Welcome to ZoomHub.\
-    \ Go to <"
-      ++ show baseURI
-      ++ "> and have fun!"
+  logInfo_ $ "Welcome to ZoomHub. Go to <" <> show baseURI <> "> and have fun!"
   logInfo
     "Config: App"
     ["config" .= config]
