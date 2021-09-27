@@ -71,27 +71,6 @@ baseURIEnvName = "BASE_URI"
 contentBaseURIEnvName :: String
 contentBaseURIEnvName = "CONTENT_BASE_URI"
 
-staticBaseURIEnvName :: String
-staticBaseURIEnvName = "STATIC_BASE_URI"
-
-processContentEnvName :: String
-processContentEnvName = "PROCESS_CONTENT"
-
-uploadsEnvName :: String
-uploadsEnvName = "UPLOADS"
-
-numProcessingWorkersEnvName :: String
-numProcessingWorkersEnvName = "PROCESSING_WORKERS"
-
-portEnvName :: String
-portEnvName = "PORT"
-
-publicPathEnvName :: String
-publicPathEnvName = "PUBLIC_PATH"
-
-tempRootPathEnvName :: String
-tempRootPathEnvName = "TEMP_PATH"
-
 -- Main
 main :: IO ()
 main = do
@@ -121,25 +100,25 @@ main = do
       (error "ZoomHub.Main: Failed to parse AWS configuration.")
       <$> AWSConfig.fromEnv AWS.Ohio -- TODO: Grab AWS region from environment?
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
-  let port = fromMaybe defaultPort (lookup portEnvName env >>= readMaybe)
-      maybeProcessContent = ProcessContent.parse <$> lookup processContentEnvName env
+  let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
+      maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env
       processContent = fromMaybe ProcessNoContent maybeProcessContent
-      maybeUploads = Uploads.parse <$> lookup uploadsEnvName env
+      maybeUploads = Uploads.parse <$> lookup "UPLOADS" env
       uploads = fromMaybe UploadsDisabled maybeUploads
       defaultNumProcessingWorkers = 0 :: Integer
-      maybeNumProcessingWorkers = lookup numProcessingWorkersEnvName env >>= readMaybe
+      maybeNumProcessingWorkers = lookup "PROCESSING_WORKERS" env >>= readMaybe
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
       defaultPublicPath = currentDirectory </> "public"
-      publicPath = fromMaybe defaultPublicPath (lookup publicPathEnvName env)
+      publicPath = fromMaybe defaultPublicPath (lookup "PUBLIC_PATH" env)
       defaultTempRootPath = currentDirectory </> "data"
-      tempPath = TempPath $ fromMaybe defaultTempRootPath (lookup tempRootPathEnvName env) </> "temp"
+      tempPath = TempPath $ fromMaybe defaultTempRootPath (lookup "TEMP_PATH" env) </> "temp"
       baseURI = case lookup baseURIEnvName env of
         Just uriString ->
           toBaseURI uriString
         Nothing ->
           toBaseURI $ "http://" <> hostname
       defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "http://static.zoomhub.net"
-      mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup staticBaseURIEnvName env)
+      mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup "STATIC_BASE_URI" env)
       staticBaseURI = fromMaybe defaultStaticBaseURI mStaticBaseURI
       defaultDBName = "zoomhub_development"
       -- Database connection pool:
