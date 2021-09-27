@@ -335,7 +335,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           authPutJSON "/v1/content/X75/reset" authorizedUser ""
             `shouldRespondWith` restRedirect (ContentId.fromString "X75")
           get "/v1/content/X75"
-            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":0,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":false,"failed":false}|]
+            `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":false,"failed":false}|]
               { matchStatus = 200,
                 matchHeaders = [applicationJSON]
               }
