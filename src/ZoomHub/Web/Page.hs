@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Page
-  ( template,
+  ( layout,
     title,
     styles,
     analyticsScript,
@@ -35,12 +35,12 @@ import NeatInterpolation (text)
 title :: Text
 title = "ZoomHub · Share and view high-resolution images effortlessly"
 
-template ::
+layout ::
   Monad m =>
   Text -> -- title
   HtmlT m a ->
   HtmlT m a
-template pageTitle body = do
+layout pageTitle body = do
   doctypehtml_ $
     do
       head_

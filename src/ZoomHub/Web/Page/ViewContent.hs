@@ -38,7 +38,7 @@ mkViewContent :: BaseURI -> Content -> ViewContent
 mkViewContent vcBaseURI vcContent = ViewContent {..}
 
 instance ToHtml ViewContent where
-  toHtml vc = Page.template
+  toHtml vc = Page.layout
     (T.pack cId <> " — " <> Page.title)
     $ do
       script_ [src_ (T.pack $ show scriptURI)] emptyScriptBody
