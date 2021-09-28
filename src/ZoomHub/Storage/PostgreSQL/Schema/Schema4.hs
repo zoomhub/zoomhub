@@ -42,6 +42,7 @@ setup =
   manipDefinition $
     UnsafeManipulation
       [r|
+        CREATE INDEX "content_active_at_idx" ON "content" USING btree ("active_at");
         CREATE INDEX "content_initialized_at_idx" ON "content" USING btree ("initialized_at");
         CREATE INDEX "content_num_views_idx" ON "content" USING btree ("num_views" DESC NULLS LAST);
         CREATE INDEX "content_state_idx" ON "content" USING btree ("state");
@@ -55,6 +56,7 @@ teardown =
   manipDefinition $
     UnsafeManipulation
       [r|
+        DROP INDEX "content_active_at_idx";
         DROP INDEX "content_initialized_at_idx";
         DROP INDEX "content_num_views_idx";
         DROP INDEX "content_state_idx";

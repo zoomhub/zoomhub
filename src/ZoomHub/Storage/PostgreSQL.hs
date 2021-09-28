@@ -45,7 +45,7 @@ import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
   ( MonadPQ,
     Only (Only),
-    SortExpression (Asc, Desc),
+    SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
     getRows,
     isNotNull,
@@ -146,6 +146,7 @@ getExpiredActive ttl = do
                   ( ((#content ! #active_at) .< param @1)
                       .&& ((#content ! #state) .== literal Active)
                   )
+                & orderBy [#content ! #active_at & DescNullsLast]
           )
       )
       (Only earliestAllowed)
