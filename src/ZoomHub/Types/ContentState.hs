@@ -8,6 +8,7 @@
 module ZoomHub.Types.ContentState
   ( ContentState (..),
     fromString,
+    isCompleted,
   )
 where
 
@@ -43,6 +44,13 @@ toText Initialized = "initialized"
 toText Active = "active"
 toText CompletedSuccess = "completed:success"
 toText CompletedFailure = "completed:failure"
+
+isCompleted :: ContentState -> Bool
+isCompleted state = case state of
+  Initialized -> False
+  Active -> False
+  CompletedSuccess -> True
+  CompletedFailure -> True
 
 -- Squeal / PostgreSQL
 instance FromValue 'PGtext ContentState where
