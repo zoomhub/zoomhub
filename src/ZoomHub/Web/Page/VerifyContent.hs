@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Page.VerifyContent
@@ -45,22 +46,24 @@ mkVerifyContent vcBaseURI vcResult = VerifyContent {..}
 
 progressScript :: ContentId -> Text
 progressScript cId =
-  Page.concatPretty
-    [ ";(() => {",
-      "setInterval(async () => {",
-      "    const content = await fetch(\"/v1/content/" <> T.pack (unContentId cId) <> "\").then(",
-      "      (response) => response.json()",
-      "    )",
-      "",
-      "    console.log(\"---\")",
-      "    console.log(content)",
-      "",
-      "    if (content.ready) {",
-      "      location.href = content.shareUrl",
-      "    }",
-      "  }, 2000)",
-      "})()"
-    ]
+  [text|
+    ;(() => {
+      setInterval(async () => {
+        const content = await fetch("$apiURL").then(
+          (response) => response.json()
+        )
+
+        console.log("---")
+        console.log(content)
+
+        if (content.ready) {
+          location.href = content.shareUrl
+        }
+      }, 2000)
+    })()
+  |]
+  where
+    apiURL = "/v1/content/" <> T.pack (unContentId cId)
 
 instance ToHtml VerifyContent where
   toHtml (VerifyContent {..}) =
