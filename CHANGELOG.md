@@ -3,6 +3,8 @@
 ## 2021-09-28
 
 - When resetting content, delete any associated image.
+- Temporarily reduce max upload size from 100MB to 50MB due to AWS Lambda
+  scratch disk limitations (500MB maximum).
 - Improve logging for when we try to notify someone about content without a
   submitter email and/or verification token.
 - Remove unused `TempPath` since we stopped doing image processing on web
