@@ -116,16 +116,18 @@ getNextUnprocessed = do
   result <-
     runQueryParams
       ( selectContentBy $
-          \t ->
-            t
+          \table ->
+            table
               & where_
                 ( (#content ! #state) .== param @1
                     .&& ( #content ! #version .>= 5
                             .&& isNotNull (#content ! #verified_at)
                         )
                 )
-              & orderBy [#content ! #initialized_at & Asc]
-              & orderBy [#content ! #num_views & Desc]
+              & orderBy
+                [ #content ! #initialized_at & Asc,
+                  #content ! #num_views & Desc
+                ]
               & limit 1
       )
       (Only Initialized)
