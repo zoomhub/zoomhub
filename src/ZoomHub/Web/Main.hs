@@ -114,7 +114,7 @@ main = do
           toBaseURI uriString
         Nothing ->
           toBaseURI $ "http://" <> hostname
-      defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "http://static.zoomhub.net"
+      defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "https://static.zoomhub.net"
       mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup "STATIC_BASE_URI" env)
       staticBaseURI = fromMaybe defaultStaticBaseURI mStaticBaseURI
       defaultDBName = "zoomhub_development"
