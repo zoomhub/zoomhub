@@ -45,7 +45,7 @@ import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
   ( MonadPQ,
     Only (Only),
-    SortExpression (Asc, Desc),
+    SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
     getRows,
     isNotNull,
@@ -116,16 +116,18 @@ getNextUnprocessed = do
   result <-
     runQueryParams
       ( selectContentBy $
-          \t ->
-            t
+          \table ->
+            table
               & where_
                 ( (#content ! #state) .== param @1
                     .&& ( #content ! #version .>= 5
                             .&& isNotNull (#content ! #verified_at)
                         )
                 )
-              & orderBy [#content ! #initialized_at & Asc]
-              & orderBy [#content ! #num_views & Desc]
+              & orderBy
+                [ #content ! #initialized_at & Asc,
+                  #content ! #num_views & Desc
+                ]
               & limit 1
       )
       (Only Initialized)
@@ -146,6 +148,7 @@ getExpiredActive ttl = do
                   ( ((#content ! #active_at) .< param @1)
                       .&& ((#content ! #state) .== literal Active)
                   )
+                & orderBy [#content ! #active_at & DescNullsLast]
           )
       )
       (Only earliestAllowed)
