@@ -12,13 +12,13 @@ where
 import Control.Concurrent (threadDelay)
 import Control.Exception.Enclosed (catchAny)
 import Control.Lens ((^.))
-import Control.Monad (forever)
+import Control.Monad (forM_, forever)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Lazy (toStrict)
 import Data.Foldable (for_)
 import Data.Text (Text)
-import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
+import Data.Time.Units (Minute, Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
 import qualified Network.AWS as AWS
 import qualified Network.AWS.Lambda as AWS
@@ -26,8 +26,8 @@ import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
 import qualified ZoomHub.AWS as ZHAWS
 import ZoomHub.Config (Config (..))
-import ZoomHub.Log.Logger (logDebug, logDebugT, logException, logInfo)
-import ZoomHub.Storage.PostgreSQL (dequeueNextUnprocessed)
+import ZoomHub.Log.Logger (logDebug, logDebugT, logException, logInfo, logInfoT)
+import ZoomHub.Storage.PostgreSQL (dequeueNextUnprocessed, getExpiredActive, resetAsInitialized)
 import ZoomHub.Types.Content (Content (contentId))
 import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Utils (lenientDecodeUtf8)
@@ -35,6 +35,9 @@ import ZoomHub.Utils (lenientDecodeUtf8)
 -- Constants
 processExistingContentInterval :: Second
 processExistingContentInterval = 5
+
+processExpiredActiveContentInterval :: Minute
+processExpiredActiveContentInterval = 30
 
 -- Public API
 processExistingContent :: Config -> String -> IO ()
@@ -86,4 +89,17 @@ processExistingContent Config {..} workerId = forever $ do
       ]
 
 processExpiredActiveContent :: Config -> IO ()
-processExpiredActiveContent Config {..} = pure ()
+processExpiredActiveContent Config {..} = forever $ do
+  cs <- runPoolPQ (getExpiredActive processExpiredActiveContentInterval) dbConnPool
+  logInfoT
+    "Reset expired active content"
+    ["ids" .= map contentId cs]
+    ( forM_ cs $ \content ->
+        runPoolPQ (resetAsInitialized (contentId content)) dbConnPool
+    )
+  logInfo
+    "Wait for next expired active content"
+    ["sleepDuration" .= sleepDuration]
+  threadDelay . fromIntegral $ toMicroseconds sleepDuration
+  where
+    sleepDuration = processExpiredActiveContentInterval

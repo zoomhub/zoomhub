@@ -4,6 +4,8 @@
 
 - Improve performance of `getNextUnprocessed` query using indexes on `content`.
 - When resetting content, delete any associated image.
+- Reset content that hasn’t completed processing within 30 minutes (expired
+  active content).
 - Temporarily reduce max upload size from 100MB to 50MB due to AWS Lambda
   scratch disk limitations (500MB maximum).
 - Improve logging for when we try to notify someone about content without a
