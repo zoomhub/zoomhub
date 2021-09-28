@@ -593,6 +593,10 @@
             const sectionElement = document.querySelector(`.${currentSection}`)
             sectionElement.style.display =
               section === currentSection ? "block" : "none"
+            sectionElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            })
           })
         }
 
