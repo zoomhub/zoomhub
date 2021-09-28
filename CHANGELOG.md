@@ -1,5 +1,16 @@
 # ZoomHub
 
+## 2021-09-29
+
+- Redirect on verification link if content is completed.
+- Improve copy of verification email.
+- Homepage: Keep upload card in view (via scrolling) when changing states.
+- Use HTTPS for static and cache content URLs by default.
+- Use `neat-interpolation` for cleaner multiline strings with interpolated
+  values.
+- `zh`: Fix slow compilation due to optimization flag change by adding `--fast`
+  to match all the other `stack build` calls.
+
 ## 2021-09-28
 
 - Improve performance of `getNextUnprocessed` query using indexes on `content`.
