@@ -423,7 +423,12 @@ restUpload baseURI awsConfig uploads email =
                   return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
-        maxUploadSizeBytes = 512 * 1024 * 1024 -- 512MB
+        -- NOTE: AWS Lambda has a limit of 500MB scratch space. If content
+        -- sticks around between invocations due to failures, we will eventually
+        -- run out of space.
+        -- In addition, to process an image of x bytes, we need roughly 2x the
+        -- space to hold the original as well as the generated tiles.
+        maxUploadSizeBytes = 50 * 1024 * 1024 -- 50MB
         s3Bucket = AWS.configSourcesS3Bucket awsConfig
 
 restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
