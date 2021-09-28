@@ -2,6 +2,7 @@
 
 ## 2021-09-28
 
+- Improve performance of `getNextUnprocessed` query using indexes on `content`.
 - When resetting content, delete any associated image.
 - Temporarily reduce max upload size from 100MB to 50MB due to AWS Lambda
   scratch disk limitations (500MB maximum).
