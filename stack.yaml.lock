@@ -40,6 +40,13 @@ packages:
   original:
     hackage: mime-0.4.0.2
 - completed:
+    hackage: neat-interpolation-0.5.1.2@sha256:6a8f04befb39c20896aed9a452f84540dd8ed37efae09a656023b151886b1262,2992
+    pantry-tree:
+      size: 566
+      sha256: 046371778d4cdf1283089d337498cee40906edf3f55ccd1d1e89ac9209d2d083
+  original:
+    hackage: neat-interpolation-0.5.1.2
+- completed:
     hackage: squeal-postgresql-0.5.1.0@sha256:731c2bc1dbf3b02ffc8a3fe2b9215655c2b8e06aa49d18cd6ae66d91de03391f,3449
     pantry-tree:
       size: 2959

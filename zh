@@ -75,6 +75,7 @@ run)
       < ./data/zoomhub_sequences.sql
 
     stack build \
+      --fast \
       --no-run-tests \
       --ghc-options='-Wall' \
       --file-watch \

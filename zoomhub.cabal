@@ -129,6 +129,7 @@ library
     , minio-hs
     , monad-control
     , mtl
+    , neat-interpolation
     , network
     , network-uri
     , postgresql-simple

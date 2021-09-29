@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Types.Embed
@@ -13,7 +14,9 @@ import Data.Aeson (encode)
 import qualified Data.ByteString.Lazy.Char8 as BLC
 import Data.List (intercalate)
 import Data.Maybe (fromJust, fromMaybe)
+import qualified Data.Text as T
 import GHC.Generics (Generic)
+import NeatInterpolation (text)
 import Network.URI (parseRelativeReference, relativeTo)
 import ZoomHub.API.ContentTypes.JavaScript (ToJS, toJS)
 import ZoomHub.API.Types.Content (Content, contentDzi, contentReady)
@@ -88,9 +91,6 @@ style maybeWidth maybeHeight =
     width = fromMaybe defaultWidth maybeWidth
 
 -- JavaScript
-concatPretty :: [String] -> String
-concatPretty = intercalate "\n"
-
 concatScripts :: [String] -> String
 concatScripts = intercalate ";\n"
 
@@ -102,22 +102,26 @@ attr :: (String, String) -> String
 attr (name, value) = concat [name, "=", "\"", value, "\""]
 
 instance ToJS Embed where
-  toJS embed = concatScripts [script, wrapper]
+  toJS embed = concatScripts [script, T.unpack wrapper]
     where
       html =
-        tag
-          "div"
-          [ ("class", unwords cssClassNames),
-            ("id", embedContainerId embed),
-            ("style", style (embedWidth embed) (embedHeight embed))
-          ]
+        T.pack $
+          "'"
+            <> tag
+              "div"
+              [ ("class", unwords cssClassNames),
+                ("id", embedContainerId embed),
+                ("style", style (embedWidth embed) (embedHeight embed))
+              ]
+            <> "'"
       wrapper =
-        concatPretty
-          [ "(function () {",
-            "  document.write('" ++ html ++ "');",
-            "  OpenSeadragon(" ++ BLC.unpack (encode viewerConfig) ++ ");",
-            "}());"
-          ]
+        [text|
+          ;(() => {
+            document.write($html)
+            OpenSeadragon($openSeadragonConfig)
+          })()
+        |]
+      openSeadragonConfig = T.pack $ BLC.unpack $ encode viewerConfig
       script = embedBody embed
       content = embedContent embed
       maybeDZI = contentDzi content

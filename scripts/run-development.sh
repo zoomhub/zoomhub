@@ -20,7 +20,7 @@ fi
 
 ZH_ENV='development' \
 BASE_URI="${BASE_URI:-http://localhost:8000}" \
-CONTENT_BASE_URI='http://cache-development.zoomhub.net/content' \
+CONTENT_BASE_URI='https://cache-development.zoomhub.net/content' \
 PGDATABASE='zoomhub_development' \
 PGUSER="$(whoami)" \
 PROCESS_CONTENT='ProcessExistingAndNewContent' \

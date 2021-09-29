@@ -118,6 +118,7 @@ import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
+import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
@@ -596,7 +597,7 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
             baseURI
             contentId
             verificationToken
-            (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
+            (Email.From "\"ZoomHub (formerly zoom.it)\" <daniel@zoomhub.net>")
             (Email.To submitterEmail)
 
 restInvalidRequest :: Maybe String -> Handler Content
@@ -659,6 +660,8 @@ webContentVerificationById ::
 webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
   result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
   case result of
+    Right internalContent | ContentState.isCompleted (Internal.contentState internalContent) -> do
+      redirectToView baseURI (Internal.contentId internalContent)
     Right internalContent -> do
       let content = Content.fromInternal baseURI contentBaseURI internalContent
       return $ Page.mkVerifyContent baseURI (VerificationResult.Success content)
@@ -692,8 +695,10 @@ webContentByURL ::
 webContentByURL baseURI dbConnPool contentURI = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL contentURI) dbConnPool
   case maybeContent of
-    Nothing -> noNewContentErrorWeb
-    Just c -> redirectToView baseURI (Internal.contentId c)
+    Nothing ->
+      noNewContentErrorWeb
+    Just content ->
+      redirectToView baseURI (Internal.contentId content)
 
 webInvalidURLParam :: String -> Handler Page.ViewContent
 webInvalidURLParam _ = throwError . Web.error400 $ invalidURLErrorMessage
@@ -740,7 +745,7 @@ invalidURLErrorMessage :: String
 invalidURLErrorMessage =
   "Please give us the full URL, including ‘http://’ or ‘https://’."
 
-redirectToView :: BaseURI -> ContentId -> Handler Page.ViewContent
+redirectToView :: BaseURI -> ContentId -> Handler a
 redirectToView baseURI contentId =
   -- TODO: Look into Servant ‘Links’ for type safe link generation:
   redirect $ webRedirectURI baseURI contentId
