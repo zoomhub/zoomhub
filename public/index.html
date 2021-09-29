@@ -75,7 +75,8 @@
       }
 
       body {
-        color: #333;
+        background-color: #fafafa;
+        color: #222;
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         font-size: 16px;
         height: 100%;
@@ -91,14 +92,25 @@
         width: 80%;
       }
 
-      .title {
+      .logo {
+        text-align: center;
         font-size: 360%;
         letter-spacing: -4px;
       }
 
+      .logo .small-caps {
+        font-size: 1.08em;
+      }
+
       .mark {
-        color: #444;
+        color: #111;
         font-weight: bold;
+      }
+
+      .card {
+        background-color: #fff;
+        box-shadow: 0 0 #0000, 0 0 #0000, 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
       }
 
       a {
@@ -113,12 +125,31 @@
         border-bottom: 1px dashed;
       }
 
+      section {
+        padding-top: 1rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      section:first-child {
+        border-bottom: none;
+      }
+
+      h2 {
+        font-size: 1.75rem;
+        line-height: 2rem;
+      }
+
       h3 a {
         color: #333;
       }
 
       p {
         margin-bottom: 1em;
+      }
+
+      ol {
+        padding-inline-start: 20px;
       }
 
       footer {
@@ -136,7 +167,6 @@
 
       /* Upload */
       .upload-card {
-        border: 4px solid #eee;
         border-radius: 8px;
         padding: 1.5em 2em;
       }
@@ -289,19 +319,7 @@
       }
 
       /* Placeholders */
-      ::-webkit-input-placeholder {
-        color: #f2c779;
-      }
-
-      :-moz-placeholder {
-        color: #f2c779;
-      }
-
-      ::-moz-placeholder {
-        color: #f2c779;
-      }
-
-      :-ms-input-placeholder {
+      #mc_embed_signup ::placeholder {
         color: #f2c779;
       }
 
@@ -319,10 +337,12 @@
 
   <body>
     <header class="container">
-      <h1 class="title">ZoomHub</h1>
+      <h1 class="logo">
+        Z<span class="small-caps">oom</span>H<span class="small-caps">ub</span>
+      </h1>
     </header>
 
-    <script src="/h.js?width=auto&amp;height=340px"></script>
+    <script src="/w2O0D.js?width=auto&amp;height=340px"></script>
 
     <!-- Begin MailChimp Signup Form -->
     <div id="mc_embed_signup" class="container" style="display: none">
@@ -375,149 +395,139 @@
     <!--End mc_embed_signup-->
 
     <article class="container">
-      <div class="upload-card" style="display: none; margin-top: 1em">
-        <div class="instructions">
-          <h2>Create a zoomable image in 3 easy steps…</h2>
-          <form class="upload-form">
-            <ol>
-              <li>
-                Pick an image to upload:<br />
-                <input
-                  class="form-control"
-                  type="file"
-                  name="content"
-                  accept="image/png,image/jpeg"
-                  style="padding: 1em; margin-top: 0.3em"
-                  required
-                />
-              </li>
-              <li>
-                Give us your email so we know you’re human*:<br />
-                <input
-                  class="form-control"
-                  type="email"
-                  name="email"
-                  style="margin-top: 0.3em"
-                  required
-                />
-              </li>
-              <li>
-                <input
-                  type="submit"
-                  value="Upload image"
-                  name="submit"
-                  style="
-                    background-color: #f60;
-                    border-color: #f60;
-                    border-radius: 0.25rem;
-                    color: #fff;
-                    font-size: 16px;
-                    line-height: 1.5;
-                    padding: 0.375rem 0.75rem;
-                  "
-                />
-              </li>
-            </ol>
+      <section id="submit">
+        <div class="upload-card card" style="display: none; margin-top: 1em">
+          <div class="instructions">
+            <h2 class="cta">Create your own in 3 easy steps…</h2>
+            <form class="upload-form">
+              <ol>
+                <li>
+                  Pick an image to upload:<br />
+                  <input
+                    class="form-control"
+                    type="file"
+                    name="content"
+                    accept="image/png,image/jpeg"
+                    style="padding: 1em; margin-top: 0.3em"
+                    required
+                  />
+                </li>
+                <li>
+                  Give us your email so we can send you a link when it’s
+                  ready*:<br />
+                  <input
+                    class="form-control"
+                    type="email"
+                    name="email"
+                    style="margin-top: 0.3em"
+                    required
+                    placeholder="you@example.com"
+                  />
+                </li>
+                <li>
+                  <input
+                    type="submit"
+                    value="Upload image"
+                    name="submit"
+                    style="
+                      background-color: #f60;
+                      border-color: #f60;
+                      border-radius: 0.25rem;
+                      color: #fff;
+                      font-size: 16px;
+                      line-height: 1.5;
+                      padding: 0.375rem 0.75rem;
+                    "
+                  />
+                </li>
+              </ol>
 
-            <span style="color: #aaa; font-size: 14px">
-              * We won’t spam you or share your email — promise!
-            </span>
-          </form>
-        </div>
+              <span style="color: #aaa; font-size: 14px">
+                * We won’t spam you or share your email — promise!
+              </span>
+            </form>
+          </div>
 
-        <div class="progress" style="display: none">
-          <h2>⬆️ Uploading…</h2>
-          <div class="lead">Hang tight, we’re uploading your image.</div>
-        </div>
+          <div class="progress" style="display: none">
+            <h2>⬆️ Uploading…</h2>
+            <div class="lead">Hang tight, we’re uploading your image.</div>
+          </div>
 
-        <div class="thanks" style="display: none">
-          <h2>🎉 Success!</h2>
-          <div class="lead">
-            📩 Check your email. We just sent you the link to view your upload.
+          <div class="thanks" style="display: none">
+            <h2>🎉 Success!</h2>
+            <div class="lead">
+              📩 Check your email. We just sent you the link to view your
+              upload.
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <h2>What is it?</h2>
-      <p>
-        <span class="mark">ZoomHub</span> lets you share &amp; view your
-        high-resolution images seamlessly and blazingly fast, no matter whether
-        you are on a desktop computer, tablet, or mobile phone.
-      </p>
-      <p>Play around with the demo above and experience it yourself!</p>
+      <section id="about">
+        <h2>What is it?</h2>
+        <p class="lead">
+          <span class="mark">ZoomHub</span> lets you share &amp; view your
+          high-resolution images seamlessly and blazingly fast, no matter
+          whether you are on a desktop computer, tablet, or mobile phone.
+        </p>
+        <p class="lead">
+          Play around with the demo above and experience it yourself!
+        </p>
+      </section>
 
-      <h2>What’s the current status?</h2>
-      <p>
-        <span class="mark">ZoomHub</span> is the spiritual and open-source
-        successor to Microsoft’s <span class="mark">Zoom.it</span>. It is
-        developed and maintained by
-        <a
-          class="secondary"
-          href="https://github.com/zoomhub/zoomhub/graphs/contributors"
-          >volunteers</a
-        >
-        who were members of the original <span class="mark">Zoom.it</span> team.
-      </p>
-      <p>
-        We’re currently
-        <a
-          class="secondary"
-          href="https://github.com/zoomhub/zoomhub/issues/89"
-        >
-          not converting new images</a
-        >, but existing images—including their pages and embeds—should work. We
-        are working very hard to restore the service to its old glory and
-        beyond!
-      </p>
+      <section id="examples">
+        <h2>Examples</h2>
+        <h3>
+          <a href="/L8wh">NASA: Earth at Night</a>
+        </h3>
+        <p>
+          <script src="/L8wh.js?width=auto&amp;height=340px"></script>
+        </p>
 
-      <h2>Examples</h2>
+        <h3>
+          <a href="/STK4">Pieter Bruegel the Elder: The Tower of Babel</a>
+        </h3>
+        <p>
+          <script src="/STK4.js?width=auto&amp;height=340px"></script>
+        </p>
 
-      <h3>
-        <a href="/L8wh">NASA: Earth at Night</a>
-      </h3>
-      <p>
-        <script src="/L8wh.js?width=auto&amp;height=340px"></script>
-      </p>
+        <h3>
+          <a href="/Xjce">Luis Romero Martinez: Manglar en Emergencia</a>
+        </h3>
+        <p>
+          <script src="/Xjce.js?width=auto&amp;height=340px"></script>
+        </p>
+      </section>
 
-      <h3>
-        <a href="/STK4">Pieter Bruegel the Elder: The Tower of Babel</a>
-      </h3>
-      <p>
-        <script src="/STK4.js?width=auto&amp;height=340px"></script>
-      </p>
-
-      <h3>
-        <a href="/Xjce">Luis Romero Martinez: Manglar en Emergencia</a>
-      </h3>
-      <p>
-        <script src="/Xjce.js?width=auto&amp;height=340px"></script>
-      </p>
-
-      <h2>Get involved!</h2>
-      <ul>
-        <li>
-          Want to integrate <span class="mark">ZoomHub</span> into your app?
-          Check out our
-          <a href="https://github.com/zoomhub/zoomhub/blob/master/API.md">API</a
-          >.
-        </li>
-        <li>
-          Looking for the latest news? Follow us on Twitter:
-          <a href="https://twitter.com/zoomhub">@zoomhub</a>.
-        </li>
-        <li>
-          Need help? Join the
-          <a href="https://groups.google.com/group/zoomhub">mailing list</a>.
-        </li>
-        <li>
-          Found a bug or typo?
-          <a href="https://github.com/zoomhub/zoomhub/issues">File an issue</a>.
-        </li>
-        <li>
-          Want to contribute a new feature? Check out the
-          <a href="https://github.com/zoomhub/zoomhub">code</a>.
-        </li>
-      </ul>
+      <section id="participate">
+        <h2>Get involved!</h2>
+        <ul>
+          <li>
+            Want to integrate <span class="mark">ZoomHub</span> into your app?
+            Check out our
+            <a href="https://github.com/zoomhub/zoomhub/blob/master/API.md"
+              >API</a
+            >.
+          </li>
+          <li>
+            Looking for the latest news? Follow us on Twitter:
+            <a href="https://twitter.com/zoomhub">@ZoomHub</a>.
+          </li>
+          <li>
+            Need help? Join the
+            <a href="https://groups.google.com/group/zoomhub">mailing list</a>.
+          </li>
+          <li>
+            Found a bug or typo?
+            <a href="https://github.com/zoomhub/zoomhub/issues">File an issue</a
+            >.
+          </li>
+          <li>
+            Want to contribute a new feature? Check out the
+            <a href="https://github.com/zoomhub/zoomhub">code</a>.
+          </li>
+        </ul>
+      </section>
 
       <footer>
         <p>Powered by <a href="https://www.haskell.org">Haskell</a> ❤️</p>

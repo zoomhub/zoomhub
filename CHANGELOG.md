@@ -1,6 +1,11 @@
 # ZoomHub
 
-## 2021-09-29
+## 2021-09-29-2
+
+- Improve homepage design.
+- Swap cover image for a panorama.
+
+## 2021-09-29-1
 
 - Redirect on verification link if content is completed.
 - Improve copy of verification email.
