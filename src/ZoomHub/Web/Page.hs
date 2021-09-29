@@ -11,7 +11,6 @@ module ZoomHub.Web.Page
 where
 
 import Data.Text (Text)
-import qualified Data.Text as T
 import Lucid
   ( HtmlT,
     body_,
