@@ -1,5 +1,9 @@
 # ZoomHub
 
+## 2021-09-30-1
+
+- Improve homepage copy.
+
 ## 2021-09-29-2
 
 - Improve homepage design.
