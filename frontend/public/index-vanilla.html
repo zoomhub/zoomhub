@@ -196,6 +196,11 @@
         font-size: 20px;
         line-height: 1.4em;
       }
+
+      .__zoomhub {
+        border-radius: 12px;
+        overflow: hidden;
+      }
     </style>
 
     <!-- MailChimp -->
@@ -333,11 +338,12 @@
         padding: 0.8em 0.8em 1.3em;
       }
     </style>
+    <link rel="stylesheet" type="text/css" href="/styles/global.css" />
   </head>
 
   <body>
     <header class="container">
-      <h1 class="logo">
+      <h1 class="logo font-bold">
         Z<span class="small-caps">oom</span>H<span class="small-caps">ub</span>
       </h1>
     </header>
@@ -395,6 +401,7 @@
     <!--End mc_embed_signup-->
 
     <article class="container">
+      <section id="submit-v2"></section>
       <section id="submit">
         <div class="upload-card card" style="display: none; margin-top: 1em">
           <div class="instructions">
@@ -402,15 +409,31 @@
             <form class="upload-form">
               <ol>
                 <li>
-                  Pick an image to upload:<br />
-                  <input
-                    class="form-control"
-                    type="file"
-                    name="content"
-                    accept="image/png,image/jpeg"
-                    style="padding: 1em; margin-top: 0.3em"
-                    required
-                  />
+                  I have an image…
+
+                  <button>To upload</button>
+                  <button>As a link</button>
+
+                  <!--
+                  <div>
+                    Pick an image to upload:<br />
+                    <input
+                      class="form-control"
+                      type="file"
+                      name="content"
+                      accept="image/png,image/jpeg"
+                      style="padding: 1em; margin-top: 0.3em"
+                      required
+                    />
+                  </div>
+                  or
+                  <div>
+                    <input
+                      class="form-control"
+                      type="url"
+                      placeholder="https://example.com/photos/summer.jpg"
+                    />
+                  </div> -->
                 </li>
                 <li>
                   Give us your email so we can send you a link when it’s
@@ -421,7 +444,7 @@
                     name="email"
                     style="margin-top: 0.3em"
                     required
-                    placeholder="you@example.com"
+                    placeholder="me@example.com"
                   />
                 </li>
                 <li>
@@ -535,7 +558,8 @@
     </article>
     <script>
       ;(async () => {
-        const apiConfig = await fetch("/v1/config").then((_) => _.json())
+        // const apiConfig = await fetch("/v1/config").then((_) => _.json())
+        const apiConfig = { uploadsEnabled: true }
 
         console.log("API configuration:", apiConfig)
         const sectionSelector = apiConfig.uploadsEnabled
@@ -641,5 +665,6 @@
         }
       })()
     </script>
+    <script type="module" src="/dist/index.js"></script>
   </body>
 </html>
