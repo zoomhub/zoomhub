@@ -9,7 +9,7 @@ import {
 
 export const Create = () => (
   <div className="rounded-lg bg-gray-800 p-8 mt-4 shadow-md">
-    <form className="grid gap-5">
+    <form className="grid gap-7">
       <h2 className="text-gray-200 text-center text-3xl font-semibold">
         Create your own zoomable image
       </h2>
@@ -130,7 +130,7 @@ export const Create = () => (
           <ChevronDoubleRightIcon className="h-5 w-5 ml-1"></ChevronDoubleRightIcon>
         </button>
 
-        <div className="text-gray-500 text-sm mt-3">
+        <div className="text-gray-500 text-sm mt-4">
           <sup>★</sup> We won’t spam you or share your email — promise!
         </div>
       </div>
