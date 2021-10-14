@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>ZoomHub · Share and view full-resolution images easily</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="favicon.ico" />
+
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon-precomposed"
+      href="/apple-touch-icon-precomposed.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="57x57"
+      href="/apple-touch-icon-57x57.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="76x76"
+      href="/apple-touch-icon-76x76.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="120x120"
+      href="/apple-touch-icon-120x120.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/apple-touch-icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="167x167"
+      href="/apple-touch-icon-167x167.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/apple-touch-icon-180x180.png"
+    />
+
+    <!-- Google Analytics -->
+    <script>
+      ;(function (i, s, o, g, r, a, m) {
+        i["GoogleAnalyticsObject"] = r
+        ;(i[r] =
+          i[r] ||
+          function () {
+            ;(i[r].q = i[r].q || []).push(arguments)
+          }),
+          (i[r].l = 1 * new Date())
+        ;(a = s.createElement(o)), (m = s.getElementsByTagName(o)[0])
+        a.async = 1
+        a.src = g
+        m.parentNode.insertBefore(a, m)
+      })(
+        window,
+        document,
+        "script",
+        "//www.google-analytics.com/analytics.js",
+        "ga"
+      )
+
+      ga("create", "UA-55808703-1", "auto")
+      ga("_setDomainName", "zoomhub.net")
+      ga("_setAllowLinker", true)
+      ga("send", "pageview")
+    </script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link rel="stylesheet" type="text/css" href="/styles/global.css" />
+    <style>
+      /* Prevent blue outline: https://github.com/openseadragon/openseadragon/issues/893*/
+      .openseadragon-canvas:focus {
+        outline: none;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-900 border-t-4 border-orange-500 px-4 md:px-0">
+    <div class="px-5">
+      <header class="mt-4 mb-3 flex justify-center items-center">
+        <div
+          class="bg-orange-500 inline-block mr-1 mb-0.5 rounded-full"
+          style="width: 31px; height: 31px"
+        >
+          &nbsp;
+        </div>
+        <h1 class="text-4xl tracking-tighter text-white font-bold">ZoomHub</h1>
+      </header>
+    </div>
+
+    <div>
+      <div
+        id="hero-image"
+        style="
+          background: black;
+          border: 1px solid black;
+          color: white;
+          height: 420px;
+          margin: 0;
+          padding: 0;
+          width: auto;
+        "
+      ></div>
+      <div id="create" class="md:w-1/2 max-w-xl mx-auto"></div>
+    </div>
+
+    <script type="module" src="/dist/index.js"></script>
+
+    <!-- hero -->
+    <script src="https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/openseadragon.min.js"></script>
+    <script>
+      let viewer
+      ;(() => {
+        viewer = OpenSeadragon({
+          id: "hero-image",
+          showNavigationControl: false,
+          // navigation control images
+          prefixUrl: "https://static.zoomhub.net/openseadragon-images/",
+          // image source
+          tileSources: {
+            Image: {
+              xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+              Size: { Height: 4096, Width: 4096 },
+              Format: "jpg",
+              Overlap: 1,
+              Url: "https://cache.zoomhub.net/content/1zYop_files/",
+              TileSize: 254,
+            },
+          },
+        })
+
+        let heroAnimationIntervalId
+        viewer.addHandler("open", () => {
+          viewer.viewport.zoomTo(4, viewer.viewport.getHomeBounds(), true)
+
+          heroAnimationIntervalId = setInterval(() => {
+            const currentZoom = viewer.viewport.getZoom()
+            if (currentZoom <= 0.3) {
+              clearInterval(heroAnimationIntervalId)
+              return
+            }
+            viewer.viewport.zoomBy(0.96)
+          }, 100)
+        })
+        ;[
+          "canvas-drag",
+          "canvas-click",
+          "canvas-double-click",
+          "canvas-pinch",
+          "canvas-scroll",
+        ].forEach((eventName) => {
+          viewer.addHandler(eventName, () =>
+            clearInterval(heroAnimationIntervalId)
+          )
+        })
+      })()
+    </script>
+  </body>
+</html>
