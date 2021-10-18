@@ -8,10 +8,10 @@ import {
 } from "@heroicons/react/solid"
 
 export const Create = () => (
-  <div className="rounded-lg bg-gray-800 p-8 mt-4 shadow-md">
+  <div className="rounded-lg bg-gray-800 bg-opacity-60 p-8 mt-4 shadow-md backdrop-filter backdrop-blur-md">
     <form className="grid gap-7">
-      <h2 className="text-gray-200 text-center text-3xl font-semibold">
-        Create your own zoomable image
+      <h2 className="text-gray-200 text-center text-3xl font-semibold tracking-tighter">
+        Make your image zoomable
       </h2>
       <div className="inline-grid w-full grid-cols-2 gap-2">
         <button
@@ -76,8 +76,10 @@ export const Create = () => (
       <div className="grid gap-1">
         <label className="text-gray-50 inline-flex items-center text-sm">
           <MailIcon className="h-5 w-5 mr-1" />
-          Give us your email and we’ll let you know when your image is ready{" "}
-          <sup>★</sup>
+          <strong>Email</strong>{" "}
+          <span className="ml-1">
+            (so we know how to reach you when your image is ready<sup>★</sup>)
+          </span>
         </label>
         <input
           type="text"
