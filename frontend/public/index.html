@@ -115,6 +115,8 @@
     <script>
       let viewer
       ;(() => {
+        let heroAnimationIntervalId
+
         viewer = OpenSeadragon({
           id: "hero-image",
           showNavigationControl: false,
@@ -133,14 +135,19 @@
           },
         })
 
-        let heroAnimationIntervalId
+        const enableInteractivity = () => {
+          clearInterval(heroAnimationIntervalId)
+          viewer.setControlsEnabled(true)
+        }
+
         viewer.addHandler("open", () => {
+          viewer.setControlsEnabled(false)
           viewer.viewport.zoomTo(4, viewer.viewport.getHomeBounds(), true)
 
           heroAnimationIntervalId = setInterval(() => {
             const currentZoom = viewer.viewport.getZoom()
             if (currentZoom <= 0.3) {
-              clearInterval(heroAnimationIntervalId)
+              enableInteractivity()
               return
             }
             viewer.viewport.zoomBy(0.96)
@@ -153,9 +160,7 @@
           "canvas-pinch",
           "canvas-scroll",
         ].forEach((eventName) => {
-          viewer.addHandler(eventName, () =>
-            clearInterval(heroAnimationIntervalId)
-          )
+          viewer.addHandler(eventName, () => enableInteractivity())
         })
       })()
     </script>
