@@ -8,10 +8,10 @@ import {
 } from "@heroicons/react/solid"
 
 export const Create = () => (
-  <div className="rounded-lg bg-gray-800 bg-opacity-60 p-8 mt-4 shadow-md backdrop-filter backdrop-blur-md">
+  <div className="rounded-lg bg-gray-800 bg-opacity-50 p-8 mt-4 shadow-md backdrop-filter backdrop-blur-md">
     <form className="grid gap-7">
       <h2 className="text-gray-200 text-center text-3xl font-semibold tracking-tighter">
-        Make your image zoomable
+        Make your images zoomable
       </h2>
       <div className="inline-grid w-full grid-cols-2 gap-2">
         <button

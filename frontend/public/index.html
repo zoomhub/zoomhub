@@ -79,33 +79,36 @@
     </style>
   </head>
 
-  <body class="bg-gray-900 border-t-4 border-orange-500 px-4 md:px-0">
-    <div class="px-5">
-      <header class="mt-4 mb-3 flex justify-center items-center">
-        <div
-          class="bg-orange-500 inline-block mr-1 mb-0.5 rounded-full"
-          style="width: 31px; height: 31px"
-        >
-          &nbsp;
-        </div>
-        <h1 class="text-4xl tracking-tighter text-white font-bold">ZoomHub</h1>
-      </header>
-    </div>
+  <body class="bg-gray-900 relative">
+    <header
+      class="
+        bg-gray-900
+        border-t-2 border-orange-500
+        fixed
+        z-10
+        w-full
+        h-16
+        px-5
+        flex
+        justify-center
+        items-center
+      "
+    >
+      <div class="bg-orange-500 inline-block mr-1 rounded-full w-8 h-8">
+        &nbsp;
+      </div>
+      <h1 class="text-4xl tracking-tighter text-white font-bold">ZoomHub</h1>
+    </header>
 
-    <div>
+    <div class="relative">
+      <div id="hero-image" class="h-screen w-full bg-black"></div>
       <div
-        id="hero-image"
-        style="
-          background: black;
-          border: 1px solid black;
-          color: white;
-          height: 420px;
-          margin: 0;
-          padding: 0;
-          width: auto;
-        "
+        id="create"
+        class="md:w-1/2 max-w-xl mx-auto absolute left-0 right-0 top-1/3"
       ></div>
-      <div id="create" class="md:w-1/2 max-w-xl mx-auto"></div>
+      <div class="absolute bottom-12 left-5 right-5">
+        <div id="hero-toolbar"></div>
+      </div>
     </div>
 
     <script type="module" src="/dist/index.js"></script>
@@ -115,43 +118,76 @@
     <script>
       let viewer
       ;(() => {
-        let heroAnimationIntervalId
+        const images = [
+          { id: "Zxn4x", width: 3605, height: 4987 },
+          { id: "0w5YD", width: 8192, height: 8192 },
+          { id: "1zYop", width: 4096, height: 4096 },
+          { id: "NVYGe", width: 2048, height: 2048 },
+        ]
+
+        const image = images[Math.floor(Math.random() * images.length)]
 
         viewer = OpenSeadragon({
           id: "hero-image",
-          showNavigationControl: false,
+          showNavigationControl: true,
+          toolbar: "hero-toolbar",
           // navigation control images
           prefixUrl: "https://static.zoomhub.net/openseadragon-images/",
           // image source
           tileSources: {
             Image: {
               xmlns: "http://schemas.microsoft.com/deepzoom/2008",
-              Size: { Height: 4096, Width: 4096 },
+              Size: { Width: image.width, Height: image.height },
               Format: "jpg",
               Overlap: 1,
-              Url: "https://cache.zoomhub.net/content/1zYop_files/",
+              Url: `https://cache.zoomhub.net/content/${image.id}_files/`,
               TileSize: 254,
             },
           },
         })
+        viewer.setControlsEnabled(false)
 
+        let animationRequestId
         const enableInteractivity = () => {
-          clearInterval(heroAnimationIntervalId)
           viewer.setControlsEnabled(true)
+          cancelAnimationFrame(animationRequestId)
         }
 
         viewer.addHandler("open", () => {
           viewer.setControlsEnabled(false)
-          viewer.viewport.zoomTo(4, viewer.viewport.getHomeBounds(), true)
 
-          heroAnimationIntervalId = setInterval(() => {
+          const targetWidth = 0.1
+          const endBounds = viewer.viewport.getHomeBounds()
+          const startBounds = new OpenSeadragon.Rect(
+            0.1 + (1 - targetWidth) / 2, // x
+            0.075, // y
+            targetWidth, // width
+            0.1 // height
+          )
+          viewer.viewport.fitBounds(startBounds, true)
+
+          const animationDuration = 5 * 60 * 1000 // ms
+          const animationStep = (timestamp) => {
+            const delta = (timestamp - animationStartTime) / animationDuration
             const currentZoom = viewer.viewport.getZoom()
-            if (currentZoom <= 0.3) {
+            if (delta >= 1.0) {
               enableInteractivity()
               return
             }
-            viewer.viewport.zoomBy(0.96)
-          }, 100)
+            const currentBounds = new OpenSeadragon.Rect(
+              startBounds.x + (endBounds.x - startBounds.x) * delta,
+              startBounds.y + (endBounds.y - startBounds.y) * delta,
+              startBounds.width + (endBounds.width - startBounds.width) * delta,
+              startBounds.height +
+                (endBounds.height - startBounds.height) * delta
+            )
+
+            viewer.viewport.fitBounds(currentBounds)
+            animationRequestId = requestAnimationFrame(animationStep)
+          }
+
+          let animationStartTime = performance.now()
+          animationRequestId = requestAnimationFrame(animationStep)
         })
         ;[
           "canvas-drag",
