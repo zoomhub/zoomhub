@@ -2,8 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-.btn-primary {
-  @apply font-semibold
+@layer components {
+  .btn-primary {
+    @apply font-semibold
     inline-flex
     items-center
     justify-center
@@ -23,10 +24,10 @@
     focus:ring-4
     focus:ring-orange-500
     focus:ring-opacity-90;
-}
+  }
 
-.btn-secondary {
-  @apply font-semibold
+  .btn-secondary {
+    @apply font-semibold
     inline-flex
     items-center
     justify-center
@@ -46,13 +47,13 @@
     focus:ring-4
     focus:ring-orange-500
     focus:ring-opacity-90;
-}
+  }
 
-.text-input {
-  @apply px-4
+  .text-input {
+    @apply px-4
     py-2
     rounded
-    placeholder-gray-400
+    placeholder-gray-300
     text-center
     outline-none
     focus:ring-4
@@ -61,4 +62,5 @@
     text-lg
     font-medium
     text-gray-700;
+  }
 }
