@@ -1,3 +1,64 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.btn-primary {
+  @apply font-semibold
+    inline-flex
+    items-center
+    justify-center
+    px-4
+    py-3
+    uppercase
+    bg-orange-500
+    hover:bg-orange-600
+    rounded-lg
+    shadow-lg
+    cursor-pointer
+    text-gray-800
+    hover:text-white
+    text-lg
+
+    outline-none
+    focus:ring-4
+    focus:ring-orange-500
+    focus:ring-opacity-90;
+}
+
+.btn-secondary {
+  @apply font-semibold
+    inline-flex
+    items-center
+    justify-center
+    px-4
+    py-3
+    uppercase
+    bg-gray-400
+    hover:bg-orange-600
+    text-sm
+    rounded-lg
+    shadow-lg
+    cursor-pointer
+    text-gray-800
+    hover:text-white
+
+    outline-none
+    focus:ring-4
+    focus:ring-orange-500
+    focus:ring-opacity-90;
+}
+
+.text-input {
+  @apply px-4
+    py-2
+    rounded
+    placeholder-gray-400
+    text-center
+    outline-none
+    focus:ring-4
+    focus:ring-orange-500
+    focus:ring-opacity-90
+    text-lg
+    font-medium
+    text-gray-700;
+}
