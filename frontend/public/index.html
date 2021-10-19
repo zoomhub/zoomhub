@@ -118,14 +118,7 @@
     <script>
       let viewer
       ;(() => {
-        const images = [
-          { id: "Zxn4x", width: 3605, height: 4987 },
-          { id: "0w5YD", width: 8192, height: 8192 },
-          { id: "1zYop", width: 4096, height: 4096 },
-          { id: "NVYGe", width: 2048, height: 2048 },
-        ]
-
-        const image = images[Math.floor(Math.random() * images.length)]
+        const image = { id: "0w5YD", width: 8192, height: 8192 }
 
         viewer = OpenSeadragon({
           id: "hero-image",
