@@ -1,7 +1,7 @@
 export default {
   mount: {
     public: "/",
-    src: "/dist",
+    src: "/scripts",
     styles: "/styles",
   },
   devOptions: {
