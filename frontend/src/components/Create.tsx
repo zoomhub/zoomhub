@@ -48,7 +48,9 @@ const SubmissionsDisabled = () => (
   <div className="text-center grid gap-6 lg:gap-10">
     <Tagline />
     <hr className="border-gray-600/40" />
-    <SectionTitle>Make your own… coming soon.</SectionTitle>
+    <SectionTitle>
+      Make your own… <span className="text-orange-500">coming soon.</span>
+    </SectionTitle>
   </div>
 )
 
