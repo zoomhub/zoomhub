@@ -19,10 +19,16 @@ cd zoomhub
 
 ### Run
 
-Build and run the app:
+Build and run the backend:
 
 ```bash
 ./zh run
+```
+
+Run the frontend:
+
+```bash
+cd frontend && npx snowpack dev
 ```
 
 ### Test
