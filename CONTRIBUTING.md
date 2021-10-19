@@ -31,6 +31,14 @@ Run the frontend:
 cd frontend && npx snowpack dev
 ```
 
+### Build
+
+Build the frontend:
+
+```bash
+cd frontend && npx snowpack build
+```
+
 ### Test
 
 Run the app tests:
