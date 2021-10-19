@@ -9,8 +9,8 @@ import {
   MailOpenIcon,
 } from "@heroicons/react/solid"
 
-export const Create = () => {
-  const [view, setView] = useState("submit")
+export const Create = ({ initialView }) => {
+  const [view, setView] = useState(initialView)
 
   return (
     <div
@@ -28,6 +28,8 @@ export const Create = () => {
     >
       {(() => {
         switch (view) {
+          case "submissions-disabled":
+            return <SubmissionsDisabled />
           case "submit":
             return <Submit onViewChange={setView} />
           case "verify-email":
@@ -42,21 +44,23 @@ export const Create = () => {
   )
 }
 
+const SubmissionsDisabled = () => (
+  <div className="text-center grid gap-6 lg:gap-10">
+    <Tagline />
+    <hr className="border-gray-600/40" />
+    <SectionTitle>Make your own… coming soon.</SectionTitle>
+  </div>
+)
+
 const Submit = ({ onViewChange }) => {
   const formRef = useRef(null)
   const [imageURL, setImageURL] = useState()
   const [email, setEmail] = useState()
+  const [isSubmissionPending, setIsSubmissionPending] = useState(false)
 
   return (
     <div className="grid gap-6 lg:gap-10">
-      <div className="grid place-content-center place-items-center text-center">
-        <h1 className="text-4xl lg:text-5xl text-white font-semibold tracking-tighter">
-          Stunning zoomable images
-        </h1>
-        <h2 className="text-lg lg:text-xl text-gray-400 font-semibold tracking-tighter">
-          Play around with the background: tap, pinch, drag, scroll.
-        </h2>
-      </div>
+      <Tagline />
       <hr className="border-gray-600/40" />
       <form className="grid gap-7" ref={formRef}>
         <SectionTitle>Try it with your own image</SectionTitle>
@@ -92,6 +96,7 @@ const Submit = ({ onViewChange }) => {
           <button
             type="submit"
             className="w-full btn-primary"
+            disabled={isSubmissionPending}
             onClick={async (event) => {
               event.preventDefault()
 
@@ -101,11 +106,14 @@ const Submit = ({ onViewChange }) => {
 
               let response
               try {
+                setIsSubmissionPending(true)
                 response = await submitURL({ url: imageURL, email })
               } catch (error) {
                 console.error("response:", response)
                 onViewChange("error")
                 return
+              } finally {
+                setIsSubmissionPending(false)
               }
 
               onViewChange("verify-email")
@@ -171,6 +179,17 @@ const SectionTitle = ({ children }) => (
   <h2 className="text-3xl lg:text-4xl text-gray-200 text-center font-semibold tracking-tighter">
     {children}
   </h2>
+)
+
+const Tagline = () => (
+  <div className="grid place-content-center place-items-center text-center">
+    <h1 className="text-4xl lg:text-5xl text-white font-semibold tracking-tighter">
+      Stunning zoomable images
+    </h1>
+    <h2 className="text-lg lg:text-xl text-gray-400 font-semibold tracking-tighter">
+      Play around with the background: tap, pinch, drag, scroll.
+    </h2>
+  </div>
 )
 
 const submitURL = async ({ url, email }) =>
