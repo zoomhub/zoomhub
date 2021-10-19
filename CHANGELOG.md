@@ -1,5 +1,14 @@
 # ZoomHub
 
+## 2021-10-20-1
+
+- Accept submissions from image URLs instead of uploads only.
+- Temporarily remove upload UI until it’s ported to new frontend.
+- Add frontend project using:
+  - [React.js] for interactive components
+  - [Tailwind CSS] for styling
+  - [Snowpack] for development server and production builds
+
 ## 2021-09-30-1
 
 - Improve homepage copy.
@@ -271,9 +280,12 @@
 [ormolu]: https://hackage.haskell.org/package/ormolu
 [postgresql]: https://www.postgresql.org/
 [rackspace]: http://www.rackspace.com/
+[react.js]: https://reactjs.org/
 [redis]: http://redis.io/
 [sqlite]: https://www.sqlite.org/index.html
 [squeal]: https://hackage.haskell.org/package/squeal-postgresql
+[tailwind css]: https://tailwindcss.com
+[snowpack]: https://www.snowpack.dev
 [vips]: http://www.vips.ecs.soton.ac.uk/index.php?title=VIPS
 [zh-172]: https://github.com/zoomhub/zoomhub/issues/#172
 [zh-18]: https://github.com/zoomhub/zoomhub/issues/18
