@@ -60,6 +60,17 @@ jobs:
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
             web-build-v1-${{ runner.os }}-
 
+      - name: Cache frontend/node_modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-frontend-node_modules
+        with:
+          path: frontend/node_modules
+          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
+            web-build-v1-${{ runner.os }}-
+
       - name: Cache binaries
         id: cache-stack-binaries
         uses: actions/cache@v2
@@ -73,7 +84,13 @@ jobs:
           restore-keys: |
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}-${{ hashFiles('**/*.hs') }}
 
-      - name: Build
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npx snowpack build
+
+      - name: Build backend
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
           mkdir bin
@@ -87,7 +104,7 @@ jobs:
             --ghc-options='-O2' \
             --local-bin-path bin
 
-      - name: Run tests
+      - name: Run backend tests
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
           HASHIDS_SALT='secret-salt' ./bin/migrate-database $PGDATABASE migrate
@@ -117,7 +134,7 @@ jobs:
             workspace
 
       - name: Copy public files to workspace
-        run: cp --recursive public workspace
+        run: cp --recursive frontend/build workspace
 
       - name: Copy binaries workspace
         run: cp bin/* workspace
