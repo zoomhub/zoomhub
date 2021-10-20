@@ -9,7 +9,9 @@
 /ops/.vault_pass.txt
 
 # PID
-/zoomhub.pid
+/ngrok.pid
+/zoomhub-api.pid
+/zoomhub-web.pid
 
 # Exported design files
 /design/*.png

@@ -2,20 +2,10 @@
 set -eo pipefail
 
 
-if [[ -f ./zoomhub.pid ]] ; then
+if [[ -f ./zoomhub-api.pid ]] ; then
   set +e
-  kill -9 $(cat zoomhub.pid) >/dev/null 2>&1
+  kill -9 $(cat zoomhub-api.pid) >/dev/null 2>&1
   set -e
-fi
-
-if [[ -z "$AWS_ACCESS_KEY_ID" ]]; then
-  echo "Missing 'AWS_ACCESS_KEY_ID' environment variable"
-  exit 1
-fi
-
-if [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
-  echo "Missing 'AWS_SECRET_ACCESS_KEY' environment variable"
-  exit 1
 fi
 
 ZH_ENV='development' \
@@ -29,4 +19,4 @@ S3_SOURCES_BUCKET='zoomhub-sources-development' \
 UPLOADS='true' \
   stack exec zoomhub | jq &
 
-echo $! > zoomhub.pid
+echo $! > zoomhub-api.pid
