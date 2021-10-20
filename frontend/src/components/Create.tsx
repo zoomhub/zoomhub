@@ -1,3 +1,7 @@
+// IMPORTANT: Required to make `__SNOWPACK_ENV__` available.
+// See: https://github.com/snowpackjs/snowpack/issues/3621#issuecomment-907731004
+import.meta.hot
+
 import * as React from "react"
 import { useRef, useState } from "react"
 
