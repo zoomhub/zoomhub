@@ -1,9 +1,11 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Types.Environment
   ( Environment (..),
     fromEnv,
     fromText,
+    toText,
   )
 where
 
@@ -26,3 +28,9 @@ fromText "development" = Just Development
 fromText "test" = Just Test
 fromText "production" = Just Production
 fromText _ = Nothing
+
+toText :: Environment -> Text
+toText = \case
+  Development -> "development"
+  Test -> "test"
+  Production -> "production"

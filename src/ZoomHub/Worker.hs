@@ -11,7 +11,7 @@ where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception.Enclosed (catchAny)
-import Control.Lens ((^.))
+import Control.Lens ((&), (.~), (^.))
 import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
@@ -21,7 +21,7 @@ import Data.Text (Text)
 import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
 import qualified Network.AWS as AWS
-import qualified Network.AWS.Lambda as AWS
+import qualified Network.AWS.Lambda as AWSLambda
 import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
 import qualified ZoomHub.AWS as ZHAWS
@@ -30,6 +30,7 @@ import ZoomHub.Log.Logger (logDebug, logDebugT, logException, logInfo)
 import ZoomHub.Storage.PostgreSQL (dequeueNextUnprocessed)
 import ZoomHub.Types.Content (Content (contentId))
 import ZoomHub.Types.ContentId (unContentId)
+import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Utils (lenientDecodeUtf8)
 
 -- Constants
@@ -64,10 +65,11 @@ processExistingContent Config {..} workerId = forever $ do
         ZHAWS.run aws logLevel $ do
           response <-
             AWS.send $
-              AWS.invoke
+              AWSLambda.invoke
                 "processContent"
                 (toStrict . encode $ object ["contentURL" .= apiURL content])
-          for_ (response ^. AWS.irsPayload) $ \output ->
+                & AWSLambda.iQualifier .~ (Just . Environment.toText $ environment)
+          for_ (response ^. AWSLambda.irsPayload) $ \output ->
             liftIO $
               logInfo
                 "worker:lambda:response"
