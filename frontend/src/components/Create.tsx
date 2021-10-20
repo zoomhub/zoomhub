@@ -59,8 +59,8 @@ const SubmissionsDisabled = () => (
 
 const Submit = ({ onViewChange }) => {
   const formRef = useRef(null)
-  const [imageURL, setImageURL] = useState()
-  const [email, setEmail] = useState()
+  const [imageURL, setImageURL] = useState("")
+  const [email, setEmail] = useState("")
   const [isSubmissionPending, setIsSubmissionPending] = useState(false)
 
   return (
