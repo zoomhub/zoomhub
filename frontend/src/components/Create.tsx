@@ -198,4 +198,7 @@ const Tagline = () => (
 )
 
 const submitURL = async ({ url, email }) =>
-  await axios.get("/v1/content", { params: { url, email } })
+  await axios.get(
+    `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/content`,
+    { params: { url, email } }
+  )
