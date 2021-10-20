@@ -6,7 +6,6 @@ import {
   ChevronDoubleRightIcon,
   LinkIcon,
   MailIcon,
-  MailOpenIcon,
 } from "@heroicons/react/solid"
 
 export const Create = ({ initialView }) => {
