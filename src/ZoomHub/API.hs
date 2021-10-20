@@ -597,7 +597,7 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
             baseURI
             contentId
             verificationToken
-            (Email.From "\"ZoomHub (formerly zoom.it)\" <daniel@zoomhub.net>")
+            (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
             (Email.To submitterEmail)
 
 restInvalidRequest :: Maybe String -> Handler Content

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>ZoomHub · Share and view full-resolution images easily</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="favicon.ico" />
+
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon-precomposed"
+      href="/apple-touch-icon-precomposed.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="57x57"
+      href="/apple-touch-icon-57x57.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="76x76"
+      href="/apple-touch-icon-76x76.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="120x120"
+      href="/apple-touch-icon-120x120.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/apple-touch-icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="167x167"
+      href="/apple-touch-icon-167x167.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/apple-touch-icon-180x180.png"
+    />
+
+    <!-- Google Analytics -->
+    <script>
+      ;(function (i, s, o, g, r, a, m) {
+        i["GoogleAnalyticsObject"] = r
+        ;(i[r] =
+          i[r] ||
+          function () {
+            ;(i[r].q = i[r].q || []).push(arguments)
+          }),
+          (i[r].l = 1 * new Date())
+        ;(a = s.createElement(o)), (m = s.getElementsByTagName(o)[0])
+        a.async = 1
+        a.src = g
+        m.parentNode.insertBefore(a, m)
+      })(
+        window,
+        document,
+        "script",
+        "//www.google-analytics.com/analytics.js",
+        "ga"
+      )
+
+      ga("create", "UA-55808703-1", "auto")
+      ga("_setDomainName", "zoomhub.net")
+      ga("_setAllowLinker", true)
+      ga("send", "pageview")
+    </script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link rel="stylesheet" type="text/css" href="/styles/global.css" />
+    <style>
+      /* Prevent blue outline: https://github.com/openseadragon/openseadragon/issues/893*/
+      .openseadragon-canvas:focus {
+        outline: none;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-900 relative">
+    <header
+      class="
+        bg-gray-900
+        border-t-2 border-orange-500
+        fixed
+        z-10
+        w-full
+        h-16
+        px-5
+        flex
+        justify-center
+        items-center
+      "
+    >
+      <div class="bg-orange-500 inline-block mr-1 rounded-full w-7 h-7"></div>
+      <h1 class="text-4xl tracking-tighter text-gray-100 font-bold select-none">
+        ZoomHub
+      </h1>
+    </header>
+
+    <div class="relative">
+      <div id="hero-image" class="h-screen w-full bg-black"></div>
+      <div
+        id="create"
+        class="
+          md:w-2/3
+          lg:1/2
+          max-w-2xl
+          mx-auto
+          absolute
+          inset-0
+          pointer-events-none
+          grid
+          place-items-center place-content-center
+        "
+      ></div>
+      <div class="absolute bottom-12 left-5 right-5">
+        <div id="hero-toolbar"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/scripts/index.js"></script>
+
+    <!-- hero -->
+    <script src="https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/openseadragon.min.js"></script>
+    <script>
+      let viewer
+      ;(() => {
+        const image = { id: "0w5YD", width: 8192, height: 8192 }
+
+        viewer = OpenSeadragon({
+          id: "hero-image",
+          showNavigationControl: true,
+          toolbar: "hero-toolbar",
+          // navigation control images
+          prefixUrl: "https://static.zoomhub.net/openseadragon-images/",
+          // image source
+          tileSources: {
+            Image: {
+              xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+              Size: { Width: image.width, Height: image.height },
+              Format: "jpg",
+              Overlap: 1,
+              Url: `https://cache.zoomhub.net/content/${image.id}_files/`,
+              TileSize: 254,
+            },
+          },
+        })
+        viewer.setControlsEnabled(false)
+
+        let animationRequestId
+        const enableInteractivity = () => {
+          viewer.setControlsEnabled(true)
+          cancelAnimationFrame(animationRequestId)
+        }
+
+        viewer.addHandler("open", () => {
+          viewer.setControlsEnabled(false)
+
+          const targetWidth = 0.1
+          const endBounds = viewer.viewport.getHomeBounds()
+          const startBounds = new OpenSeadragon.Rect(
+            0.1 + (1 - targetWidth) / 2, // x
+            0.075, // y
+            targetWidth, // width
+            0.1 // height
+          )
+          viewer.viewport.fitBounds(startBounds, true)
+
+          const animationDuration = 5 * 60 * 1000 // ms
+          const animationStep = (timestamp) => {
+            const delta = (timestamp - animationStartTime) / animationDuration
+            const currentZoom = viewer.viewport.getZoom()
+            if (delta >= 1.0) {
+              enableInteractivity()
+              return
+            }
+            const currentBounds = new OpenSeadragon.Rect(
+              startBounds.x + (endBounds.x - startBounds.x) * delta,
+              startBounds.y + (endBounds.y - startBounds.y) * delta,
+              startBounds.width + (endBounds.width - startBounds.width) * delta,
+              startBounds.height +
+                (endBounds.height - startBounds.height) * delta
+            )
+
+            viewer.viewport.fitBounds(currentBounds)
+            animationRequestId = requestAnimationFrame(animationStep)
+          }
+
+          let animationStartTime = performance.now()
+          animationRequestId = requestAnimationFrame(animationStep)
+        })
+        ;[
+          "canvas-drag",
+          "canvas-click",
+          "canvas-double-click",
+          "canvas-pinch",
+          "canvas-scroll",
+        ].forEach((eventName) => {
+          viewer.addHandler(eventName, () => enableInteractivity())
+        })
+      })()
+    </script>
+  </body>
+</html>

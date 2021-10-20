@@ -82,14 +82,15 @@ main = do
       (error "ZoomHub.Main: Missing `ZH_ENV`")
       <$> Environment.fromEnv
   currentDirectory <- getCurrentDirectory
+  let defaultPublicPath = currentDirectory </> "frontend" </> "public"
+  let publicPath = fromMaybe defaultPublicPath (lookup "PUBLIC_PATH" env)
   openSeadragonScript <-
     readFile $
-      currentDirectory
-        </> "public"
+      publicPath
         </> "lib"
         </> "openseadragon"
         </> "openseadragon.min.js"
-  error404 <- BL.readFile $ currentDirectory </> "public" </> "404.html"
+  error404 <- BL.readFile $ publicPath </> "404.html"
   version <- readVersion currentDirectory
   logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
@@ -107,8 +108,6 @@ main = do
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers = lookup "PROCESSING_WORKERS" env >>= readMaybe
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
-      defaultPublicPath = currentDirectory </> "public"
-      publicPath = fromMaybe defaultPublicPath (lookup "PUBLIC_PATH" env)
       baseURI = case lookup baseURIEnvName env of
         Just uriString ->
           toBaseURI uriString
