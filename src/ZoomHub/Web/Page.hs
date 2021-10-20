@@ -32,7 +32,7 @@ import Lucid
 import NeatInterpolation (text)
 
 title :: Text
-title = "ZoomHub · Share and view high-resolution images effortlessly"
+title = "ZoomHub · Share and view full-resolution images easily"
 
 layout ::
   Monad m =>
