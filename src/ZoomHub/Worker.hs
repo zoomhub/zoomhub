@@ -53,9 +53,7 @@ processExistingContent Config {..} workerId = forever $ do
   threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     go = do
-      mContent <- do
-        logT "Get next unprocessed content and mark as active" [] $
-          liftIO $ runPoolPQ dequeueNextUnprocessed dbConnPool
+      mContent <- liftIO $ runPoolPQ dequeueNextUnprocessed dbConnPool
       for_ mContent $ \content -> do
         logInfo
           "worker:lambda:start"
