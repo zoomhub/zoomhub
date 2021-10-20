@@ -134,7 +134,7 @@ jobs:
             workspace
 
       - name: Copy public files to workspace
-        run: cp --recursive frontend/build workspace
+        run: cp --recursive frontend/build workspace/public
 
       - name: Copy binaries workspace
         run: cp bin/* workspace
