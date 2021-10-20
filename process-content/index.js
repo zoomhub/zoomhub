@@ -205,8 +205,6 @@ const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
       Key: `content/${key}`,
     })
     .promise()
-
-  log("file uploaded", { fileName, key, contentType })
 }
 
 const markAsSuccess = async ({ contentURL, mime, size, dzi }) => {
