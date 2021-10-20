@@ -13,6 +13,7 @@ import { Create } from "./components/Create"
       `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/config`
     ).then((_) => _.json())
   } catch (error) {
+    console.error("Error fetching API configuration:", error)
     apiConfig = { uploadsEnabled: false }
   }
 
