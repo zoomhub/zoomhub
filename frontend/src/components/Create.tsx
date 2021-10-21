@@ -18,6 +18,8 @@ export const Create = ({ initialView }) => {
   return (
     <div
       className="
+        w-full
+        sm:w-auto
         rounded-lg
         bg-gray-800/50
         py-8
@@ -50,7 +52,7 @@ export const Create = ({ initialView }) => {
 const SubmissionsDisabled = () => (
   <div className="text-center grid gap-6 lg:gap-10">
     <Tagline />
-    <hr className="border-gray-600/40" />
+    <hr className="border-gray-600/40 hidden lg:block" />
     <SectionTitle>
       Make your own… <span className="text-orange-500">coming soon.</span>
     </SectionTitle>
@@ -66,9 +68,14 @@ const Submit = ({ onViewChange }) => {
   return (
     <div className="grid gap-6 lg:gap-10">
       <Tagline />
-      <hr className="border-gray-600/40" />
+      <hr className="border-gray-600/40 hidden lg:block" />
       <form className="grid gap-7" ref={formRef}>
-        <SectionTitle>Try it with your own image</SectionTitle>
+        <SectionTitle className="hidden lg:block">
+          Try it with your own image
+        </SectionTitle>
+        <SectionTitle className="lg:hidden">
+          Create your own zoomable image
+        </SectionTitle>
         <div className="w-full">
           <label className="text-gray-50 inline-flex items-center text-sm">
             <LinkIcon className="h-5 w-5 mr-1" />
@@ -86,7 +93,10 @@ const Submit = ({ onViewChange }) => {
         <div className="grid gap-1">
           <label className="text-gray-50 inline-flex items-center text-sm">
             <MailIcon className="h-5 w-5 mr-1" />
-            Email where we can notify you when your image is ready<sup>★</sup>
+            Email{" "}
+            <span className="ml-1 text-gray-400">
+              (we’ll notify you when your image is ready<sup>★</sup>)
+            </span>
           </label>
           <input
             type="email"
@@ -100,7 +110,7 @@ const Submit = ({ onViewChange }) => {
         <div className="text-center">
           <button
             type="submit"
-            className="w-full btn-primary"
+            className="w-full btn btn-primary"
             disabled={isSubmissionPending}
             onClick={async (event) => {
               event.preventDefault()
@@ -180,14 +190,16 @@ const Error = ({ onViewChange }) => (
   </div>
 )
 
-const SectionTitle = ({ children }) => (
-  <h2 className="text-3xl lg:text-4xl text-gray-200 text-center font-semibold tracking-tighter">
+const SectionTitle = ({ children, className }) => (
+  <h2
+    className={`text-3xl lg:text-4xl text-gray-200 text-center font-semibold tracking-tighter ${className}`}
+  >
     {children}
   </h2>
 )
 
 const Tagline = () => (
-  <div className="grid place-content-center place-items-center text-center">
+  <div className="lg:grid place-content-center place-items-center text-center hidden">
     <h1 className="text-4xl lg:text-5xl text-white font-semibold tracking-tighter">
       Stunning zoomable images
     </h1>

@@ -87,16 +87,30 @@
         fixed
         z-10
         w-full
-        h-16
+        h-10
+        md:h-16
         px-5
         flex
         justify-center
         items-center
       "
     >
-      <div class="bg-orange-500 inline-block mr-1 rounded-full w-7 h-7"></div>
-      <h1 class="text-4xl tracking-tighter text-gray-100 font-bold select-none">
-        ZoomHub
+      <a href="/"
+        ><div
+          class="bg-orange-500 mr-1 rounded-full w-4 h-4 md:w-7 md:h-7"
+        ></div
+      ></a>
+      <h1
+        class="
+          text-xl
+          md:text-4xl
+          tracking-tighter
+          text-gray-100
+          font-bold
+          select-none
+        "
+      >
+        <a href="/">ZoomHub</a>
       </h1>
     </header>
 
@@ -105,14 +119,10 @@
       <div
         id="create"
         class="
-          md:w-2/3
-          lg:1/2
-          max-w-2xl
-          mx-auto
           absolute
           inset-0
           pointer-events-none
-          grid
+          grid grid-cols-1
           place-items-center place-content-center
         "
       ></div>
