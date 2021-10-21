@@ -161,7 +161,7 @@ const VerifyEmail = ({ onViewChange }) => (
 
     <button
       type="button"
-      className="btn-primary mt-6"
+      className="btn btn-primary mt-6"
       onClick={() => onViewChange("submit")}
     >
       Create another one
@@ -181,7 +181,7 @@ const Error = ({ onViewChange }) => (
 
     <button
       type="button"
-      className="btn-primary mt-6"
+      className="btn btn-primary mt-6"
       onClick={() => onViewChange("submit")}
     >
       Try again
