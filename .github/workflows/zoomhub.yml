@@ -11,6 +11,7 @@ jobs:
       PGUSER: "zoomhub"
       PGDATABASE: "zoomhub_test"
       PGPASSWORD: "popcorn"
+      ZH_API_BASE_URI: "https://api.zoomhub.net"
 
     services:
       postgres:
@@ -88,7 +89,7 @@ jobs:
         run: |
           cd frontend
           npm ci
-          npx snowpack build
+          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
 
       - name: Build backend
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'

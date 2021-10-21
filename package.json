@@ -1,0 +1,22 @@
+{
+  "name": "zoomhub",
+  "version": "0.0.0",
+  "description": "ZoomHub · Share and view full-resolution images easily",
+  "scripts": {
+    "test": "./zh test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zoomhub/zoomhub.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "(AGPL-3.0-only AND MIT)",
+  "bugs": {
+    "url": "https://github.com/zoomhub/zoomhub/issues"
+  },
+  "homepage": "https://www.zoomhub.net",
+  "devDependencies": {
+    "concurrently": "^6.3.0"
+  }
+}
