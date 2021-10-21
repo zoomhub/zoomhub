@@ -1,5 +1,14 @@
 # ZoomHub
 
+## 2021-10-21-1
+
+- Make homepage more mobile friendly.
+- Run full development stack via `./zh run`: ngrok, Haskell web API, and
+  Snowpack frontend development server.
+- Dynamically set API base URL.
+- Reduce logging in background worker to increase signal to noise ratio.
+- Call AWS Lambda function alias based on `ZH_ENV` environment variable.
+
 ## 2021-10-20-1
 
 - Accept submissions from image URLs instead of uploads only.
