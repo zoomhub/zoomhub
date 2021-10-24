@@ -27,5 +27,5 @@ fromEnv region = do
     Config
       <$> (T.pack <$> lookup "AWS_ACCESS_KEY_ID" env)
       <*> (T.pack <$> lookup "AWS_SECRET_ACCESS_KEY" env)
-      <*> (T.pack <$> lookup "S3_SOURCES_BUCKET" env)
+      <*> (T.pack <$> lookup "ZH_S3_SOURCES_BUCKET" env)
       <*> Just region

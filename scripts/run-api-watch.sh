@@ -4,7 +4,7 @@ set -eo pipefail
 dropdb --if-exists "$DEVELOPMENT_DB_NAME"
 createdb "$DEVELOPMENT_DB_NAME"
 
-PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
+PGUSER="$(whoami)" ZH_HASHIDS_SALT='secret-salt' \
   stack build \
     --fast \
     --no-run-tests \

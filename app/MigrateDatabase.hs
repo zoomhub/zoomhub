@@ -14,7 +14,7 @@ import ZoomHub.Storage.PostgreSQL.Schema (migrations)
 main :: IO ()
 main = do
   args <- getArgs
-  mHashidsSecret <- lookupEnv "HASHIDS_SALT"
+  mHashidsSecret <- lookupEnv "ZH_HASHIDS_SALT"
   case (args, mHashidsSecret) of
     ((database : rest), Just hashidsSecret) -> do
       connectInfo <- ConnectInfo.fromEnv database
@@ -24,6 +24,6 @@ main = do
               (migrations hashidsSecret)
       withArgs rest program
     (_, Nothing) ->
-      die "Missing environment variable HASHIDS_SALT"
+      die "Missing environment variable ZH_HASHIDS_SALT"
     _ ->
       die "Missing argument DATABASE"

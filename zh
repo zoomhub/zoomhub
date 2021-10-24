@@ -63,7 +63,7 @@ test)
     dropdb --if-exists "$TEST_DB_NAME"
     createdb "$TEST_DB_NAME"
 
-    PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
+    PGUSER="$(whoami)" ZH_HASHIDS_SALT='secret-salt' \
       stack build \
         --fast \
         --test \

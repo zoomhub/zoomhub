@@ -76,7 +76,7 @@ processExistingContent Config {..} workerId = forever $ do
                   "apiURL" .= apiURL content
                 ]
     sleepBase = processExistingContentInterval
-    -- TODO: Split `BASE_URI` into `WWW_BASE_URI` and `API_BASE_URI`:
+    -- TODO: Split `ZH_BASE_URI` into `ZH_WWW_BASE_URI` and `ZH_API_BASE_URI`:
     wwwURL c = mconcat [show baseURI, "/", unContentId (contentId c)]
     apiURL c = mconcat [show baseURI, "/v1/content/", unContentId (contentId c)]
     extraLogMeta =

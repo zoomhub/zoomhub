@@ -63,14 +63,6 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 
--- Environment variables
-baseURIEnvName :: String
-baseURIEnvName = "BASE_URI"
-
-contentBaseURIEnvName :: String
-contentBaseURIEnvName = "CONTENT_BASE_URI"
-
--- Main
 main :: IO ()
 main = do
   -- TODO: Migrate configuration to `configurator`:
@@ -83,7 +75,7 @@ main = do
       <$> Environment.fromEnv
   currentDirectory <- getCurrentDirectory
   let defaultPublicPath = currentDirectory </> "frontend" </> "public"
-  let publicPath = fromMaybe defaultPublicPath (lookup "PUBLIC_PATH" env)
+  let publicPath = fromMaybe defaultPublicPath (lookup "ZH_PUBLIC_PATH" env)
   openSeadragonScript <-
     readFile $
       publicPath
@@ -99,22 +91,22 @@ main = do
     fromMaybe
       (error "ZoomHub.Main: Failed to parse AWS configuration.")
       <$> AWSConfig.fromEnv AWS.Ohio -- TODO: Grab AWS region from environment?
-  let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
+  let logLevel = fromMaybe LogLevel.Debug $ lookup "ZH_LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
-      maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env
+      maybeProcessContent = ProcessContent.parse <$> lookup "ZH_PROCESS_CONTENT" env
       processContent = fromMaybe ProcessNoContent maybeProcessContent
-      maybeUploads = Uploads.parse <$> lookup "UPLOADS" env
+      maybeUploads = Uploads.parse <$> lookup "ZH_UPLOADS" env
       uploads = fromMaybe UploadsDisabled maybeUploads
       defaultNumProcessingWorkers = 0 :: Integer
-      maybeNumProcessingWorkers = lookup "PROCESSING_WORKERS" env >>= readMaybe
+      maybeNumProcessingWorkers = lookup "ZH_PROCESSING_WORKERS" env >>= readMaybe
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
-      baseURI = case lookup baseURIEnvName env of
+      baseURI = case lookup "ZH_BASE_URI" env of
         Just uriString ->
           toBaseURI uriString
         Nothing ->
           toBaseURI $ "http://" <> hostname
       defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "https://static.zoomhub.net"
-      mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup "STATIC_BASE_URI" env)
+      mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup "ZH_STATIC_BASE_URI" env)
       staticBaseURI = fromMaybe defaultStaticBaseURI mStaticBaseURI
       defaultDBName = "zoomhub_development"
       -- Database connection pool:
@@ -125,14 +117,14 @@ main = do
       dbConnPoolMaxResourcesPerStripe = fromIntegral $ (numCapabilities * 2) + numSpindles
       contentBaseURI =
         fromMaybe
-          (error $ "ZoomHub.Main: Failed to parse content base URI. Please check '" <> contentBaseURIEnvName <> "'.")
-          (mkContentBaseURI =<< parseAbsoluteURI =<< lookup contentBaseURIEnvName env)
+          (error $ "ZoomHub.Main: Failed to parse content base URI. Please check 'ZH_CONTENT_BASE_URI'.")
+          (mkContentBaseURI =<< parseAbsoluteURI =<< lookup "ZH_CONTENT_BASE_URI" env)
       apiUser =
         fromMaybe
-          (error "ZoomHub.Main: Missing API user. Please set 'API_USERNAME' and/or 'API_PASSWORD'.")
+          (error "ZoomHub.Main: Missing API user. Please set 'ZH_API_USERNAME' and/or 'ZH_API_PASSWORD'.")
           ( do
-              username <- T.pack <$> lookup "API_USERNAME" env
-              password <- T.pack <$> lookup "API_PASSWORD" env
+              username <- T.pack <$> lookup "ZH_API_USERNAME" env
+              password <- T.pack <$> lookup "ZH_API_PASSWORD" env
               pure $ APIUser {..}
           )
   -- Database connection pool
@@ -208,14 +200,11 @@ main = do
     toBaseURI :: String -> BaseURI
     toBaseURI uriString =
       case parseAbsoluteURI uriString of
-        Just uri -> BaseURI uri
+        Just uri ->
+          BaseURI uri
         Nothing ->
           error $
-            "'" <> uriString
-              <> "' is not a valid URL.\
-                 \ Please set `"
-              <> baseURIEnvName
-              <> "` to override usage of hostname."
+            "'" <> uriString <> "' is not a valid URL. Please set `ZH_BASE_URI` to override usage of hostname."
 
     readVersion :: FilePath -> IO String
     readVersion currentDirectory = do

@@ -1,5 +1,28 @@
 # ZoomHub
 
+## 2021-10-24-1
+
+- Namespace ZoomHub specific environment variables using `ZH_` prefix. We’ve had
+  crashes on Elastic Beanstalk because `PUBLIC_PATH` environment variable was
+  unset during new deployments. This change works around the suspicion that it’s
+  a reserved environment variable name even though it couldn’t independently be
+  verified.
+
+  Affected environment variable names:
+
+  - `ZH_API_PASSWORD`
+  - `ZH_API_USERNAME`
+  - `ZH_BASE_URI`
+  - `ZH_CONTENT_BASE_URI`
+  - `ZH_HASHIDS_SALT`
+  - `ZH_LOG_LEVEL`
+  - `ZH_PROCESS_CONTENT`
+  - `ZH_PROCESSING_WORKERS`
+  - `ZH_PUBLIC_PATH`
+  - `ZH_S3_SOURCES_BUCKET`
+  - `ZH_STATIC_BASE_URI`
+  - `ZH_UPLOADS`
+
 ## 2021-10-21-1
 
 - Make homepage more mobile friendly.

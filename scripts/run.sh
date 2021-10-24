@@ -11,13 +11,13 @@ if [[ -z "$AWS_ACCESS_KEY_ID" ]]; then
   exit 1
 fi
 
-if [[ -z "$API_USERNAME" ]]; then
-  echo "Please set 'API_USERNAME' environment variable"
+if [[ -z "$ZH_API_USERNAME" ]]; then
+  echo "Please set 'ZH_API_USERNAME' environment variable"
   exit 1
 fi
 
-if [[ -z "$API_PASSWORD" ]]; then
-  echo "Please set 'API_PASSWORD' environment variable"
+if [[ -z "$ZH_API_PASSWORD" ]]; then
+  echo "Please set 'ZH_API_PASSWORD' environment variable"
   exit 1
 fi
 
@@ -51,8 +51,8 @@ done
 echo ''
 
 
-BASE_URI=$NGROK_PUBLIC_URL \
-PUBLIC_PATH='frontend/public' \
+ZH_BASE_URI=$NGROK_PUBLIC_URL \
+ZH_PUBLIC_PATH='frontend/public' \
   npx concurrently \
     --names "api,web" \
     "./scripts/run-api-watch.sh" \
