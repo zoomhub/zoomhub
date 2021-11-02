@@ -40,12 +40,14 @@ const Post = () => {
       {content && typeof content !== "undefined" ? (
         <pre
           style={{
-            position: "fixed",
+            backgroundColor: "#111111",
             bottom: 0,
+            color: "#fff",
             left: 0,
+            margin: 0,
+            padding: "1rem",
+            position: "fixed",
             right: 0,
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
           }}
         >
           {content.embedHtml}
