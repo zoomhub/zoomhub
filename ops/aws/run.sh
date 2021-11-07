@@ -31,9 +31,10 @@ if [[  "$eb_environment_type" == "SingleInstance" || ("$eb_environment_type" == 
   # accidentally run this on the production database (zoomhub_production).
   if [[ "$ZH_ENV" == "staging" && "$PGDATABASE" == "zoomhub_staging" ]]; then
     echo "{$(json_log_time), \"message\": \"Drop staging database\", \"script\": \"run.sh\"}"
-    dropdb --if-exists zoomhub_staging
+    psql --command "DROP DATABASE IF EXISTS zoomhub_staging"
+
     echo "{$(json_log_time), \"message\": \"Create staging database\", \"script\": \"run.sh\"}"
-    createdb zoomhub_staging
+    psql --command "CREATE DATABASE zoomhub_staging"
   fi
 
   echo "{$(json_log_time), \"message\": \"Migrate database\", \"script\": \"run.sh\"}"
