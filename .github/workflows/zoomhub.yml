@@ -227,9 +227,6 @@ jobs:
           tar --extract --verbose --gzip --file process-content-workspace.tar.gz --strip-components=1
           tar --extract --verbose --gzip --file web-workspace.tar.gz --strip-components=1
 
-      - name: "DEBUG: List files"
-        run: ls -laR .
-
       - name: Create version
         shell: bash
         run: echo $GITHUB_SHA > version.txt
