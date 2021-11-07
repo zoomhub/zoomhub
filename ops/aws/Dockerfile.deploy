@@ -9,7 +9,7 @@ RUN apt-get upgrade -y && \
   ca-certificates \
   libgmp-dev \
   libpq-dev \
-  postgresql-client-11
+  postgresql-client-10
 
 ADD run.sh /opt/zoomhub
 ADD version.txt /opt/zoomhub
