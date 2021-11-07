@@ -198,10 +198,19 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ZH_AWS_ACCOUNT_ID: ${{ secrets.ZH_AWS_ACCOUNT_ID }}
-      ZH_AWS_EB_ENVIRONMENT: production
       ZH_AWS_EB_PROJECT: ${{ secrets.ZH_AWS_EB_PROJECT }}
       ZH_AWS_ECR_REPO: ${{ secrets.ZH_AWS_ECR_REPO }}
     steps:
+      - name: Sets ZH_AWS_EB_ENVIRONMENT=production
+        run: |
+          echo "ZH_AWS_EB_ENVIRONMENT=production" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/main'
+
+      - name: Sets ZH_AWS_EB_ENVIRONMENT=staging
+        run: |
+          echo "ZH_AWS_EB_ENVIRONMENT=staging" >> $GITHUB_ENV
+        if: github.ref != 'refs/heads/main'
+
       - name: Download process-content-workspace
         uses: actions/download-artifact@v2
         with:
