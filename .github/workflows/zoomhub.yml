@@ -11,7 +11,6 @@ jobs:
       PGUSER: "zoomhub"
       PGDATABASE: "zoomhub_test"
       PGPASSWORD: "popcorn"
-      ZH_API_BASE_URI: "https://api.zoomhub.net"
 
     services:
       postgres:
@@ -38,6 +37,16 @@ jobs:
           cabal-version: "latest"
           enable-stack: true
           stack-version: "latest"
+
+      - name: Sets ZH_API_BASE_URI=https://api.zoomhub.net
+        run: |
+          echo "ZH_API_BASE_URI=https://api.zoomhub.net" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/main'
+
+      - name: Sets ZH_API_BASE_URI=https://api.staging.zoomhub.net
+        run: |
+          echo "ZH_API_BASE_URI=https://api.staging.zoomhub.net" >> $GITHUB_ENV
+        if: github.ref != 'refs/heads/main'
 
       - name: Cache ~/.stack
         uses: actions/cache@v2
