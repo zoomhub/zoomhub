@@ -16,6 +16,7 @@ import System.Environment (lookupEnv)
 data Environment
   = Development
   | Test
+  | Staging
   | Production
 
 fromEnv :: IO (Maybe Environment)
@@ -26,6 +27,7 @@ fromEnv = do
 fromText :: Text -> Maybe Environment
 fromText "development" = Just Development
 fromText "test" = Just Test
+fromText "staging" = Just Staging
 fromText "production" = Just Production
 fromText _ = Nothing
 
@@ -33,4 +35,5 @@ toText :: Environment -> Text
 toText = \case
   Development -> "development"
   Test -> "test"
+  Staging -> "staging"
   Production -> "production"

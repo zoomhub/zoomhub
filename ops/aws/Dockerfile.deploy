@@ -8,7 +8,8 @@ RUN apt-get upgrade -y && \
   apt-get install -y \
   ca-certificates \
   libgmp-dev \
-  libpq-dev
+  libpq-dev \
+  postgresql-client-10
 
 ADD run.sh /opt/zoomhub
 ADD version.txt /opt/zoomhub

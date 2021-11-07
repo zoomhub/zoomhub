@@ -11,7 +11,6 @@ jobs:
       PGUSER: "zoomhub"
       PGDATABASE: "zoomhub_test"
       PGPASSWORD: "popcorn"
-      ZH_API_BASE_URI: "https://api.zoomhub.net"
 
     services:
       postgres:
@@ -38,6 +37,16 @@ jobs:
           cabal-version: "latest"
           enable-stack: true
           stack-version: "latest"
+
+      - name: Sets ZH_API_BASE_URI=https://api.zoomhub.net
+        run: |
+          echo "ZH_API_BASE_URI=https://api.zoomhub.net" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/main'
+
+      - name: Sets ZH_API_BASE_URI=https://api.staging.zoomhub.net
+        run: |
+          echo "ZH_API_BASE_URI=https://api.staging.zoomhub.net" >> $GITHUB_ENV
+        if: github.ref != 'refs/heads/main'
 
       - name: Cache ~/.stack
         uses: actions/cache@v2
@@ -193,15 +202,23 @@ jobs:
   deploy:
     runs-on: ubuntu-18.04
     needs: [process-content-build, web-build]
-    if: github.ref == 'refs/heads/main'
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ZH_AWS_ACCOUNT_ID: ${{ secrets.ZH_AWS_ACCOUNT_ID }}
-      ZH_AWS_EB_ENVIRONMENT: production
       ZH_AWS_EB_PROJECT: ${{ secrets.ZH_AWS_EB_PROJECT }}
       ZH_AWS_ECR_REPO: ${{ secrets.ZH_AWS_ECR_REPO }}
     steps:
+      - name: Sets ZH_AWS_EB_ENVIRONMENT=production
+        run: |
+          echo "ZH_AWS_EB_ENVIRONMENT=production" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/main'
+
+      - name: Sets ZH_AWS_EB_ENVIRONMENT=staging
+        run: |
+          echo "ZH_AWS_EB_ENVIRONMENT=staging" >> $GITHUB_ENV
+        if: github.ref != 'refs/heads/main'
+
       - name: Download process-content-workspace
         uses: actions/download-artifact@v2
         with:
@@ -217,9 +234,6 @@ jobs:
         run: |
           tar --extract --verbose --gzip --file process-content-workspace.tar.gz --strip-components=1
           tar --extract --verbose --gzip --file web-workspace.tar.gz --strip-components=1
-
-      - name: "DEBUG: List files"
-        run: ls -laR .
 
       - name: Create version
         shell: bash
