@@ -559,6 +559,8 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
                 case environment of
                   Environment.Production ->
                     sendEmail (Internal.contentId newContent) submitterEmail verificationToken
+                  Environment.Staging ->
+                    sendEmail (Internal.contentId newContent) submitterEmail verificationToken
                   -- NOTE: Do not send email in test environment
                   Environment.Test ->
                     pure ()
