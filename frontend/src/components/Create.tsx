@@ -95,7 +95,8 @@ const Submit = ({ onViewChange }) => {
             <MailIcon className="h-5 w-5 mr-1" />
             Email{" "}
             <span className="ml-1 text-gray-400">
-              (we’ll notify you when your image is ready<sup>★</sup>)
+              (where you want to be notified when your image is ready
+              <sup>★</sup>)
             </span>
           </label>
           <input
