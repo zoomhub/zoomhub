@@ -40,7 +40,7 @@ export const Create = ({ initialView }) => {
           case "verify-email":
             return <VerifyEmail onViewChange={setView} />
           case "error":
-            return <Error onViewChange={setView} />
+            return <Oops onViewChange={setView} />
           default:
             throw new Error(`Invalid view: ${view}`)
         }
@@ -170,7 +170,7 @@ const VerifyEmail = ({ onViewChange }) => (
   </div>
 )
 
-const Error = ({ onViewChange }) => (
+const Oops = ({ onViewChange }) => (
   <div className="text-center">
     <h1 className="text-4xl text-white tracking-tighter font-semibold">
       😕 Oops…
