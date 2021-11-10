@@ -1,5 +1,3 @@
-// Workaround for custom error types:
-// https://github.com/Microsoft/TypeScript-wiki/blob/main/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
 export class UploadError extends Error {
   innerError: Error
   response: Response
@@ -18,7 +16,8 @@ export class UploadError extends Error {
     this.innerError = innerError
     this.response = response
 
-    // Set the prototype explicitly:
+    // Workaround for custom error types: Set the prototype explicitly.
+    // https://github.com/Microsoft/TypeScript-wiki/blob/main/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, UploadError.prototype)
   }
 }
