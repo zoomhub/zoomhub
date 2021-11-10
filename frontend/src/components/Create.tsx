@@ -86,8 +86,8 @@ const Submit = ({ onViewChange }) => {
             case "source-type-selector":
               return (
                 <div className="w-full">
-                  <div className="flex w-full items-center">
-                    <label className="flex-grow btn btn-secondary">
+                  <div className="flex flex-col md:flex-row w-full items-center">
+                    <label className="w-full md:w-auto md:flex-grow btn btn-secondary">
                       <UploadIcon className="h-5 w-5 mr-1" />
                       I have an image file…
                       <input
@@ -99,12 +99,12 @@ const Submit = ({ onViewChange }) => {
                         }}
                       />
                     </label>
-                    <span className="text-gray-600 mx-2 text-sm font-semibold uppercase">
+                    <div className="w-full text-center my-2 md:my-0 md:inline-block md:w-auto text-gray-600 mx-2 text-sm font-semibold uppercase">
                       or
-                    </span>
+                    </div>
                     <button
                       type="button"
-                      className="flex-grow btn btn-secondary"
+                      className="w-full md:w-auto md:flex-grow btn btn-secondary"
                       onClick={() => setView("source-type-url")}
                     >
                       <LinkIcon className="w-5 h-5 mr-1" />I have an image link…
