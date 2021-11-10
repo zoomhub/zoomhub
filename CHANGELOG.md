@@ -1,5 +1,12 @@
 # ZoomHub
 
+## 2021-11-10-1
+
+- Restore upload UI. We have observed many invalid image URL submissions as many
+  point to non-image resources that we currently don’t support, e.g. images in
+  HTML image galleries, document HTML pages, YouTube, etc.
+- Improve colors of text inputs in dark theme.
+
 ## 2021-10-21-1
 
 - Make homepage more mobile friendly.

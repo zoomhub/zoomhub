@@ -10,7 +10,10 @@ import {
   ChevronDoubleRightIcon,
   LinkIcon,
   MailIcon,
+  UploadIcon,
+  XIcon,
 } from "@heroicons/react/solid"
+import { submitFile } from "../lib/submitFile"
 
 export const Create = ({ initialView }) => {
   const [view, setView] = useState(initialView)
@@ -40,7 +43,7 @@ export const Create = ({ initialView }) => {
           case "verify-email":
             return <VerifyEmail onViewChange={setView} />
           case "error":
-            return <Error onViewChange={setView} />
+            return <Oops onViewChange={setView} />
           default:
             throw new Error(`Invalid view: ${view}`)
         }
@@ -64,6 +67,8 @@ const Submit = ({ onViewChange }) => {
   const [imageURL, setImageURL] = useState("")
   const [email, setEmail] = useState("")
   const [isSubmissionPending, setIsSubmissionPending] = useState(false)
+  const [view, setView] = useState("source-type-selector")
+  const [file, setFile] = useState(null)
 
   return (
     <div className="grid gap-6 lg:gap-10">
@@ -76,26 +81,90 @@ const Submit = ({ onViewChange }) => {
         <SectionTitle className="lg:hidden">
           Create your own zoomable image
         </SectionTitle>
-        <div className="w-full">
-          <label className="text-gray-50 inline-flex items-center text-sm">
-            <LinkIcon className="h-5 w-5 mr-1" />
-            Link to an image on the web
-          </label>
-          <input
-            type="url"
-            className="w-full text-input"
-            placeholder="https://www.example.com/image.jpg"
-            value={imageURL}
-            onChange={(event) => setImageURL(event.target.value)}
-            required
-          />
-        </div>
+        {(() => {
+          switch (view) {
+            case "source-type-selector":
+              return (
+                <div className="w-full">
+                  <div className="flex flex-col md:flex-row w-full items-center">
+                    <label className="w-full md:w-auto md:flex-grow btn btn-secondary">
+                      <UploadIcon className="h-5 w-5 mr-1" />
+                      I have an image file…
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(event) => {
+                          setFile(event.target.files[0])
+                          setView("source-type-file")
+                        }}
+                      />
+                    </label>
+                    <div className="w-full text-center my-2 md:my-0 md:inline-block md:w-auto text-gray-600 mx-2 text-sm font-semibold uppercase">
+                      or
+                    </div>
+                    <button
+                      type="button"
+                      className="w-full md:w-auto md:flex-grow btn btn-secondary"
+                      onClick={() => setView("source-type-url")}
+                    >
+                      <LinkIcon className="w-5 h-5 mr-1" />I have an image link…
+                    </button>
+                  </div>
+                </div>
+              )
+            case "source-type-url":
+              return (
+                <div>
+                  <label className="text-gray-50 inline-flex items-center text-sm">
+                    <LinkIcon className="h-5 w-5 mr-1" />
+                    Link to an image on the web
+                  </label>
+                  <div className="flex flex-column">
+                    <input
+                      type="url"
+                      className="flex-grow text-input"
+                      placeholder="https://www.example.com/image.jpg"
+                      value={imageURL}
+                      onChange={(event) => setImageURL(event.target.value)}
+                      required
+                    />
+                    <CancelButton
+                      onClick={() => {
+                        setImageURL(null)
+                        setView("source-type-selector")
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            case "source-type-file":
+              return (
+                <div className="flex align-items-center">
+                  <input
+                    disabled
+                    className="text-input text-left flex-grow"
+                    value={file.name || ""}
+                  />
+                  <CancelButton
+                    onClick={() => {
+                      setFile(null)
+                      setView("source-type-selector")
+                    }}
+                  />
+                </div>
+              )
+              break
+            default:
+              throw new Error(`Invalid view: ${view}`)
+          }
+        })()}
         <div className="grid gap-1">
           <label className="text-gray-50 inline-flex items-center text-sm">
             <MailIcon className="h-5 w-5 mr-1" />
             Email{" "}
             <span className="ml-1 text-gray-400">
-              (we’ll notify you when your image is ready<sup>★</sup>)
+              (where you want to be notified when your image is ready
+              <sup>★</sup>)
             </span>
           </label>
           <input
@@ -122,9 +191,18 @@ const Submit = ({ onViewChange }) => {
               let response
               try {
                 setIsSubmissionPending(true)
-                response = await submitURL({ url: imageURL, email })
+                response = await (async () => {
+                  switch (view) {
+                    case "source-type-url":
+                      return submitURL({ url: imageURL, email })
+                    case "source-type-file":
+                      return submitFile({ file, email })
+                    default:
+                      throw new Error(`Invalid view: ${view}`)
+                  }
+                })()
               } catch (error) {
-                console.error("response:", response)
+                console.error("error", { error, response })
                 onViewChange("error")
                 return
               } finally {
@@ -170,7 +248,7 @@ const VerifyEmail = ({ onViewChange }) => (
   </div>
 )
 
-const Error = ({ onViewChange }) => (
+const Oops = ({ onViewChange }) => (
   <div className="text-center">
     <h1 className="text-4xl text-white tracking-tighter font-semibold">
       😕 Oops…
@@ -190,7 +268,10 @@ const Error = ({ onViewChange }) => (
   </div>
 )
 
-const SectionTitle = ({ children, className }) => (
+const SectionTitle: React.FC<{ className: String }> = ({
+  children,
+  className,
+}) => (
   <h2
     className={`text-3xl lg:text-4xl text-gray-200 text-center font-semibold tracking-tighter ${className}`}
   >
@@ -207,6 +288,12 @@ const Tagline = () => (
       Play around with the background: tap, pinch, drag, scroll.
     </h2>
   </div>
+)
+
+const CancelButton = ({ onClick }) => (
+  <button className="btn btn-secondary ml-1" onClick={onClick}>
+    <XIcon className="h-5 w-5" />
+  </button>
 )
 
 const submitURL = async ({ url, email }) =>
