@@ -209,9 +209,9 @@ jobs:
       ZH_AWS_EB_PROJECT: ${{ secrets.ZH_AWS_EB_PROJECT }}
       ZH_AWS_ECR_REPO: ${{ secrets.ZH_AWS_ECR_REPO }}
     steps:
-      - name: Sets ZH_AWS_EB_ENVIRONMENT=production
+      - name: Sets ZH_AWS_EB_ENVIRONMENT=production-2
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=production" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=production-2" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/main'
 
       - name: Sets ZH_AWS_EB_ENVIRONMENT=staging
