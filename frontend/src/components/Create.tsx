@@ -191,20 +191,18 @@ const Submit = ({ onViewChange }) => {
               let response
               try {
                 setIsSubmissionPending(true)
-                response = (async () => {
+                response = await (async () => {
                   switch (view) {
                     case "source-type-url":
-                      await submitURL({ url: imageURL, email })
-                      break
+                      return submitURL({ url: imageURL, email })
                     case "source-type-file":
-                      await submitFile({ file, email })
-                      break
+                      return submitFile({ file, email })
                     default:
                       throw new Error(`Invalid view: ${view}`)
                   }
                 })()
               } catch (error) {
-                console.error("response:", response)
+                console.error("error", { error, response })
                 onViewChange("error")
                 return
               } finally {
