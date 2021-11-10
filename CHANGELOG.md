@@ -1,5 +1,9 @@
 # ZoomHub
 
+## 2021-11-10-2
+
+- Restrict uploads to JPEG, PNG, and TIFF files.
+
 ## 2021-11-10-1
 
 - Restore upload UI. We have observed many invalid image URL submissions as many

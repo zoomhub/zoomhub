@@ -92,6 +92,7 @@ const Submit = ({ onViewChange }) => {
                       I have an image file…
                       <input
                         type="file"
+                        accept="image/png,image/jpeg,image/tiff"
                         className="hidden"
                         onChange={(event) => {
                           setFile(event.target.files[0])
