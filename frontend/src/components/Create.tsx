@@ -191,7 +191,10 @@ const Oops = ({ onViewChange }) => (
   </div>
 )
 
-const SectionTitle = ({ children, className }) => (
+const SectionTitle: React.FC<{ className: String }> = ({
+  children,
+  className,
+}) => (
   <h2
     className={`text-3xl lg:text-4xl text-gray-200 text-center font-semibold tracking-tighter ${className}`}
   >
