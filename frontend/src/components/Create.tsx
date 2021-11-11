@@ -69,110 +69,140 @@ const Submit = ({ onViewChange }) => {
   const [isSubmissionPending, setIsSubmissionPending] = useState(false)
   const [view, setView] = useState("source-type-selector")
   const [file, setFile] = useState(null)
+  const [progress, setProgress] = useState(null)
 
   return (
     <div className="grid gap-6 lg:gap-10">
       <Tagline />
       <hr className="border-gray-600/40 hidden lg:block" />
       <form className="grid gap-7" ref={formRef}>
-        <SectionTitle className="hidden lg:block">
-          Try it with your own image
-        </SectionTitle>
-        <SectionTitle className="lg:hidden">
-          Create your own zoomable image
-        </SectionTitle>
-        {(() => {
-          switch (view) {
-            case "source-type-selector":
-              return (
-                <SourceTypeSelector
-                  onFileChange={setFile}
-                  onViewChange={setView}
-                />
-              )
-            case "source-type-url":
-              return (
-                <ImageURLInput
-                  imageURL={imageURL}
-                  onImageURLChange={setImageURL}
-                  onViewChange={setView}
-                />
-              )
-            case "source-type-file":
-              return (
-                <FileInput
-                  file={file}
-                  onFileChange={setFile}
-                  onViewChange={setView}
-                />
-              )
-              break
-            default:
-              throw new Error(`Invalid view: ${view}`)
-          }
-        })()}
-        <div className="grid gap-1">
-          <label className="text-gray-50 inline-flex items-center text-sm">
-            <MailIcon className="h-5 w-5 mr-1" />
-            Email{" "}
-            <span className="ml-1 text-gray-400">
-              (where you want to be notified when your image is ready
-              <sup>★</sup>)
-            </span>
-          </label>
-          <input
-            type="email"
-            className="w-full text-input"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
-        <div className="text-center">
-          <button
-            type="submit"
-            className="w-full btn btn-primary"
-            disabled={isSubmissionPending}
-            onClick={async (event) => {
-              event.preventDefault()
-
-              if (!formRef.current.reportValidity()) {
-                return
+        {!isSubmissionPending ? (
+          <>
+            <SectionTitle className="hidden lg:block">
+              Try it with your own image
+            </SectionTitle>
+            <SectionTitle className="lg:hidden">
+              Create your own zoomable image
+            </SectionTitle>
+            {(() => {
+              switch (view) {
+                case "source-type-selector":
+                  return (
+                    <SourceTypeSelector
+                      onFileChange={setFile}
+                      onViewChange={setView}
+                    />
+                  )
+                case "source-type-url":
+                  return (
+                    <ImageURLInput
+                      imageURL={imageURL}
+                      onImageURLChange={setImageURL}
+                      onViewChange={setView}
+                      disabled={isSubmissionPending}
+                    />
+                  )
+                case "source-type-file":
+                  return (
+                    <FileInput
+                      file={file}
+                      onFileChange={setFile}
+                      onViewChange={setView}
+                    />
+                  )
+                default:
+                  throw new Error(`Invalid view: ${view}`)
               }
+            })()}
+            <div className="grid gap-1">
+              <label className="text-gray-50 inline-flex items-center text-sm">
+                <MailIcon className="h-5 w-5 mr-1" />
+                Email{" "}
+                <span className="ml-1 text-gray-400">
+                  (where you want to be notified when your image is ready
+                  <sup>★</sup>)
+                </span>
+              </label>
+              <input
+                type="email"
+                className="w-full text-input"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </div>
+            <div className="text-center">
+              <button
+                type="submit"
+                className="w-full btn btn-primary"
+                onClick={async (event) => {
+                  event.preventDefault()
 
-              let response
-              try {
-                setIsSubmissionPending(true)
-                response = await (async () => {
-                  switch (view) {
-                    case "source-type-url":
-                      return submitURL({ url: imageURL, email })
-                    case "source-type-file":
-                      return submitFile({ file, email })
-                    default:
-                      throw new Error(`Invalid view: ${view}`)
+                  if (!formRef.current.reportValidity()) {
+                    return
                   }
-                })()
-              } catch (error) {
-                console.error("error", { error, response })
-                onViewChange("error")
-                return
-              } finally {
-                setIsSubmissionPending(false)
-              }
 
-              onViewChange("verify-email")
-            }}
-          >
-            Create
-            <ChevronDoubleRightIcon className="h-5 w-5 ml-1" />
-          </button>
+                  let response
+                  try {
+                    setIsSubmissionPending(true)
 
-          <div className="text-gray-600 text-sm mt-4">
-            <sup>★</sup> We won’t spam you or share your email — promise!
-          </div>
-        </div>
+                    response = await (async () => {
+                      switch (view) {
+                        case "source-type-url":
+                          return submitURL({ url: imageURL, email })
+                        case "source-type-file":
+                          return submitFile({
+                            file,
+                            email,
+                            onProgress: (progressEvent) =>
+                              setProgress(
+                                progressEvent
+                                  ? progressEvent.loaded / progressEvent.total
+                                  : null
+                              ),
+                          })
+                        default:
+                          throw new Error(`Invalid view: ${view}`)
+                      }
+                    })()
+                  } catch (error) {
+                    console.error("error", { error, response })
+                    onViewChange("error")
+                    return
+                  } finally {
+                    setIsSubmissionPending(false)
+                  }
+
+                  onViewChange("verify-email")
+                }}
+              >
+                Create
+                <ChevronDoubleRightIcon className="h-5 w-5 ml-1" />
+              </button>
+
+              <div className="text-gray-600 text-sm mt-4">
+                <sup>★</sup> We won’t spam you or share your email — promise!
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <SectionTitle>
+              {(() => {
+                switch (view) {
+                  case "source-type-url":
+                    return "Downloading image…"
+                  case "source-type-file":
+                    return "Uploading image…"
+                  default:
+                    throw new Error(`Invalid view: ${view}`)
+                }
+              })()}
+            </SectionTitle>
+            <ProgressBar progress={progress} />
+          </>
+        )}
       </form>
     </div>
   )
