@@ -342,3 +342,14 @@ const FileInput: React.FC<{
     </div>
   )
 }
+
+const ProgressBar: React.FC<{ progress: number }> = ({ progress }) => (
+  <div className="relative">
+    <div className="overflow-hidden h-2 flex rounded bg-orange-200">
+      <div
+        className="transition-width duration-1000 rounded bg-orange-500"
+        style={{ width: `${Math.round(progress * 100)}%` }}
+      ></div>
+    </div>
+  </div>
+)
