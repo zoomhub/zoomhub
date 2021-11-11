@@ -2,6 +2,7 @@
 // See: https://github.com/snowpackjs/snowpack/issues/3621#issuecomment-907731004
 import.meta.hot
 
+import axios from "axios"
 import { PresignedPOSTData } from "../types/PresignedPOSTData"
 import { UploadError } from "./Error"
 
@@ -12,8 +13,8 @@ export const submitFile: ({
 }: {
   email: string
   file: File
-  onProgress?: (progress: number) => void
-}) => Promise<Response> = async ({ email, file }) => {
+  onProgress?: (progressEvent: ProgressEvent) => void
+}) => Promise<Response> = async ({ email, file, onProgress }) => {
   let presignedPOSTData: PresignedPOSTData
   try {
     presignedPOSTData = await fetch(
@@ -36,9 +37,14 @@ export const submitFile: ({
 
   let uploadResponse
   try {
-    uploadResponse = await fetch(presignedPOSTData.url, {
+    uploadResponse = await axios.request({
       method: "POST",
-      body: formData,
+      url: presignedPOSTData.url,
+      data: formData,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: onProgress,
     })
   } catch (innerError) {
     throw new UploadError({ message: "Upload request failed", innerError })
