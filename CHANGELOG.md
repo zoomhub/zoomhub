@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 2021-11-11-1
+
+- Show progress bar for uploads.
+- Add GIF (`image/gif`) to list of allowed file uploads.
+
 ## 2021-11-10-2
 
 - Restrict uploads to JPEG, PNG, and TIFF files.

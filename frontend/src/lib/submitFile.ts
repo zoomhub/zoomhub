@@ -2,17 +2,33 @@
 // See: https://github.com/snowpackjs/snowpack/issues/3621#issuecomment-907731004
 import.meta.hot
 
+import axios from "axios"
 import { PresignedPOSTData } from "../types/PresignedPOSTData"
 import { UploadError } from "./Error"
 
-export const submitFile = async ({ email, file }) => {
-  // TODO: Handle errors
-  const presignedPostData: PresignedPOSTData = await fetch(
-    `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/content/upload?email=${email}`
-  ).then((response) => response.json())
+export const submitFile: ({
+  email,
+  file,
+  onProgress,
+}: {
+  email: string
+  file: File
+  onProgress?: (progressEvent: ProgressEvent) => void
+}) => Promise<Response> = async ({ email, file, onProgress }) => {
+  let presignedPOSTData: PresignedPOSTData
+  try {
+    presignedPOSTData = await fetch(
+      `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/content/upload?email=${email}`
+    ).then((response) => response.json())
+  } catch (innerError) {
+    throw new UploadError({
+      message: "Failed to fetch presigned POST data",
+      innerError,
+    })
+  }
 
   const formData = new FormData()
-  Object.entries(presignedPostData)
+  Object.entries(presignedPOSTData)
     .filter(([key, _]) => key !== "url")
     .forEach(([key, value]) => {
       formData.append(key, value)
@@ -21,9 +37,14 @@ export const submitFile = async ({ email, file }) => {
 
   let uploadResponse
   try {
-    uploadResponse = await fetch(presignedPostData.url, {
+    uploadResponse = await axios.request({
       method: "POST",
-      body: formData,
+      url: presignedPOSTData.url,
+      data: formData,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: onProgress,
     })
   } catch (innerError) {
     throw new UploadError({ message: "Upload request failed", innerError })
