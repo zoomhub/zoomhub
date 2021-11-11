@@ -303,12 +303,12 @@ const ImageURLInput: React.FC<{
       </label>
       <div className="flex flex-column">
         <input
-          type="url"
           className="flex-grow text-input"
-          placeholder="https://www.example.com/image.jpg"
-          value={imageURL}
           onChange={(event) => onImageURLChange(event.target.value)}
+          placeholder="https://www.example.com/image.jpg"
           required
+          type="url"
+          value={imageURL}
         />
         <CancelButton
           onClick={() => {
