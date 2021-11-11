@@ -85,74 +85,26 @@ const Submit = ({ onViewChange }) => {
           switch (view) {
             case "source-type-selector":
               return (
-                <div className="w-full">
-                  <div className="flex flex-col md:flex-row w-full items-center">
-                    <label className="w-full md:w-auto md:flex-grow btn btn-secondary">
-                      <UploadIcon className="h-5 w-5 mr-1" />
-                      I have an image file…
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/tiff"
-                        className="hidden"
-                        onChange={(event) => {
-                          setFile(event.target.files[0])
-                          setView("source-type-file")
-                        }}
-                      />
-                    </label>
-                    <div className="w-full text-center my-2 md:my-0 md:inline-block md:w-auto text-gray-600 mx-2 text-sm font-semibold uppercase">
-                      or
-                    </div>
-                    <button
-                      type="button"
-                      className="w-full md:w-auto md:flex-grow btn btn-secondary"
-                      onClick={() => setView("source-type-url")}
-                    >
-                      <LinkIcon className="w-5 h-5 mr-1" />I have an image link…
-                    </button>
-                  </div>
-                </div>
+                <SourceTypeSelector
+                  onFileChange={setFile}
+                  onViewChange={setView}
+                />
               )
             case "source-type-url":
               return (
-                <div>
-                  <label className="text-gray-50 inline-flex items-center text-sm">
-                    <LinkIcon className="h-5 w-5 mr-1" />
-                    Link to an image on the web
-                  </label>
-                  <div className="flex flex-column">
-                    <input
-                      type="url"
-                      className="flex-grow text-input"
-                      placeholder="https://www.example.com/image.jpg"
-                      value={imageURL}
-                      onChange={(event) => setImageURL(event.target.value)}
-                      required
-                    />
-                    <CancelButton
-                      onClick={() => {
-                        setImageURL(null)
-                        setView("source-type-selector")
-                      }}
-                    />
-                  </div>
-                </div>
+                <ImageURLInput
+                  imageURL={imageURL}
+                  onImageURLChange={setImageURL}
+                  onViewChange={setView}
+                />
               )
             case "source-type-file":
               return (
-                <div className="flex align-items-center">
-                  <input
-                    disabled
-                    className="text-input text-left flex-grow"
-                    value={file.name || ""}
-                  />
-                  <CancelButton
-                    onClick={() => {
-                      setFile(null)
-                      setView("source-type-selector")
-                    }}
-                  />
-                </div>
+                <FileInput
+                  file={file}
+                  onFileChange={setFile}
+                  onViewChange={setView}
+                />
               )
               break
             default:
@@ -302,3 +254,91 @@ const submitURL = async ({ url, email }) =>
     `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/content`,
     { params: { url, email } }
   )
+
+const SourceTypeSelector: React.FC<{
+  onFileChange: (file: File) => void
+  onViewChange: (view: String) => void
+}> = ({ onFileChange, onViewChange }) => {
+  return (
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row w-full items-center">
+        <label className="w-full md:w-auto md:flex-grow btn btn-secondary">
+          <UploadIcon className="h-5 w-5 mr-1" />
+          I have an image file…
+          <input
+            type="file"
+            accept="image/gif,image/jpeg,image/png,image/tiff"
+            className="hidden"
+            onChange={(event) => {
+              onFileChange((event.target as HTMLInputElement).files[0])
+              onViewChange("source-type-file")
+            }}
+          />
+        </label>
+        <div className="w-full text-center my-2 md:my-0 md:inline-block md:w-auto text-gray-600 mx-2 text-sm font-semibold uppercase">
+          or
+        </div>
+        <button
+          type="button"
+          className="w-full md:w-auto md:flex-grow btn btn-secondary"
+          onClick={() => onViewChange("source-type-url")}
+        >
+          <LinkIcon className="w-5 h-5 mr-1" />I have an image link…
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const ImageURLInput: React.FC<{
+  imageURL: string
+  onImageURLChange: (file: File) => void
+  onViewChange: (view: String) => void
+}> = ({ imageURL, onImageURLChange, onViewChange }) => {
+  return (
+    <div>
+      <label className="text-gray-50 inline-flex items-center text-sm">
+        <LinkIcon className="h-5 w-5 mr-1" />
+        Link to an image on the web
+      </label>
+      <div className="flex flex-column">
+        <input
+          type="url"
+          className="flex-grow text-input"
+          placeholder="https://www.example.com/image.jpg"
+          value={imageURL}
+          onChange={(event) => onImageURLChange(event.target.value)}
+          required
+        />
+        <CancelButton
+          onClick={() => {
+            onImageURLChange(null)
+            onViewChange("source-type-selector")
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+const FileInput: React.FC<{
+  file: File
+  onFileChange: (file: File) => void
+  onViewChange: (view: String) => void
+}> = ({ file, onFileChange, onViewChange }) => {
+  return (
+    <div className="flex align-items-center">
+      <input
+        disabled
+        className="text-input text-left flex-grow"
+        value={file.name || ""}
+      />
+      <CancelButton
+        onClick={() => {
+          onFileChange(null)
+          onViewChange("source-type-selector")
+        }}
+      />
+    </div>
+  )
+}
