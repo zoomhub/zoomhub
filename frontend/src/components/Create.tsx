@@ -186,13 +186,13 @@ const VerifyEmail = ({ onViewChange }) => (
     <div className="text-gray-200 text-2xl tracking-tight font-medium mt-5">
       📩 Check your email
     </div>
-    <div className="text-gray-200 text-xl tracking-tight font-medium">
+    <div className="text-gray-200 text-xl tracking-tight font-medium mt-2">
       We’ve just sent you the link to view your upload.
     </div>
 
     <button
       type="button"
-      className="btn btn-primary mt-6"
+      className="btn btn-primary mt-6 px-5"
       onClick={() => onViewChange("submit")}
     >
       Create another one
