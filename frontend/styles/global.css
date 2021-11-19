@@ -44,10 +44,17 @@
     focus:ring-opacity-90;
   }
 
+  .btn-sm {
+    @apply px-3
+    py-2
+    text-xs;
+  }
+
   .text-input {
     @apply px-3
     py-1
-    rounded
+    h-10
+    rounded-md
     bg-gray-600/60
     placeholder-gray-500/80
     text-gray-200

@@ -267,9 +267,6 @@ const Tagline = () => (
     <h1 className="text-4xl lg:text-5xl text-white font-semibold tracking-tighter">
       Stunning zoomable images
     </h1>
-    <h2 className="text-lg lg:text-xl text-gray-400 font-semibold tracking-tighter">
-      Play around with the background: tap, pinch, drag, scroll.
-    </h2>
   </div>
 )
 

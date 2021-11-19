@@ -128,92 +128,17 @@
           place-items-center place-content-center
         "
       ></div>
+      <div class="absolute bottom-5 left-5 right-5 text-right">
+        <button class="btn btn-secondary btn-sm" id="hero-mode-toggle">
+          Enter demo mode
+        </button>
+      </div>
       <div class="absolute bottom-12 left-5 right-5">
-        <div id="hero-toolbar"></div>
+        <div id="hero-toolbar" class="hidden"></div>
       </div>
     </div>
 
-    <script type="module" src="/scripts/index.js"></script>
-
-    <!-- hero -->
     <script src="https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/openseadragon.min.js"></script>
-    <script>
-      let viewer
-      ;(() => {
-        const image = { id: "0w5YD", width: 8192, height: 8192 }
-
-        viewer = OpenSeadragon({
-          id: "hero-image",
-          showNavigationControl: true,
-          toolbar: "hero-toolbar",
-          // navigation control images
-          prefixUrl: "https://static.zoomhub.net/openseadragon-images/",
-          // image source
-          tileSources: {
-            Image: {
-              xmlns: "http://schemas.microsoft.com/deepzoom/2008",
-              Size: { Width: image.width, Height: image.height },
-              Format: "jpg",
-              Overlap: 1,
-              Url: `https://cache.zoomhub.net/content/${image.id}_files/`,
-              TileSize: 254,
-            },
-          },
-        })
-        viewer.setControlsEnabled(false)
-
-        let animationRequestId
-        const enableInteractivity = () => {
-          viewer.setControlsEnabled(true)
-          cancelAnimationFrame(animationRequestId)
-        }
-
-        viewer.addHandler("open", () => {
-          viewer.setControlsEnabled(false)
-
-          const targetWidth = 0.1
-          const endBounds = viewer.viewport.getHomeBounds()
-          const startBounds = new OpenSeadragon.Rect(
-            0.1 + (1 - targetWidth) / 2, // x
-            0.075, // y
-            targetWidth, // width
-            0.1 // height
-          )
-          viewer.viewport.fitBounds(startBounds, true)
-
-          const animationDuration = 5 * 60 * 1000 // ms
-          const animationStep = (timestamp) => {
-            const delta = (timestamp - animationStartTime) / animationDuration
-            const currentZoom = viewer.viewport.getZoom()
-            if (delta >= 1.0) {
-              enableInteractivity()
-              return
-            }
-            const currentBounds = new OpenSeadragon.Rect(
-              startBounds.x + (endBounds.x - startBounds.x) * delta,
-              startBounds.y + (endBounds.y - startBounds.y) * delta,
-              startBounds.width + (endBounds.width - startBounds.width) * delta,
-              startBounds.height +
-                (endBounds.height - startBounds.height) * delta
-            )
-
-            viewer.viewport.fitBounds(currentBounds)
-            animationRequestId = requestAnimationFrame(animationStep)
-          }
-
-          let animationStartTime = performance.now()
-          animationRequestId = requestAnimationFrame(animationStep)
-        })
-        ;[
-          "canvas-drag",
-          "canvas-click",
-          "canvas-double-click",
-          "canvas-pinch",
-          "canvas-scroll",
-        ].forEach((eventName) => {
-          viewer.addHandler(eventName, () => enableInteractivity())
-        })
-      })()
-    </script>
+    <script type="module" src="/scripts/index.js"></script>
   </body>
 </html>
