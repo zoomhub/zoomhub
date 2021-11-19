@@ -172,87 +172,86 @@
           </svg>
         </a>
       </div>
-      <div>
-        <a name="embed"></a>
-        <section class="mt-14 md:mt-20">
-          <h1
-            class="
-              text-2xl
-              lg:text-3xl
-              text-gray-50
-              font-semibold
-              tracking-tighter
-            "
+      <a name="embed"></a>
+      <section class="mt-14 md:mt-20">
+        <h1
+          class="
+            text-2xl
+            lg:text-3xl
+            text-gray-50
+            font-semibold
+            tracking-tighter
+          "
+        >
+          Embed
+        </h1>
+        <p class="text-gray-100 mt-3">
+          Embed a ZoomHub image on your website with the following HTML code:
+        </p>
+
+        <pre
+          class="code-listing"
+        >&lt;script src=&quot;https://zoomhub.net/<span class="code-highlight">{id}</span>.js?width=auto&amp;height=400px&quot;&gt;&lt;/script&gt;</pre>
+
+        <p class="text-gray-100 mt-3">
+          Replace
+          <code class="code-highlight">{id}</code> with the ID in the email you
+          received from us. You can customize the
+          <code class="code-highlight">width</code> and
+          <code class="code-highlight">height</code> of the embed.
+        </p>
+      </section>
+
+      <hr class="border-gray-700 mt-14 md:mt-20" />
+
+      <a name="api"></a>
+      <section class="mt-14 md:mt-20">
+        <h1
+          class="
+            text-2xl
+            lg:text-3xl
+            text-gray-50
+            font-semibold
+            tracking-tighter
+          "
+        >
+          API
+        </h1>
+        <p class="text-gray-100 mt-3">
+          ZoomHub has a
+          <a
+            class="link"
+            href="https://github.com/zoomhub/zoomhub/blob/main/API.md"
+            >REST API</a
           >
-            Embed
-          </h1>
-          <p class="text-gray-100 mt-3">
-            Embed a ZoomHub image on your website with the following HTML code:
-          </p>
+          that lets you easily convert all your images programmatically.
+        </p>
 
-          <pre
-            class="code-listing"
-          >&lt;script src=&quot;https://zoomhub.net/<span class="code-highlight">{id}</span>.js?width=auto&amp;height=400px&quot;&gt;&lt;/script&gt;</pre>
+        <p class="text-gray-100 mt-3">
+          We currently require a valid
+          <span class="text-orange-500 font-medium">email</span> to prevent
+          abuse. If you need to convert a large number of images, please
+          <a
+            href="mailto:daniel@zoomhub.net?subject=ZoomHub: High volume API access&body=Hi Daniel,"
+            class="link"
+            >request high volume access</a
+          >.
+        </p>
 
-          <p class="text-gray-100 mt-3">
-            Replace
-            <code class="code-highlight">{id}</code> with the ID in the email
-            you received from us. You can customize the
-            <code class="code-highlight">width</code> and
-            <code class="code-highlight">height</code> of the embed.
-          </p>
-        </section>
-
-        <hr class="border-gray-700 mt-14 md:mt-20" />
-
-        <a name="api"></a>
-        <section class="mt-14 md:mt-20">
-          <h1
-            class="
-              text-2xl
-              lg:text-3xl
-              text-gray-50
-              font-semibold
-              tracking-tighter
-            "
+        <p class="mt-4">
+          <a
+            class="btn btn-secondary btn-sm"
+            href="https://github.com/zoomhub/zoomhub/blob/main/API.md"
+            >ZoomHub API reference</a
           >
-            API
-          </h1>
-          <p class="text-gray-100 mt-3">
-            ZoomHub has a
-            <a
-              class="link"
-              href="https://github.com/zoomhub/zoomhub/blob/main/API.md"
-              >REST API</a
-            >
-            that lets you easily to convert all your images programmatically.
-          </p>
+        </p>
 
-          <p class="text-gray-100 mt-3">
-            We currently require a valid
-            <span class="text-orange-500 font-medium">email</span> to prevent
-            abuse. If you need to convert a large number of images, please
-            <a
-              href="mailto:daniel@zoomhub.net?subject=ZoomHub: High volume API access&body=Hi Daniel,"
-              class="link"
-              >request high volume access</a
-            >.
-          </p>
-
-          <p class="mt-3">
-            <a
-              class="btn btn-secondary btn-sm"
-              href="https://github.com/zoomhub/zoomhub/blob/main/API.md"
-              >ZoomHub API reference</a
-            >
-          </p>
-
-          <h2 class="text-lg font-bold text-gray-100 mt-6">
-            Example: <code>curl</code>
-          </h2>
-          <pre
-            class="code-listing"
-          >&gt; curl --include --location 'https://api.zoomhub.net/v1/content?url=<span class="code-highlight">{url}</span>&email=<span class="code-highlight">{email}</span>'
+        <h2 class="text-lg font-bold text-gray-100 mt-6">
+          Example: <code>curl</code>
+        </h2>
+        <pre
+          class="code-listing"
+        >&gt; curl --include --location 'https://api.zoomhub.net/v1/content?url=<span class="code-highlight">{url}</span>&email=<span class="code-highlight">{email}</span>'
 
 HTTP/1.1 301 Moved Permanently
 Server: nginx/1.20.0
@@ -279,10 +278,8 @@ Connection: keep-alive
   "failed": false,
   "verified": false
 }</pre>
-        </section>
-      </div>
+      </section>
 
-      <div class="flex-grow"></div>
       <div class="text-center my-4">
         <a href="#create" class="text-gray-400 hover:text-white mt-1">
           <svg
