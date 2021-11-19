@@ -182,14 +182,14 @@
 
           <pre
             class="code-listing"
-          >&lt;script src=&quot;https://zoomhub.net/<span class="text-orange-600">{id}</span>.js?width=auto&amp;height=400px&quot;&gt;&lt;/script&gt;</pre>
+          >&lt;script src=&quot;https://zoomhub.net/<span class="code-highlight">{id}</span>.js?width=auto&amp;height=400px&quot;&gt;&lt;/script&gt;</pre>
 
           <p class="text-gray-100 mt-3">
             Replace
-            <code class="text-orange-500">{id}</code> with the ID in the email
+            <code class="code-highlight">{id}</code> with the ID in the email
             you received from us. You can customize the
-            <code class="text-orange-500">width</code> and
-            <code class="text-orange-500">height</code> of the embed.
+            <code class="code-highlight">width</code> and
+            <code class="code-highlight">height</code> of the embed.
           </p>
         </section>
 
@@ -242,14 +242,14 @@
           </h2>
           <pre
             class="code-listing"
-          >&gt; curl --include --location 'https://api.zoomhub.net/v1/content?url=<span class="text-orange-600">{url}</span>&email=<span class="text-orange-600">{email}</span>'
+          >&gt; curl --include --location 'https://api.zoomhub.net/v1/content?url=<span class="code-highlight">{url}</span>&email=<span class="code-highlight">{email}</span>'
 
 HTTP/1.1 301 Moved Permanently
 Server: nginx/1.20.0
 Date: Fri, 13 Aug 2021 16:20:00 GMT
 Transfer-Encoding: chunked
 Connection: keep-alive
-Location: https://api.zoomhub.net/v1/content/<span class="text-orange-600">{id}</span>
+Location: https://api.zoomhub.net/v1/content/<span class="code-highlight">{id}</span>
 
 HTTP/1.1 200 OK
 Server: nginx/1.20.0
@@ -259,10 +259,10 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 
 {
-  "id":"<span class="text-orange-600">{id}</span>",
-  "url": "<span class="text-orange-600">{url}</span>",
-  "shareUrl": "https://zoomhub.net/<span class="text-orange-600">{id}</span>",
-  "embedHtml":"&lt;script src=\"https://zoomhub.net/<span class="text-orange-600">{id}</span>.js?width=auto&height=400px\"&gt;&lt;/script&gt;",
+  "id":"<span class="code-highlight">{id}</span>",
+  "url": "<span class="code-highlight">{url}</span>",
+  "shareUrl": "https://zoomhub.net/<span class="code-highlight">{id}</span>",
+  "embedHtml":"&lt;script src=\"https://zoomhub.net/<span class="code-highlight">{id}</span>.js?width=auto&height=400px\"&gt;&lt;/script&gt;",
   "dzi": null,
   "ready":false,
   "progress": 0,

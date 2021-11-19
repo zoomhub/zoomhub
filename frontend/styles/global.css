@@ -90,12 +90,16 @@ html {
   }
 
   .code-listing {
-    @apply text-gray-800
+    @apply text-gray-300
       mt-3
       p-6
-      bg-gray-200
+      bg-gray-800
       rounded-lg
       max-w-max
       overflow-x-scroll;
+  }
+
+  .code-highlight {
+    @apply text-orange-500 font-semibold;
   }
 }
