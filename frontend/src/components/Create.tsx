@@ -275,7 +275,7 @@ const Tagline = () => (
 
 const CancelButton = ({ onClick }) => (
   <button className="btn btn-secondary ml-1" onClick={onClick}>
-    <XIcon className="h-5 w-5" />
+    <XIcon className="h-4 w-4" />
   </button>
 )
 
