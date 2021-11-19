@@ -74,4 +74,8 @@ html {
     lg:py-2
     lg:text-lg;
   }
+
+  .link {
+    @apply text-orange-500 border-b-2 border-orange-500;
+  }
 }

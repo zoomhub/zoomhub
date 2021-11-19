@@ -192,6 +192,91 @@
             <code class="text-orange-500">height</code> of the embed.
           </p>
         </section>
+
+        <a name="api"></a>
+        <section class="mt-20">
+          <h1
+            class="
+              text-2xl
+              lg:text-3xl
+              text-gray-50
+              font-semibold
+              tracking-tighter
+            "
+          >
+            API
+          </h1>
+          <p class="text-gray-100 mt-3">
+            ZoomHub has a
+            <a
+              class="link"
+              href="https://github.com/zoomhub/zoomhub/blob/main/API.md"
+              >REST API</a
+            >
+            that lets you easily to convert all your images programmatically.
+          </p>
+
+          <p class="text-gray-100 mt-3">
+            We currently require a valid
+            <span class="text-orange-500 font-medium">email</span> to prevent
+            abuse. If you need to convert a large number of images, please
+            <a
+              href="mailto:daniel@zoomhub.net?subject=ZoomHub: High volume API access&body=Hi Daniel,"
+              class="link"
+              >request high volume access</a
+            >.
+          </p>
+
+          <p class="mt-3">
+            <a
+              class="btn btn-secondary btn-sm"
+              href="https://github.com/zoomhub/zoomhub/blob/main/API.md"
+              >ZoomHub API reference</a
+            >
+          </p>
+
+          <h2 class="text-lg font-bold text-gray-100 mt-6">
+            Example: <code>curl</code>
+          </h2>
+          <pre
+            class="
+              text-gray-800
+              mt-3
+              text-md
+              p-6
+              bg-gray-200
+              rounded-lg
+              max-w-max
+              overflow-x-scroll
+            "
+          >&gt; curl --include --location 'https://api.zoomhub.net/v1/content?url=<span class="text-orange-600">{url}</span>&email=<span class="text-orange-600">{email}</span>'
+
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.20.0
+Date: Fri, 13 Aug 2021 16:20:00 GMT
+Transfer-Encoding: chunked
+Connection: keep-alive
+Location: https://api.zoomhub.net/v1/content/<span class="text-orange-600">{id}</span>
+
+HTTP/1.1 200 OK
+Server: nginx/1.20.0
+Date: Fri, 13 Aug 2021 16:20:00 GMT
+Content-Type: application/json;charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+
+{
+  "id":"<span class="text-orange-600">{id}</span>",
+  "url": "<span class="text-orange-600">{url}</span>",
+  "shareUrl": "https://zoomhub.net/<span class="text-orange-600">{id}</span>",
+  "embedHtml":"&lt;script src=\"https://zoomhub.net/<span class="text-orange-600">{id}</span>.js?width=auto&height=400px\"&gt;&lt;/script&gt;",
+  "dzi": null,
+  "ready":false,
+  "progress": 0,
+  "failed": false,
+  "verified": false
+}</pre>
+        </section>
       </div>
 
       <div class="flex-grow"></div>
