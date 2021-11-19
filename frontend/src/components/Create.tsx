@@ -73,11 +73,11 @@ const Submit = ({ onViewChange }) => {
 
   return (
     <div className="grid gap-6 lg:gap-10">
-      <Tagline />
-      <hr className="border-gray-600/40 hidden lg:block" />
       <form className="grid gap-7" ref={formRef}>
         {!isSubmissionPending ? (
           <>
+            <Tagline />
+            <hr className="border-gray-600/40 hidden lg:block" />
             <SectionTitle className="hidden lg:block">
               Try it with your own image
             </SectionTitle>
@@ -267,15 +267,12 @@ const Tagline = () => (
     <h1 className="text-4xl lg:text-5xl text-white font-semibold tracking-tighter">
       Stunning zoomable images
     </h1>
-    <h2 className="text-lg lg:text-xl text-gray-400 font-semibold tracking-tighter">
-      Play around with the background: tap, pinch, drag, scroll.
-    </h2>
   </div>
 )
 
 const CancelButton = ({ onClick }) => (
   <button className="btn btn-secondary ml-1" onClick={onClick}>
-    <XIcon className="h-5 w-5" />
+    <XIcon className="h-4 w-4" />
   </button>
 )
 

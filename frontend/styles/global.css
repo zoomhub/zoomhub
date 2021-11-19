@@ -2,64 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  /* See: https://css-tricks.com/need-to-scroll-to-the-top-of-the-page/ */
+  scroll-behavior: smooth;
+}
+
 @layer components {
   .btn {
     @apply font-semibold
-    inline-flex
-    items-center
-    justify-center
+      inline-flex
+      items-center
+      justify-center
 
-    text-gray-800
-    hover:text-white
-    uppercase
+      text-gray-800
+      hover:text-white
+      uppercase
 
-    rounded-lg
-    shadow-lg
-    cursor-pointer
-    outline-none;
+      rounded-lg
+      shadow-lg
+      cursor-pointer
+      outline-none;
   }
 
   .btn-primary {
     @apply px-3
-    lg:px-5
-    py-2
-    bg-orange-500
-    hover:bg-orange-600
-    lg:text-lg
+      lg:px-5
+      py-2
+      bg-orange-500
+      hover:bg-orange-600
+      lg:text-lg
 
-    focus:ring-4
-    focus:ring-orange-500
-    focus:ring-opacity-90;
+      focus:ring-4
+      focus:ring-orange-500
+      focus:ring-opacity-90;
   }
 
   .btn-secondary {
     @apply px-4
-    py-3
-    bg-gray-400
-    hover:bg-orange-600
-    text-sm
+      py-3
+      bg-gray-400
+      hover:bg-orange-600
+      text-sm
 
-    focus:ring-4
-    focus:ring-orange-500
-    focus:ring-opacity-90;
+      focus:ring-4
+      focus:ring-orange-500
+      focus:ring-opacity-90;
+  }
+
+  .btn-sm {
+    @apply px-3
+      py-2
+      text-xs;
   }
 
   .text-input {
     @apply px-3
-    py-1
-    rounded
-    bg-gray-600/60
-    placeholder-gray-500/80
-    text-gray-200
-    font-medium
+      py-1
+      h-10
+      rounded-md
+      bg-gray-600/60
+      placeholder-gray-500/80
+      text-gray-200
+      font-medium
 
-    outline-none
-    focus:ring-2
-    focus:ring-orange-500
-    focus:ring-opacity-90
+      outline-none
+      focus:ring-2
+      focus:ring-orange-500
+      focus:ring-opacity-90
 
-    lg:px-4
-    lg:py-2
-    lg:text-lg;
+      lg:px-4
+      lg:py-2
+      lg:text-lg;
+  }
+
+  .link {
+    @apply text-orange-500 border-b-2 border-orange-500;
+  }
+
+  .nav-item {
+    @apply h-full
+      text-gray-400
+      hover:text-white
+      font-semibold
+      tracking-tight
+      px-4
+      md:text-lg;
+  }
+
+  .code-listing {
+    @apply text-gray-300
+      mt-3
+      p-6
+      bg-gray-800
+      rounded-lg
+      max-w-max
+      overflow-x-scroll;
+  }
+
+  .code-highlight {
+    @apply text-orange-500 font-semibold;
   }
 }

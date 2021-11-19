@@ -1,5 +1,13 @@
 # ZoomHub
 
+## 2021-11-19-1
+
+- Improve landing page
+  - Make demo mode explicit to allow for additional content below
+  - Add **Embed** section
+  - Add **API** section
+- Set Safari toolbar color
+
 ## 2021-11-11-1
 
 - Show progress bar for uploads.
