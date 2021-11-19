@@ -83,38 +83,29 @@
 
   <body class="bg-gray-900 relative">
     <a id="top"></a>
-    <header
-      class="
-        bg-gray-900
-        border-t-2 border-orange-500
-        fixed
-        z-10
-        w-full
-        h-10
-        md:h-16
-        px-5
-        flex
-        justify-center
-        items-center
-      "
-    >
-      <a href="/"
-        ><div
-          class="bg-orange-500 mr-1 rounded-full w-4 h-4 md:w-7 md:h-7"
-        ></div
-      ></a>
-      <h1
-        class="
-          text-xl
-          md:text-4xl
-          tracking-tighter
-          text-gray-100
-          font-bold
-          select-none
-        "
-      >
-        <a href="/">ZoomHub</a>
-      </h1>
+    <header class="bg-gray-900 border-t-2 border-orange-500 fixed z-10 w-full">
+      <div class="container mx-auto px-4">
+        <div class="flex items-center h-10 md:h-16">
+          <a href="/"
+            ><div
+              class="bg-orange-500 mr-1 rounded-full w-4 h-4 md:w-7 md:h-7"
+            ></div
+          ></a>
+          <h1
+            class="
+              text-xl
+              md:text-4xl
+              tracking-tighter
+              text-gray-100
+              font-bold
+              select-none
+              inline-block
+            "
+          >
+            <a href="/">ZoomHub</a>
+          </h1>
+        </div>
+      </div>
     </header>
 
     <div class="relative">
@@ -143,7 +134,7 @@
       </div>
     </div>
 
-    <main class="container mx-auto min-h-screen">
+    <main class="container mx-auto px-4 min-h-screen flex flex-col">
       <div class="text-center">
         <a href="#examples" class="text-gray-400 hover:text-white mt-1">
           <svg
@@ -162,63 +153,66 @@
           </svg>
         </a>
       </div>
-      <section id="examples" class="mt-6">
-        <h1
-          class="
-            text-2xl
-            lg:text-3xl
-            text-gray-50
-            font-semibold
-            tracking-tighter
-          "
-        >
-          Embed
-        </h1>
-        <p class="text-gray-100 mt-3">
-          Embed a ZoomHub image on your website with the following HTML code:
-        </p>
+      <div>
+        <section id="examples" class="mt-10">
+          <h1
+            class="
+              text-2xl
+              lg:text-3xl
+              text-gray-50
+              font-semibold
+              tracking-tighter
+            "
+          >
+            Embed
+          </h1>
+          <p class="text-gray-100 mt-3">
+            Embed a ZoomHub image on your website with the following HTML code:
+          </p>
 
-        <pre
-          class="
-            text-gray-800
-            mt-5
-            text-md
-            p-6
-            bg-gray-200
-            rounded-lg
-            w-auto
-            inline-block
-          "
-        >&lt;script src=&quot;https://zoomhub.net/<span class="text-orange-600">{id}</span>.js?width=auto&amp;height=400px&quot;&gt;&lt;/script&gt;</pre>
-      </section>
+          <pre
+            class="
+              text-gray-800
+              mt-5
+              text-md
+              p-6
+              bg-gray-200
+              rounded-lg
+              w-auto
+              inline-block
+            "
+          >&lt;script src=&quot;https://zoomhub.net/<span class="text-orange-600">{id}</span>.js?width=auto&amp;height=400px&quot;&gt;&lt;/script&gt;</pre>
 
-      <p class="text-gray-100 mt-3">
-        Replace
-        <code class="text-orange-400">{id}</code> with the ID in the email you
-        received from us. You can customize the
-        <code class="text-orange-400">width</code> and
-        <code class="text-orange-400">height</code> of the embed.
-      </p>
+          <p class="text-gray-100 mt-3">
+            Replace
+            <code class="text-orange-400">{id}</code> with the ID in the email
+            you received from us. You can customize the
+            <code class="text-orange-400">width</code> and
+            <code class="text-orange-400">height</code> of the embed.
+          </p>
+        </section>
+      </div>
+
+      <div class="flex-grow"></div>
+      <div class="text-center mb-4">
+        <a href="#top" class="text-gray-400 hover:text-white mt-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8 inline-block"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 15l7-7 7 7"
+            />
+          </svg>
+        </a>
+      </div>
     </main>
-
-    <div class="text-center mb-2">
-      <a href="#top" class="text-gray-400 hover:text-white mt-1">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-8 w-8 inline-block"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 15l7-7 7 7"
-          />
-        </svg>
-      </a>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/openseadragon.min.js"></script>
     <script type="module" src="/scripts/index.js"></script>
