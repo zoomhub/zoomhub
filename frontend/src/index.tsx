@@ -57,12 +57,12 @@ import { Create } from "./components/Create"
     heroModeSelector.addEventListener("click", () => {
       switch (heroMode) {
         case "animated":
-          heroModeSelector.innerText = "Exit demo mode"
+          heroModeSelector.innerText = "Exit demo"
           enableInteractivity()
           heroMode = "interactive"
           return
         case "interactive":
-          heroModeSelector.innerText = "Enter demo mode"
+          heroModeSelector.innerText = "Try demo"
           disableInteractivity()
           heroMode = "animated"
           return
