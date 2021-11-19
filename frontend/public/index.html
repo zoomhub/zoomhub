@@ -117,7 +117,11 @@
     </header>
 
     <div class="relative">
-      <div id="hero-image" class="h-screen w-full bg-black"></div>
+      <div
+        id="hero-image"
+        class="w-full bg-black"
+        style="height: calc(100vh - 40px)"
+      ></div>
       <div
         id="create"
         class="
@@ -137,6 +141,64 @@
         <div id="hero-toolbar" class="hidden"></div>
       </div>
     </div>
+
+    <main class="container mx-auto min-h-screen">
+      <div class="text-center">
+        <a href="#examples" class="text-gray-400 hover:text-white mt-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8 inline-block"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </a>
+      </div>
+      <section id="examples" class="mt-6">
+        <h1
+          class="
+            text-2xl
+            lg:text-3xl
+            text-gray-50
+            font-semibold
+            tracking-tighter
+          "
+        >
+          Embed
+        </h1>
+        <p class="text-gray-100 mt-3">
+          Embed a ZoomHub image on your website with the following HTML code:
+        </p>
+
+        <pre
+          class="
+            text-gray-800
+            mt-5
+            text-md
+            p-6
+            bg-gray-200
+            rounded-lg
+            w-auto
+            inline-block
+          "
+        >&lt;script src=&quot;https://zoomhub.net/<span class="text-orange-600">{id}</span>.js?width=auto&amp;height=400px&quot;&gt;&lt;/script&gt;</pre>
+      </section>
+
+      <p class="text-gray-100 mt-3">
+        Replace
+        <code class="text-orange-400">{id}</code> with the ID in the email you
+        received from us. You can customize the
+        <code class="text-orange-400">width</code> and
+        <code class="text-orange-400">height</code> of the embed.
+      </p>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/openseadragon.min.js"></script>
     <script type="module" src="/scripts/index.js"></script>
