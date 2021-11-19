@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  /* See: https://css-tricks.com/need-to-scroll-to-the-top-of-the-page/ */
+  scroll-behavior: smooth;
+}
+
 @layer components {
   .btn {
     @apply font-semibold
