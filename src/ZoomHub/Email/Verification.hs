@@ -26,7 +26,12 @@ request baseURI contentId verificationToken from to =
 
         Thanks for your upload to ZoomHub (formerly zoom.it).
 
-        You can now view it at: $verificationURL
+        Verify your email to view your upload: $verificationURL
+
+        Helpful links
+        - Share link: $wwwURL
+        - How to embed your image: $baseURL/#embed
+        - Developer API: $baseURL/#api
 
         If you haven’t uploaded anything to ZoomHub, please ignore this email.
 
@@ -36,9 +41,7 @@ request baseURI contentId verificationToken from to =
 
         P.S. Do you have a question or feedback? Simply reply to this email. I read each and every message :)
       |]
-    verificationURL =
-      T.pack (show baseURI)
-        <> "/"
-        <> T.pack (unContentId contentId)
-        <> "/verify/"
-        <> T.pack (show verificationToken)
+
+    baseURL = T.pack (show baseURI)
+    wwwURL = baseURL <> "/" <> T.pack (unContentId contentId)
+    verificationURL = wwwURL <> "/verify/" <> T.pack (show verificationToken)
