@@ -13,7 +13,7 @@ import { Create } from "./components/Create"
     const heroModeSelector = document.querySelector(
       "#hero-mode-toggle"
     ) as HTMLButtonElement
-    const createCard = document.querySelector("#create")
+    const createContainer = document.querySelector("#create-container")
     const image = { id: "0w5YD", width: 8192, height: 8192 }
 
     viewer = OpenSeadragon({
@@ -41,7 +41,7 @@ import { Create } from "./components/Create"
       viewer.setMouseNavEnabled(true)
       document.querySelector("#hero-toolbar").classList.remove("hidden")
 
-      createCard.classList.add("hidden")
+      createContainer.classList.add("hidden")
 
       cancelAnimationFrame(animationRequestId)
     }
@@ -49,7 +49,7 @@ import { Create } from "./components/Create"
       viewer.setControlsEnabled(false)
       viewer.setMouseNavEnabled(false)
 
-      createCard.classList.remove("hidden")
+      createContainer.classList.remove("hidden")
 
       document.querySelector("#hero-toolbar").classList.add("hidden")
     }
@@ -119,7 +119,7 @@ import { Create } from "./components/Create"
     apiConfig = { uploadsEnabled: false }
   }
 
-  const container = document.querySelector("#create")
+  const container = document.querySelector("#create-container")
   ReactDOM.render(
     <Create
       initialView={apiConfig.uploadsEnabled ? "submit" : "submissions-disabled"}
