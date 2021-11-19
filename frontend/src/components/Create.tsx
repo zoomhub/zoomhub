@@ -73,11 +73,11 @@ const Submit = ({ onViewChange }) => {
 
   return (
     <div className="grid gap-6 lg:gap-10">
-      <Tagline />
-      <hr className="border-gray-600/40 hidden lg:block" />
       <form className="grid gap-7" ref={formRef}>
         {!isSubmissionPending ? (
           <>
+            <Tagline />
+            <hr className="border-gray-600/40 hidden lg:block" />
             <SectionTitle className="hidden lg:block">
               Try it with your own image
             </SectionTitle>
