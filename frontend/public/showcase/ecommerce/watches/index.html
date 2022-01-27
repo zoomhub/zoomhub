@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ZoomHub · Showcase · E-commerce: Watch store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#171717" />
+
+    <link rel="shortcut icon" href="/favicon.ico" />
+
+    <style>
+      html {
+        font-family: sans-serif;
+        font-size: 0.875em;
+      }
+
+      html,
+      body {
+        height: 100%;
+        position: relative;
+        margin: 0;
+      }
+
+      #pivot-viewer {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border: 2px solid gray;
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://zoomhub-showcase.s3.amazonaws.com/scripts/seadragon/viewer.css"
+    />
+
+    <!-- Google Analytics -->
+    <script>
+      ;(function (i, s, o, g, r, a, m) {
+        i["GoogleAnalyticsObject"] = r
+        ;(i[r] =
+          i[r] ||
+          function () {
+            ;(i[r].q = i[r].q || []).push(arguments)
+          }),
+          (i[r].l = 1 * new Date())
+        ;(a = s.createElement(o)), (m = s.getElementsByTagName(o)[0])
+        a.async = 1
+        a.src = g
+        m.parentNode.insertBefore(a, m)
+      })(
+        window,
+        document,
+        "script",
+        "//www.google-analytics.com/analytics.js",
+        "ga"
+      )
+
+      ga("create", "UA-55808703-1", "auto")
+      ga("_setDomainName", "zoomhub.net")
+      ga("_setAllowLinker", true)
+      ga("send", "pageview")
+    </script>
+  </head>
+  <body>
+    <script src="https://zoomhub-showcase.s3.amazonaws.com/scripts/seadragon/viewer.js"></script>
+    <div
+      id="pivot-viewer"
+      class="pivot_ajax_viewer"
+      data-collection="https://zoomhub-showcase.s3.amazonaws.com/ecommerce/watches/catalog.cxml"
+      data-use-history="true"
+    ></div>
+  </body>
+</html>
