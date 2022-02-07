@@ -1,5 +1,12 @@
 # ZoomHub
 
+## 2021-02-07-1
+
+- Set canonical URLs to direct traffic from zoom.it to zoomhub.net.
+- `processContent`:
+  - Clean up `/tmp` on every invocation to free up disk space.
+  - Report disk space.
+
 ## 2021-11-19-1
 
 - Improve landing page
