@@ -93,7 +93,7 @@ const processContent = async ({ contentURL }) => {
   // https://stackoverflow.com/a/37990409
   const tmpFiles = await fs.promises.readdir(ROOT_PATH)
   const tmpDiskSpace = await checkDiskSpace(ROOT_PATH)
-  log("/tmp contents", { tmpFiles, tmpDiskSpace })
+  log("/tmp info", { tmpFiles, tmpDiskSpace })
   await rmfr(`${ROOT_PATH}/*`)
 
   // Write source file
