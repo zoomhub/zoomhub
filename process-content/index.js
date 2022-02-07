@@ -1,6 +1,7 @@
 const AmazonS3URI = require("amazon-s3-uri")
 const AWS = require("aws-sdk")
 const axios = require("axios")
+const checkDiskSpace = require("check-disk-space").default
 const ClientError = require("./lib/ClientError")
 const FileType = require("file-type")
 const fs = require("fs")
@@ -91,7 +92,8 @@ const processContent = async ({ contentURL }) => {
   // According to SO, `/tmp` is not shared between different invocations:
   // https://stackoverflow.com/a/37990409
   const tmpFiles = await fs.promises.readdir(ROOT_PATH)
-  log("/tmp contents", { tmpFiles })
+  const tmpDiskSpace = await checkDiskSpace(ROOT_PATH)
+  log("/tmp contents", { tmpFiles, tmpDiskSpace })
   await rmfr(`${ROOT_PATH}/*`)
 
   // Write source file
