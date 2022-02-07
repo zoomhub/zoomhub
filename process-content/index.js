@@ -88,11 +88,11 @@ const processContent = async ({ contentURL }) => {
   log("output", { outputPath })
 
   // Clean up output directory
-  await Promise.all([
-    rmfr(outputPath),
-    rmfr(`${outputPath}_files`),
-    rmfr(`${outputPath}.dzi`),
-  ])
+  // According to SO, `/tmp` is not shared between different invocations:
+  // https://stackoverflow.com/a/37990409
+  const tmpFiles = await fs.promises.readdir(ROOT_PATH)
+  log("/tmp contents", { tmpFiles })
+  await rmfr(`${ROOT_PATH}/*`)
 
   // Write source file
   await fs.promises.writeFile(outputPath, body)
