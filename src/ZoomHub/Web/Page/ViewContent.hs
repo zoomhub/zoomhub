@@ -27,6 +27,7 @@ import ZoomHub.API.Types.Content (Content, contentId, contentUrl)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import ZoomHub.Types.ContentId (unContentId)
 import qualified ZoomHub.Web.Page as Page
+import ZoomHub.Web.Page (Path(..), Title (..))
 
 data ViewContent = ViewContent
   { vcContent :: Content,
@@ -39,7 +40,8 @@ mkViewContent vcBaseURI vcContent = ViewContent {..}
 
 instance ToHtml ViewContent where
   toHtml vc = Page.layout
-    (T.pack cId <> " — " <> Page.title)
+    (Title $ T.pack cId <> " — " <> Page.title)
+    (Just $ Path $ "/" <> T.pack cId)
     $ do
       script_ [src_ (T.pack $ show scriptURI)] emptyScriptBody
       div_ [class_ "meta"] $

@@ -4,6 +4,8 @@
 
 module ZoomHub.Web.Page
   ( layout,
+    Title(..),
+    Path(..),
     title,
     styles,
     analyticsScript,
@@ -30,22 +32,32 @@ import Lucid
     toHtml,
   )
 import NeatInterpolation (text)
+import Control.Monad (forM_)
 
 title :: Text
 title = "ZoomHub · Share and view full-resolution images easily"
 
+newtype Title = Title Text
+newtype Path = Path Text
+
 layout ::
   Monad m =>
-  Text -> -- title
+  Title ->
+  Maybe Path ->
   HtmlT m a ->
   HtmlT m a
-layout pageTitle body = do
+layout (Title pageTitle) mPath body = do
   doctypehtml_ $
     do
       head_
         ( do
-            title_ (toHtml pageTitle)
             meta_ [charset_ "utf-8"]
+            title_ (toHtml pageTitle)
+            forM_ mPath $ \(Path path) ->
+              link_
+                [ rel_ "canonical",
+                  href_ $ "https://zoomhub.net" <> path
+                ]
             meta_
               [ name_ "viewport",
                 content_ "width=device-width, initial-scale=1"
@@ -95,7 +107,7 @@ layout pageTitle body = do
             style_ styles
             script_ analyticsScript
         )
-      body_ $ body
+      body_ body
 
 -- TODO: Improve how we represent inline styles.
 styles :: Text
