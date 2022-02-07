@@ -20,6 +20,7 @@ import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Web.Page as Page
+import ZoomHub.Web.Page (Title(Title))
 
 data VerifyContent = VerifyContent
   { vcResult :: VerificationResult,
@@ -57,8 +58,8 @@ progressScript cId =
     apiURL = "/v1/content/" <> T.pack (unContentId cId)
 
 instance ToHtml VerifyContent where
-  toHtml (VerifyContent {..}) =
-    Page.layout Page.title do
+  toHtml VerifyContent {..} =
+    Page.layout (Title Page.title) Nothing do
       H.div_
         [ H.style_ $
             T.intercalate
