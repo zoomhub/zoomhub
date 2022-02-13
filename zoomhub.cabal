@@ -80,11 +80,13 @@ library
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Main
     , ZoomHub.Web.Page
+    , ZoomHub.Web.Page.EmbedContent
     , ZoomHub.Web.Page.VerifyContent
     , ZoomHub.Web.Page.ViewContent
     , ZoomHub.Web.Static
     , ZoomHub.Web.Types.Embed
     , ZoomHub.Web.Types.EmbedDimension
+    , ZoomHub.Web.Types.EmbedObjectFit
     , ZoomHub.Web.Types.EmbedId
     , ZoomHub.Web.Types.OpenSeadragonTileSource
     , ZoomHub.Web.Types.OpenSeadragonViewerConfig

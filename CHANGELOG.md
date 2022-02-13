@@ -1,5 +1,10 @@
 # ZoomHub
 
+## Unreleased
+
+- Embed: Add iframe embeds for better security and faster loading (shared
+  OpenSeadragon script).
+
 ## 2021-02-07-1
 
 - Set canonical URLs to direct traffic from zoom.it to zoomhub.net.

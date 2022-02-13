@@ -126,6 +126,7 @@ import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
+import qualified ZoomHub.Web.Page.EmbedContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
 import qualified ZoomHub.Web.Page.ViewContent as Page
@@ -133,6 +134,7 @@ import ZoomHub.Web.Static (serveDirectory)
 import ZoomHub.Web.Types.Embed (Embed, mkEmbed)
 import ZoomHub.Web.Types.EmbedDimension (EmbedDimension)
 import ZoomHub.Web.Types.EmbedId (EmbedId, unEmbedId)
+import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit)
 
 -- API
 type API =
@@ -217,7 +219,12 @@ type API =
     :<|> "v1" :> "content"
       :> QueryParam "url" String
       :> Get '[JSON] Content
-    -- Embed
+    -- Embed (iframe)
+    :<|> Capture "embedId" ContentId
+      :> "embed"
+      :> QueryParam "fit" EmbedObjectFit
+      :> Get '[HTML] Page.EmbedContent
+    -- Embed (JavaScript)
     :<|> Capture "embedId" EmbedId
       :> QueryParam "id" String
       :> QueryParam "width" EmbedDimension
@@ -264,7 +271,9 @@ server config =
     :<|> restInvalidContentId
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
-    -- Web: Embed
+    -- Web: Embed (iframe)
+    :<|> webEmbedIFrame baseURI staticBaseURI contentBaseURI dbConnPool
+    -- Web: Embed (JavaScript)
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
     -- Web: View
     :<|> webContentVerificationById baseURI contentBaseURI dbConnPool
@@ -606,6 +615,24 @@ restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
   Nothing -> throwError . API.error400 $ apiMissingIdOrURLMessage
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
+
+-- Web: Embed
+webEmbedIFrame ::
+  BaseURI ->
+  StaticBaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  ContentId ->
+  Maybe EmbedObjectFit ->
+  Handler Page.EmbedContent
+webEmbedIFrame baseURI staticBaseURI contentBaseURI dbConnPool contentId mObjectFit = do
+  maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
+  case maybeContent of
+    Nothing ->
+      throwError . Web.error404 $ contentNotFoundMessage contentId
+    Just c -> do
+      let content = Content.fromInternal baseURI contentBaseURI c
+      return $ Page.mkEmbedContent baseURI staticBaseURI content mObjectFit
 
 -- Web: Embed
 webEmbed ::
