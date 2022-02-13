@@ -4,14 +4,15 @@
 
 module ZoomHub.Web.Page
   ( layout,
-    Title(..),
-    Path(..),
+    Title (..),
+    Path (..),
     title,
     styles,
     analyticsScript,
   )
 where
 
+import Control.Monad (forM_)
 import Data.Text (Text)
 import Lucid
   ( HtmlT,
@@ -32,12 +33,12 @@ import Lucid
     toHtml,
   )
 import NeatInterpolation (text)
-import Control.Monad (forM_)
 
 title :: Text
 title = "ZoomHub · Share and view full-resolution images easily"
 
 newtype Title = Title Text
+
 newtype Path = Path Text
 
 layout ::

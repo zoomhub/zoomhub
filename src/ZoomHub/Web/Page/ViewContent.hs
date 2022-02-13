@@ -26,8 +26,8 @@ import Network.URI (parseRelativeReference, relativeTo)
 import ZoomHub.API.Types.Content (Content, contentId, contentUrl)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import ZoomHub.Types.ContentId (unContentId)
+import ZoomHub.Web.Page (Path (..), Title (..))
 import qualified ZoomHub.Web.Page as Page
-import ZoomHub.Web.Page (Path(..), Title (..))
 
 data ViewContent = ViewContent
   { vcContent :: Content,

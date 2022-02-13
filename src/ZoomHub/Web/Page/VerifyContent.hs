@@ -19,8 +19,8 @@ import NeatInterpolation (text)
 import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
+import ZoomHub.Web.Page (Title (Title))
 import qualified ZoomHub.Web.Page as Page
-import ZoomHub.Web.Page (Title(Title))
 
 data VerifyContent = VerifyContent
   { vcResult :: VerificationResult,
