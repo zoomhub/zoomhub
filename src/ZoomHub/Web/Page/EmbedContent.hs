@@ -66,7 +66,7 @@ instance L.ToHtml EmbedContent where
       staticBaseURI = ecStaticBaseURI ec
 
       openSeadragonScriptPath =
-        fromJust . parseRelativeReference $ "/scripts/openseadragon/3.0.0/openseadragon.min.js"
+        fromJust . parseRelativeReference $ "scripts/openseadragon/3.0.0-zoomhub/openseadragon.min.js"
       openSeadragonScriptURI =
         openSeadragonScriptPath `relativeTo` unStaticBaseURI staticBaseURI
 

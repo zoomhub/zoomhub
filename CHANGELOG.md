@@ -4,6 +4,7 @@
 
 - Embed: Add iframe embeds for better security and faster loading (shared
   OpenSeadragon script).
+- OpenSeadragon: Upgrade to version 3.0.0. Use fork with custom icons.
 
 ## 2021-02-07-1
 

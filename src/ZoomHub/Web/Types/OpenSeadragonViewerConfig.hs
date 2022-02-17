@@ -41,7 +41,7 @@ mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource objectFit =
     }
   where
     prefixURI = prefixPath `relativeTo` unStaticBaseURI staticBaseURI
-    prefixPath = fromJust . parseRelativeReference $ "openseadragon-images"
+    prefixPath = fromJust . parseRelativeReference $ "scripts/openseadragon/3.0.0-zoomhub/images"
 
 -- JSON
 instance ToJSON OpenSeadragonViewerConfig where
