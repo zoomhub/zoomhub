@@ -20,7 +20,8 @@ import { Create } from "./components/Create"
       id: "hero-image",
       toolbar: "hero-toolbar",
       // navigation control images
-      prefixUrl: "https://static.zoomhub.net/openseadragon-images/",
+      prefixUrl:
+        "https://static.zoomhub.net/scripts/openseadragon/3.0.0-zoomhub/images/",
       // image source
       tileSources: {
         Image: {

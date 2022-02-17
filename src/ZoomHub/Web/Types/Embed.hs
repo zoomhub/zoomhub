@@ -136,6 +136,6 @@ instance ToJS Embed where
         | not isReady = fromDeepZoomImage queuedDZI
         | otherwise = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
       viewerConfig =
-        mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource
+        mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource Nothing
       staticBaseURI = embedStaticBaseURI embed
       containerId = embedContainerId embed

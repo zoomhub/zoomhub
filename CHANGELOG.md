@@ -1,5 +1,38 @@
 # ZoomHub
 
+## Unreleased
+
+- Embed: Add iframe embeds for better security and faster loading (shared
+  OpenSeadragon script).
+
+  **Example (default)**
+
+  ```html
+  <iframe
+    width="600"
+    height="450"
+    src="https://zoomhub.net/h/embed"
+    title="ZoomHub image embed"
+    frameborder="0"
+    allowfullscreen
+  ></iframe>
+  ```
+
+  **Example (cover)**
+
+  ```html
+  <iframe
+    width="100%"
+    height="450"
+    src="https://zoomhub.net/h/embed?fit=cover"
+    title="ZoomHub image embed"
+    frameborder="0"
+    allowfullscreen
+  ></iframe>
+  ```
+
+- OpenSeadragon: Upgrade to version 3.0.0. Use fork with custom icons.
+
 ## 2021-02-07-1
 
 - Set canonical URLs to direct traffic from zoom.it to zoomhub.net.
