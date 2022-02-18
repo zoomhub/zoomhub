@@ -85,6 +85,9 @@ library
     , ZoomHub.Web.Page.ViewContent
     , ZoomHub.Web.Static
     , ZoomHub.Web.Types.Embed
+    , ZoomHub.Web.Types.EmbedAspectRatio
+    , ZoomHub.Web.Types.EmbedConstraint
+    , ZoomHub.Web.Types.EmbedBorder
     , ZoomHub.Web.Types.EmbedDimension
     , ZoomHub.Web.Types.EmbedObjectFit
     , ZoomHub.Web.Types.EmbedId

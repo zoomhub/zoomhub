@@ -4,6 +4,7 @@ module ZoomHub.Web.Types.OpenSeadragonViewerConfig
   ( OpenSeadragonViewerConfig,
     mkOpenSeadragonViewerConfig,
     ObjectFit (..),
+    Constraint (..),
   )
 where
 
@@ -18,11 +19,15 @@ import ZoomHub.Web.Types.OpenSeadragonTileSource (OpenSeadragonTileSource)
 data ObjectFit = Contain | Cover
   deriving (Eq, Show)
 
+data Constraint = Zoom | Full
+  deriving (Eq, Show)
+
 data OpenSeadragonViewerConfig = OpenSeadragonViewerConfig
   { osvcContainerId :: String,
     osvcPrefixURI :: URI,
     oscvTileSource :: OpenSeadragonTileSource,
-    oscvObjectFit :: ObjectFit
+    oscvObjectFit :: ObjectFit,
+    oscvConstraint :: Maybe Constraint
   }
   deriving (Eq, Show)
 
@@ -31,13 +36,15 @@ mkOpenSeadragonViewerConfig ::
   String ->
   OpenSeadragonTileSource ->
   Maybe ObjectFit ->
+  Maybe Constraint ->
   OpenSeadragonViewerConfig
-mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource objectFit =
+mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource objectFit constraint =
   OpenSeadragonViewerConfig
     { osvcContainerId = containerId,
       oscvTileSource = tileSource,
       osvcPrefixURI = prefixURI,
-      oscvObjectFit = fromMaybe Contain objectFit
+      oscvObjectFit = fromMaybe Contain objectFit,
+      oscvConstraint = constraint
     }
   where
     prefixURI = prefixPath `relativeTo` unStaticBaseURI staticBaseURI
@@ -46,7 +53,7 @@ mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource objectFit =
 -- JSON
 instance ToJSON OpenSeadragonViewerConfig where
   toJSON o =
-    object
+    object $
       [ "id" .= T.pack (osvcContainerId o),
         "prefixUrl" .= (T.pack . addTrailingPathSeparator . show . osvcPrefixURI) o,
         "tileSources" .= toJSON (oscvTileSource o), -- NOTE: plural key
@@ -54,3 +61,13 @@ instance ToJSON OpenSeadragonViewerConfig where
           Contain -> False
           Cover -> True
       ]
+        <> case oscvConstraint o of
+          Nothing ->
+            []
+          Just Zoom ->
+            ["minZoomImageRatio" .= (1.0 :: Double)]
+          Just Full ->
+            [ "minZoomImageRatio" .= (1.0 :: Double),
+              "visibilityRatio" .= (1.0 :: Double),
+              "constrainDuringPan" .= True
+            ]
