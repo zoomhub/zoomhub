@@ -1,6 +1,31 @@
 # ZoomHub
 
-## Unreleased
+## 2022-02-18
+
+- Embed: Add new features to `<script>` embeds:
+
+  - `border=none`: Disable black border.
+  - `fit=contain|cover`:
+    - `contain` (default): Contain image within canvas.
+    - `cover`: Cover canvas with image.
+  - `constrain=zoom|full`:
+    - `zoom`: Disallow zooming out from default view.
+    - `full`: Disallow zooming out as well as panning away from default view to
+      never show black borders (as long as aspect ratio of image preserved).
+
+  Preserve image aspect ratio by setting `width` to a value and `height=auto`.
+  This uses CSS `aspect-ratio` property.
+
+  Due to the lack of full screen support on Safari iOS, we need to continue
+  offering `<script>` embeds alongside `<iframe>` imports.
+
+  **Example**
+
+  ```html
+  <script src="http://localhost:8000/h.js?width=100%&height=auto&border=none&constrain=full"></script>
+  ```
+
+## 2022-02-17
 
 - Embed: Add iframe embeds for better security and faster loading (shared
   OpenSeadragon script).

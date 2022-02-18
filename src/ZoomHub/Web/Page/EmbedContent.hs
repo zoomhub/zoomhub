@@ -26,6 +26,7 @@ import qualified ZoomHub.Types.DeepZoomImage as TileFormat
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import ZoomHub.Web.Page (Path (..), Title (..))
 import qualified ZoomHub.Web.Page as Page
+import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
 import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit (unEmbedObjectFit))
 import ZoomHub.Web.Types.OpenSeadragonTileSource (fromDeepZoomImage)
 import ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
@@ -34,6 +35,7 @@ data EmbedContent = EmbedContent
   { ecContent :: Content,
     ecBaseURI :: BaseURI,
     ecObjectFit :: Maybe EmbedObjectFit,
+    ecConstraint :: Maybe EmbedConstraint,
     ecStaticBaseURI :: StaticBaseURI
   }
   deriving (Eq, Show)
@@ -43,8 +45,9 @@ mkEmbedContent ::
   StaticBaseURI ->
   Content ->
   Maybe EmbedObjectFit ->
+  Maybe EmbedConstraint ->
   EmbedContent
-mkEmbedContent ecBaseURI ecStaticBaseURI ecContent ecObjectFit =
+mkEmbedContent ecBaseURI ecStaticBaseURI ecContent ecObjectFit ecConstraint =
   EmbedContent {..}
 
 instance L.ToHtml EmbedContent where
@@ -87,6 +90,7 @@ instance L.ToHtml EmbedContent where
           (T.unpack containerId)
           tileSource
           (unEmbedObjectFit <$> ecObjectFit ec)
+          (unEmbedConstraint <$> ecConstraint ec)
       containerId = "container" :: Text
 
   toHtmlRaw = L.toHtml

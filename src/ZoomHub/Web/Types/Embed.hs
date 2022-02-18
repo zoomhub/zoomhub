@@ -6,7 +6,6 @@
 
 module ZoomHub.Web.Types.Embed
   ( Embed (..),
-    mkEmbed,
   )
 where
 
@@ -20,7 +19,9 @@ import NeatInterpolation (text)
 import Network.URI (parseRelativeReference, relativeTo)
 import ZoomHub.API.ContentTypes.JavaScript (ToJS, toJS)
 import ZoomHub.API.Types.Content (Content, contentDzi, contentReady)
+import qualified ZoomHub.API.Types.Content as API
 import ZoomHub.API.Types.DeepZoomImage (DeepZoomImageURI (..), mkDeepZoomImage)
+import qualified ZoomHub.API.Types.DeepZoomImage as API
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.DeepZoomImage
   ( TileFormat (PNG),
@@ -28,7 +29,13 @@ import ZoomHub.Types.DeepZoomImage
     TileSize (TileSize256),
   )
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
-import ZoomHub.Web.Types.EmbedDimension (EmbedDimension (..), toCSSValue)
+import qualified ZoomHub.Web.Types.EmbedAspectRatio as EmbedAspectRatio
+import ZoomHub.Web.Types.EmbedBorder
+import qualified ZoomHub.Web.Types.EmbedBorder as EmbedBorder
+import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
+import ZoomHub.Web.Types.EmbedDimension (EmbedDimension (..))
+import qualified ZoomHub.Web.Types.EmbedDimension as EmbedDimension
+import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit (unEmbedObjectFit))
 import ZoomHub.Web.Types.OpenSeadragonTileSource (fromDeepZoomImage)
 import ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
 
@@ -39,28 +46,12 @@ data Embed = Embed
     embedContainerId :: String,
     embedContent :: Content,
     embedHeight :: Maybe EmbedDimension,
-    embedWidth :: Maybe EmbedDimension
+    embedWidth :: Maybe EmbedDimension,
+    embedBorder :: Maybe EmbedBorder,
+    embedObjectFit :: Maybe EmbedObjectFit,
+    embedConstraint :: Maybe EmbedConstraint
   }
   deriving (Eq, Generic, Show)
-
-mkEmbed ::
-  BaseURI ->
-  StaticBaseURI ->
-  String ->
-  Content ->
-  String ->
-  Maybe EmbedDimension ->
-  Maybe EmbedDimension ->
-  Embed
-mkEmbed baseURI staticBaseURI containerId content body width height = Embed {..}
-  where
-    embedBaseURI = baseURI
-    embedStaticBaseURI = staticBaseURI
-    embedContainerId = containerId
-    embedContent = content
-    embedBody = body
-    embedWidth = width
-    embedHeight = height
 
 -- CSS
 legacyCSSClassName :: String
@@ -75,20 +66,30 @@ defaultHeight = Pixels 200
 defaultWidth :: EmbedDimension
 defaultWidth = Auto
 
-style :: Maybe EmbedDimension -> Maybe EmbedDimension -> String
-style maybeWidth maybeHeight =
+style :: Embed -> String
+style Embed {embedContent, embedWidth, embedHeight, embedBorder} =
   unwords
-    [ "background: black;",
-      "border: 1px solid black;",
+    [ "aspect-ratio: " <> EmbedAspectRatio.toCSSValue aspectRatio <> ";",
+      "background: black;",
+      "border: " <> EmbedBorder.toCSSValue border <> ";",
       "color: white;",
-      "height: " ++ toCSSValue height ++ ";",
+      "height: " <> EmbedDimension.toCSSValue height <> ";",
       "margin: 0;",
       "padding: 0;",
-      "width: " ++ toCSSValue width ++ ";"
+      "width: " <> EmbedDimension.toCSSValue width <> ";"
     ]
   where
-    height = fromMaybe defaultHeight maybeHeight
-    width = fromMaybe defaultWidth maybeWidth
+    border = fromMaybe EmbedBorder.Default embedBorder
+    height = fromMaybe defaultHeight embedHeight
+    width = fromMaybe defaultWidth embedWidth
+    aspectRatio =
+      case API.contentDzi embedContent of
+        Just dzi ->
+          EmbedAspectRatio.Ratio
+            (API.dziWidth dzi)
+            (API.dziHeight dzi)
+        Nothing ->
+          EmbedAspectRatio.Auto
 
 -- JavaScript
 concatScripts :: [String] -> String
@@ -111,7 +112,7 @@ instance ToJS Embed where
               "div"
               [ ("class", unwords cssClassNames),
                 ("id", embedContainerId embed),
-                ("style", style (embedWidth embed) (embedHeight embed))
+                ("style", style embed)
               ]
             <> "'"
       wrapper =
@@ -136,6 +137,11 @@ instance ToJS Embed where
         | not isReady = fromDeepZoomImage queuedDZI
         | otherwise = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
       viewerConfig =
-        mkOpenSeadragonViewerConfig staticBaseURI containerId tileSource Nothing
+        mkOpenSeadragonViewerConfig
+          staticBaseURI
+          containerId
+          tileSource
+          (unEmbedObjectFit <$> embedObjectFit embed)
+          (unEmbedConstraint <$> embedConstraint embed)
       staticBaseURI = embedStaticBaseURI embed
       containerId = embedContainerId embed

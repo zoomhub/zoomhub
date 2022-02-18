@@ -131,7 +131,9 @@ import qualified ZoomHub.Web.Page.VerifyContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
 import qualified ZoomHub.Web.Page.ViewContent as Page
 import ZoomHub.Web.Static (serveDirectory)
-import ZoomHub.Web.Types.Embed (Embed, mkEmbed)
+import ZoomHub.Web.Types.Embed (Embed (..))
+import ZoomHub.Web.Types.EmbedBorder (EmbedBorder)
+import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint)
 import ZoomHub.Web.Types.EmbedDimension (EmbedDimension)
 import ZoomHub.Web.Types.EmbedId (EmbedId, unEmbedId)
 import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit)
@@ -223,12 +225,16 @@ type API =
     :<|> Capture "embedId" ContentId
       :> "embed"
       :> QueryParam "fit" EmbedObjectFit
+      :> QueryParam "constrain" EmbedConstraint
       :> Get '[HTML] Page.EmbedContent
     -- Embed (JavaScript)
     :<|> Capture "embedId" EmbedId
       :> QueryParam "id" String
       :> QueryParam "width" EmbedDimension
       :> QueryParam "height" EmbedDimension
+      :> QueryParam "border" EmbedBorder
+      :> QueryParam "fit" EmbedObjectFit
+      :> QueryParam "constrain" EmbedConstraint
       :> Get '[JavaScript] Embed
     -- Web: Verification
     :<|> Capture "viewId" ContentId
@@ -624,15 +630,23 @@ webEmbedIFrame ::
   Pool Connection ->
   ContentId ->
   Maybe EmbedObjectFit ->
+  Maybe EmbedConstraint ->
   Handler Page.EmbedContent
-webEmbedIFrame baseURI staticBaseURI contentBaseURI dbConnPool contentId mObjectFit = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
-  case maybeContent of
-    Nothing ->
-      throwError . Web.error404 $ contentNotFoundMessage contentId
-    Just c -> do
-      let content = Content.fromInternal baseURI contentBaseURI c
-      return $ Page.mkEmbedContent baseURI staticBaseURI content mObjectFit
+webEmbedIFrame
+  baseURI
+  staticBaseURI
+  contentBaseURI
+  dbConnPool
+  contentId
+  mObjectFit
+  mEmbedConstraint = do
+    maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
+    case maybeContent of
+      Nothing ->
+        throwError . Web.error404 $ contentNotFoundMessage contentId
+      Just c -> do
+        let content = Content.fromInternal baseURI contentBaseURI c
+        return $ Page.mkEmbedContent baseURI staticBaseURI content mObjectFit mEmbedConstraint
 
 -- Web: Embed
 webEmbed ::
@@ -645,6 +659,9 @@ webEmbed ::
   Maybe String ->
   Maybe EmbedDimension ->
   Maybe EmbedDimension ->
+  Maybe EmbedBorder ->
+  Maybe EmbedObjectFit ->
+  Maybe EmbedConstraint ->
   Handler Embed
 webEmbed
   baseURI
@@ -655,24 +672,32 @@ webEmbed
   embedId
   maybeId
   width
-  height = do
+  height
+  border
+  objectFit
+  constraint = do
     maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
     case maybeContent of
-      Nothing -> throwError . Web.error404 $ contentNotFoundMessage contentId
+      Nothing ->
+        throwError . Web.error404 $ contentNotFoundMessage contentId
       Just content -> do
         let randomIdRange = (100000, 999999) :: (Int, Int)
         randomId <- liftIO $ randomRIO randomIdRange
         let containerId = fromMaybe (defaultContainerId randomId) maybeId
-            pContent = Content.fromInternal baseURI contentBaseURI content
+            publicContent = Content.fromInternal baseURI contentBaseURI content
         return $
-          mkEmbed
-            baseURI
-            staticBaseURI
-            containerId
-            pContent
-            viewerScript
-            width
-            height
+          Embed
+            { embedBaseURI = baseURI,
+              embedStaticBaseURI = staticBaseURI,
+              embedContainerId = containerId,
+              embedContent = publicContent,
+              embedBody = viewerScript,
+              embedWidth = width,
+              embedHeight = height,
+              embedBorder = border,
+              embedObjectFit = objectFit,
+              embedConstraint = constraint
+            }
     where
       contentId = unEmbedId embedId
       defaultContainerId n = "zoomhub-embed-" ++ show n
