@@ -169,7 +169,7 @@ const fetchGenericURL = async (url) =>
 const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
   const tileFileNames = await readdir(`${basePath}_files`)
   const manifestFileName = `${basePath}.dzi`
-  log("DZI", { manifestFileName, tileFileNames })
+  log("DZI", { manifestFileName })
 
   const tileOperations = tileFileNames.map((fileName) =>
     limit(() => {
