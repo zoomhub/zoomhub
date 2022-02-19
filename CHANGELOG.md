@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 2022-02-19
+
+- View page: Fix layout. Explicitly set `width` and `height` to prevent aspect
+  ratio preservation behavior.
+
 ## 2022-02-18
 
 - Embed: Add new features to `<script>` embeds:

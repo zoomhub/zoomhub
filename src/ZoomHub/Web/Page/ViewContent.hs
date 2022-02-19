@@ -7,6 +7,7 @@ module ZoomHub.Web.Page.ViewContent
   )
 where
 
+import Data.Foldable (fold)
 import Data.Maybe (fromJust)
 import Data.Monoid ((<>))
 import Data.Text (Text)
@@ -54,7 +55,17 @@ instance ToHtml ViewContent where
       scriptURI = scriptPath `relativeTo` unBaseURI baseURI
       scriptPath =
         fromJust . parseRelativeReference $
-          "/" ++ cId ++ ".js?id=container&width=auto&height=100" ++ escapedPercent
+          fold
+            [ "/",
+              cId,
+              ".js",
+              "?",
+              "id=container",
+              "&",
+              "width=100" <> escapedPercent,
+              "&",
+              "height=100" <> escapedPercent
+            ]
       escapedPercent = "%25"
       rawContentURL = show . contentUrl $ content
 
