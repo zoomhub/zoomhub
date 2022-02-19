@@ -19,7 +19,7 @@ import NeatInterpolation (text)
 import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
-import ZoomHub.Web.Page (Title (Title))
+import ZoomHub.Web.Page (Page (Page), Title (Title))
 import qualified ZoomHub.Web.Page as Page
 
 data VerifyContent = VerifyContent
@@ -59,42 +59,46 @@ progressScript cId =
 
 instance ToHtml VerifyContent where
   toHtml VerifyContent {..} =
-    Page.layout (Title Page.title) Nothing do
-      H.div_
-        [ H.style_ $
-            T.intercalate
-              ";"
-              [ "display: flex",
-                "flex-flow: column",
-                "align-items: center",
-                "justify-content: center",
-                "height: 100%",
-                "text-align: center"
+    Page.layout $
+      Page
+        { pageTitle = Title Page.title,
+          pageCanonicalPath = Nothing,
+          pageBody = do
+            H.div_
+              [ H.style_ $
+                  T.intercalate
+                    ";"
+                    [ "display: flex",
+                      "flex-flow: column",
+                      "align-items: center",
+                      "justify-content: center",
+                      "height: 100%",
+                      "text-align: center"
+                    ]
               ]
-        ]
-        $ case vcResult of
-          Success content -> do
-            H.script_ $
-              progressScript (contentId content)
-            H.h1_ [H.class_ "title"] "🔧 Your upload is now being processed…"
-            H.p_
-              [H.style_ "color: #fff;"]
-              do
-                "🕐 Hang in there, this may take up to a few minutes."
-                H.br_ []
-                "➡️ We’ll redirect you as soon as it’s ready."
-            H.p_
-              [H.style_ "color: #fff;"]
-              "\x1F971 If it’s taking too long, you can also close this page and come back via:"
-            H.a_
-              [H.href_ (T.pack . show $ contentShareUrl content)]
-              (toHtml . show $ contentShareUrl content)
-          Error message -> do
-            H.h2_
-              [H.style_ "color: #fff;"]
-              "Oops, something went wrong"
-            H.p_
-              [H.style_ "color: #fff;"]
-              (H.toHtml message)
-
+              $ case vcResult of
+                Success content -> do
+                  H.script_ $
+                    progressScript (contentId content)
+                  H.h1_ [H.class_ "title"] "🔧 Your upload is now being processed…"
+                  H.p_
+                    [H.style_ "color: #fff;"]
+                    do
+                      "🕐 Hang in there, this may take up to a few minutes."
+                      H.br_ []
+                      "➡️ We’ll redirect you as soon as it’s ready."
+                  H.p_
+                    [H.style_ "color: #fff;"]
+                    "\x1F971 If it’s taking too long, you can also close this page and come back via:"
+                  H.a_
+                    [H.href_ (T.pack . show $ contentShareUrl content)]
+                    (toHtml . show $ contentShareUrl content)
+                Error message -> do
+                  H.h2_
+                    [H.style_ "color: #fff;"]
+                    "Oops, something went wrong"
+                  H.p_
+                    [H.style_ "color: #fff;"]
+                    (H.toHtml message)
+        }
   toHtmlRaw = toHtml

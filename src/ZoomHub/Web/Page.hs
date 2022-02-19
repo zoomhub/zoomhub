@@ -1,9 +1,11 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Page
-  ( layout,
+  ( Page (..),
+    layout,
     Title (..),
     Path (..),
     title,
@@ -14,24 +16,8 @@ where
 
 import Control.Monad (forM_)
 import Data.Text (Text)
-import Lucid
-  ( HtmlT,
-    body_,
-    charset_,
-    content_,
-    doctypehtml_,
-    head_,
-    href_,
-    link_,
-    meta_,
-    name_,
-    rel_,
-    script_,
-    sizes_,
-    style_,
-    title_,
-    toHtml,
-  )
+import Lucid (ToHtml (toHtml))
+import qualified Lucid as H
 import NeatInterpolation (text)
 
 title :: Text
@@ -39,76 +25,37 @@ title = "ZoomHub · Share and view full-resolution images easily"
 
 newtype Title = Title Text
 
+instance H.ToHtml Title where
+  toHtml (Title t) = H.toHtml t
+  toHtmlRaw (Title t) = H.toHtmlRaw t
+
 newtype Path = Path Text
 
-layout ::
-  Monad m =>
-  Title ->
-  Maybe Path ->
-  HtmlT m a ->
-  HtmlT m a
-layout (Title pageTitle) mPath body = do
-  doctypehtml_ $
+instance H.ToHtml Path where
+  toHtml (Path p) = H.toHtml p
+  toHtmlRaw (Path p) = H.toHtmlRaw p
+
+data Page m a = Page
+  { pageTitle :: Title,
+    pageCanonicalPath :: Maybe Path,
+    pageBody :: H.HtmlT m a
+  }
+
+layout :: Monad m => Page m a -> H.HtmlT m a
+layout Page {..} = do
+  H.doctypehtml_ $
     do
-      head_
-        ( do
-            meta_ [charset_ "utf-8"]
-            title_ (toHtml pageTitle)
-            forM_ mPath $ \(Path path) ->
-              link_
-                [ rel_ "canonical",
-                  href_ $ "https://zoomhub.net" <> path
-                ]
-            meta_
-              [ name_ "viewport",
-                content_ "width=device-width, initial-scale=1"
-              ]
-            link_
-              [ rel_ "shortcut icon",
-                href_ "favicon.ico"
-              ]
-            link_
-              [ rel_ "apple-touch-icon",
-                href_ "/apple-touch-icon.png"
-              ]
-            link_
-              [ rel_ "apple-touch-icon-precomposed",
-                href_ "/apple-touch-icon-precomposed.png"
-              ]
-            link_
-              [ rel_ "apple-touch-icon",
-                sizes_ "57x57",
-                href_ "/apple-touch-icon-57x57.png"
-              ]
-            link_
-              [ rel_ "apple-touch-icon",
-                sizes_ "76x76",
-                href_ "/apple-touch-icon-76x76.png"
-              ]
-            link_
-              [ rel_ "apple-touch-icon",
-                sizes_ "120x120",
-                href_ "/apple-touch-icon-120x120.png"
-              ]
-            link_
-              [ rel_ "apple-touch-icon",
-                sizes_ "152x152",
-                href_ "/apple-touch-icon-152x152.png"
-              ]
-            link_
-              [ rel_ "apple-touch-icon",
-                sizes_ "167x167",
-                href_ "/apple-touch-icon-167x167.png"
-              ]
-            link_
-              [ rel_ "apple-touch-icon",
-                sizes_ "180x180",
-                href_ "/apple-touch-icon-180x180.png"
-              ]
-            style_ styles
-            script_ analyticsScript
-        )
-      body_ body
+      H.head_ do
+        H.meta_ [H.charset_ "utf-8"]
+        H.title_ (H.toHtml pageTitle)
+        forM_ pageCanonicalPath $ \(Path path) ->
+          H.link_ [H.rel_ "canonical", H.href_ $ "https://zoomhub.net" <> path]
+        H.meta_ [H.name_ "viewport", H.content_ "width=device-width, initial-scale=1"]
+        H.link_ [H.rel_ "shortcut icon", H.href_ "favicon.ico"]
+        appleTouchIcons
+        H.style_ styles
+        H.script_ analyticsScript
+      H.body_ pageBody
 
 -- TODO: Improve how we represent inline styles.
 styles :: Text
@@ -168,3 +115,44 @@ analyticsScript =
     ga('_setAllowLinker', true);
     ga('send', 'pageview');
   |]
+
+appleTouchIcons :: Monad m => H.HtmlT m ()
+appleTouchIcons = do
+  H.link_
+    [ H.rel_ "apple-touch-icon",
+      H.href_ "/apple-touch-icon.png"
+    ]
+  H.link_
+    [ H.rel_ "apple-touch-icon-precomposed",
+      H.href_ "/apple-touch-icon-precomposed.png"
+    ]
+  H.link_
+    [ H.rel_ "apple-touch-icon",
+      H.sizes_ "57x57",
+      H.href_ "/apple-touch-icon-57x57.png"
+    ]
+  H.link_
+    [ H.rel_ "apple-touch-icon",
+      H.sizes_ "76x76",
+      H.href_ "/apple-touch-icon-76x76.png"
+    ]
+  H.link_
+    [ H.rel_ "apple-touch-icon",
+      H.sizes_ "120x120",
+      H.href_ "/apple-touch-icon-120x120.png"
+    ]
+  H.link_
+    [ H.rel_ "apple-touch-icon",
+      H.sizes_ "152x152",
+      H.href_ "/apple-touch-icon-152x152.png"
+    ]
+  H.link_
+    [ H.rel_ "apple-touch-icon",
+      H.sizes_ "167x167",
+      H.href_ "/apple-touch-icon-167x167.png"
+    ]
+  H.link_
+    [ H.rel_ "apple-touch-icon",
+      H.sizes_ "180x180",
+      H.href_ "/apple-touch-icon-180x180.png"
+    ]
