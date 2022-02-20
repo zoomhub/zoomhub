@@ -21,6 +21,7 @@ library
   exposed-modules:
       Data.Time.Units.Instances
     , Database.PostgreSQL.Simple.Instances
+    , DevelMain
     , Network.HTTP.Client.Instances
     , Network.URI.Instances
     , ZoomHub.API
@@ -119,6 +120,7 @@ library
     , exceptions
     , fast-logger
     , filepath
+    , foreign-store
     , generics-sop
     , hashids
     , hostname
@@ -145,6 +147,8 @@ library
     , resource-pool
     , retry
     , safe
+    , safe-exceptions
+    , say
     , servant
     , servant-auth
     , servant-auth-server

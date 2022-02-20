@@ -9,7 +9,6 @@ module ZoomHub.Web.Page
     Title (..),
     Path (..),
     title,
-    styles,
     analyticsScript,
   )
 where
@@ -43,62 +42,22 @@ data Page m a = Page
 
 layout :: Monad m => Page m a -> H.HtmlT m a
 layout Page {..} = do
-  H.doctypehtml_ $
-    do
-      H.head_ do
-        H.meta_ [H.charset_ "utf-8"]
-        H.title_ (H.toHtml pageTitle)
-        forM_ pageCanonicalPath $ \(Path path) ->
-          H.link_ [H.rel_ "canonical", H.href_ $ "https://zoomhub.net" <> path]
-        H.meta_ [H.name_ "viewport", H.content_ "width=device-width, initial-scale=1"]
-        H.link_ [H.rel_ "shortcut icon", H.href_ "favicon.ico"]
-        appleTouchIcons
-        H.style_ styles
-        H.script_ analyticsScript
-      H.body_ pageBody
+  H.doctype_
+  H.html_ [H.lang_ "en", H.class_ "h-full"] do
+    H.head_ do
+      H.meta_ [H.charset_ "utf-8"]
+      H.title_ (H.toHtml pageTitle)
+      forM_ pageCanonicalPath $ \(Path path) ->
+        H.link_ [H.rel_ "canonical", H.href_ $ "https://zoomhub.net" <> path]
+      H.meta_ [H.name_ "viewport", H.content_ "width=device-width, initial-scale=1"]
+      H.link_ [H.rel_ "shortcut icon", H.href_ "favicon.ico"]
+      appleTouchIcons
 
--- TODO: Improve how we represent inline styles.
-styles :: Text
-styles =
-  [text|
-    html, body {
-      background-color: black;
-      color: white;
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      font-size: 16px;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    .meta {
-      align-items: center;
-      bottom: 0;
-      color: white;
-      display: flex;
-      font-size: 12px;
-      justify-content: center;
-      left: 0;
-      padding: 1em 3em;
-      position: fixed;
-      right: 0;
-    }
-    .meta a,
-    .meta a:visited {
-      font-family: monospace;
-      color: #666;
-    }
-    .meta a:hover {
-      color: #ddd;
-    }
-    a,
-    .a:visited {
-      color: #f60;
-    }
-    a:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
-  |]
+      H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ "https://rsms.me/inter/inter.css"]
+      H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ "/styles/global.css"]
+
+      H.script_ analyticsScript
+    H.body_ [H.class_ "h-full bg-black m-0 p-0"] pageBody
 
 -- TODO: Improve how we represent analytics code.
 -- TODO: Pass through `UA-XXXXXXXX-X` Google Analytics ID.

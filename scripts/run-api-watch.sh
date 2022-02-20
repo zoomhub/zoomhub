@@ -1,6 +1,14 @@
 #!/bin/bash
 set -eo pipefail
 
+
+if [[ -f ./zoomhub-api.pid ]] ; then
+  set +e
+  kill -9 $(cat zoomhub-api.pid) >/dev/null 2>&1
+  set -e
+fi
+
+
 dropdb --if-exists "$DEVELOPMENT_DB_NAME"
 createdb "$DEVELOPMENT_DB_NAME"
 
@@ -18,9 +26,26 @@ psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
 psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
   < ./data/zoomhub_sequences.sql
 
-stack build \
-  --fast \
-  --no-run-tests \
-  --ghc-options='-Wall' \
-  --file-watch \
-  --exec ./scripts/run-api.sh
+# jq: Ignore non-JSON lines using `fromjson?`: https://blog.nem.ec/code-snippets/jq-ignore-errors/
+ZH_ENV='development' \
+BASE_URI="${BASE_URI:-http://localhost:8000}" \
+CONTENT_BASE_URI='https://cache-development.zoomhub.net/content' \
+PGDATABASE='zoomhub_development' \
+PGUSER="$(whoami)" \
+PROCESS_CONTENT='ProcessExistingAndNewContent' \
+PROCESSING_WORKERS='2' \
+S3_SOURCES_BUCKET='zoomhub-sources-development' \
+UPLOADS='true' \
+  ghcid \
+	    --command "stack ghci zoomhub" \
+	    --test DevelMain.update \
+	    --warnings \
+	    --restart ./zoomhub.cabal \
+	    --restart ./stack.yaml \
+  | jq \
+    --color-output \
+    --raw-input \
+    --raw-output \
+    '. as $line | try fromjson catch $line' &
+
+echo $! > zoomhub-api.pid

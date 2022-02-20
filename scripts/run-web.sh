@@ -14,8 +14,7 @@ until $(curl --insecure --head  --silent --fail --output /dev/null $API_BASE_URI
   sleep 1
 done
 
-cd frontend
-SNOWPACK_PUBLIC_API_BASE_URI=$API_BASE_URI npx snowpack dev &
-cd -
+
+SNOWPACK_PUBLIC_API_BASE_URI=$API_BASE_URI npx snowpack build --watch &
 
 echo $! > zoomhub-web.pid

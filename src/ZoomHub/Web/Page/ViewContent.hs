@@ -36,9 +36,12 @@ instance H.ToHtml ViewContent where
         { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
           pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
           pageBody = do
-            H.div_ [H.class_ "meta"] $
-              H.a_ [H.href_ (T.pack rawContentURL)] (H.toHtml rawContentURL)
             H.script_ [H.src_ (T.pack $ show scriptURI)] ("" :: Text)
+            H.div_
+              [H.class_ "fixed left-0 bottom-0 right-0 px-2 py-3 flex justify-center items-center text-sm text-white"]
+              $ H.a_
+                [H.class_ "font-mono text-gray-600 hover:text-gray-200", H.href_ (T.pack rawContentURL)]
+                (H.toHtml rawContentURL)
         }
     where
       content = vcContent vc

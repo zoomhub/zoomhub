@@ -52,7 +52,7 @@ echo ''
 
 
 BASE_URI=$NGROK_PUBLIC_URL \
-PUBLIC_PATH='frontend/public' \
+PUBLIC_PATH='frontend/build' \
   npx concurrently \
     --names "api,web" \
     "./scripts/run-api-watch.sh" \
