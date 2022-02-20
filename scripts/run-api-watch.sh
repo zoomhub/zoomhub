@@ -8,6 +8,15 @@ if [[ -f ./zoomhub-api.pid ]] ; then
   set -e
 fi
 
+# Use `jq` with both JSON and non-JSON lines.
+function lenient_jq {
+    jq \
+      --color-output \
+      --raw-output \
+      --raw-input \
+      "${1:-.} as \$line | try fromjson catch \$line"
+}
+
 
 dropdb --if-exists "$DEVELOPMENT_DB_NAME"
 createdb "$DEVELOPMENT_DB_NAME"
@@ -42,10 +51,6 @@ UPLOADS='true' \
 	    --warnings \
 	    --restart ./zoomhub.cabal \
 	    --restart ./stack.yaml \
-  | jq \
-    --color-output \
-    --raw-input \
-    --raw-output \
-    '. as $line | try fromjson catch $line' &
+  | lenient_jq &
 
 echo $! > zoomhub-api.pid
