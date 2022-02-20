@@ -38,7 +38,7 @@ S3_SOURCES_BUCKET='zoomhub-sources-development' \
 UPLOADS='true' \
   ghcid \
 	    --command "stack ghci zoomhub" \
-	    --test DevelMain.update \
+	    --test ZoomHub.Web.MainDevelopment.update \
 	    --warnings \
 	    --restart ./zoomhub.cabal \
 	    --restart ./stack.yaml \

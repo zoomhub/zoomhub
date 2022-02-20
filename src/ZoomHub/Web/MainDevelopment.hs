@@ -22,7 +22,7 @@
 -- SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 -- See: https://github.com/parsonsmatt/servant-persistent/commit/95df92b2fe9b0f421afa0cf1bcc9c3a4ca38b48c
-module DevelMain where
+module ZoomHub.Web.MainDevelopment where -- Originally `DevelMain`
 
 import Control.Concurrent
 import Control.Exception.Safe
@@ -42,11 +42,10 @@ import Prelude
 tshow :: Show a => a -> Text
 tshow = Text.pack . show
 
-runAppDevel :: IO ()
-runAppDevel = Web.main
+runAppDevelopment :: IO ()
+runAppDevelopment = Web.main
 
 -- | Start or restart the server.
--- newStore is from foreign-store.
 -- A Store holds onto some data across ghci reloads
 update :: IO ()
 update = do
@@ -83,11 +82,11 @@ update = do
       myThreadId
         <* ( do
                say "in forkFinally"
-               runAppDevel `catch` \(SomeException e) -> do
-                 say "!!! exception in runAppDevel !!!"
+               runAppDevelopment `catch` \(SomeException e) -> do
+                 say "!!! exception in runAppDevelopment !!!"
                  say $ "X    exception type: " <> tshow (typeOf e)
                  say $ "X    exception     : " <> tshow e
-               say "runAppDevel terminated"
+               say "runAppDevelopment terminated"
            )
         `catch` ( \(SomeException err) -> do
                     say "finally action"

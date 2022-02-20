@@ -21,7 +21,6 @@ library
   exposed-modules:
       Data.Time.Units.Instances
     , Database.PostgreSQL.Simple.Instances
-    , DevelMain
     , Network.HTTP.Client.Instances
     , Network.URI.Instances
     , ZoomHub.API
@@ -80,6 +79,7 @@ library
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Main
+    , ZoomHub.Web.MainDevelopment
     , ZoomHub.Web.Page
     , ZoomHub.Web.Page.EmbedContent
     , ZoomHub.Web.Page.VerifyContent
