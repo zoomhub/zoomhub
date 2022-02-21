@@ -13,7 +13,6 @@ where
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Lucid (ToHtml, toHtml, toHtmlRaw)
 import qualified Lucid as H
 import NeatInterpolation (text)
 import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
@@ -59,7 +58,7 @@ progressScript cId =
   where
     apiURL = "/v1/content/" <> T.pack (unContentId cId)
 
-instance ToHtml VerifyContent where
+instance H.ToHtml VerifyContent where
   toHtml VerifyContent {..} =
     Page.layout $
       Page
@@ -87,7 +86,7 @@ instance ToHtml VerifyContent where
                       "\x1F971 If it’s taking too long, you can also close this page and come back via:"
                     H.a_
                       [H.href_ (T.pack . show $ contentShareUrl content)]
-                      (toHtml . show $ contentShareUrl content)
+                      (H.toHtml . show $ contentShareUrl content)
                   Error message -> do
                     H.h2_
                       [H.style_ "color: #fff;"]
@@ -96,4 +95,4 @@ instance ToHtml VerifyContent where
                       [H.style_ "color: #fff;"]
                       (H.toHtml message)
         }
-  toHtmlRaw = toHtml
+  toHtmlRaw = H.toHtml

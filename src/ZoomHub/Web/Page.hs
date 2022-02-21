@@ -15,7 +15,6 @@ where
 
 import Control.Monad (forM_)
 import Data.Text (Text)
-import Lucid (ToHtml (toHtml))
 import qualified Lucid as H
 import NeatInterpolation (text)
 

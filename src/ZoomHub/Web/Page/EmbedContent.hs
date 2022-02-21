@@ -14,7 +14,7 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Lucid as L
+import qualified Lucid as H
 import NeatInterpolation (text)
 import Network.URI (parseRelativeReference, relativeTo)
 import ZoomHub.API.Types.Content (Content (contentDzi, contentReady), contentId)
@@ -50,16 +50,16 @@ mkEmbedContent ::
 mkEmbedContent ecBaseURI ecStaticBaseURI ecContent ecObjectFit ecConstraint =
   EmbedContent {..}
 
-instance L.ToHtml EmbedContent where
+instance H.ToHtml EmbedContent where
   toHtml ec =
     Page.layout
       ( Page
           { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
             pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
             pageBody = do
-              L.script_ [L.src_ (T.pack $ show openSeadragonScriptURI)] ("" :: Text)
-              L.div_ [L.id_ containerId, L.style_ "width: 100%; height: 100vh;"] ""
-              L.script_
+              H.script_ [H.src_ (T.pack $ show openSeadragonScriptURI)] ("" :: Text)
+              H.div_ [H.id_ containerId, H.style_ "width: 100%; height: 100vh;"] ""
+              H.script_
                 [text|
                 OpenSeadragon($openSeadragonConfig)
               |]
@@ -95,4 +95,4 @@ instance L.ToHtml EmbedContent where
           (unEmbedConstraint <$> ecConstraint ec)
       containerId = "container" :: Text
 
-  toHtmlRaw = L.toHtml
+  toHtmlRaw = H.toHtml
