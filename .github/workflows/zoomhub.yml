@@ -214,7 +214,7 @@ jobs:
     steps:
       - name: Sets ZH_AWS_EB_ENVIRONMENT for production
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=production-2" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=production" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/main'
 
       - name: Sets ZH_AWS_EB_ENVIRONMENT for staging
