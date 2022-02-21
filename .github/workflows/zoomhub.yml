@@ -70,13 +70,13 @@ jobs:
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
             web-build-v1-${{ runner.os }}-
 
-      - name: Cache frontend/node_modules
+      - name: Cache node_modules
         uses: actions/cache@v2
         env:
-          cache-name: cache-frontend-node_modules
+          cache-name: cache-node_modules
         with:
-          path: frontend/node_modules
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('frontend/package-lock.json') }}
+          path: node_modules
+          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
             web-build-v1-${{ runner.os }}-
@@ -96,7 +96,6 @@ jobs:
 
       - name: Build frontend
         run: |
-          cd frontend
           npm ci
           SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
 
