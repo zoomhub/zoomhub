@@ -1,5 +1,24 @@
 # ZoomHub
 
+## 2022-02-21
+
+- **Haskell:** Integrate Tailwind CSS by running Snowpack as a file watcher.
+
+  Enable autocomplete in Haskell/Lucid using Visual Studio Code Tailwind CSS
+  extension and this configuration:
+
+  ```json
+  {
+    "tailwindCSS.includeLanguages": {
+      "haskell": "html"
+    },
+    "tailwindCSS.experimental.classRegex": ["H[.]class_ \"([^\"]*)"]
+  }
+  ```
+
+- **Haskell:** Enable fast reload using `ghcid` and `ZoomHub.Web.MainDevelopment` as
+  adapted from [servant-persistent](https://github.com/parsonsmatt/servant-persistent/commit/95df92b2fe9b0f421afa0cf1bcc9c3a4ca38b48c).
+
 ## 2022-02-19
 
 - View page: Fix layout. Explicitly set `width` and `height` to prevent aspect
