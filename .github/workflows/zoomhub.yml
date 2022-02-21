@@ -97,7 +97,7 @@ jobs:
       - name: Build frontend
         run: |
           npm ci
-          NODE_ENV=production SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
+          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
           # NOTE: Delete Haskell source code. This directory is only mounted in
           # Snowpack configuration to enable Tailwind CSS ’purge’ feature. These
           # files are not meant to be shipped to the public website.
