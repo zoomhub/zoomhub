@@ -47,3 +47,7 @@ it. This is a convenient way to develop new features before using the vault.
 - nginx configuration: `cat /etc/nginx/nginx.conf`
 - nginx extensions: `cat /etc/nginx/conf.d/*.conf` (note `.conf` extension)
 - cron logs: `sudo tail -f /var/log/cron`
+
+#### Adding new environment
+
+- Add new rule to RDS security groups.
