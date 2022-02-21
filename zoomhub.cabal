@@ -79,6 +79,7 @@ library
     , ZoomHub.Utils
     , ZoomHub.Web.Errors
     , ZoomHub.Web.Main
+    , ZoomHub.Web.MainDevelopment
     , ZoomHub.Web.Page
     , ZoomHub.Web.Page.EmbedContent
     , ZoomHub.Web.Page.VerifyContent
@@ -119,6 +120,7 @@ library
     , exceptions
     , fast-logger
     , filepath
+    , foreign-store
     , generics-sop
     , hashids
     , hostname
@@ -145,6 +147,8 @@ library
     , resource-pool
     , retry
     , safe
+    , safe-exceptions
+    , say
     , servant
     , servant-auth
     , servant-auth-server

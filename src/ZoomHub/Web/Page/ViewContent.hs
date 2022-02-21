@@ -12,22 +12,12 @@ import Data.Maybe (fromJust)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Lucid
-  ( ToHtml,
-    a_,
-    class_,
-    div_,
-    href_,
-    script_,
-    src_,
-    toHtml,
-    toHtmlRaw,
-  )
+import qualified Lucid as H
 import Network.URI (parseRelativeReference, relativeTo)
 import ZoomHub.API.Types.Content (Content, contentId, contentUrl)
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import ZoomHub.Types.ContentId (unContentId)
-import ZoomHub.Web.Page (Path (..), Title (..))
+import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
 import qualified ZoomHub.Web.Page as Page
 
 data ViewContent = ViewContent
@@ -39,14 +29,20 @@ data ViewContent = ViewContent
 mkViewContent :: BaseURI -> Content -> ViewContent
 mkViewContent vcBaseURI vcContent = ViewContent {..}
 
-instance ToHtml ViewContent where
-  toHtml vc = Page.layout
-    (Title $ T.pack cId <> " — " <> Page.title)
-    (Just $ Path $ "/" <> T.pack cId)
-    $ do
-      script_ [src_ (T.pack $ show scriptURI)] emptyScriptBody
-      div_ [class_ "meta"] $
-        a_ [href_ (T.pack rawContentURL)] (toHtml rawContentURL)
+instance H.ToHtml ViewContent where
+  toHtml vc =
+    Page.layout $
+      Page
+        { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
+          pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
+          pageBody = do
+            H.script_ [H.src_ (T.pack $ show scriptURI)] ("" :: Text)
+            H.div_
+              [H.class_ "fixed left-0 bottom-0 right-0 px-2 py-3 flex justify-center items-center text-sm text-white"]
+              $ H.a_
+                [H.class_ "font-mono text-gray-600 hover:text-gray-200", H.href_ (T.pack rawContentURL)]
+                (H.toHtml rawContentURL)
+        }
     where
       content = vcContent vc
       cId = unContentId $ contentId content
@@ -56,8 +52,7 @@ instance ToHtml ViewContent where
       scriptPath =
         fromJust . parseRelativeReference $
           fold
-            [ "/",
-              cId,
+            [ cId,
               ".js",
               "?",
               "id=container",
@@ -69,7 +64,4 @@ instance ToHtml ViewContent where
       escapedPercent = "%25"
       rawContentURL = show . contentUrl $ content
 
-      emptyScriptBody :: Text
-      emptyScriptBody = ""
-
-  toHtmlRaw = toHtml
+  toHtmlRaw = H.toHtml

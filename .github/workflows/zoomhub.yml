@@ -70,13 +70,13 @@ jobs:
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
             web-build-v1-${{ runner.os }}-
 
-      - name: Cache frontend/node_modules
+      - name: Cache node_modules
         uses: actions/cache@v2
         env:
-          cache-name: cache-frontend-node_modules
+          cache-name: cache-node_modules
         with:
-          path: frontend/node_modules
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('frontend/package-lock.json') }}
+          path: node_modules
+          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
             web-build-v1-${{ runner.os }}-
@@ -96,9 +96,12 @@ jobs:
 
       - name: Build frontend
         run: |
-          cd frontend
           npm ci
           SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
+          # NOTE: Delete Haskell source code. This directory is only mounted in
+          # Snowpack configuration to enable Tailwind CSS ’purge’ feature. These
+          # files are not meant to be shipped to the public website.
+          rm -rf frontend/build/__DELETE_ME__
 
       - name: Build backend
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
@@ -209,14 +212,14 @@ jobs:
       ZH_AWS_EB_PROJECT: ${{ secrets.ZH_AWS_EB_PROJECT }}
       ZH_AWS_ECR_REPO: ${{ secrets.ZH_AWS_ECR_REPO }}
     steps:
-      - name: Sets ZH_AWS_EB_ENVIRONMENT=production-2
+      - name: Sets ZH_AWS_EB_ENVIRONMENT for production
         run: |
           echo "ZH_AWS_EB_ENVIRONMENT=production-2" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/main'
 
-      - name: Sets ZH_AWS_EB_ENVIRONMENT=staging
+      - name: Sets ZH_AWS_EB_ENVIRONMENT for staging
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=staging" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=staging-2" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
       - name: Download process-content-workspace

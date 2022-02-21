@@ -24,7 +24,7 @@ import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Types.DeepZoomImage (TileOverlap (TileOverlap1), TileSize (TileSize256))
 import qualified ZoomHub.Types.DeepZoomImage as TileFormat
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
-import ZoomHub.Web.Page (Path (..), Title (..))
+import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
 import qualified ZoomHub.Web.Page as Page
 import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
 import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit (unEmbedObjectFit))
@@ -51,18 +51,20 @@ mkEmbedContent ecBaseURI ecStaticBaseURI ecContent ecObjectFit ecConstraint =
   EmbedContent {..}
 
 instance L.ToHtml EmbedContent where
-  toHtml ec = Page.layout
-    (Title $ T.pack cId <> " — " <> Page.title)
-    (Just $ Path $ "/" <> T.pack cId)
-    $ do
-      L.script_ [L.src_ (T.pack $ show openSeadragonScriptURI)] ("" :: Text)
-      L.div_ [L.id_ containerId, L.style_ "width: 100%; height: 100vh;"] ""
-      L.script_
-        [text|
-          (() => {
-            const viewer = OpenSeadragon($openSeadragonConfig);
-          })();
-        |]
+  toHtml ec =
+    Page.layout
+      ( Page
+          { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
+            pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
+            pageBody = do
+              L.script_ [L.src_ (T.pack $ show openSeadragonScriptURI)] ("" :: Text)
+              L.div_ [L.id_ containerId, L.style_ "width: 100%; height: 100vh;"] ""
+              L.script_
+                [text|
+                OpenSeadragon($openSeadragonConfig)
+              |]
+          }
+      )
     where
       content = ecContent ec
       cId = unContentId $ contentId content
