@@ -212,14 +212,14 @@ jobs:
       ZH_AWS_EB_PROJECT: ${{ secrets.ZH_AWS_EB_PROJECT }}
       ZH_AWS_ECR_REPO: ${{ secrets.ZH_AWS_ECR_REPO }}
     steps:
-      - name: Sets ZH_AWS_EB_ENVIRONMENT=production-2
+      - name: Sets ZH_AWS_EB_ENVIRONMENT for production
         run: |
           echo "ZH_AWS_EB_ENVIRONMENT=production-2" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/main'
 
-      - name: Sets ZH_AWS_EB_ENVIRONMENT=staging
+      - name: Sets ZH_AWS_EB_ENVIRONMENT for staging
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=staging" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=staging-2" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
       - name: Download process-content-workspace
