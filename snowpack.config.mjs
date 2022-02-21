@@ -3,7 +3,7 @@ export default {
     "frontend/public": "/",
     "frontend/src": "/scripts",
     "frontend/styles": "/styles",
-    src: "/_haskell",
+    src: "/__DELETE_ME__/haskell",
   },
   buildOptions: {
     out: "./frontend/build",
