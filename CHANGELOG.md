@@ -1,6 +1,14 @@
 # ZoomHub
 
-## 2022-02-21
+## 2022-02-21-2
+
+- View page: Add share buttons:
+  - Embed
+  - Email
+  - Twitter
+- Temporarily remove source URL until we can hide it for uploads.
+
+## 2022-02-21-1
 
 - **Haskell:** Integrate Tailwind CSS by running Snowpack as a file watcher.
 
