@@ -97,7 +97,7 @@ jobs:
       - name: Build frontend
         run: |
           npm ci
-          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
+          NODE_ENV=production SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
 
       - name: Build backend
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
