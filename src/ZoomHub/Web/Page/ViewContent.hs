@@ -56,6 +56,7 @@ instance H.ToHtml ViewContent where
                   } catch (error) {
                     console.error(error)
                     alert("Sorry, couldn’t copy embed code to clipboard.")
+                    return
                   }
 
                   alert("🔥 Success! Copied embed code to clipboard.")
