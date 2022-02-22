@@ -4,8 +4,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Page.ViewContent
-  ( ViewContent,
-    mkViewContent,
+  ( ViewContent (..),
   )
 where
 
@@ -18,7 +17,9 @@ import qualified Lucid as H
 import NeatInterpolation (text)
 import Network.URI (parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URI
-import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
+import ZoomHub.API.Types.Content (Content (contentUrl), contentId, contentShareUrl)
+import ZoomHub.Config.AWS (S3BucketName (unS3BucketName))
+import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Utils (tshow)
@@ -27,12 +28,10 @@ import qualified ZoomHub.Web.Page as Page
 
 data ViewContent = ViewContent
   { vcContent :: Content,
-    vcBaseURI :: BaseURI
+    vcBaseURI :: BaseURI,
+    vcAWSSourcesS3BucketName :: AWS.S3BucketName
   }
   deriving (Eq, Show)
-
-mkViewContent :: BaseURI -> Content -> ViewContent
-mkViewContent vcBaseURI vcContent = ViewContent {..}
 
 instance H.ToHtml ViewContent where
   toHtml vc =
@@ -48,6 +47,9 @@ instance H.ToHtml ViewContent where
                 embedButton
                 emailButton
                 tweetButton
+                if isUpload
+                  then mempty
+                  else viewSourceButton
             H.script_
               [text|
                 document.querySelector("#embed-button").onclick = async () => {
@@ -67,6 +69,9 @@ instance H.ToHtml ViewContent where
       content = vcContent vc
       cId = unContentId $ contentId content
       baseURI = vcBaseURI vc
+
+      isUpload = unS3BucketName (vcAWSSourcesS3BucketName vc) `T.isInfixOf` rawContentURL
+      rawContentURL = tshow . contentUrl $ content
 
       scriptBaseURI = tshow $ scriptPath `relativeTo` unBaseURI baseURI
       scriptPath = fromJust . parseRelativeReference $ cId <> ".js"
@@ -142,5 +147,19 @@ instance H.ToHtml ViewContent where
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-twitter"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
                 |]
             H.toHtml ("Tweet" :: Text)
+
+      viewSourceButton =
+        H.a_
+          [ H.class_ "btn btn-sm btn-secondary bg-amber-200 hover:bg-amber-500 text-black",
+            H.target_ "_blank",
+            H.href_ rawContentURL
+          ]
+          do
+            H.span_ [H.class_ "mr-1"] $
+              H.toHtmlRaw
+                [text|
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-image"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                |]
+            H.toHtml ("View source" :: Text)
 
   toHtmlRaw = H.toHtml

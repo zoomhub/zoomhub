@@ -1,5 +1,14 @@
 # ZoomHub
 
+## 2022-02-23-1
+
+- View content page:
+  - Add ‘View source’ button for URL submissions.
+- Verify page:
+  - Fix redirect.
+  - Fix link color.
+  - Improve mobile layout.
+
 ## 2022-02-21-2
 
 - View page: Add share buttons:
