@@ -84,7 +84,9 @@ instance H.ToHtml VerifyContent where
                       [H.class_ "text-lg text-white"]
                       "\x1F971 If it’s taking too long, you can also close this page and come back via:"
                     H.a_
-                      [H.href_ (T.pack . show $ contentShareUrl content)]
+                      [ H.class_ "link",
+                        H.href_ (T.pack . show $ contentShareUrl content)
+                      ]
                       (H.toHtml . show $ contentShareUrl content)
                   Error message -> do
                     H.h2_
