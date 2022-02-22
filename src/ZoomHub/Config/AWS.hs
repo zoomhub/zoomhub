@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Config.AWS
   ( Config (..),
+    S3BucketName (..),
     fromEnv,
   )
 where
@@ -12,10 +12,13 @@ import qualified Data.Text as T
 import qualified Network.AWS as AWS
 import System.Environment (getEnvironment)
 
+newtype S3BucketName = S3BucketName {unS3BucketName :: Text}
+  deriving (Eq, Show)
+
 data Config = Config
   { configAccessKeyId :: Text,
     configSecretAccessKey :: Text,
-    configSourcesS3Bucket :: Text,
+    configSourcesS3Bucket :: S3BucketName,
     configRegion :: AWS.Region
   }
 
@@ -27,5 +30,5 @@ fromEnv region = do
     Config
       <$> (T.pack <$> lookup "AWS_ACCESS_KEY_ID" env)
       <*> (T.pack <$> lookup "AWS_SECRET_ACCESS_KEY" env)
-      <*> (T.pack <$> lookup "S3_SOURCES_BUCKET" env)
+      <*> (S3BucketName . T.pack <$> lookup "S3_SOURCES_BUCKET" env)
       <*> Just region

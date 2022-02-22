@@ -129,6 +129,7 @@ import qualified ZoomHub.Web.Errors as Web
 import qualified ZoomHub.Web.Page.EmbedContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
+import ZoomHub.Web.Page.ViewContent (ViewContent (..))
 import qualified ZoomHub.Web.Page.ViewContent as Page
 import ZoomHub.Web.Static (serveDirectory)
 import ZoomHub.Web.Types.Embed (Embed (..))
@@ -283,7 +284,7 @@ server config =
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
     -- Web: View
     :<|> webContentVerificationById baseURI contentBaseURI dbConnPool
-    :<|> webContentById baseURI contentBaseURI dbConnPool
+    :<|> webContentById baseURI contentBaseURI (AWS.configSourcesS3Bucket awsConfig) dbConnPool
     :<|> webContentByURL baseURI dbConnPool
     :<|> webInvalidURLParam
     :<|> webContentByURL baseURI dbConnPool
@@ -445,7 +446,7 @@ restUpload baseURI awsConfig uploads email =
         -- In addition, to process an image of x bytes, we need roughly 2x the
         -- space to hold the original as well as the generated tiles.
         maxUploadSizeBytes = 50 * 1024 * 1024 -- 50MB
-        s3Bucket = AWS.configSourcesS3Bucket awsConfig
+        s3Bucket = AWS.unS3BucketName . AWS.configSourcesS3Bucket $ awsConfig
 
 restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
 restUploadWithoutEmail UploadsDisabled = noNewContentErrorAPI
@@ -728,17 +729,23 @@ webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificat
 webContentById ::
   BaseURI ->
   ContentBaseURI ->
+  AWS.S3BucketName ->
   Pool Connection ->
   ContentId ->
   Handler Page.ViewContent
-webContentById baseURI contentBaseURI dbConnPool contentId = do
+webContentById baseURI contentBaseURI awsSourcesS3BucketName dbConnPool contentId = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
   case maybeContent of
     Nothing ->
       throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c -> do
       let content = Content.fromInternal baseURI contentBaseURI c
-      return $ Page.mkViewContent baseURI content
+      return $
+        ViewContent
+          { vcBaseURI = baseURI,
+            vcContent = content,
+            vcAWSSourcesS3BucketName = awsSourcesS3BucketName
+          }
 
 -- TODO: Add support for submission, i.e. create content in the background:
 webContentByURL ::
