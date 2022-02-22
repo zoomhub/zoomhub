@@ -47,11 +47,10 @@ progressScript cId =
         console.log("---")
         console.log(content)
 
-        /*
+
         if (content.ready) {
           location.href = content.shareUrl
         }
-        */
       }, 2000)
     })()
   |]
