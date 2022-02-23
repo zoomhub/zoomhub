@@ -219,21 +219,7 @@
         </h2>
         <pre
           class="code-listing"
-        >&gt; curl --include --location 'https://api.zoomhub.net/v1/content?url=<span class="code-highlight">{url}</span>&email=<span class="code-highlight">{email}</span>'
-
-HTTP/1.1 301 Moved Permanently
-Server: nginx/1.20.0
-Date: Fri, 13 Aug 2021 16:20:00 GMT
-Transfer-Encoding: chunked
-Connection: keep-alive
-Location: https://api.zoomhub.net/v1/content/<span class="code-highlight">{id}</span>
-
-HTTP/1.1 200 OK
-Server: nginx/1.20.0
-Date: Fri, 13 Aug 2021 16:20:00 GMT
-Content-Type: application/json;charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
+        >&gt; curl --location 'https://api.zoomhub.net/v1/content?url=<span class="code-highlight">{url}</span>&email=<span class="code-highlight">{email}</span>'
 
 {
   "id":"<span class="code-highlight">{id}</span>",

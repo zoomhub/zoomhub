@@ -8,7 +8,7 @@ where
 import qualified Data.ByteString.Lazy as BL
 import Network.HTTP.Types (status404)
 import Network.Wai (Application, responseLBS)
-import Network.Wai.Application.Static (defaultFileServerSettings, ss404Handler)
+import Network.Wai.Application.Static (defaultFileServerSettings, ss404Handler, ssListing)
 import Servant.API.Raw (Raw)
 import Servant.Server (Server)
 import Servant.Server.StaticFiles (serveDirectoryWith)
@@ -18,7 +18,8 @@ serveDirectory :: BL.ByteString -> FilePath -> Server Raw
 serveDirectory error404 root =
   serveDirectoryWith
     (defaultFileServerSettings normalizedRoot)
-      { ss404Handler = Just (custom404Handler error404)
+      { ss404Handler = Just (custom404Handler error404),
+        ssListing = Nothing
       }
   where
     normalizedRoot = addTrailingPathSeparator root
