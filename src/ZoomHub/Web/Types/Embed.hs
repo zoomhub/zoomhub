@@ -30,6 +30,8 @@ import ZoomHub.Types.DeepZoomImage
   )
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import qualified ZoomHub.Web.Types.EmbedAspectRatio as EmbedAspectRatio
+import ZoomHub.Web.Types.EmbedBackground (EmbedBackground)
+import qualified ZoomHub.Web.Types.EmbedBackground as EmbedBackground
 import ZoomHub.Web.Types.EmbedBorder
 import qualified ZoomHub.Web.Types.EmbedBorder as EmbedBorder
 import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
@@ -49,7 +51,8 @@ data Embed = Embed
     embedWidth :: Maybe EmbedDimension,
     embedBorder :: Maybe EmbedBorder,
     embedObjectFit :: Maybe EmbedObjectFit,
-    embedConstraint :: Maybe EmbedConstraint
+    embedConstraint :: Maybe EmbedConstraint,
+    embedBackgroundColor :: Maybe EmbedBackground
   }
   deriving (Eq, Generic, Show)
 
@@ -67,18 +70,21 @@ defaultWidth :: EmbedDimension
 defaultWidth = Auto
 
 style :: Embed -> String
-style Embed {embedContent, embedWidth, embedHeight, embedBorder} =
-  unwords
-    [ "aspect-ratio: " <> EmbedAspectRatio.toCSSValue aspectRatio <> ";",
-      "background: black;",
-      "border: " <> EmbedBorder.toCSSValue border <> ";",
-      "color: white;",
-      "height: " <> EmbedDimension.toCSSValue height <> ";",
-      "margin: 0;",
-      "padding: 0;",
-      "width: " <> EmbedDimension.toCSSValue width <> ";"
-    ]
+style Embed {embedContent, embedWidth, embedHeight, embedBorder, embedBackgroundColor} =
+  T.unpack $
+    T.intercalate
+      ";"
+      [ "aspect-ratio: " <> EmbedAspectRatio.toCSSValue aspectRatio,
+        "background: " <> EmbedBackground.toCSSValue background,
+        "border: " <> EmbedBorder.toCSSValue border,
+        "color: white",
+        "height: " <> EmbedDimension.toCSSValue height,
+        "margin: 0",
+        "padding: 0",
+        "width: " <> EmbedDimension.toCSSValue width
+      ]
   where
+    background = fromMaybe EmbedBackground.Black embedBackgroundColor
     border = fromMaybe EmbedBorder.Default embedBorder
     height = fromMaybe defaultHeight embedHeight
     width = fromMaybe defaultWidth embedWidth

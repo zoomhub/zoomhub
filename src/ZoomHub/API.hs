@@ -133,6 +133,7 @@ import ZoomHub.Web.Page.ViewContent (ViewContent (..))
 import qualified ZoomHub.Web.Page.ViewContent as Page
 import ZoomHub.Web.Static (serveDirectory)
 import ZoomHub.Web.Types.Embed (Embed (..))
+import ZoomHub.Web.Types.EmbedBackground (EmbedBackground)
 import ZoomHub.Web.Types.EmbedBorder (EmbedBorder)
 import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint)
 import ZoomHub.Web.Types.EmbedDimension (EmbedDimension)
@@ -227,6 +228,7 @@ type API =
       :> "embed"
       :> QueryParam "fit" EmbedObjectFit
       :> QueryParam "constrain" EmbedConstraint
+      :> QueryParam "background" EmbedBackground
       :> Get '[HTML] Page.EmbedContent
     -- Embed (JavaScript)
     :<|> Capture "embedId" EmbedId
@@ -236,6 +238,7 @@ type API =
       :> QueryParam "border" EmbedBorder
       :> QueryParam "fit" EmbedObjectFit
       :> QueryParam "constrain" EmbedConstraint
+      :> QueryParam "background" EmbedBackground
       :> Get '[JavaScript] Embed
     -- Web: Verification
     :<|> Capture "viewId" ContentId
@@ -632,6 +635,7 @@ webEmbedIFrame ::
   ContentId ->
   Maybe EmbedObjectFit ->
   Maybe EmbedConstraint ->
+  Maybe EmbedBackground ->
   Handler Page.EmbedContent
 webEmbedIFrame
   baseURI
@@ -640,14 +644,22 @@ webEmbedIFrame
   dbConnPool
   contentId
   mObjectFit
-  mEmbedConstraint = do
+  mEmbedConstraint
+  mEmbedBackground = do
     maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
     case maybeContent of
       Nothing ->
         throwError . Web.error404 $ contentNotFoundMessage contentId
       Just c -> do
         let content = Content.fromInternal baseURI contentBaseURI c
-        return $ Page.mkEmbedContent baseURI staticBaseURI content mObjectFit mEmbedConstraint
+        return $
+          Page.mkEmbedContent
+            baseURI
+            staticBaseURI
+            content
+            mObjectFit
+            mEmbedConstraint
+            mEmbedBackground
 
 -- Web: Embed
 webEmbed ::
@@ -663,6 +675,7 @@ webEmbed ::
   Maybe EmbedBorder ->
   Maybe EmbedObjectFit ->
   Maybe EmbedConstraint ->
+  Maybe EmbedBackground ->
   Handler Embed
 webEmbed
   baseURI
@@ -676,7 +689,8 @@ webEmbed
   height
   border
   objectFit
-  constraint = do
+  constraint
+  backgroundColor = do
     maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
     case maybeContent of
       Nothing ->
@@ -697,7 +711,8 @@ webEmbed
               embedHeight = height,
               embedBorder = border,
               embedObjectFit = objectFit,
-              embedConstraint = constraint
+              embedConstraint = constraint,
+              embedBackgroundColor = backgroundColor
             }
     where
       contentId = unEmbedId embedId

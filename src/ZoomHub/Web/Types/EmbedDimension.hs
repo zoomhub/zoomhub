@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ZoomHub.Web.Types.EmbedDimension
   ( EmbedDimension (..),
     toCSSValue,
@@ -5,11 +7,14 @@ module ZoomHub.Web.Types.EmbedDimension
   )
 where
 
-import Data.Bifunctor (first)
+import Data.Bifunctor (Bifunctor (first))
 import Data.Char (isDigit)
+import Data.Function ((&))
+import Data.Text (Text)
 import qualified Data.Text as T
 import Safe (readEitherSafe)
 import Servant (FromHttpApiData, parseUrlPiece)
+import ZoomHub.Utils (tshow)
 
 -- Type
 data EmbedDimension
@@ -19,23 +24,23 @@ data EmbedDimension
   | Percentage Integer
   deriving (Eq, Show)
 
-toCSSValue :: EmbedDimension -> String
+toCSSValue :: EmbedDimension -> Text
 toCSSValue Auto = "auto"
 toCSSValue Zero = "0"
-toCSSValue (Pixels n) = show n ++ "px"
-toCSSValue (Percentage n) = show n ++ "%"
+toCSSValue (Pixels n) = tshow n <> "px"
+toCSSValue (Percentage n) = tshow n <> "%"
 
-parseCSSValue :: String -> Either String EmbedDimension
+parseCSSValue :: Text -> Either Text EmbedDimension
 parseCSSValue "auto" = Right Auto
 parseCSSValue "0" = Right Zero
 parseCSSValue s = case unit of
-  "px" -> readEitherSafe value >>= Right . Pixels
-  "%" -> readEitherSafe value >>= Right . Percentage
-  u -> Left $ "Invalid CSS unit: " <> u
+  "px" -> readEitherSafe value & first T.pack >>= Right . Pixels
+  "%" -> readEitherSafe value & first T.pack >>= Right . Percentage
+  invalidUnit -> Left $ "Invalid CSS unit: " <> invalidUnit
   where
-    value = takeWhile isDigit s
-    unit = dropWhile isDigit s
+    value = T.unpack $ T.takeWhile isDigit s
+    unit = T.dropWhile isDigit s
 
--- Text
+-- Servant
 instance FromHttpApiData EmbedDimension where
-  parseUrlPiece p = first T.pack $ parseCSSValue . T.unpack $ p
+  parseUrlPiece = parseCSSValue

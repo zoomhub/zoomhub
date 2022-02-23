@@ -26,6 +26,8 @@ import qualified ZoomHub.Types.DeepZoomImage as TileFormat
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
 import qualified ZoomHub.Web.Page as Page
+import ZoomHub.Web.Types.EmbedBackground (EmbedBackground)
+import qualified ZoomHub.Web.Types.EmbedBackground as EmbedBackground
 import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
 import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit (unEmbedObjectFit))
 import ZoomHub.Web.Types.OpenSeadragonTileSource (fromDeepZoomImage)
@@ -33,9 +35,10 @@ import ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
 
 data EmbedContent = EmbedContent
   { ecContent :: Content,
+    ecBackgroundColor :: Maybe EmbedBackground,
     ecBaseURI :: BaseURI,
-    ecObjectFit :: Maybe EmbedObjectFit,
     ecConstraint :: Maybe EmbedConstraint,
+    ecObjectFit :: Maybe EmbedObjectFit,
     ecStaticBaseURI :: StaticBaseURI
   }
   deriving (Eq, Show)
@@ -46,19 +49,36 @@ mkEmbedContent ::
   Content ->
   Maybe EmbedObjectFit ->
   Maybe EmbedConstraint ->
+  Maybe EmbedBackground ->
   EmbedContent
-mkEmbedContent ecBaseURI ecStaticBaseURI ecContent ecObjectFit ecConstraint =
-  EmbedContent {..}
+mkEmbedContent
+  ecBaseURI
+  ecStaticBaseURI
+  ecContent
+  ecObjectFit
+  ecConstraint
+  ecBackgroundColor =
+    EmbedContent {..}
 
 instance H.ToHtml EmbedContent where
-  toHtml ec =
+  toHtml EmbedContent {..} =
     Page.layout
       ( Page
           { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
             pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
             pageBody = do
               H.script_ [H.src_ (T.pack $ show openSeadragonScriptURI)] ("" :: Text)
-              H.div_ [H.id_ containerId, H.style_ "width: 100%; height: 100vh;"] ""
+              H.div_
+                [ H.id_ containerId,
+                  H.style_ $
+                    T.intercalate
+                      ";"
+                      [ "width: 100%",
+                        "height: 100vh",
+                        "background: " <> EmbedBackground.toCSSValue backgroundColor
+                      ]
+                ]
+                ""
               H.script_
                 [text|
                 OpenSeadragon($openSeadragonConfig)
@@ -66,9 +86,11 @@ instance H.ToHtml EmbedContent where
           }
       )
     where
-      content = ecContent ec
+      content = ecContent
       cId = unContentId $ contentId content
-      staticBaseURI = ecStaticBaseURI ec
+      staticBaseURI = ecStaticBaseURI
+
+      backgroundColor = fromMaybe EmbedBackground.Black ecBackgroundColor
 
       openSeadragonScriptPath =
         fromJust . parseRelativeReference $ "scripts/openseadragon/3.0.0-zoomhub/openseadragon.min.js"
@@ -91,8 +113,8 @@ instance H.ToHtml EmbedContent where
           staticBaseURI
           (T.unpack containerId)
           tileSource
-          (unEmbedObjectFit <$> ecObjectFit ec)
-          (unEmbedConstraint <$> ecConstraint ec)
+          (unEmbedObjectFit <$> ecObjectFit)
+          (unEmbedConstraint <$> ecConstraint)
       containerId = "container" :: Text
 
   toHtmlRaw = H.toHtml
