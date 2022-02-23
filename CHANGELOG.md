@@ -1,5 +1,21 @@
 # ZoomHub
 
+## 2022-02-23-2
+
+- Embed: Add `background` parameter
+
+  Customize embed background to be:
+
+  - `none` (transparent)
+  - `white`
+  - `black` (default)
+
+  Useful for branding as well as avoiding background bleed through on
+  `constrain=full` embeds.
+
+- Disable directory listings, e.g. on `/showcase/ecommerce/`.
+- Simplify `curl` example on homepage.
+
 ## 2022-02-23-1
 
 - View content page:
