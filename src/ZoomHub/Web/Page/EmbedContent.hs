@@ -3,8 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Page.EmbedContent
-  ( EmbedContent,
-    mkEmbedContent,
+  ( EmbedContent (..),
   )
 where
 
@@ -34,31 +33,14 @@ import ZoomHub.Web.Types.OpenSeadragonTileSource (fromDeepZoomImage)
 import ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
 
 data EmbedContent = EmbedContent
-  { ecContent :: Content,
-    ecBackgroundColor :: Maybe EmbedBackground,
+  { ecBackgroundColor :: Maybe EmbedBackground,
+    ecContent :: Content,
     ecBaseURI :: BaseURI,
     ecConstraint :: Maybe EmbedConstraint,
     ecObjectFit :: Maybe EmbedObjectFit,
     ecStaticBaseURI :: StaticBaseURI
   }
   deriving (Eq, Show)
-
-mkEmbedContent ::
-  BaseURI ->
-  StaticBaseURI ->
-  Content ->
-  Maybe EmbedObjectFit ->
-  Maybe EmbedConstraint ->
-  Maybe EmbedBackground ->
-  EmbedContent
-mkEmbedContent
-  ecBaseURI
-  ecStaticBaseURI
-  ecContent
-  ecObjectFit
-  ecConstraint
-  ecBackgroundColor =
-    EmbedContent {..}
 
 instance H.ToHtml EmbedContent where
   toHtml EmbedContent {..} =

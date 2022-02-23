@@ -126,6 +126,7 @@ import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
+import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
@@ -653,13 +654,14 @@ webEmbedIFrame
       Just c -> do
         let content = Content.fromInternal baseURI contentBaseURI c
         return $
-          Page.mkEmbedContent
-            baseURI
-            staticBaseURI
-            content
-            mObjectFit
-            mEmbedConstraint
-            mEmbedBackground
+          Page.EmbedContent
+            { ecBackgroundColor = mEmbedBackground,
+              ecBaseURI = baseURI,
+              ecConstraint = mEmbedConstraint,
+              ecContent = content,
+              ecObjectFit = mObjectFit,
+              ecStaticBaseURI = staticBaseURI
+            }
 
 -- Web: Embed
 webEmbed ::
