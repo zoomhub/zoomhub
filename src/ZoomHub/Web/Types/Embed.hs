@@ -32,6 +32,7 @@ import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import qualified ZoomHub.Web.Types.EmbedAspectRatio as EmbedAspectRatio
 import ZoomHub.Web.Types.EmbedBackground (EmbedBackground)
 import qualified ZoomHub.Web.Types.EmbedBackground as EmbedBackground
+import qualified ZoomHub.Web.Types.EmbedBackground as EmbedBackgroundColor
 import ZoomHub.Web.Types.EmbedBorder
 import qualified ZoomHub.Web.Types.EmbedBorder as EmbedBorder
 import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
@@ -126,10 +127,17 @@ instance ToJS Embed where
         [text|
           ;(() => {
             document.write($html)
-            OpenSeadragon($openSeadragonConfig)
+            const viewer = OpenSeadragon($openSeadragonConfig)
+            viewer.addHandler("full-page", ({fullPage}) => {
+              viewer.canvas.style.backgroundColor =
+                fullPage ? "black" : "$backgroundColor"
+            })
           })()
         |]
       openSeadragonConfig = T.pack $ BLC.unpack $ encode viewerConfig
+      backgroundColor =
+        EmbedBackground.toCSSValue $
+          fromMaybe EmbedBackgroundColor.Black embedBackgroundColor
       script = embedBody
       content = embedContent
       maybeDZI = contentDzi content
