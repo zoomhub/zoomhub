@@ -108,6 +108,7 @@ tag name attrs =
 attr :: (String, String) -> String
 attr (name, value) = concat [name, "=", "\"", value, "\""]
 
+-- TODO: Refactor using Lucid
 instance ToJS Embed where
   toJS embed = concatScripts [script, T.unpack wrapper]
     where
