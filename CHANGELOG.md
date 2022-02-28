@@ -1,5 +1,9 @@
 # ZoomHub
 
+## 2022-02-28-1
+
+- Embed: Ensure fullscreen background color is always black.
+
 ## 2022-02-23-2
 
 - Embed: Add `background` parameter

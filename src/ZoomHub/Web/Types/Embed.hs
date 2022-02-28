@@ -32,6 +32,7 @@ import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import qualified ZoomHub.Web.Types.EmbedAspectRatio as EmbedAspectRatio
 import ZoomHub.Web.Types.EmbedBackground (EmbedBackground)
 import qualified ZoomHub.Web.Types.EmbedBackground as EmbedBackground
+import qualified ZoomHub.Web.Types.EmbedBackground as EmbedBackgroundColor
 import ZoomHub.Web.Types.EmbedBorder
 import qualified ZoomHub.Web.Types.EmbedBorder as EmbedBorder
 import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
@@ -108,8 +109,9 @@ tag name attrs =
 attr :: (String, String) -> String
 attr (name, value) = concat [name, "=", "\"", value, "\""]
 
+-- TODO: Refactor using Lucid
 instance ToJS Embed where
-  toJS embed = concatScripts [script, T.unpack wrapper]
+  toJS embed@Embed {..} = concatScripts [script, T.unpack wrapper]
     where
       html =
         T.pack $
@@ -117,7 +119,7 @@ instance ToJS Embed where
             <> tag
               "div"
               [ ("class", unwords cssClassNames),
-                ("id", embedContainerId embed),
+                ("id", embedContainerId),
                 ("style", style embed)
               ]
             <> "'"
@@ -125,18 +127,25 @@ instance ToJS Embed where
         [text|
           ;(() => {
             document.write($html)
-            OpenSeadragon($openSeadragonConfig)
+            const viewer = OpenSeadragon($openSeadragonConfig)
+            viewer.addHandler("full-page", ({fullPage}) => {
+              viewer.canvas.style.backgroundColor =
+                fullPage ? "black" : "$backgroundColor"
+            })
           })()
         |]
       openSeadragonConfig = T.pack $ BLC.unpack $ encode viewerConfig
-      script = embedBody embed
-      content = embedContent embed
+      backgroundColor =
+        EmbedBackground.toCSSValue $
+          fromMaybe EmbedBackgroundColor.Black embedBackgroundColor
+      script = embedBody
+      content = embedContent
       maybeDZI = contentDzi content
       queuedDZI =
         mkDeepZoomImage queuedDZIURI 8000 6000 TileSize256 TileOverlap1 PNG
       queuedDZIURI =
         DeepZoomImageURI $
-          queuedDZIPath `relativeTo` unStaticBaseURI staticBaseURI
+          queuedDZIPath `relativeTo` unStaticBaseURI embedStaticBaseURI
       queuedDZIPath = fromJust (parseRelativeReference "queued.dzi")
       isReady = contentReady content
       tileSource
@@ -144,10 +153,8 @@ instance ToJS Embed where
         | otherwise = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI
       viewerConfig =
         mkOpenSeadragonViewerConfig
-          staticBaseURI
-          containerId
+          embedStaticBaseURI
+          embedContainerId
           tileSource
-          (unEmbedObjectFit <$> embedObjectFit embed)
-          (unEmbedConstraint <$> embedConstraint embed)
-      staticBaseURI = embedStaticBaseURI embed
-      containerId = embedContainerId embed
+          (unEmbedObjectFit <$> embedObjectFit)
+          (unEmbedConstraint <$> embedConstraint)
