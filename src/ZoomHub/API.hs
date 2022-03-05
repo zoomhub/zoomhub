@@ -641,8 +641,8 @@ webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
   case authResult of
     Authenticated _ -> do
       let minItems = 1
-          maxItems = 100
-          numItems = fromMaybe maxItems mNumItems
+          maxItems = 200
+          numItems = fromMaybe 50 mNumItems
       when (numItems > maxItems || numItems < minItems) $
         throwError . Web.error400 $
           "'numItems' must be between "
