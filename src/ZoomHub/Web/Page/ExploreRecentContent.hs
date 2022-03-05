@@ -54,6 +54,9 @@ instance H.ToHtml ExploreRecentContent where
                           H.a_
                             [H.class_ "link", H.href_ ("mailto:" <> email)]
                             (H.toHtml email)
+                      for_ (Internal.contentError internalContent) \errorMessage -> do
+                        H.div_ [H.class_ "py-2 text-sm text-red-500"] $
+                          H.toHtml errorMessage
                       H.span_ [H.class_ "text-gray-400 text-xs"] $
                         H.toHtml $ tshow $ Content.contentInitializedAt internalContent
           }
