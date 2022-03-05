@@ -1,5 +1,9 @@
 # ZoomHub
 
+## 2022-03-05-1
+
+- Explore: Add private `/explore/recent` page for viewing recent uploads.
+
 ## 2022-02-28-1
 
 - Embed: Ensure fullscreen background color is always black.
