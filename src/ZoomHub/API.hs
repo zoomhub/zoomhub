@@ -104,16 +104,6 @@ import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Storage.PostgreSQL as PG
-  ( getById,
-    getById',
-    getByURL,
-    getByURL',
-    initialize,
-    markAsFailure,
-    markAsSuccess,
-    markAsVerified,
-    unsafeResetAsInitializedWithVerification,
-  )
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
