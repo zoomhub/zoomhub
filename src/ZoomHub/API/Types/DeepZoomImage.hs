@@ -9,6 +9,7 @@ module ZoomHub.API.Types.DeepZoomImage
     dziTileOverlap,
     dziTileSize,
     dziUrl,
+    largestSingleTileUrl,
     dziWidth,
     fromInternal,
     toInternal,
@@ -18,6 +19,7 @@ where
 
 import Data.Aeson (FromJSON, ToJSON, Value (String), genericParseJSON, genericToJSON, parseJSON, toJSON, withText)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import qualified Generics.SOP as SOP
@@ -29,6 +31,7 @@ import ZoomHub.Types.ContentBaseURI
   )
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.DeepZoomImage as Internal
+import ZoomHub.Utils (tshow)
 
 data DeepZoomImage = DeepZoomImage
   { dziUrl :: DeepZoomImageURI,
@@ -86,6 +89,24 @@ mkDeepZoomImage uri width height tileSize tileOverlap tileFormat =
       dziTileOverlap = tileOverlap,
       dziTileFormat = tileFormat
     }
+
+-- TODO: Make dynamic based on size of image
+largestSingleTileUrl :: DeepZoomImage -> URI
+largestSingleTileUrl dzi =
+  fromMaybe
+    (error "Invalid DZI tile URL")
+    $ parseAbsoluteURI
+      . T.unpack
+      $ T.dropEnd
+        (T.length dziExtension)
+        (tshow $ dziUrl dzi)
+        <> "_files/"
+        <> tshow largestSingleTileLevel
+        <> "/0_0."
+        <> tshow (dziTileFormat dzi)
+  where
+    dziExtension = ".dzi"
+    largestSingleTileLevel = 8 :: Int
 
 -- JSON
 instance ToJSON DeepZoomImage where
