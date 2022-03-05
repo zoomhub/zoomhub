@@ -7,8 +7,7 @@ module ZoomHub.Web.Page.ExploreRecentContent
   )
 where
 
-import Data.Foldable (forM_, for_, sequenceA_, traverse_)
-import Data.Functor ((<&>))
+import Data.Foldable (forM_, for_)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Lucid as H

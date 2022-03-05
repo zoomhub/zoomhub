@@ -51,6 +51,7 @@ library
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.PostgreSQL
     , ZoomHub.Storage.PostgreSQL.ConnectInfo
+    , ZoomHub.Storage.PostgreSQL.GetRecent
     , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Storage.PostgreSQL.Schema.Schema0

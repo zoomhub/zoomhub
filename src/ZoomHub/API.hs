@@ -105,6 +105,7 @@ import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Storage.PostgreSQL as PG
+import ZoomHub.Storage.PostgreSQL.GetRecent as PG
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -637,7 +638,7 @@ webExploreRecent ::
 webExploreRecent baseURI contentBaseURI dbConnPool authResult =
   case authResult of
     Authenticated _ -> do
-      content <- liftIO $ runPoolPQ PG.getRecent dbConnPool
+      content <- liftIO $ runPoolPQ (PG.getRecent 50) dbConnPool
       return
         Page.ExploreRecentContent
           { ercContent = content,
