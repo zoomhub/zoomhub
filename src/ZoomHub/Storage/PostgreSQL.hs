@@ -18,6 +18,7 @@ module ZoomHub.Storage.PostgreSQL
     getByURL,
     getNextUnprocessed,
     getExpiredActive,
+    getRecent,
 
     -- ** Read operations (with view tracking)
     getById',
@@ -43,7 +44,7 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
-  ( MonadPQ,
+  ( MonadPQ (runQuery),
     Only (Only),
     SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
@@ -95,7 +96,7 @@ import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content (..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState (ContentState (Active, Initialized))
+import ZoomHub.Types.ContentState (ContentState (Active, CompletedSuccess, Initialized))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 import ZoomHub.Types.VerificationError (VerificationError)
@@ -152,6 +153,24 @@ getExpiredActive ttl = do
           )
       )
       (Only earliestAllowed)
+  contentRows <- getRows result
+  return $ contentImageRowToContent <$> contentRows
+
+getRecent :: (MonadUnliftIO m, MonadPQ Schemas m) => m [Content]
+getRecent = do
+  result <-
+    runQueryParams
+      ( selectContentBy
+          ( \table ->
+              table
+                & where_
+                  ( (#content ! #state) .== param @1
+                  )
+                & orderBy [#content ! #initialized_at & Desc]
+                & limit 25
+          )
+      )
+      (Only CompletedSuccess)
   contentRows <- getRows result
   return $ contentImageRowToContent <$> contentRows
 
