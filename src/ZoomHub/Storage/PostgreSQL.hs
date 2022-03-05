@@ -44,7 +44,7 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
-  ( MonadPQ (runQuery),
+  ( MonadPQ,
     Only (Only),
     SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
