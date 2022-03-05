@@ -7,7 +7,8 @@ module ZoomHub.Web.Page.ExploreRecentContent
   )
 where
 
-import Data.Foldable (forM_, for_)
+import Data.Foldable (forM_, for_, sequenceA_, traverse_)
+import Data.Functor ((<&>))
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Lucid as H
@@ -35,20 +36,27 @@ instance H.ToHtml ExploreRecentContent where
           { pageTitle = Title $ "Explore: Recent — " <> Page.title,
             pageCanonicalPath = Nothing,
             pageBody =
-              H.div_ [H.class_ "flex flex-col justify-center max-w-max mx-auto space-y-4 py-6"] do
-                H.h1_ [H.class_ "text-3xl text-white font-bold"] "Explore: Recent"
-                forM_ ercContent \internalContent ->
-                  H.div_ [] do
-                    let content = Content.fromInternal ercBaseURI ercContentBaseURI internalContent
-                    for_ (Content.contentDzi content) \dzi ->
-                      H.a_ [H.href_ $ "/" <> (T.pack . unContentId . Internal.contentId $ internalContent)] $
-                        H.img_
-                          [ H.src_ $ tshow $ DZI.largestSingleTileUrl dzi,
-                            H.width_ "256",
-                            H.style_ ("aspect-ratio: " <> tshow (dziWidth dzi) <> " / " <> tshow (dziHeight dzi))
-                          ]
-                    H.span_ [H.class_ "text-gray-400 text-xs"] $
-                      H.toHtml $ tshow $ Content.contentInitializedAt internalContent
+              H.div_ [H.class_ "flex flex-col justify-center max-w-max mx-auto py-6"] do
+                H.h1_ [H.class_ "text-3xl text-white font-bold mb-2"] "Explore: Recent"
+                H.div_ [H.class_ "space-y-10"] $
+                  forM_ ercContent \internalContent ->
+                    H.div_ [] do
+                      let content = Content.fromInternal ercBaseURI ercContentBaseURI internalContent
+                      for_ (Content.contentDzi content) \dzi ->
+                        H.a_ [H.href_ $ "/" <> (T.pack . unContentId . Internal.contentId $ internalContent)] $
+                          H.img_
+                            [ H.src_ $ tshow $ DZI.largestSingleTileUrl dzi,
+                              H.width_ "256",
+                              H.style_ ("aspect-ratio: " <> tshow (dziWidth dzi) <> " / " <> tshow (dziHeight dzi))
+                            ]
+                      for_ (Internal.contentSubmitterEmail internalContent) \email -> do
+                        H.div_ [H.class_ "py-2 text-sm"] do
+                          H.span_ [H.class_ "text-gray-200"] "By "
+                          H.a_
+                            [H.class_ "link", H.href_ ("mailto:" <> email)]
+                            (H.toHtml email)
+                      H.span_ [H.class_ "text-gray-400 text-xs"] $
+                        H.toHtml $ tshow $ Content.contentInitializedAt internalContent
           }
       )
 
