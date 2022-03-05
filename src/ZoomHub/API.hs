@@ -9,7 +9,7 @@ module ZoomHub.API
   )
 where
 
-import Control.Monad.Except (throwError, void)
+import Control.Monad.Except (throwError, void, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Char8 as BC
@@ -68,6 +68,7 @@ import Servant.Auth.Server
     defaultCookieSettings,
     defaultJWTSettings,
     generateKey,
+    wwwAuthenticatedErr,
   )
 import Servant.HTML.Lucid (HTML)
 import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
@@ -104,16 +105,7 @@ import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Storage.PostgreSQL as PG
-  ( getById,
-    getById',
-    getByURL,
-    getByURL',
-    initialize,
-    markAsFailure,
-    markAsSuccess,
-    markAsVerified,
-    unsafeResetAsInitializedWithVerification,
-  )
+import ZoomHub.Storage.PostgreSQL.GetRecent as PG
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -128,6 +120,8 @@ import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
+import ZoomHub.Web.Page.ExploreRecentContent (ExploreRecentContent (..))
+import qualified ZoomHub.Web.Page.ExploreRecentContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
 import ZoomHub.Web.Page.ViewContent (ViewContent (..))
@@ -224,14 +218,20 @@ type API =
     :<|> "v1" :> "content"
       :> QueryParam "url" String
       :> Get '[JSON] Content
-    -- Embed (iframe)
+    -- Web: Explore: Recent
+    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+      :> "explore"
+      :> "recent"
+      :> QueryParam "items" Int
+      :> Get '[HTML] Page.ExploreRecentContent
+    -- Web: Embed (iframe)
     :<|> Capture "embedId" ContentId
       :> "embed"
       :> QueryParam "fit" EmbedObjectFit
       :> QueryParam "constrain" EmbedConstraint
       :> QueryParam "background" EmbedBackground
       :> Get '[HTML] Page.EmbedContent
-    -- Embed (JavaScript)
+    -- Web: Embed (JavaScript)
     :<|> Capture "embedId" EmbedId
       :> QueryParam "id" String
       :> QueryParam "width" EmbedDimension
@@ -282,6 +282,8 @@ server config =
     :<|> restInvalidContentId
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
+    -- Web: Explore: Recent
+    :<|> webExploreRecent baseURI contentBaseURI dbConnPool
     -- Web: Embed (iframe)
     :<|> webEmbedIFrame baseURI staticBaseURI contentBaseURI dbConnPool
     -- Web: Embed (JavaScript)
@@ -626,6 +628,42 @@ restInvalidRequest :: Maybe String -> Handler Content
 restInvalidRequest maybeURL = case maybeURL of
   Nothing -> throwError . API.error400 $ apiMissingIdOrURLMessage
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
+
+-- Web: Explore: Recent
+webExploreRecent ::
+  BaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  AuthResult Authentication.AuthenticatedUser ->
+  Maybe Int ->
+  Handler Page.ExploreRecentContent
+webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
+  case authResult of
+    Authenticated _ -> do
+      let minItems = 1
+          maxItems = 200
+          numItems = fromMaybe 50 mNumItems
+      when (numItems > maxItems || numItems < minItems) $
+        throwError . Web.error400 $
+          "'numItems' must be between "
+            <> show minItems
+            <> " and "
+            <> show maxItems
+            <> ": "
+            <> show numItems
+      content <- liftIO $ runPoolPQ (PG.getRecent (fromIntegral numItems)) dbConnPool
+      return
+        Page.ExploreRecentContent
+          { ercContent = content,
+            ercBaseURI = baseURI,
+            ercContentBaseURI = contentBaseURI
+          }
+    NoSuchUser ->
+      throwError . Web.error401 $ "Invalid auth"
+    BadPassword ->
+      throwError . Web.error401 $ "Invalid auth"
+    Indefinite ->
+      throwError $ wwwAuthenticatedErr "ZoomHub"
 
 -- Web: Embed
 webEmbedIFrame ::

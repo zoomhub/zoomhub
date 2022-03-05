@@ -51,6 +51,7 @@ library
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.PostgreSQL
     , ZoomHub.Storage.PostgreSQL.ConnectInfo
+    , ZoomHub.Storage.PostgreSQL.GetRecent
     , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Storage.PostgreSQL.Schema.Schema0
@@ -82,6 +83,7 @@ library
     , ZoomHub.Web.MainDevelopment
     , ZoomHub.Web.Page
     , ZoomHub.Web.Page.EmbedContent
+    , ZoomHub.Web.Page.ExploreRecentContent
     , ZoomHub.Web.Page.VerifyContent
     , ZoomHub.Web.Page.ViewContent
     , ZoomHub.Web.Static
