@@ -9,7 +9,7 @@ module ZoomHub.API
   )
 where
 
-import Control.Monad.Except (throwError, void)
+import Control.Monad.Except (throwError, void, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Char8 as BC
@@ -222,6 +222,7 @@ type API =
     :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
       :> "explore"
       :> "recent"
+      :> QueryParam "items" Int
       :> Get '[HTML] Page.ExploreRecentContent
     -- Web: Embed (iframe)
     :<|> Capture "embedId" ContentId
@@ -634,11 +635,23 @@ webExploreRecent ::
   ContentBaseURI ->
   Pool Connection ->
   AuthResult Authentication.AuthenticatedUser ->
+  Maybe Int ->
   Handler Page.ExploreRecentContent
-webExploreRecent baseURI contentBaseURI dbConnPool authResult =
+webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
   case authResult of
     Authenticated _ -> do
-      content <- liftIO $ runPoolPQ (PG.getRecent 50) dbConnPool
+      let minItems = 1
+          maxItems = 100
+          numItems = fromMaybe maxItems mNumItems
+      when (numItems > maxItems || numItems < minItems) $
+        throwError . Web.error400 $
+          "'numItems' must be between "
+            <> show minItems
+            <> " and "
+            <> show maxItems
+            <> ": "
+            <> show numItems
+      content <- liftIO $ runPoolPQ (PG.getRecent (fromIntegral numItems)) dbConnPool
       return
         Page.ExploreRecentContent
           { ercContent = content,
