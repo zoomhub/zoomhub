@@ -50,4 +50,16 @@ it. This is a convenient way to develop new features before using the vault.
 
 #### Adding new environment
 
-- Add new rule to RDS security groups.
+Add new rule to RDS security groups.
+
+### Lambda + EFS
+
+Requires VPC for the Lambda which cuts off internet access, i.e. the Lambda can
+no longer call the ZoomHub API. This manifests itself as rather unhelpful timeout
+without any log output.
+
+To fix this, follow this guide:
+https://aws.amazon.com/premiumsupport/knowledge-center/internet-access-lambda-function/
+
+Other timeout causes:
+https://aws.amazon.com/premiumsupport/knowledge-center/lambda-vpc-troubleshoot-timeout/
