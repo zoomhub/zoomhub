@@ -93,14 +93,6 @@ const processContent = async ({ contentURL }) => {
     })
   }
 
-  const sourceURL = content.url
-  const s3URL = parseS3URL(sourceURL)
-  log("meta", { contentId, contentURL, sourceURL, s3URL })
-
-  const body = s3URL
-    ? await fetchS3URL({ ...s3URL, s3Client })
-    : await fetchGenericURL(sourceURL)
-
   await mkdirp(TMPDIR)
   log("created TMPDIR", { TMPDIR })
 
@@ -110,13 +102,22 @@ const processContent = async ({ contentURL }) => {
   // Clean up output directory
   // According to SO, `/tmp` is not shared between different invocations:
   // https://stackoverflow.com/a/37990409
-  const tmpFiles = await fs.promises.readdir(ROOT_PATH)
-  const tmpDiskSpace = await checkDiskSpace(ROOT_PATH)
-  log("/tmp info", { tmpFiles, tmpDiskSpace })
-  await rmfr(`${ROOT_PATH}/*`)
+  const rootFiles = await fs.promises.readdir(ROOT_PATH)
+  const rootDiskSpace = await checkDiskSpace(ROOT_PATH)
+  log("root info", { rootFiles, rootDiskSpace })
+  await rmfr(`${outputPath}*`)
 
-  // Write source file
+  const sourceURL = content.url
+  const s3URL = parseS3URL(sourceURL)
+  log("meta", { contentId, contentURL, sourceURL, s3URL })
+
+  const body = s3URL
+    ? await fetchS3URL({ ...s3URL, s3Client })
+    : await fetchGenericURL(sourceURL)
+  log("fetched source file", { sourceURL })
+
   await fs.promises.writeFile(outputPath, body)
+  log("wrote source file locally", { outputPath })
 
   const fileType = await FileType.fromFile(outputPath)
   const isPNG = fileType && fileType.mime === "image/png"
