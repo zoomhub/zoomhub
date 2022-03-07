@@ -19,11 +19,19 @@ const TILE_FORMAT = {
   png: "image/png",
 }
 
+const TMPDIR = process.env.TMPDIR
+
 const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
 const limit = pLimit(parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10)
 
 exports.handler = async ({ contentURL }) => {
-  log("start", { contentURL, ROOT_PATH })
+  log("start", {
+    contentURL,
+    config: {
+      ROOT_PATH,
+      TMPDIR,
+    },
+  })
 
   if (!contentURL) {
     return {
