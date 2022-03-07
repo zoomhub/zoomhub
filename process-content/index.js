@@ -13,7 +13,7 @@ const rmfr = require("rmfr")
 const sharp = require("sharp")
 const xml2js = require("xml2js")
 
-const ROOT_PATH = "/mnt/efs"
+const ROOT_PATH = process.env.ROOT_PATH || "/tmp"
 const TILE_FORMAT = {
   jpg: "image/jpeg",
   png: "image/png",
