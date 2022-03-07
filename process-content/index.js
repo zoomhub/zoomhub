@@ -20,7 +20,7 @@ const TILE_FORMAT = {
 }
 
 const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
-const limit = pLimit(10)
+const limit = pLimit(parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10)
 
 exports.handler = async ({ contentURL }) => {
   log("start", { contentURL, ROOT_PATH })
