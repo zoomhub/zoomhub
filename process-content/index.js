@@ -20,15 +20,18 @@ const TILE_FORMAT = {
 }
 
 const TMPDIR = process.env.TMPDIR
+const NUM_CONCURRENT_UPLOADS =
+  parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10
 
 const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
-const limit = pLimit(parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10)
+const limit = pLimit(NUM_CONCURRENT_UPLOADS)
 
 exports.handler = async ({ contentURL }) => {
   log("start", {
     contentURL,
     config: {
       ROOT_PATH,
+      NUM_CONCURRENT_UPLOADS,
       TMPDIR,
     },
   })
