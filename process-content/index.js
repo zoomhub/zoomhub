@@ -5,6 +5,7 @@ const checkDiskSpace = require("check-disk-space").default
 const ClientError = require("./lib/ClientError")
 const FileType = require("file-type")
 const fs = require("fs")
+const mkdirp = require("mkdirp")
 const path = require("path")
 const pLimit = require("p-limit")
 const readdir = require("recursive-readdir")
@@ -19,7 +20,7 @@ const TILE_FORMAT = {
   png: "image/png",
 }
 
-const TMPDIR = process.env.TMPDIR
+const TMPDIR = process.env.TMPDIR || "/tmp"
 const VIPS_DISC_THRESHOLD = process.env.VIPS_DISC_THRESHOLD
 const NUM_CONCURRENT_UPLOADS =
   parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10
@@ -99,6 +100,9 @@ const processContent = async ({ contentURL }) => {
   const body = s3URL
     ? await fetchS3URL({ ...s3URL, s3Client })
     : await fetchGenericURL(sourceURL)
+
+  await mkdirp(TMPDIR)
+  log("created TMPDIR", { TMPDIR })
 
   const outputPath = `${ROOT_PATH}/${contentId}`
   log("output", { outputPath })
