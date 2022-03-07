@@ -202,9 +202,9 @@ jobs:
           name: process-content-workspace
           path: process-content-workspace.tar.gz
 
-  deploy:
+  web-deploy:
     runs-on: ubuntu-18.04
-    needs: [process-content-build, web-build]
+    needs: [web-build]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -222,11 +222,6 @@ jobs:
           echo "ZH_AWS_EB_ENVIRONMENT=staging-2" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
-      - name: Download process-content-workspace
-        uses: actions/download-artifact@v2
-        with:
-          name: process-content-workspace
-
       - name: Download web-workspace
         uses: actions/download-artifact@v2
         with:
@@ -235,7 +230,6 @@ jobs:
       - name: "WORKAROUND: Extract tar archive (preserves file permissions on GitHub Actions)"
         # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
         run: |
-          tar --extract --verbose --gzip --file process-content-workspace.tar.gz --strip-components=1
           tar --extract --verbose --gzip --file web-workspace.tar.gz --strip-components=1
 
       - name: Create version
@@ -249,6 +243,23 @@ jobs:
       - name: Deploy 'web' Docker image to AWS Elastic Beanstalk
         shell: bash
         run: ./deploy-web.sh $GITHUB_SHA
+
+  process-content-deploy:
+    runs-on: ubuntu-18.04
+    needs: [process-content-build]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Download process-content-workspace
+        uses: actions/download-artifact@v2
+        with:
+          name: process-content-workspace
+
+      - name: "WORKAROUND: Extract tar archive (preserves file permissions on GitHub Actions)"
+        # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
+        run: |
+          tar --extract --verbose --gzip --file process-content-workspace.tar.gz --strip-components=1
 
       - name: Deploy 'processContent' to AWS Lambda
         shell: bash
