@@ -20,6 +20,7 @@ const TILE_FORMAT = {
 }
 
 const TMPDIR = process.env.TMPDIR
+const VIPS_DISC_THRESHOLD = process.env.VIPS_DISC_THRESHOLD
 const NUM_CONCURRENT_UPLOADS =
   parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10
 
@@ -33,6 +34,7 @@ exports.handler = async ({ contentURL }) => {
       ROOT_PATH,
       NUM_CONCURRENT_UPLOADS,
       TMPDIR,
+      VIPS_DISC_THRESHOLD,
     },
   })
 
