@@ -140,11 +140,13 @@ const processContent = async ({ contentURL }) => {
   ])
   log("file meta", { fileSize, dzi })
 
+  log("start:uploadDZI")
   await uploadDZI({
     basePath: outputPath,
     s3Client,
     tileFormat,
   })
+  log("end:uploadDZI")
 
   await markAsSuccess({
     contentURL,
