@@ -138,6 +138,7 @@ const processContent = async ({ contentURL }) => {
     (await fs.promises.stat(outputPath)).size,
     await parseDZI(fixedDZIXMLString),
   ])
+  log("file meta", { fileSize, dzi })
 
   await uploadDZI({
     basePath: outputPath,
