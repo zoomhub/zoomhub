@@ -172,10 +172,10 @@ jobs:
           cache-name: process-content-node-dependencies
         with:
           path: process-content/.npm
-          key: process-content-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('process-content/package-lock.json') }}
+          key: process-content-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('process-content/package-lock.json') }}
           restore-keys: |
-            process-content-build-v1-${{ runner.os }}-${{ env.cache-name }}-
-            process-content-build-v1-${{ runner.os }}-
+            process-content-build-v2-${{ runner.os }}-${{ env.cache-name }}-
+            process-content-build-v2-${{ runner.os }}-
 
       - name: Install Node.js dependencies
         run: cd process-content && npm ci --cache .npm --prefer-offline
