@@ -132,7 +132,7 @@ const processContent = async ({ contentURL }) => {
       depth: "onepixel",
       layout: "dz",
       overlap: 1,
-      size: 254,
+      size: 510, // results in 512x512 tiles (with overlap) apart from the edges
     })
     .toFile(`${outputPath}.dz`)
   log("end:createDZI")
