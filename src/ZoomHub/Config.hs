@@ -63,6 +63,7 @@ instance ToJSON Config where
         "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
         "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe,
         "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
+        "environment" .= environment,
         "logLevel" .= show logLevel,
         "port" .= port,
         "processContent" .= processContent,
