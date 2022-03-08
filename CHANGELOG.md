@@ -4,6 +4,7 @@
 
 - Introduce `UPLOADS_MAX_SIZE_MEGABYTES` environment variable for controlling
   the maximum size for uploads.
+- Move internal API from `/v1` to `/internal`.
 
 ## 2022-03-05-1
 

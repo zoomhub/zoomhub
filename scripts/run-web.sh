@@ -9,7 +9,7 @@ fi
 
 
 echo "Waiting for API: $API_BASE_URI"
-until $(curl --insecure --head  --silent --fail --output /dev/null $API_BASE_URI/v1/config); do
+until $(curl --insecure --head  --silent --fail --output /dev/null $API_BASE_URI/internal/config); do
   echo -n '.'
   sleep 1
 done

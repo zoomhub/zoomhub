@@ -142,7 +142,7 @@ type API =
   "health" :> Get '[HTML] String
     :<|> "version" :> Get '[HTML] String
     -- Config
-    :<|> "v1"
+    :<|> "internal"
       :> "config"
       :> Get '[JSON] API.Config
     -- JSONP: ID
