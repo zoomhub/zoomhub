@@ -63,3 +63,6 @@ https://aws.amazon.com/premiumsupport/knowledge-center/internet-access-lambda-fu
 
 Other timeout causes:
 https://aws.amazon.com/premiumsupport/knowledge-center/lambda-vpc-troubleshoot-timeout/
+
+Security recommendations:
+https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Scenario2.html#VPC_Scenario2_Security
