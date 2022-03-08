@@ -124,6 +124,7 @@ const processContent = async ({ contentURL }) => {
   const tileFormat = isPNG ? { id: "png" } : { id: "jpg", quality: 90 }
   log("file meta", { fileType, isPNG, tileFormat })
 
+  log("start:createDZI")
   await sharp(outputPath, { limitInputPixels: false })
     .rotate() // auto-rotate based on EXIF
     .toFormat(tileFormat)
@@ -134,6 +135,7 @@ const processContent = async ({ contentURL }) => {
       size: 254,
     })
     .toFile(`${outputPath}.dz`)
+  log("end:createDZI")
 
   const dziXMLString = await fs.promises.readFile(`${outputPath}.dzi`)
   const fixedDZIXMLString = await fixDZITileFormat(dziXMLString)
