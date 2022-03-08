@@ -11,6 +11,7 @@ import GHC.Generics (Generic)
 
 data Config = Config
   { configUploadsEnabled :: Bool
+  , configUploadsMaxSizeMegabytes :: Integer
   }
   deriving (Eq, Show, Generic)
 

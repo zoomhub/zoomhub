@@ -332,7 +332,11 @@ version = return
 
 restConfig :: Config -> Handler API.Config
 restConfig config =
-  return API.Config {API.configUploadsEnabled = Config.uploads config == UploadsEnabled}
+  return
+    API.Config
+      { API.configUploadsEnabled = Config.uploads config == UploadsEnabled,
+        API.configUploadsMaxSizeMegabytes = Config.maxUploadSizeMegabytes config
+      }
 
 -- API: JSONP
 jsonpContentById ::
