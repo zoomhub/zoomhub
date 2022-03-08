@@ -109,7 +109,7 @@ const processContent = async ({ contentURL }) => {
 
   const sourceURL = content.url
   const s3URL = parseS3URL(sourceURL)
-  log("meta", { contentId, contentURL, sourceURL, s3URL })
+  log("meta", { contentId, contentURL, sourceURL })
 
   const body = s3URL
     ? await fetchS3URL({ ...s3URL, s3Client })
