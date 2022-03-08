@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 2022-03-09-1
+
+- Introduce `UPLOADS_MAX_SIZE_MEGABYTES` environment variable for controlling
+  the maximum size for uploads.
+
 ## 2022-03-05-1
 
 - Explore: Add private `/explore/recent` page for viewing recent uploads.
