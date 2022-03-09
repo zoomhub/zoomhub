@@ -111,8 +111,13 @@ const processContent = async ({ contentURL }) => {
   )
   log("root info", { rootFiles, rootDiskSpace })
 
-  await logTime("cleanOutputPath", () => rmfr(`${outputPath}*`))
-
+  await logTime("cleanOutputPath", () =>
+    Promise.all([
+      rmfr(outputPath),
+      rmfr(`${outputPath}_files`),
+      rmfr(`${outputPath}.dzi`),
+    ])
+  )
   const sourceURL = content.url
   const s3URL = parseS3URL(sourceURL)
   log("meta", { contentId, contentURL, sourceURL })
