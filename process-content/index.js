@@ -81,7 +81,7 @@ exports.handler = async ({ contentURL }) => {
 const processContent = async ({ contentURL }) => {
   const content = await fetchContent(contentURL)
   if (!content.id) {
-    throw new ClientError("Invalid content")
+    throw new ClientError("Invalid content: Missing ID")
   }
 
   const contentId = parseContentId(content.id)
