@@ -50,7 +50,8 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: "us-east-2"
+      # See: https://github.com/aws/aws-cli/issues/735#issuecomment-39395188
+      AWS_DEFAULT_REGION: "us-east-2"
       ZH_API_PASSWORD_DEVELOPMENT: ${{ secrets.ZH_API_PASSWORD_DEVELOPMENT }}
       ZH_API_USERNAME_DEVELOPMENT: ${{ secrets.ZH_API_USERNAME_DEVELOPMENT }}
       ZH_API_PASSWORD_STAGING: ${{ secrets.ZH_API_PASSWORD_STAGING }}
