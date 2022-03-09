@@ -52,9 +52,9 @@ aws lambda wait function-updated --function-name processContent
 
 update_code_output=$(
   aws lambda update-function-code \
-		--region us-east-2 \
-		--zip-file fileb://function-processContent.zip \
-		--function-name processContent
+    --region $AWS_REGION \
+    --zip-file fileb://function-processContent.zip \
+    --function-name processContent
 )
 
 aws lambda wait function-updated --function-name processContent
@@ -74,6 +74,7 @@ aws lambda wait function-updated --function-name processContent
 publish_output=$(
   aws lambda publish-version \
       --function-name processContent \
+      --region $AWS_REGION \
       --code-sha256 $(jq --raw-output '.CodeSha256' <<< "$update_code_output") \
       --revision-id $(jq --raw-output '.RevisionId' <<< "$update_configuration_output")
 )
@@ -82,6 +83,7 @@ aws lambda wait function-updated --function-name processContent
 
 aws lambda update-alias \
     --function-name processContent \
+    --region $AWS_REGION \
     --function-version $(jq --raw-output '.Version' <<< "$publish_output") \
     --revision-id $(jq --raw-output '.RevisionId' <<< "$publish_output") \
     --name $ZH_ENV
