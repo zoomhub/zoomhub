@@ -29,9 +29,15 @@ const NUM_CONCURRENT_UPLOADS =
 const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
 const limit = pLimit(NUM_CONCURRENT_UPLOADS)
 
-exports.handler = async ({ contentURL }) => {
+exports.handler = async ({ contentURL }, context) => {
   log("start", {
     contentURL,
+    context: {
+      functionName: context.functionName,
+      functionVersion: context.functionVersion,
+      invokedFunctionArn: context.invokedFunctionArn,
+      memoryLimitInMB: context.memoryLimitInMB,
+    },
     config: {
       NUM_CONCURRENT_UPLOADS,
       ROOT_PATH,
