@@ -63,8 +63,7 @@ update_configuration_output=$(
     --function-name processContent \
     --memory-size $MEMORY_SIZE \
     --description "$(date +%FT%T%z)-$ZH_ENV-memory-$MEMORY_SIZE" \
-    --environment "Variables={NUM_CONCURRENT_UPLOADS=$NUM_CONCURRENT_UPLOADS,ROOT_PATH=$ROOT_PATH,S3_CACHE_BUCKET=$S3_CACHE_BUCKET,TMPDIR=$TMPDIR,VIPS_DISC_THRESHOLD=$VIPS_DISC_THRESHOLD,ZH_API_PASSWORD=$ZH_API_PASSWORD,ZH_API_USERNAME=$ZH_API_USERNAME}" \
-    --revision-id  $(jq --raw-output '.RevisionId' <<< "$update_code_output")
+    --environment "Variables={NUM_CONCURRENT_UPLOADS=$NUM_CONCURRENT_UPLOADS,ROOT_PATH=$ROOT_PATH,S3_CACHE_BUCKET=$S3_CACHE_BUCKET,TMPDIR=$TMPDIR,VIPS_DISC_THRESHOLD=$VIPS_DISC_THRESHOLD,ZH_API_PASSWORD=$ZH_API_PASSWORD,ZH_API_USERNAME=$ZH_API_USERNAME}"
 )
 
 aws lambda wait function-updated --function-name processContent
@@ -72,8 +71,7 @@ aws lambda wait function-updated --function-name processContent
 publish_output=$(
   aws lambda publish-version \
       --function-name processContent \
-      --code-sha256 $(jq --raw-output '.CodeSha256' <<< "$update_code_output") \
-      --revision-id $(jq --raw-output '.RevisionId' <<< "$update_configuration_output")
+      --code-sha256 $(jq --raw-output '.CodeSha256' <<< "$update_code_output")
 )
 
 aws lambda wait function-updated --function-name processContent
@@ -81,7 +79,6 @@ aws lambda wait function-updated --function-name processContent
 aws lambda update-alias \
     --function-name processContent \
     --function-version $(jq --raw-output '.Version' <<< "$publish_output") \
-    --revision-id $(jq --raw-output '.RevisionId' <<< "$publish_output") \
     --name $ZH_ENV
 
 aws lambda wait function-updated --function-name processContent
