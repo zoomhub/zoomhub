@@ -58,6 +58,7 @@ update_configuration_output=$(
   aws lambda update-function-configuration \
     --function-name processContent \
     --memory-size $MEMORY_SIZE \
+    --region $AWS_REGION \
     --description "$(date +%FT%T%z)-$ZH_ENV-memory-$MEMORY_SIZE" \
     --environment "Variables={NUM_CONCURRENT_UPLOADS=$NUM_CONCURRENT_UPLOADS,ROOT_PATH=$ROOT_PATH,S3_CACHE_BUCKET=$S3_CACHE_BUCKET,TMPDIR=$TMPDIR,VIPS_DISC_THRESHOLD=$VIPS_DISC_THRESHOLD,ZH_API_PASSWORD=$ZH_API_PASSWORD,ZH_API_USERNAME=$ZH_API_USERNAME}" \
     --revision-id  $(jq --raw-output '.RevisionId' <<< "$update_code_output")
