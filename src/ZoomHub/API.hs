@@ -272,7 +272,7 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restUpload baseURI awsConfig uploads
+    :<|> restUpload config awsConfig uploads
     :<|> restUploadWithoutEmail uploads
     :<|> restContentResetById baseURI dbConnPool
     :<|> restContentVerificationById baseURI dbConnPool
@@ -400,8 +400,8 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: BaseURI -> AWS.Config -> Uploads -> Text -> Handler (HashMap Text Text)
-restUpload baseURI awsConfig uploads email =
+restUpload :: Config -> AWS.Config -> Uploads -> Text -> Handler (HashMap Text Text)
+restUpload config awsConfig uploads email =
   case uploads of
     UploadsDisabled ->
       noNewContentErrorAPI
@@ -423,7 +423,7 @@ restUpload baseURI awsConfig uploads email =
                   "success_action_redirect"
                   -- TODO: Use type-safe links
                   ( fold
-                      [ T.pack $ show baseURI,
+                      [ T.pack . show . Config.baseURI $ config,
                         "/v1/content",
                         "?email=",
                         URIEncode.encodeText email,
@@ -450,7 +450,8 @@ restUpload baseURI awsConfig uploads email =
                   return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
-        maxUploadSizeBytes = 2000 * 1024 * 1024 -- 2GB
+        maxUploadSizeBytes =
+          fromInteger $ Config.maxUploadSizeMegabytes config * 1024 * 1024
         s3Bucket = AWS.unS3BucketName . AWS.configSourcesS3Bucket $ awsConfig
 
 restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)
