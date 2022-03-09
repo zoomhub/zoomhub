@@ -3,6 +3,84 @@ name: zoomhub
 on: push
 
 jobs:
+  # process-content
+  process-content-build:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache process-content Node.js dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: process-content-node-dependencies
+        with:
+          path: process-content/.npm
+          key: process-content-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('process-content/package-lock.json') }}
+          restore-keys: |
+            process-content-build-v2-${{ runner.os }}-${{ env.cache-name }}-
+            process-content-build-v2-${{ runner.os }}-
+
+      - name: Install Node.js dependencies
+        run: cd process-content && npm ci --cache .npm --prefer-offline
+
+      - name: Create workspace directory
+        run: mkdir workspace
+
+      - name: Create AWS Lambda package
+        run: cd process-content && zip -r function-processContent.zip index.js lib node_modules
+
+      - name: Move AWS Lambda package to workspace
+        run: mv process-content/function-processContent.zip workspace
+
+      - name: Copy AWS ops files to workspace
+        run: cp ops/aws/deploy-processContent.sh workspace
+
+      - name: "WORKAROUND: Create tar archive (preserves file permissions on GitHub Actions)"
+        # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
+        run: tar --create --verbose --gzip --file process-content-workspace.tar.gz workspace
+
+      - name: Upload workspace
+        uses: actions/upload-artifact@v2
+        with:
+          name: process-content-workspace
+          path: process-content-workspace.tar.gz
+
+  process-content-deploy:
+    runs-on: ubuntu-18.04
+    needs: [process-content-build]
+    env:
+      ZH_API_PASSWORD_DEVELOPMENT: ${{ secrets.ZH_API_PASSWORD_DEVELOPMENT }}
+      ZH_API_USERNAME_DEVELOPMENT: ${{ secrets.ZH_API_USERNAME_DEVELOPMENT }}
+      ZH_API_PASSWORD_STAGING: ${{ secrets.ZH_API_PASSWORD_STAGING }}
+      ZH_API_USERNAME_STAGING: ${{ secrets.ZH_API_USERNAME_STAGING }}
+      ZH_API_PASSWORD_PRODUCTION: ${{ secrets.ZH_API_PASSWORD_PRODUCTION }}
+      ZH_API_USERNAME_PRODUCTION: ${{ secrets.ZH_API_USERNAME_PRODUCTION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Download process-content-workspace
+        uses: actions/download-artifact@v2
+        with:
+          name: process-content-workspace
+
+      - name: "WORKAROUND: Extract tar archive (preserves file permissions on GitHub Actions)"
+        # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
+        run: |
+          tar --extract --verbose --gzip --file process-content-workspace.tar.gz --strip-components=1
+
+      - name: "development + staging: Deploy 'processContent' to AWS Lambda"
+        shell: bash
+        run: |
+          ZH_ENV=development ./deploy-processContent.sh
+          ZH_ENV=staging ./deploy-processContent.sh
+        if: github.ref != 'refs/heads/main'
+
+      - name: "production: Deploy 'processContent' to AWS Lambda"
+        shell: bash
+        run: |
+          ZH_ENV=production ./deploy-processContent.sh
+        if: github.ref == 'refs/heads/main'
+
+  # web
   web-build:
     runs-on: ubuntu-18.04
     env:
@@ -162,46 +240,6 @@ jobs:
           name: web-workspace
           path: web-workspace.tar.gz
 
-  process-content-build:
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Cache process-content Node.js dependencies
-        uses: actions/cache@v2
-        env:
-          cache-name: process-content-node-dependencies
-        with:
-          path: process-content/.npm
-          key: process-content-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('process-content/package-lock.json') }}
-          restore-keys: |
-            process-content-build-v2-${{ runner.os }}-${{ env.cache-name }}-
-            process-content-build-v2-${{ runner.os }}-
-
-      - name: Install Node.js dependencies
-        run: cd process-content && npm ci --cache .npm --prefer-offline
-
-      - name: Create workspace directory
-        run: mkdir workspace
-
-      - name: Create AWS Lambda package
-        run: cd process-content && zip -r function-processContent.zip index.js lib node_modules
-
-      - name: Move AWS Lambda package to workspace
-        run: mv process-content/function-processContent.zip workspace
-
-      - name: Copy AWS ops files to workspace
-        run: cp ops/aws/deploy-processContent.sh workspace
-
-      - name: "WORKAROUND: Create tar archive (preserves file permissions on GitHub Actions)"
-        # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
-        run: tar --create --verbose --gzip --file process-content-workspace.tar.gz workspace
-
-      - name: Upload workspace
-        uses: actions/upload-artifact@v2
-        with:
-          name: process-content-workspace
-          path: process-content-workspace.tar.gz
-
   web-deploy:
     runs-on: ubuntu-18.04
     needs: [web-build]
@@ -243,24 +281,3 @@ jobs:
       - name: Deploy 'web' Docker image to AWS Elastic Beanstalk
         shell: bash
         run: ./deploy-web.sh $GITHUB_SHA
-
-  process-content-deploy:
-    runs-on: ubuntu-18.04
-    needs: [process-content-build]
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    steps:
-      - name: Download process-content-workspace
-        uses: actions/download-artifact@v2
-        with:
-          name: process-content-workspace
-
-      - name: "WORKAROUND: Extract tar archive (preserves file permissions on GitHub Actions)"
-        # See: https://github.com/actions/upload-artifact/tree/11e311c8b504ea40cbed20583a64d75b4735cff3#permission-loss
-        run: |
-          tar --extract --verbose --gzip --file process-content-workspace.tar.gz --strip-components=1
-
-      - name: Deploy 'processContent' to AWS Lambda
-        shell: bash
-        run: ./deploy-processContent.sh
