@@ -97,9 +97,6 @@ const processContent = async ({ contentURL }) => {
 
   await logTime("createTMPDIR", () => mkdirp(TMPDIR), { TMPDIR })
 
-  const outputPath = `${ROOT_PATH}/${contentId}`
-  log("output", { outputPath })
-
   // Clean up output directory
   // According to SO, `/tmp` is not shared between different invocations:
   // https://stackoverflow.com/a/37990409
@@ -111,14 +108,29 @@ const processContent = async ({ contentURL }) => {
   )
   log("root info", { rootFiles, rootDiskSpace })
 
-  await logTime("cleanOutputPath", () =>
-    Promise.all([
-      rmfr(outputPath),
-      rmfr(`${outputPath}_files`),
-      rmfr(`${outputPath}.dzi`),
-    ])
-  )
   const sourceURL = content.url
+  const outputPath = `${ROOT_PATH}/${contentId}`
+
+  try {
+    await processContentUnsafe({ contentId, contentURL, sourceURL, outputPath })
+  } finally {
+    // Always delete all output to prevent stale files incurring storage costs:
+    await logTime("post:cleanOutputPath", () => deleteOutput(outputPath), {
+      outputPath,
+    })
+  }
+}
+
+const processContentUnsafe = async ({
+  contentId,
+  contentURL,
+  sourceURL,
+  outputPath,
+}) => {
+  await logTime("pre:cleanOutputPath", () => deleteOutput(outputPath), {
+    outputPath,
+  })
+
   const s3URL = parseS3URL(sourceURL)
   log("meta", { contentId, contentURL, sourceURL })
 
@@ -319,3 +331,10 @@ const fixDZITileFormat = async (xmlString) => {
 
   return new xml2js.Builder().buildObject(dzi)
 }
+
+const deleteOutput = (outputPath) =>
+  Promise.all([
+    rmfr(outputPath),
+    rmfr(`${outputPath}_files`),
+    rmfr(`${outputPath}.dzi`),
+  ])
