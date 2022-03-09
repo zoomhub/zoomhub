@@ -21,6 +21,7 @@ const TILE_FORMAT = {
 }
 
 const TMPDIR = process.env.TMPDIR || "/tmp"
+const TILE_SIZE = parseInt(process.env.TILE_SIZE, 10) || 254
 const VIPS_DISC_THRESHOLD = process.env.VIPS_DISC_THRESHOLD
 const NUM_CONCURRENT_UPLOADS =
   parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10
@@ -32,8 +33,9 @@ exports.handler = async ({ contentURL }) => {
   log("start", {
     contentURL,
     config: {
-      ROOT_PATH,
       NUM_CONCURRENT_UPLOADS,
+      ROOT_PATH,
+      TILE_SIZE,
       TMPDIR,
       VIPS_DISC_THRESHOLD,
     },
@@ -134,8 +136,7 @@ const processContent = async ({ contentURL }) => {
         depth: "onepixel",
         layout: "dz",
         overlap: 1,
-        // results in 512x512 tiles (with overlap) apart from the edges
-        size: 510,
+        size: TILE_SIZE,
       })
       .toFile(`${outputPath}.dz`)
   )

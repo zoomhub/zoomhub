@@ -12,6 +12,8 @@
       Default: `10`.
     - `ROOT_PATH`: Set root path for where to store tiles, e.g. to leverage
       AWS Elastic File Storage (EFS). Default: `/tmp`.
+    - `TILE_SIZE`: Set tile size of Deep Zoom image pyramid. Recommended: `254`
+      or `510`. Default: `254`.
     - `VIPS_DISC_THRESHOLD`: Set maximum size of image that VIPS loads into
       memory.
   - Upgrade `sharp` from 0.29.1 to 0.30.2. This should improve tiling
