@@ -111,10 +111,12 @@ const processContent = async ({ contentURL }) => {
   const s3URL = parseS3URL(sourceURL)
   log("meta", { contentId, contentURL, sourceURL })
 
-  const body = s3URL
-    ? await fetchS3URL({ ...s3URL, s3Client })
-    : await fetchGenericURL(sourceURL)
-  log("fetched source file", { sourceURL })
+  const body = await logTime(
+    "fetchFile",
+    () =>
+      s3URL ? fetchS3URL({ ...s3URL, s3Client }) : fetchGenericURL(sourceURL),
+    { source: s3URL ? "s3" : "generic" }
+  )
 
   await fs.promises.writeFile(outputPath, body)
   log("wrote source file locally", { outputPath })
@@ -124,18 +126,19 @@ const processContent = async ({ contentURL }) => {
   const tileFormat = isPNG ? { id: "png" } : { id: "jpg", quality: 90 }
   log("file meta", { fileType, isPNG, tileFormat })
 
-  log("start:createDZI")
-  await sharp(outputPath, { limitInputPixels: false })
-    .rotate() // auto-rotate based on EXIF
-    .toFormat(tileFormat)
-    .tile({
-      depth: "onepixel",
-      layout: "dz",
-      overlap: 1,
-      size: 510, // results in 512x512 tiles (with overlap) apart from the edges
-    })
-    .toFile(`${outputPath}.dz`)
-  log("end:createDZI")
+  await logTime("createDZI", () =>
+    sharp(outputPath, { limitInputPixels: false })
+      .rotate() // auto-rotate based on EXIF
+      .toFormat(tileFormat)
+      .tile({
+        depth: "onepixel",
+        layout: "dz",
+        overlap: 1,
+        // results in 512x512 tiles (with overlap) apart from the edges
+        size: 510,
+      })
+      .toFile(`${outputPath}.dz`)
+  )
 
   const dziXMLString = await fs.promises.readFile(`${outputPath}.dzi`)
   const fixedDZIXMLString = await fixDZITileFormat(dziXMLString)
@@ -147,13 +150,13 @@ const processContent = async ({ contentURL }) => {
   ])
   log("DZI meta", { fileSize, dzi })
 
-  log("start:uploadDZI")
-  await uploadDZI({
-    basePath: outputPath,
-    s3Client,
-    tileFormat,
-  })
-  log("end:uploadDZI")
+  await logTime("uploadDZI", () =>
+    uploadDZI({
+      basePath: outputPath,
+      s3Client,
+      tileFormat,
+    })
+  )
 
   await markAsSuccess({
     contentURL,
@@ -184,6 +187,17 @@ const parseContentId = (value) => {
 
 const log = (message, props = {}) =>
   console.log({ time: new Date().toISOString(), message, ...props })
+
+const logTime = async (message, action, props = {}) => {
+  log(`start:${message}`)
+  const start = Date.now()
+  const result = await action()
+  log(`end:${message}`, {
+    ...props,
+    duration: { value: Date.now() - start, unit: "ms" },
+  })
+  return result
+}
 
 const fetchContent = async (url) => (await axios.get(url)).data
 const fetchS3URL = async ({ s3Client, bucket, key }) =>
