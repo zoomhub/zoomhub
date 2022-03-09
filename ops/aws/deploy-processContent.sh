@@ -47,12 +47,17 @@ if [[ -z "$ZH_API_PASSWORD" ]]; then
   exit 1
 fi
 
+# Source: https://stackoverflow.com/a/70474523/125305
+aws lambda wait function-updated --function-name processContent
+
 update_code_output=$(
   aws lambda update-function-code \
 		--region us-east-2 \
 		--zip-file fileb://function-processContent.zip \
 		--function-name processContent
 )
+
+aws lambda wait function-updated --function-name processContent
 
 update_configuration_output=$(
   aws lambda update-function-configuration \
@@ -64,6 +69,8 @@ update_configuration_output=$(
     --revision-id  $(jq --raw-output '.RevisionId' <<< "$update_code_output")
 )
 
+aws lambda wait function-updated --function-name processContent
+
 publish_output=$(
   aws lambda publish-version \
       --function-name processContent \
@@ -71,8 +78,12 @@ publish_output=$(
       --revision-id $(jq --raw-output '.RevisionId' <<< "$update_configuration_output")
 )
 
+aws lambda wait function-updated --function-name processContent
+
 aws lambda update-alias \
     --function-name processContent \
     --function-version $(jq --raw-output '.Version' <<< "$publish_output") \
     --revision-id $(jq --raw-output '.RevisionId' <<< "$publish_output") \
     --name $ZH_ENV
+
+aws lambda wait function-updated --function-name processContent
