@@ -259,7 +259,7 @@ jobs:
 
       - name: Sets ZH_AWS_EB_ENVIRONMENT for staging
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=staging-2" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=staging" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
       - name: Download web-workspace
