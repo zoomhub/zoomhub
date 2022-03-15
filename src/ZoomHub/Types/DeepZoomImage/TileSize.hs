@@ -26,10 +26,10 @@ data TileSize
   deriving (Bounded, Enum, Eq)
 
 fromString :: String -> Maybe TileSize
-fromString "1024" = Just TileSize1024
 fromString "254" = Just TileSize254
 fromString "256" = Just TileSize256
 fromString "510" = Just TileSize510
+fromString "1024" = Just TileSize1024
 fromString _ = Nothing
 
 fromInteger :: Integer -> Maybe TileSize
