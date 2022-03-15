@@ -9,6 +9,7 @@ fi
 MEMORY_SIZE=8192
 NUM_CONCURRENT_UPLOADS=64
 ROOT_PATH='/mnt/efs'
+TILE_SIZE=254
 TMPDIR='/mnt/efs/tmp'
 VIPS_DISC_THRESHOLD='512m'
 
@@ -23,11 +24,13 @@ case $ZH_ENV in
     ;;
   staging)
     S3_CACHE_BUCKET='cache-staging.zoomhub.net'
+    TILE_SIZE=510
     ZH_API_PASSWORD=$ZH_API_PASSWORD_STAGING
     ZH_API_USERNAME=$ZH_API_USERNAME_STAGING
     ;;
   development)
     S3_CACHE_BUCKET='cache-development.zoomhub.net'
+    TILE_SIZE=510
     ZH_API_PASSWORD=$ZH_API_PASSWORD_DEVELOPMENT
     ZH_API_USERNAME=$ZH_API_USERNAME_DEVELOPMENT
     ;;
