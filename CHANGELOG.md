@@ -1,6 +1,6 @@
 # ZoomHub
 
-## 2022-03-09-1
+## 2022-03-15-1
 
 - API:
   - Introduce `UPLOADS_MAX_SIZE_MEGABYTES` environment variable for controlling
