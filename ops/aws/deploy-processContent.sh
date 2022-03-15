@@ -6,19 +6,28 @@ if [[ -z "$ZH_ENV" ]]; then
   exit 1
 fi
 
-MEMORY_SIZE=8192
 NUM_CONCURRENT_UPLOADS=64
-ROOT_PATH='/mnt/efs'
 TILE_SIZE=254
-TMPDIR='/mnt/efs/tmp'
-VIPS_DISC_THRESHOLD='512m'
+
+# NOTE: Enabling EFS requires a VPC which requires a NAT gateway to preserve
+# internet connection to talk to ZoomHub API. This adds a cost of ~$30/month.
+use_efs='false'
+echo "EFS enabled: $use_efs"
+if [ "$use_efs" == "true" ]; then
+    MEMORY_SIZE=8192
+    ROOT_PATH='/mnt/efs'
+    TMPDIR='/mnt/efs/tmp'
+    VIPS_DISC_THRESHOLD='512m'
+else
+    MEMORY_SIZE=4000
+    ROOT_PATH='/tmp'
+    TMPDIR='/tmp'
+    VIPS_DISC_THRESHOLD='4000m'
+fi
 
 case $ZH_ENV in
   production)
-    MEMORY_SIZE=4096
-    ROOT_PATH='/tmp'
     S3_CACHE_BUCKET='cache.zoomhub.net'
-    TMPDIR='/tmp'
     ZH_API_PASSWORD=$ZH_API_PASSWORD_PRODUCTION
     ZH_API_USERNAME=$ZH_API_USERNAME_PRODUCTION
     ;;
