@@ -18,8 +18,10 @@
       memory.
   - Upgrade `sharp` from 0.29.1 to 0.30.2. This should improve tiling
     performance.
-  - Increase tile size from 254 pixels to 510 pixels.
+  - Increase tile size from 254 pixels to 510 pixels (in development and staging)
   - Time long-running operations.
+- Ops:
+  - Separate deployment of `web` and `processContent`.
 
 ## 2022-03-05-1
 
