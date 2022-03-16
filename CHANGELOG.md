@@ -24,7 +24,7 @@
     staging)
   - Time long-running operations.
   - Delete temporary files after DZI upload.
-- CI:
+- Ops (CI):
   - Separate deployment of `web` and `processContent`.
 
 ## 2022-03-05-1
