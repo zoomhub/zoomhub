@@ -189,12 +189,10 @@ const processContentUnsafe = async ({
     })
   )
 
-  await markAsSuccess({
-    contentURL,
-    mime: fileType && fileType.mime,
-    size: fileSize,
-    dzi,
-  })
+  const mime = fileType && fileType.mime
+  const size = fileSize
+  log("pre:marking", { contentURL, mime, size, dzi })
+  return markAsSuccess({ contentURL, mime, size, dzi })
 }
 
 // Helpers
