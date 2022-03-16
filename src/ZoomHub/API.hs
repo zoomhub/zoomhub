@@ -142,7 +142,7 @@ type API =
   "health" :> Get '[HTML] String
     :<|> "version" :> Get '[HTML] String
     -- Config
-    :<|> "v1"
+    :<|> "internal"
       :> "config"
       :> Get '[JSON] API.Config
     -- JSONP: ID
@@ -272,7 +272,7 @@ server config =
     :<|> jsonpContentByURL baseURI contentBaseURI dbConnPool
     :<|> jsonpInvalidRequest
     -- API: RESTful
-    :<|> restUpload baseURI awsConfig uploads
+    :<|> restUpload config awsConfig uploads
     :<|> restUploadWithoutEmail uploads
     :<|> restContentResetById baseURI dbConnPool
     :<|> restContentVerificationById baseURI dbConnPool
@@ -332,7 +332,13 @@ version = return
 
 restConfig :: Config -> Handler API.Config
 restConfig config =
-  return API.Config {API.configUploadsEnabled = Config.uploads config == UploadsEnabled}
+  return
+    API.Config
+      { API.configEnvironment = Config.environment config,
+        API.configBaseURI = Config.baseURI config,
+        API.configUploadsEnabled = Config.uploads config == UploadsEnabled,
+        API.configUploadsMaxSizeMegabytes = Config.maxUploadSizeMegabytes config
+      }
 
 -- API: JSONP
 jsonpContentById ::
@@ -396,8 +402,8 @@ jsonpInvalidRequest maybeURL callback =
     Just _ ->
       return $ mkJSONP callback (mkNonRESTful400 invalidURLErrorMessage)
 
-restUpload :: BaseURI -> AWS.Config -> Uploads -> Text -> Handler (HashMap Text Text)
-restUpload baseURI awsConfig uploads email =
+restUpload :: Config -> AWS.Config -> Uploads -> Text -> Handler (HashMap Text Text)
+restUpload config awsConfig uploads email =
   case uploads of
     UploadsDisabled ->
       noNewContentErrorAPI
@@ -419,7 +425,7 @@ restUpload baseURI awsConfig uploads email =
                   "success_action_redirect"
                   -- TODO: Use type-safe links
                   ( fold
-                      [ T.pack $ show baseURI,
+                      [ T.pack . show . Config.baseURI $ config,
                         "/v1/content",
                         "?email=",
                         URIEncode.encodeText email,
@@ -446,12 +452,8 @@ restUpload baseURI awsConfig uploads email =
                   return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
       where
         minUploadSizeBytes = 1
-        -- NOTE: AWS Lambda has a limit of 500MB scratch space. If content
-        -- sticks around between invocations due to failures, we will eventually
-        -- run out of space.
-        -- In addition, to process an image of x bytes, we need roughly 2x the
-        -- space to hold the original as well as the generated tiles.
-        maxUploadSizeBytes = 50 * 1024 * 1024 -- 50MB
+        maxUploadSizeBytes =
+          fromInteger $ Config.maxUploadSizeMegabytes config * 1024 * 1024
         s3Bucket = AWS.unS3BucketName . AWS.configSourcesS3Bucket $ awsConfig
 
 restUploadWithoutEmail :: Uploads -> Handler (HashMap Text Text)

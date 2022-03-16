@@ -8,11 +8,16 @@ where
 import Data.Aeson (ToJSON, genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import GHC.Generics (Generic)
+import ZoomHub.Types.BaseURI (BaseURI)
+import ZoomHub.Types.Environment (Environment)
 
 data Config = Config
-  { configUploadsEnabled :: Bool
+  { configEnvironment :: Environment,
+    configBaseURI :: BaseURI,
+    configUploadsEnabled :: Bool,
+    configUploadsMaxSizeMegabytes :: Integer
   }
-  deriving (Eq, Show, Generic)
+  deriving (Generic)
 
 -- JSON
 instance ToJSON Config where

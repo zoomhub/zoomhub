@@ -12,6 +12,7 @@ where
 import Data.Text (Text)
 import qualified Data.Text as T
 import System.Environment (lookupEnv)
+import Data.Aeson (ToJSON(toJSON), Value (String))
 
 data Environment
   = Development
@@ -37,3 +38,7 @@ toText = \case
   Test -> "test"
   Staging -> "staging"
   Production -> "production"
+
+-- JSON
+instance ToJSON Environment where
+  toJSON = String . toText

@@ -5,6 +5,7 @@ const checkDiskSpace = require("check-disk-space").default
 const ClientError = require("./lib/ClientError")
 const FileType = require("file-type")
 const fs = require("fs")
+const mkdirp = require("mkdirp")
 const path = require("path")
 const pLimit = require("p-limit")
 const readdir = require("recursive-readdir")
@@ -13,16 +14,39 @@ const rmfr = require("rmfr")
 const sharp = require("sharp")
 const xml2js = require("xml2js")
 
-const ROOT_PATH = "/tmp"
+const ROOT_PATH = process.env.ROOT_PATH || "/tmp"
 const TILE_FORMAT = {
   jpg: "image/jpeg",
   png: "image/png",
 }
 
-const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
-const limit = pLimit(10)
+const TMPDIR = process.env.TMPDIR || "/tmp"
+const TILE_SIZE = parseInt(process.env.TILE_SIZE, 10) || 254
+const VIPS_DISC_THRESHOLD = process.env.VIPS_DISC_THRESHOLD
+const NUM_CONCURRENT_UPLOADS =
+  parseInt(process.env.NUM_CONCURRENT_UPLOADS, 10) || 10
 
-exports.handler = async ({ contentURL }) => {
+const s3Client = new AWS.S3({ apiVersion: "2006-03-01" })
+const limit = pLimit(NUM_CONCURRENT_UPLOADS)
+
+exports.handler = async ({ contentURL }, context) => {
+  log("start", {
+    contentURL,
+    context: {
+      functionName: context.functionName,
+      functionVersion: context.functionVersion,
+      invokedFunctionArn: context.invokedFunctionArn,
+      memoryLimitInMB: context.memoryLimitInMB,
+    },
+    config: {
+      NUM_CONCURRENT_UPLOADS,
+      ROOT_PATH,
+      TILE_SIZE,
+      TMPDIR,
+      VIPS_DISC_THRESHOLD,
+    },
+  })
+
   if (!contentURL) {
     return {
       status: 400,
@@ -63,7 +87,7 @@ exports.handler = async ({ contentURL }) => {
 const processContent = async ({ contentURL }) => {
   const content = await fetchContent(contentURL)
   if (!content.id) {
-    throw new ClientError("Invalid content")
+    throw new ClientError("Invalid content: Missing ID")
   }
 
   const contentId = parseContentId(content.id)
@@ -77,43 +101,75 @@ const processContent = async ({ contentURL }) => {
     })
   }
 
-  const sourceURL = content.url
-  const s3URL = parseS3URL(sourceURL)
-  log("meta", { contentId, contentURL, sourceURL, s3URL })
-
-  const body = s3URL
-    ? await fetchS3URL({ ...s3URL, s3Client })
-    : await fetchGenericURL(sourceURL)
-
-  const outputPath = `${ROOT_PATH}/${contentId}`
-  log("output", { outputPath })
+  await logTime("createTMPDIR", () => mkdirp(TMPDIR), { TMPDIR })
 
   // Clean up output directory
   // According to SO, `/tmp` is not shared between different invocations:
   // https://stackoverflow.com/a/37990409
-  const tmpFiles = await fs.promises.readdir(ROOT_PATH)
-  const tmpDiskSpace = await checkDiskSpace(ROOT_PATH)
-  log("/tmp info", { tmpFiles, tmpDiskSpace })
-  await rmfr(`${ROOT_PATH}/*`)
+  const rootFiles = await logTime("readRootFiles", () =>
+    fs.promises.readdir(ROOT_PATH)
+  )
+  const rootDiskSpace = await logTime("checkDiskSpace", () =>
+    checkDiskSpace(ROOT_PATH)
+  )
+  log("root info", { rootFiles, rootDiskSpace })
 
-  // Write source file
-  await fs.promises.writeFile(outputPath, body)
+  const sourceURL = content.url
+  const outputPath = `${ROOT_PATH}/${contentId}`
+
+  try {
+    await processContentUnsafe({ contentId, contentURL, sourceURL, outputPath })
+  } finally {
+    // Always delete all output to prevent stale files incurring storage costs:
+    await logTime("post:cleanOutputPath", () => deleteOutput(outputPath), {
+      outputPath,
+    })
+  }
+}
+
+const processContentUnsafe = async ({
+  contentId,
+  contentURL,
+  sourceURL,
+  outputPath,
+}) => {
+  await logTime("pre:cleanOutputPath", () => deleteOutput(outputPath), {
+    outputPath,
+  })
+
+  const s3URL = parseS3URL(sourceURL)
+  log("meta", { contentId, contentURL, sourceURL })
+
+  const body = await logTime(
+    "fetchFile",
+    () =>
+      s3URL ? fetchS3URL({ ...s3URL, s3Client }) : fetchGenericURL(sourceURL),
+    { source: s3URL ? "s3" : "generic" }
+  )
+
+  await logTime(
+    "writeSourceFile",
+    () => fs.promises.writeFile(outputPath, body),
+    { outputPath }
+  )
 
   const fileType = await FileType.fromFile(outputPath)
   const isPNG = fileType && fileType.mime === "image/png"
   const tileFormat = isPNG ? { id: "png" } : { id: "jpg", quality: 90 }
   log("file meta", { fileType, isPNG, tileFormat })
 
-  await sharp(outputPath, { limitInputPixels: false })
-    .rotate() // auto-rotate based on EXIF
-    .toFormat(tileFormat)
-    .tile({
-      depth: "onepixel",
-      layout: "dz",
-      overlap: 1,
-      size: 254,
-    })
-    .toFile(`${outputPath}.dz`)
+  await logTime("createDZI", () =>
+    sharp(outputPath, { limitInputPixels: false })
+      .rotate() // auto-rotate based on EXIF
+      .toFormat(tileFormat)
+      .tile({
+        depth: "onepixel",
+        layout: "dz",
+        overlap: 1,
+        size: TILE_SIZE,
+      })
+      .toFile(`${outputPath}.dz`)
+  )
 
   const dziXMLString = await fs.promises.readFile(`${outputPath}.dzi`)
   const fixedDZIXMLString = await fixDZITileFormat(dziXMLString)
@@ -123,19 +179,20 @@ const processContent = async ({ contentURL }) => {
     (await fs.promises.stat(outputPath)).size,
     await parseDZI(fixedDZIXMLString),
   ])
+  log("DZI meta", { fileSize, dzi })
 
-  await uploadDZI({
-    basePath: outputPath,
-    s3Client,
-    tileFormat,
-  })
+  await logTime("uploadDZI", () =>
+    uploadDZI({
+      basePath: outputPath,
+      s3Client,
+      tileFormat,
+    })
+  )
 
-  await markAsSuccess({
-    contentURL,
-    mime: fileType && fileType.mime,
-    size: fileSize,
-    dzi,
-  })
+  const mime = fileType && fileType.mime
+  const size = fileSize
+  log("pre:marking", { contentURL, mime, size, dzi })
+  return markAsSuccess({ contentURL, mime, size, dzi })
 }
 
 // Helpers
@@ -159,6 +216,17 @@ const parseContentId = (value) => {
 
 const log = (message, props = {}) =>
   console.log({ time: new Date().toISOString(), message, ...props })
+
+const logTime = async (message, action, props = {}) => {
+  log(`start:${message}`)
+  const start = Date.now()
+  const result = await action()
+  log(`end:${message}`, {
+    ...props,
+    duration: { value: Date.now() - start, unit: "ms" },
+  })
+  return result
+}
 
 const fetchContent = async (url) => (await axios.get(url)).data
 const fetchS3URL = async ({ s3Client, bucket, key }) =>
@@ -267,3 +335,10 @@ const fixDZITileFormat = async (xmlString) => {
 
   return new xml2js.Builder().buildObject(dzi)
 }
+
+const deleteOutput = (outputPath) =>
+  Promise.all([
+    rmfr(outputPath),
+    rmfr(`${outputPath}_files`),
+    rmfr(`${outputPath}.dzi`),
+  ])

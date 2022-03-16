@@ -113,7 +113,7 @@ import { Create } from "./components/Create"
   let apiConfig
   try {
     apiConfig = await fetch(
-      `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/config`
+      `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/internal/config`
     ).then((_) => _.json())
   } catch (error) {
     console.error("Error fetching API configuration:", error)

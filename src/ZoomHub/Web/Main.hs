@@ -105,6 +105,7 @@ main = do
       processContent = fromMaybe ProcessNoContent maybeProcessContent
       maybeUploads = Uploads.parse <$> lookup "UPLOADS" env
       uploads = fromMaybe UploadsDisabled maybeUploads
+      maxUploadSizeMegabytes = fromMaybe 50 (lookup "UPLOADS_MAX_SIZE_MEGABYTES" env >>= readMaybe)
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers = lookup "PROCESSING_WORKERS" env >>= readMaybe
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers

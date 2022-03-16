@@ -164,6 +164,7 @@ config =
       error404 = "404",
       logger = nullLogger,
       logLevel = LogLevel.Debug,
+      maxUploadSizeMegabytes = 50,
       openSeadragonScript = "osd",
       port = 8000,
       processContent = ProcessExistingAndNewContent,

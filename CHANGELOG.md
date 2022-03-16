@@ -1,5 +1,32 @@
 # ZoomHub
 
+## 2022-03-16-1
+
+- API:
+  - Introduce `UPLOADS_MAX_SIZE_MEGABYTES` environment variable for controlling
+    the maximum size for uploads.
+  - Move internal API from `/v1` to `/internal`.
+  - Make `environment` and `baseURI` public in `/internal/config` to verify
+    environment configuration.
+- processContent:
+  - Introduce new environment variables:
+    - `NUM_CONCURRENT_UPLOADS`: Set maximum of concurrent uploads of tiles to
+      S3. Default: `10`.
+    - `ROOT_PATH`: Set root path for where to store tiles, e.g. to leverage AWS
+      Elastic File Storage (EFS). Default: `/tmp`.
+    - `TILE_SIZE`: Set tile size of Deep Zoom image pyramid. Recommended: `254`
+      or `510`. Default: `254`.
+    - `VIPS_DISC_THRESHOLD`: Set maximum size of image that VIPS loads into
+      memory.
+  - Upgrade `sharp` from 0.29.1 to 0.30.2. This should improve tiling
+    performance.
+  - Increase tile size from 254 pixels to 510 pixels (in development and
+    staging)
+  - Time long-running operations.
+  - Delete temporary files after DZI upload.
+- Ops (CI):
+  - Separate deployment of `web` and `processContent`.
+
 ## 2022-03-05-1
 
 - Explore: Add private `/explore/recent` page for viewing recent uploads.
