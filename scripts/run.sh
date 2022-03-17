@@ -1,6 +1,10 @@
 #!/bin/bash
 set -eo pipefail
 
+function json_log_time() {
+  echo "\"time\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\""
+}
+
 if [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
   echo "Please set 'AWS_SECRET_ACCESS_KEY' environment variable"
   exit 1
@@ -50,7 +54,7 @@ while [ -z "$NGROK_PUBLIC_URL" ]; do
 done
 echo ''
 
-
+echo "{$(json_log_time), \"message\": \"Start\"}"
 BASE_URI=$NGROK_PUBLIC_URL \
 PUBLIC_PATH='frontend/build' \
   npx concurrently \
