@@ -18,7 +18,7 @@ response format?
   That might conflict with the proposed `type` property on **Content** objects;
   see below.
 
-**Content** objects:
+**Content** objects: (TODO: Rename to `Post`)
 
 - Add an `error` property for semantic failure codes/reasons.
   (We were routinely asked for this.)
