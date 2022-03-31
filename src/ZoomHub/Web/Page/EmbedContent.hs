@@ -16,7 +16,7 @@ import qualified Data.Text as T
 import qualified Lucid as H
 import NeatInterpolation (text)
 import Network.URI (parseRelativeReference, relativeTo)
-import ZoomHub.API.Types.Content (Content (contentDzi, contentReady), contentId)
+import qualified ZoomHub.API.Types.PublicContent as PublicContent
 import ZoomHub.API.Types.DeepZoomImage (DeepZoomImageURI (DeepZoomImageURI), mkDeepZoomImage)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentId (unContentId)
@@ -31,10 +31,11 @@ import ZoomHub.Web.Types.EmbedConstraint (EmbedConstraint (unEmbedConstraint))
 import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit (unEmbedObjectFit))
 import ZoomHub.Web.Types.OpenSeadragonTileSource (fromDeepZoomImage)
 import ZoomHub.Web.Types.OpenSeadragonViewerConfig (mkOpenSeadragonViewerConfig)
+import ZoomHub.API.Types.PublicContent (PublicContent)
 
 data EmbedContent = EmbedContent
   { ecBackgroundColor :: Maybe EmbedBackground,
-    ecContent :: Content,
+    ecContent :: PublicContent,
     ecBaseURI :: BaseURI,
     ecConstraint :: Maybe EmbedConstraint,
     ecObjectFit :: Maybe EmbedObjectFit,
@@ -69,7 +70,7 @@ instance H.ToHtml EmbedContent where
       )
     where
       content = ecContent
-      cId = unContentId $ contentId content
+      cId = unContentId $ PublicContent.contentId content
       staticBaseURI = ecStaticBaseURI
 
       backgroundColor = fromMaybe EmbedBackground.Black ecBackgroundColor
@@ -80,13 +81,13 @@ instance H.ToHtml EmbedContent where
         openSeadragonScriptPath `relativeTo` unStaticBaseURI staticBaseURI
 
       openSeadragonConfig = T.pack $ BLC.unpack $ encode viewerConfig
-      maybeDZI = contentDzi content
+      maybeDZI = PublicContent.contentDzi content
       queuedDZI =
         mkDeepZoomImage queuedDZIURI 8000 6000 TileSize256 TileOverlap1 TileFormat.PNG
       queuedDZIURI =
         DeepZoomImageURI $ queuedDZIPath `relativeTo` unStaticBaseURI staticBaseURI
       queuedDZIPath = fromJust (parseRelativeReference "queued.dzi")
-      isReady = contentReady content
+      isReady = PublicContent.contentReady content
       tileSource
         | not isReady = fromDeepZoomImage queuedDZI
         | otherwise = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI

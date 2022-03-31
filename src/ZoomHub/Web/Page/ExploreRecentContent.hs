@@ -11,7 +11,6 @@ import Data.Foldable (forM_, for_)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Lucid as H
-import qualified ZoomHub.API.Types.Content as Content
 import ZoomHub.API.Types.DeepZoomImage as DZI
 import ZoomHub.Types.BaseURI (BaseURI)
 import qualified ZoomHub.Types.Content as Content
@@ -21,6 +20,7 @@ import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Utils (tshow)
 import ZoomHub.Web.Page (Page (Page), Title (..))
 import qualified ZoomHub.Web.Page as Page
+import qualified ZoomHub.API.Types.PublicContent as PublicContent
 
 data ExploreRecentContent = ExploreRecentContent
   { ercContent :: [Internal.Content],
@@ -40,8 +40,8 @@ instance H.ToHtml ExploreRecentContent where
                 H.div_ [H.class_ "space-y-10"] $
                   forM_ ercContent \internalContent ->
                     H.div_ [] do
-                      let content = Content.fromInternal ercBaseURI ercContentBaseURI internalContent
-                      for_ (Content.contentDzi content) \dzi ->
+                      let content = PublicContent.fromInternal ercBaseURI ercContentBaseURI internalContent
+                      for_ (PublicContent.contentDzi content) \dzi ->
                         H.a_ [H.href_ $ "/" <> (T.pack . unContentId . Internal.contentId $ internalContent)] $
                           H.img_
                             [ H.src_ $ tshow $ DZI.largestSingleTileUrl dzi,

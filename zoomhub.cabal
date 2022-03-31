@@ -35,6 +35,8 @@ library
     , ZoomHub.API.Types.DeepZoomImageWithoutURL
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
+    , ZoomHub.API.Types.PrivateContent
+    , ZoomHub.API.Types.PublicContent
     , ZoomHub.Authentication
     , ZoomHub.AWS
     , ZoomHub.Config

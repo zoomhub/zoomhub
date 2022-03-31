@@ -78,7 +78,6 @@ import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
 import ZoomHub.API.Types.Callback (Callback)
 import qualified ZoomHub.API.Types.Config as API
-import ZoomHub.API.Types.Content (Content)
 import qualified ZoomHub.API.Types.Content as Content
 import ZoomHub.API.Types.ContentCompletion (ContentCompletion (..))
 import qualified ZoomHub.API.Types.ContentCompletion as Completion
@@ -92,6 +91,8 @@ import ZoomHub.API.Types.NonRESTfulResponse
     mkNonRESTful404,
     mkNonRESTful503,
   )
+import ZoomHub.API.Types.PublicContent (PublicContent)
+import qualified ZoomHub.API.Types.PublicContent as PublicContent
 import qualified ZoomHub.Authentication as Authentication
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
@@ -149,7 +150,7 @@ type API =
     :<|> "v1" :> "content"
       :> Capture "id" ContentId
       :> RequiredQueryParam "callback" Callback
-      :> Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
+      :> Get '[JavaScript] (JSONP (NonRESTfulResponse PublicContent))
     -- JSONP: Error: ID
     :<|> "v1" :> "content"
       :> Capture "id" String
@@ -159,7 +160,7 @@ type API =
     :<|> "v1" :> "content"
       :> RequiredQueryParam "url" ContentURI
       :> RequiredQueryParam "callback" Callback
-      :> Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
+      :> Get '[JavaScript] (JSONP (NonRESTfulResponse PublicContent))
     -- JSONP: Error: URL
     :<|> "v1" :> "content"
       :> QueryParam "url" String
@@ -182,21 +183,21 @@ type API =
       :> "content"
       :> Capture "id" ContentId
       :> "reset"
-      :> Put '[JSON] Content
+      :> Put '[JSON] PublicContent
     -- API: RESTful: Verification
     :<|> "v1"
       :> "content"
       :> Capture "id" ContentId
       :> "verification"
       :> Capture "token" VerificationToken
-      :> Put '[JSON] Content
+      :> Put '[JSON] PublicContent
     -- API: RESTful: Error: Invalid verification token
     :<|> "v1"
       :> "content"
       :> Capture "id" ContentId
       :> "verification"
       :> Capture "token" String
-      :> Put '[JSON] Content
+      :> Put '[JSON] PublicContent
     -- API: RESTful: Completion
     :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
       :> "v1"
@@ -204,20 +205,20 @@ type API =
       :> Capture "id" ContentId
       :> "completion"
       :> ReqBody '[JSON] ContentCompletion
-      :> Put '[JSON] Content
+      :> Put '[JSON] PublicContent
     -- API: RESTful: ID
-    :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] Content
+    :<|> "v1" :> "content" :> Capture "id" ContentId :> Get '[JSON] PublicContent
     -- API: RESTful: Error: ID
-    :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
+    :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] PublicContent
     -- API: RESTful: URL
     :<|> "v1" :> "content"
       :> RequiredQueryParam "url" ContentURI
       :> QueryParam "email" Text
-      :> Get '[JSON] Content
+      :> Get '[JSON] PublicContent
     -- API: RESTful: Error: URL
     :<|> "v1" :> "content"
       :> QueryParam "url" String
-      :> Get '[JSON] Content
+      :> Get '[JSON] PublicContent
     -- Web: Explore: Recent
     :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
       :> "explore"
@@ -347,7 +348,7 @@ jsonpContentById ::
   Pool Connection ->
   ContentId ->
   Callback ->
-  Handler (JSONP (NonRESTfulResponse Content))
+  Handler (JSONP (NonRESTfulResponse PublicContent))
 jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
@@ -358,7 +359,7 @@ jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
             mkNonRESTful404 $
               contentNotFoundMessage contentId
     Just content -> do
-      let publicContent = Content.fromInternal baseURI contentBaseURI content
+      let publicContent = PublicContent.fromInternal baseURI contentBaseURI content
       return $ mkJSONP callback $ mkNonRESTful200 "content" publicContent
 
 jsonpContentByURL ::
@@ -367,7 +368,7 @@ jsonpContentByURL ::
   Pool Connection ->
   ContentURI ->
   Callback ->
-  Handler (JSONP (NonRESTfulResponse Content))
+  Handler (JSONP (NonRESTfulResponse PublicContent))
 jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case maybeContent of
@@ -375,7 +376,7 @@ jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
       throwError . JSONP.mkError $
         mkJSONP callback (mkNonRESTful503 noNewContentErrorMessage)
     Just content -> do
-      let publicContent = Content.fromInternal baseURI contentBaseURI content
+      let publicContent = PublicContent.fromInternal baseURI contentBaseURI content
           redirectLocation = apiRedirectURI baseURI contentId
           contentId = Internal.contentId content
       return $
@@ -465,7 +466,7 @@ restContentResetById ::
   Pool Connection ->
   AuthResult Authentication.AuthenticatedUser ->
   ContentId ->
-  Handler Content
+  Handler PublicContent
 restContentResetById baseURI dbConnPool authResult contentId = do
   case authResult of
     Authenticated _ -> do
@@ -491,7 +492,7 @@ restContentVerificationById ::
   Pool Connection ->
   ContentId ->
   VerificationToken ->
-  Handler Content
+  Handler PublicContent
 restContentVerificationById baseURI dbConnPool contentId verificationToken = do
   result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
   case result of
@@ -505,7 +506,7 @@ restContentVerificationById baseURI dbConnPool contentId verificationToken = do
 restContentInvalidVerificationToken ::
   ContentId ->
   String -> -- VerificationToken
-  Handler Content
+  Handler PublicContent
 restContentInvalidVerificationToken _contentId verificationToken =
   throwError . API.error401 $ "Invalid verification token: " <> verificationToken
 
@@ -516,7 +517,7 @@ restContentCompletionById ::
   AuthResult Authentication.AuthenticatedUser ->
   ContentId ->
   ContentCompletion ->
-  Handler Content
+  Handler PublicContent
 restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId completion =
   case authResult of
     Authenticated _ -> do
@@ -534,7 +535,7 @@ restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId
         Nothing ->
           throwError . API.error404 $ contentNotFoundMessage contentId
         Just content ->
-          return $ Content.fromInternal baseURI contentBaseURI content
+          return $ PublicContent.fromInternal baseURI contentBaseURI content
     NoSuchUser ->
       throwError . API.error401 $ "Invalid auth"
     BadPassword ->
@@ -547,14 +548,14 @@ restContentById ::
   ContentBaseURI ->
   Pool Connection ->
   ContentId ->
-  Handler Content
+  Handler PublicContent
 restContentById baseURI contentBaseURI dbConnPool contentId = do
   maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
   case maybeContent of
     Nothing -> throwError . API.error404 $ contentNotFoundMessage contentId
-    Just content -> return $ Content.fromInternal baseURI contentBaseURI content
+    Just content -> return $ PublicContent.fromInternal baseURI contentBaseURI content
 
-restInvalidContentId :: String -> Handler Content
+restInvalidContentId :: String -> Handler PublicContent
 restInvalidContentId contentId =
   throwError . API.error404 $ noContentWithIdMessage contentId
 
@@ -565,7 +566,7 @@ restContentByURL ::
   ProcessContent ->
   ContentURI ->
   Maybe Text -> -- Email
-  Handler Content
+  Handler PublicContent
 restContentByURL config baseURI dbConnPool processContent url mEmail = do
   maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
   case (maybeContent, mEmail) of
@@ -626,7 +627,7 @@ restContentByURL config baseURI dbConnPool processContent url mEmail = do
             (Email.From "\"ZoomHub\" <daniel@zoomhub.net>")
             (Email.To submitterEmail)
 
-restInvalidRequest :: Maybe String -> Handler Content
+restInvalidRequest :: Maybe String -> Handler PublicContent
 restInvalidRequest maybeURL = case maybeURL of
   Nothing -> throwError . API.error400 $ apiMissingIdOrURLMessage
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
@@ -688,11 +689,11 @@ webEmbedIFrame
   mEmbedConstraint
   mEmbedBackground = do
     maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
-    case maybeContent of
+    -- FIXME
+    case maybeContent >>= Content.toPublic . Content.Public . PublicContent.fromInternal baseURI contentBaseURI of
       Nothing ->
         throwError . Web.error404 $ contentNotFoundMessage contentId
-      Just c -> do
-        let content = Content.fromInternal baseURI contentBaseURI c
+      Just content -> do
         return $
           Page.EmbedContent
             { ecBackgroundColor = mEmbedBackground,
@@ -741,7 +742,7 @@ webEmbed
         let randomIdRange = (100000, 999999) :: (Int, Int)
         randomId <- liftIO $ randomRIO randomIdRange
         let containerId = fromMaybe (defaultContainerId randomId) maybeId
-            publicContent = Content.fromInternal baseURI contentBaseURI content
+            publicContent = PublicContent.fromInternal baseURI contentBaseURI content
         return $
           Embed
             { embedBaseURI = baseURI,
@@ -775,7 +776,7 @@ webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificat
     Right internalContent | ContentState.isCompleted (Internal.contentState internalContent) -> do
       redirectToView baseURI (Internal.contentId internalContent)
     Right internalContent -> do
-      let content = Content.fromInternal baseURI contentBaseURI internalContent
+      let content = PublicContent.fromInternal baseURI contentBaseURI internalContent
       return $ Page.mkVerifyContent baseURI (VerificationResult.Success content)
     Left VerificationError.TokenMismatch ->
       return $ Page.mkVerifyContent baseURI (VerificationResult.Error "Cannot verify submission :(")
@@ -796,7 +797,7 @@ webContentById baseURI contentBaseURI awsSourcesS3BucketName dbConnPool contentI
     Nothing ->
       throwError . Web.error404 $ contentNotFoundMessage contentId
     Just c -> do
-      let content = Content.fromInternal baseURI contentBaseURI c
+      let content = PublicContent.fromInternal baseURI contentBaseURI c
       return $
         ViewContent
           { vcBaseURI = baseURI,
@@ -868,7 +869,7 @@ redirectToView baseURI contentId =
   -- TODO: Look into Servant ‘Links’ for type safe link generation:
   redirect $ webRedirectURI baseURI contentId
 
-redirectToAPI :: BaseURI -> ContentId -> Handler Content
+redirectToAPI :: BaseURI -> ContentId -> Handler PublicContent
 redirectToAPI baseURI contentId =
   -- TODO: Look into Servant ‘Links’ for type safe link generation:
   redirect $ apiRedirectURI baseURI contentId

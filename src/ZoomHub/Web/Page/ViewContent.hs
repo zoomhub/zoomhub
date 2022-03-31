@@ -17,7 +17,8 @@ import qualified Lucid as H
 import NeatInterpolation (text)
 import Network.URI (parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URI
-import ZoomHub.API.Types.Content (Content (contentUrl), contentId, contentShareUrl)
+import ZoomHub.API.Types.PublicContent as PublicContent
+import ZoomHub.API.Types.PublicContent (PublicContent)
 import ZoomHub.Config.AWS (S3BucketName (unS3BucketName))
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
@@ -27,7 +28,7 @@ import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
 import qualified ZoomHub.Web.Page as Page
 
 data ViewContent = ViewContent
-  { vcContent :: Content,
+  { vcContent :: PublicContent,
     vcBaseURI :: BaseURI,
     vcAWSSourcesS3BucketName :: AWS.S3BucketName
   }

@@ -18,8 +18,8 @@ import GHC.Generics (Generic)
 import NeatInterpolation (text)
 import Network.URI (parseRelativeReference, relativeTo)
 import ZoomHub.API.ContentTypes.JavaScript (ToJS, toJS)
-import ZoomHub.API.Types.Content (Content, contentDzi, contentReady)
-import qualified ZoomHub.API.Types.Content as API
+import qualified ZoomHub.API.Types.PublicContent as PublicContent
+import ZoomHub.API.Types.PublicContent (PublicContent)
 import ZoomHub.API.Types.DeepZoomImage (DeepZoomImageURI (..), mkDeepZoomImage)
 import qualified ZoomHub.API.Types.DeepZoomImage as API
 import ZoomHub.Types.BaseURI (BaseURI)
@@ -47,7 +47,7 @@ data Embed = Embed
     embedStaticBaseURI :: StaticBaseURI,
     embedBody :: String,
     embedContainerId :: String,
-    embedContent :: Content,
+    embedContent :: PublicContent,
     embedHeight :: Maybe EmbedDimension,
     embedWidth :: Maybe EmbedDimension,
     embedBorder :: Maybe EmbedBorder,
@@ -90,7 +90,7 @@ style Embed {embedContent, embedWidth, embedHeight, embedBorder, embedBackground
     height = fromMaybe defaultHeight embedHeight
     width = fromMaybe defaultWidth embedWidth
     aspectRatio =
-      case API.contentDzi embedContent of
+      case PublicContent.contentDzi embedContent of
         Just dzi ->
           EmbedAspectRatio.Ratio
             (API.dziWidth dzi)
@@ -140,14 +140,14 @@ instance ToJS Embed where
           fromMaybe EmbedBackgroundColor.Black embedBackgroundColor
       script = embedBody
       content = embedContent
-      maybeDZI = contentDzi content
+      maybeDZI = PublicContent.contentDzi content
       queuedDZI =
         mkDeepZoomImage queuedDZIURI 8000 6000 TileSize256 TileOverlap1 PNG
       queuedDZIURI =
         DeepZoomImageURI $
           queuedDZIPath `relativeTo` unStaticBaseURI embedStaticBaseURI
       queuedDZIPath = fromJust (parseRelativeReference "queued.dzi")
-      isReady = contentReady content
+      isReady = PublicContent.contentReady content
       tileSource
         | not isReady = fromDeepZoomImage queuedDZI
         | otherwise = fromDeepZoomImage $ fromMaybe queuedDZI maybeDZI

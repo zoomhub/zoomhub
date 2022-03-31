@@ -15,7 +15,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Lucid as H
 import NeatInterpolation (text)
-import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
+import qualified ZoomHub.API.Types.PublicContent as PublicContent
+import ZoomHub.API.Types.PublicContent (PublicContent)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Web.Page (Page (Page), Title (Title))
@@ -28,7 +29,7 @@ data VerifyContent = VerifyContent
   deriving (Eq, Show)
 
 data VerificationResult
-  = Success Content
+  = Success PublicContent
   | Error Text
   deriving (Eq, Show)
 
@@ -69,7 +70,7 @@ instance H.ToHtml VerifyContent where
                 case vcResult of
                   Success content -> do
                     H.script_ $
-                      progressScript (contentId content)
+                      progressScript (PublicContent.contentId content)
                     H.h1_
                       [H.class_ "text-2xl lg:text-3xl text-white font-semibold tracking-tighter"]
                       "🔧 Your upload is now being processed…"
@@ -86,9 +87,9 @@ instance H.ToHtml VerifyContent where
                         H.br_ []
                         H.a_
                           [ H.class_ "link",
-                            H.href_ (T.pack . show $ contentShareUrl content)
+                            H.href_ (T.pack . show $ PublicContent.contentShareUrl content)
                           ]
-                          (H.toHtml . show $ contentShareUrl content)
+                          (H.toHtml . show $ PublicContent.contentShareUrl content)
                   Error message -> do
                     H.h2_
                       [H.style_ "color: #fff;"]
