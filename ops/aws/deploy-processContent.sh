@@ -27,12 +27,14 @@ fi
 case $ZH_ENV in
   production)
     MEMORY_SIZE_MB=10240
+    EPHEMERAL_STORAGE_SIZE_MB=10240
     S3_CACHE_BUCKET='cache.zoomhub.net'
     ZH_API_PASSWORD=$ZH_API_PASSWORD_PRODUCTION
     ZH_API_USERNAME=$ZH_API_USERNAME_PRODUCTION
     ;;
   staging)
     MEMORY_SIZE_MB=4096
+    EPHEMERAL_STORAGE_SIZE_MB=4096
     S3_CACHE_BUCKET='cache-staging.zoomhub.net'
     TILE_SIZE=510
     ZH_API_PASSWORD=$ZH_API_PASSWORD_STAGING
@@ -40,6 +42,7 @@ case $ZH_ENV in
     ;;
   development)
     MEMORY_SIZE_MB=4096
+    EPHEMERAL_STORAGE_SIZE_MB=4096
     S3_CACHE_BUCKET='cache-development.zoomhub.net'
     TILE_SIZE=510
     ZH_API_PASSWORD=$ZH_API_PASSWORD_DEVELOPMENT
@@ -76,6 +79,7 @@ update_configuration_output=$(
   aws lambda update-function-configuration \
     --function-name processContent \
     --memory-size "$MEMORY_SIZE_MB" \
+    --ephemeral-storage "Size=$EPHEMERAL_STORAGE_SIZE_MB" \
     --description "$(date +%FT%T%z)-$ZH_ENV-memory-$MEMORY_SIZE_MB" \
     --environment "Variables={NUM_CONCURRENT_UPLOADS=$NUM_CONCURRENT_UPLOADS,ROOT_PATH=$ROOT_PATH,S3_CACHE_BUCKET=$S3_CACHE_BUCKET,TILE_SIZE=$TILE_SIZE,TMPDIR=$TMPDIR,VIPS_DISC_THRESHOLD=$VIPS_DISC_THRESHOLD,ZH_API_PASSWORD=$ZH_API_PASSWORD,ZH_API_USERNAME=$ZH_API_USERNAME}"
 )
