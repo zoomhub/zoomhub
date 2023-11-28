@@ -81,7 +81,6 @@ update_configuration_output=$(
     --memory-size "$MEMORY_SIZE_MB" \
     --ephemeral-storage "Size=$EPHEMERAL_STORAGE_SIZE_MB" \
     --description "$(date +%FT%T%z)-$ZH_ENV-memory-$MEMORY_SIZE_MB" \
-    --logging-config "LogFormat=JSON,ApplicationLogLevel=TRACE,SystemLogLevel=DEBUG"\
     --environment "Variables={NUM_CONCURRENT_UPLOADS=$NUM_CONCURRENT_UPLOADS,ROOT_PATH=$ROOT_PATH,S3_CACHE_BUCKET=$S3_CACHE_BUCKET,TILE_SIZE=$TILE_SIZE,TMPDIR=$TMPDIR,VIPS_DISC_THRESHOLD=$VIPS_DISC_THRESHOLD,ZH_API_PASSWORD=$ZH_API_PASSWORD,ZH_API_USERNAME=$ZH_API_USERNAME}"
 )
 
