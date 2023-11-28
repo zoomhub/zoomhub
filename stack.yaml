@@ -42,3 +42,10 @@ extra-package-dbs: []
 # Extra directories used by stack for building
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
+
+# macOS on Apple Silicon
+arch: x86_64 # force Rosetta
+extra-include-dirs:
+- /usr/local/opt/libpq/include # use Homebrew x86 includes
+extra-lib-dirs:
+- /usr/local/opt/libpq/lib # use Homebrew x86 libs
