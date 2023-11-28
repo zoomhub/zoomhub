@@ -95,9 +95,11 @@ publish_output=$(
 
 aws lambda wait function-updated --function-name processContent
 
-aws lambda update-alias \
-    --function-name processContent \
-    --function-version $(jq --raw-output '.Version' <<< "$publish_output") \
-    --name "$ZH_ENV"
+if [ "$ZH_ENV" != "production" ]; then
+  aws lambda update-alias \
+      --function-name processContent \
+      --function-version $(jq --raw-output '.Version' <<< "$publish_output") \
+      --name "$ZH_ENV"
+fi
 
 aws lambda wait function-updated --function-name processContent
