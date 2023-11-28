@@ -8,7 +8,7 @@
   - Move internal API from `/v1` to `/internal`.
   - Make `environment` and `baseURI` public in `/internal/config` to verify
     environment configuration.
-- processContent:
+- `processContent`:
   - Introduce new environment variables:
     - `NUM_CONCURRENT_UPLOADS`: Set maximum of concurrent uploads of tiles to
       S3. Default: `10`.
