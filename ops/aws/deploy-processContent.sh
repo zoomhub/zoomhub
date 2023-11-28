@@ -96,6 +96,6 @@ aws lambda wait function-updated --function-name processContent
 aws lambda update-alias \
     --function-name processContent \
     --function-version $(jq --raw-output '.Version' <<< "$publish_output") \
-    --name $ZH_ENV
+    --name "$ZH_ENV"
 
 aws lambda wait function-updated --function-name processContent
