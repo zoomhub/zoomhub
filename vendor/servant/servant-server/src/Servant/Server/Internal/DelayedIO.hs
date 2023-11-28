@@ -12,20 +12,19 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans
                  (MonadIO (..), MonadTrans (..))
 import           Control.Monad.Trans.Control
-                 (ComposeSt, MonadBaseControl (..), MonadTransControl (..),
-                 defaultLiftBaseWith, defaultRestoreM)
+                 (MonadBaseControl (..))
 import           Control.Monad.Trans.Resource
                  (MonadResource (..), ResourceT, runInternalState,
-                 runResourceT, transResourceT, withInternalState)
+                 transResourceT, withInternalState)
 import           Network.Wai
-                 (Application, Request, Response, ResponseReceived)
+                 (Request)
 
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.ServerError
 
 -- | Computations used in a 'Delayed' can depend on the
 -- incoming 'Request', may perform 'IO', and result in a
--- 'RouteResult', meaning they can either suceed, fail
+-- 'RouteResult', meaning they can either succeed, fail
 -- (with the possibility to recover), or fail fatally.
 --
 newtype DelayedIO a = DelayedIO { runDelayedIO' :: ReaderT Request (ResourceT (RouteResultT IO)) a }
