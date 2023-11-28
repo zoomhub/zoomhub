@@ -83,6 +83,7 @@ update_configuration_output=$(
     --description "$(date +%FT%T%z)-$ZH_ENV-memory-$MEMORY_SIZE_MB" \
     --environment "Variables={NUM_CONCURRENT_UPLOADS=$NUM_CONCURRENT_UPLOADS,ROOT_PATH=$ROOT_PATH,S3_CACHE_BUCKET=$S3_CACHE_BUCKET,TILE_SIZE=$TILE_SIZE,TMPDIR=$TMPDIR,VIPS_DISC_THRESHOLD=$VIPS_DISC_THRESHOLD,ZH_API_PASSWORD=$ZH_API_PASSWORD,ZH_API_USERNAME=$ZH_API_USERNAME}"
 )
+echo "update_configuration_output: $update_configuration_output"
 
 aws lambda wait function-updated --function-name processContent
 
