@@ -14,12 +14,11 @@ TILE_SIZE=254
 use_efs='false'
 echo "EFS enabled: $use_efs"
 if [ "$use_efs" == "true" ]; then
-    MEMORY_SIZE=8192
+    MEMORY_SIZE_MB=8192
     ROOT_PATH='/mnt/efs'
     TMPDIR='/mnt/efs/tmp'
     VIPS_DISC_THRESHOLD='512m'
 else
-    MEMORY_SIZE=4000
     ROOT_PATH='/tmp'
     TMPDIR='/tmp'
     VIPS_DISC_THRESHOLD='4000m'
@@ -27,17 +26,20 @@ fi
 
 case $ZH_ENV in
   production)
+    MEMORY_SIZE_MB=10240
     S3_CACHE_BUCKET='cache.zoomhub.net'
     ZH_API_PASSWORD=$ZH_API_PASSWORD_PRODUCTION
     ZH_API_USERNAME=$ZH_API_USERNAME_PRODUCTION
     ;;
   staging)
+    MEMORY_SIZE_MB=4096
     S3_CACHE_BUCKET='cache-staging.zoomhub.net'
     TILE_SIZE=510
     ZH_API_PASSWORD=$ZH_API_PASSWORD_STAGING
     ZH_API_USERNAME=$ZH_API_USERNAME_STAGING
     ;;
   development)
+    MEMORY_SIZE_MB=4096
     S3_CACHE_BUCKET='cache-development.zoomhub.net'
     TILE_SIZE=510
     ZH_API_PASSWORD=$ZH_API_PASSWORD_DEVELOPMENT
@@ -73,8 +75,8 @@ aws lambda wait function-updated --function-name processContent
 update_configuration_output=$(
   aws lambda update-function-configuration \
     --function-name processContent \
-    --memory-size $MEMORY_SIZE \
-    --description "$(date +%FT%T%z)-$ZH_ENV-memory-$MEMORY_SIZE" \
+    --memory-size "$MEMORY_SIZE_MB" \
+    --description "$(date +%FT%T%z)-$ZH_ENV-memory-$MEMORY_SIZE_MB" \
     --environment "Variables={NUM_CONCURRENT_UPLOADS=$NUM_CONCURRENT_UPLOADS,ROOT_PATH=$ROOT_PATH,S3_CACHE_BUCKET=$S3_CACHE_BUCKET,TILE_SIZE=$TILE_SIZE,TMPDIR=$TMPDIR,VIPS_DISC_THRESHOLD=$VIPS_DISC_THRESHOLD,ZH_API_PASSWORD=$ZH_API_PASSWORD,ZH_API_USERNAME=$ZH_API_USERNAME}"
 )
 
