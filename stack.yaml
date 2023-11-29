@@ -12,17 +12,30 @@ extra-deps:
   # Custom support for `RawCaptureRouter` to parse `https://www.zoomhub.net/<url>:
   - ./vendor/servant/servant-server
 
-  - amazonka-1.6.1@sha256:f58b63e83876f93aa03c54e54b3eb8ba9358af93819d41f4a5a8f8b7d8b8399c,3544
-  - amazonka-core-1.6.1@sha256:9bc59ce403c6eeba3b3eaf3f10e5f0b6a33b6edbbf8f6de0dd6f4c67b86fa698,5135
-  - amazonka-lambda-1.6.1@sha256:395f48418da98b6c8853c7751e08464eee7b9140683c0b6f19b54c4b21699b5d,4231
-  - amazonka-ses-1.6.1@sha256:335796c855121ca34affd35097676587d5ebe0b2e576da42faaedd9d163881b0,6425
-  - mime-0.4.0.2
-  - neat-interpolation-0.5.1.2
-  - squeal-postgresql-0.5.1.0
-  - time-units-1.0.0
+  # # amazonka compatibility
+  # - amazonka-1.6.1@sha256:f58b63e83876f93aa03c54e54b3eb8ba9358af93819d41f4a5a8f8b7d8b8399c,3544
+  # - unliftio-core-0.1.2.0@sha256:b0a7652ffce2284a6cebe05c99eb60573a8fb6631163f34b0b30a80b4a78cb23,1081
 
-  - base64-0.4.2.2@sha256:7aaab1623fd3a003efc840f679d6f582b33536c8e508bd989bc88c22618fa6bd,2849
-  - ghc-byteorder-4.11.0.0.10@sha256:5ee4a907279bfec27b0f9de7b8fba4cecfd34395a0235a7784494de70ad4e98f,1535
+  # missing in stackage
+  - mime-0.4.0.2
+
+  # removed from stackage
+  - servant-lucid-0.9.0.6@sha256:4a557ab3c535f9e267b0f614375aa2d9db070997ac566d5ffde8d8cb47a51376,1804
+
+  # # compatibility with `amazonka` + `unliftio-core`
+  # - minio-hs-1.5.2
+  # - protolude-0.2.4@sha256:ec6c01be631050f8c1b9153a782d329a52609d058cb4b461104222862f7792af,2292
+
+  - git: https://github.com/brendanhay/amazonka.git
+    commit: e081929d5a81f30397c9c9a219b154da1a922fb8
+    subdirs:
+    - lib/amazonka
+    - lib/amazonka-core
+    - lib/services/amazonka-lambda
+    - lib/services/amazonka-ses
+    - lib/services/amazonka-sso
+    - lib/services/amazonka-sts
+  - crypton-0.33@sha256:5e92f29b9b7104d91fcdda1dec9400c9ad1f1791c231cc41ceebd783fb517dee,18202
 
 # Override default flag values for local packages and extra-deps
 flags: {}
@@ -44,9 +57,21 @@ extra-package-dbs: []
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
 
-# macOS on Apple Silicon
-arch: x86_64 # force Rosetta
-extra-include-dirs:
-- /usr/local/opt/libpq/include # use Homebrew x86 includes
-extra-lib-dirs:
-- /usr/local/opt/libpq/lib # use Homebrew x86 libs
+# # macOS on Apple Silicon
+# arch: arm64
+# extra-include-dirs:
+# - /opt/homebrew/opt/libpq/include
+# extra-lib-dirs:
+# - /opt/homebrew/opt/libpq/lib/
+# # macOS on Apple Silicon
+# arch: x86_64 # force Rosetta
+# extra-include-dirs:
+# - /usr/local/opt/libpq/include # use Homebrew x86 includes
+# extra-lib-dirs:
+# - /usr/local/opt/libpq/lib # use Homebrew x86 libs
+
+
+# allow-newer: true
+# allow-newer-deps:
+# - minio-hs
+
