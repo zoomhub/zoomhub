@@ -12,8 +12,8 @@ import Data.Binary.Builder (Builder)
 import qualified Data.Binary.Builder as Builder
 import qualified Data.ByteString.Lazy.UTF8 as BL
 import Data.Text.Encoding (encodeUtf8)
-import Network.AWS (AccessKey (AccessKey), Credentials (FromKeys), SecretKey (SecretKey))
-import qualified Network.AWS as AWS
+import Amazonka (AccessKey (AccessKey), Credentials (FromKeys), SecretKey (SecretKey))
+import qualified Amazonka as AWS
 import UnliftIO (MonadUnliftIO)
 import qualified ZoomHub.Config.AWS as Config
 import qualified ZoomHub.Log.Logger as Logger

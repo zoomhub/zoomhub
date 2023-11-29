@@ -9,7 +9,7 @@ where
 
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Network.AWS as AWS
+import qualified Amazonka as AWS
 import System.Environment (getEnvironment)
 
 newtype S3BucketName = S3BucketName {unS3BucketName :: Text}

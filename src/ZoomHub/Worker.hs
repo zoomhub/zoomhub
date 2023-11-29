@@ -20,8 +20,8 @@ import Data.Foldable (for_)
 import Data.Text (Text)
 import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
-import qualified Network.AWS as AWS
-import qualified Network.AWS.Lambda as AWSLambda
+import qualified Amazonka as AWS
+import qualified Amazonka.Lambda as AWSLambda
 import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.Random (randomRIO)
 import qualified ZoomHub.AWS as ZHAWS

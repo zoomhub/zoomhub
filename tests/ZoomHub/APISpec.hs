@@ -17,7 +17,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
-import qualified Network.AWS as AWS
+import qualified Amazonka as AWS
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)

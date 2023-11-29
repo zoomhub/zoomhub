@@ -11,8 +11,8 @@ where
 
 import Control.Lens ((&), (.~), (?~))
 import Data.Text (Text)
-import qualified Network.AWS as AWS
-import qualified Network.AWS.SES as SES
+import qualified Amazonka as AWS
+import qualified Amazonka.SES as SES
 import qualified ZoomHub.AWS as ZHAWS
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Log.Logger (LogLevel)

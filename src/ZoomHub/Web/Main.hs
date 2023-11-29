@@ -18,7 +18,7 @@ import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
-import qualified Network.AWS as AWS
+import qualified Amazonka as AWS
 import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
 import Network.Wai (Request)
