@@ -9,6 +9,7 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
+  # Custom support for `RawCaptureRouter` to parse `https://www.zoomhub.net/<url>:
   - ./vendor/servant/servant-server
 
   - amazonka-1.6.1@sha256:f58b63e83876f93aa03c54e54b3eb8ba9358af93819d41f4a5a8f8b7d8b8399c,3544
