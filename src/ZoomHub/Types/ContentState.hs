@@ -19,10 +19,17 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Squeal.PostgreSQL
   ( FromValue (..),
-    Literal (..),
+    -- Literal (..),
     PG,
-    PGType (PGtext),
+    PGType (PGtext, PGenum),
     ToParam (..),
+    IsPG,
+    FromPG(fromPG),
+    ToPG(..),
+    Inline(..),
+    enumValue,
+    label,
+    NP( (:*) )
   )
 
 data ContentState
@@ -31,6 +38,7 @@ data ContentState
   | CompletedSuccess
   | CompletedFailure
   deriving (Eq, Show)
+
 
 fromString :: String -> Maybe ContentState
 fromString "initialized" = Just Initialized
@@ -53,17 +61,27 @@ isCompleted state = case state of
   CompletedFailure -> True
 
 -- Squeal / PostgreSQL
-instance FromValue 'PGtext ContentState where
-  -- TODO: What if database value is not a valid?
-  fromValue = fromJust . fromString <$> fromValue @'PGtext
+instance IsPG ContentState where
+  type PG ContentState = 'PGtext
+instance FromPG ContentState where
+  fromPG = fromJust . fromString <$> fromPG @String
+instance ToPG db ContentState where
+  toPG = toPG . toText
+instance Inline ContentState where
+  inline = inline . toText
 
-type instance PG ContentState = 'PGtext
 
-instance ToParam ContentState 'PGtext where
-  toParam = toParam . toText
+-- instance FromValue 'PGtext ContentState where
+--   -- TODO: What if database value is not a valid?
+--   fromValue = fromJust . fromString <$> fromValue @'PGtext
 
-toExpression :: IsString a => ContentState -> a
-toExpression = String.fromString . T.unpack . toText
+-- type instance PG ContentState = 'PGtext
 
-instance Literal ContentState where
-  literal = toExpression
+-- instance ToParam ContentState 'PGtext where
+--   toParam = toParam . toText
+
+-- toExpression :: IsString a => ContentState -> a
+-- toExpression = String.fromString . T.unpack . toText
+
+-- instance Literal ContentState where
+--   literal = toExpression

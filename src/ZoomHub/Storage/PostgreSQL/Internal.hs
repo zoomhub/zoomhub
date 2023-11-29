@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 -- Simplify Squeal query type signatures
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE TypeApplications #-}
@@ -13,7 +14,7 @@
 
 module ZoomHub.Storage.PostgreSQL.Internal
   ( module ZoomHub.Storage.PostgreSQL.Internal,
-    destroyAllResources,
+    destroyConnectionPool,
   )
 where
 
@@ -26,6 +27,8 @@ import Database.PostgreSQL.Simple (ConnectInfo (..))
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Generics.SOP.BasicFunctors (K)
+import Squeal.PostgreSQL.Manipulation (pattern Returning_)
+import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
 import Squeal.PostgreSQL
   ( Condition,
     ConflictClause (OnConflictDoRaise),
@@ -33,7 +36,7 @@ import Squeal.PostgreSQL
     Manipulation_,
     MonadPQ,
     NP (Nil, (:*)),
-    NullityType (NotNull),
+    NullType (NotNull),
     Only (..),
     Optional (Default, Set),
     PGType (PGint8, PGtext),
@@ -49,7 +52,7 @@ import Squeal.PostgreSQL
     from,
     insertInto_,
     leftOuterJoin,
-    literal,
+    inline,
     manipulateParams,
     manipulateParams_,
     null_,
@@ -65,11 +68,14 @@ import Squeal.PostgreSQL
     (&),
     (.&&),
     (.==),
+    insertInto,
+    deleteFrom,
+    QueryClause(Subquery),
+    UsingClause(Using)
   )
-import Squeal.PostgreSQL.Manipulation
-import qualified Squeal.PostgreSQL.PQ as PQ
-import Squeal.PostgreSQL.Pool (Pool, destroyAllResources)
-import qualified Squeal.PostgreSQL.Pool as P
+import qualified Squeal.PostgreSQL.Session.Connection as Connection
+import qualified Squeal.PostgreSQL.Session.Pool as P
+import Squeal.PostgreSQL.Session.Pool (destroyConnectionPool)
 import System.Random (randomRIO)
 import UnliftIO (MonadUnliftIO (..), liftIO)
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
@@ -88,7 +94,7 @@ import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Connection
-type Connection = K PQ.Connection Schemas
+type Connection = K Connection.Connection Schemas
 
 createConnectionPool ::
   (TimeUnit a, MonadUnliftIO io) =>
@@ -96,7 +102,7 @@ createConnectionPool ::
   Integer ->
   a ->
   Integer ->
-  io (Pool Connection)
+  io (P.Pool Connection)
 createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
   P.createConnectionPool
     (ConnectInfo.connectionString connInfo)
@@ -387,7 +393,7 @@ insertContent =
             :* Default `as` #abuse_level_id
             :* Default `as` #num_abuse_reports
             :* Default `as` #num_views
-            :* Set (literal Content.version) `as` #version
+            :* Set (inline Content.version) `as` #version
             :* Set (param @2) `as` #submitter_email
             :* Set (param @3) `as` #verification_token
             :* Default `as` #verified_at
@@ -423,8 +429,8 @@ markContentAsActive :: Manipulation_ Schemas (Only Text) ContentRow
 markContentAsActive =
   update
     #content
-    ( Set (literal Unknown) `as` #type_id
-        :* Set (literal Active) `as` #state
+    ( Set (inline Unknown) `as` #type_id
+        :* Set (inline Active) `as` #state
         :* Set currentTimestamp `as` #active_at
         :* Set null_ `as` #completed_at
         :* Set null_ `as` #title
@@ -465,8 +471,8 @@ markContentAsFailure :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
 markContentAsFailure =
   update
     #content
-    ( Set (literal Unknown) `as` #type_id
-        :* Set (literal CompletedFailure) `as` #state
+    ( Set (inline Unknown) `as` #type_id
+        :* Set (inline CompletedFailure) `as` #state
         :* Set currentTimestamp `as` #completed_at
         :* Set null_ `as` #title
         :* Set null_ `as` #attribution_text
@@ -510,8 +516,8 @@ markContentAsSuccess ::
 markContentAsSuccess =
   update
     #content
-    ( Set (literal Image) `as` #type_id
-        :* Set (literal CompletedSuccess) `as` #state
+    ( Set (inline Image) `as` #type_id
+        :* Set (inline CompletedSuccess) `as` #state
         :* Set currentTimestamp `as` #completed_at
         :* Set (param @2) `as` #mime
         :* Set (param @3) `as` #size
@@ -549,7 +555,7 @@ markContentAsVerified =
   update
     #content
     ( Set currentTimestamp `as` #verified_at
-        :* Set (literal Content.version) `as` #version
+        :* Set (inline Content.version) `as` #version
     )
     (#hash_id .== param @1)
     ( Returning_
@@ -581,8 +587,8 @@ resetContentAsInitialized :: Manipulation_ Schemas (Only Text) ContentRow
 resetContentAsInitialized =
   update
     #content
-    ( Set (literal Unknown) `as` #type_id
-        :* Set (literal Initialized) `as` #state
+    ( Set (inline Unknown) `as` #type_id
+        :* Set (inline Initialized) `as` #state
         :* Set null_ `as` #active_at
         :* Set null_ `as` #completed_at
         :* Set null_ `as` #mime

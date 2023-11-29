@@ -11,12 +11,13 @@ module ZoomHub.Storage.PostgreSQL.Schema
 where
 
 import Squeal.PostgreSQL
-  ( AlignedList (Done, (:>>)),
+  ( Path (Done, (:>>)),
     Definition,
     Public,
     (>>>),
+    IsoQ
   )
-import Squeal.PostgreSQL.Migration (Migration (..))
+import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema0 as Schema0
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema1 as Schema1
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema2 as Schema2
@@ -26,7 +27,7 @@ import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema4 as Schema4
 
 type Schemas = Public Schema4
 
-migrations :: String -> AlignedList (Migration Definition) (Public '[]) Schemas
+migrations :: String -> Path (Migration (IsoQ Definition)) (Public '[]) Schemas
 migrations hashidsSecret =
   Schema0.migrations hashidsSecret
     >>> Schema1.migration

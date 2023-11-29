@@ -17,10 +17,11 @@ import Data.Aeson (ToJSON (toJSON))
 import Data.Aeson.Types (Value (String))
 import Data.Maybe (fromJust)
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (PG, PGType (PGtext), IsPG(..), FromPG(..), ToPG(..), Inline(..))
 
 newtype VerificationToken = VerificationToken {unVerificationToken :: UUID}
   deriving (Eq)
@@ -45,11 +46,13 @@ instance ToJSON VerificationToken where
   toJSON = String . UUID.toText . unVerificationToken
 
 -- Squeal / PostgreSQL
-type instance PG VerificationToken = 'PGtext
 
-instance ToParam VerificationToken 'PGtext where
-  toParam = toParam . UUID.toText . unVerificationToken
+instance IsPG VerificationToken where
+  type PG VerificationToken = 'PGtext
+instance FromPG VerificationToken where
+  fromPG = fromJust . fromText <$> fromPG @Text
+instance ToPG db VerificationToken where
+  toPG = toPG . T.pack . show
+instance Inline VerificationToken where
+  inline = inline . T.pack . show
 
--- TODO: Unsafe use of `fromJust`:
-instance FromValue 'PGtext VerificationToken where
-  fromValue = VerificationToken . fromJust . UUID.fromText <$> fromValue @'PGtext

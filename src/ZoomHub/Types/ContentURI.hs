@@ -1,14 +1,17 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module ZoomHub.Types.ContentURI
   ( ContentURI,
-    ContentURI' (ContentURI),
     -- TODO: Can we test this without exporting it?
     unContentURI,
   )
@@ -16,14 +19,15 @@ where
 
 import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Text (Text)
+import GHC.Generics (Generic)
 import qualified Data.Text as T
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..), IsPG, ToPG, FromPG(..), Inline)
 
-newtype ContentURI' a = ContentURI {unContentURI :: a}
-  deriving (Eq, Functor)
+newtype ContentURI = ContentURI { unContentURI :: Text }
+  deriving stock (Eq, Generic)
+  deriving newtype (IsPG, ToPG db, Inline)
 
-type ContentURI = ContentURI' Text
 
 instance Show ContentURI where
   show = T.unpack . unContentURI
@@ -41,10 +45,9 @@ instance ToJSON ContentURI where
   toJSON = String . unContentURI
 
 -- Squeal / PostgreSQL
-type instance PG ContentURI = 'PGtext
+-- type instance PG ContentURI = 'PGtext
 
-instance ToParam ContentURI 'PGtext where
-  toParam = toParam . unContentURI
 
-instance FromValue 'PGtext ContentURI where
-  fromValue = ContentURI <$> fromValue @'PGtext
+
+instance FromPG ContentURI where
+  fromPG = ContentURI <$> fromPG @Text

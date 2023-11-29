@@ -38,7 +38,7 @@ import Squeal.PostgreSQL
     pqThen,
     runPQ,
   )
-import Squeal.PostgreSQL.Migration (migrateDown, migrateUp)
+import Squeal.PostgreSQL.Session.Migration (migrateDown, migrateUp)
 import System.Environment (lookupEnv)
 import System.Process (readProcess)
 import Test.Hspec

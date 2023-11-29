@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module ZoomHub.Types.DeepZoomImage.TileSize
   ( TileSize (..),
@@ -15,7 +16,7 @@ import Data.Aeson (ToJSON, Value (Number), toJSON)
 import Data.Aeson.Types (FromJSON (parseJSON), withScientific)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGint4), ToParam (..))
+import Squeal.PostgreSQL (PG, PGType (PGint4), IsPG(..), FromPG(..), ToPG(..), Inline(..))
 import Prelude hiding (fromInteger)
 
 data TileSize
@@ -39,6 +40,12 @@ fromInteger 510 = Just TileSize510
 fromInteger 1024 = Just TileSize1024
 fromInteger _ = Nothing
 
+toInt32 :: TileSize -> Int32
+toInt32 TileSize254 = 254
+toInt32 TileSize256 = 256
+toInt32 TileSize510 = 510
+toInt32 TileSize1024 = 1024
+
 instance Show TileSize where
   show TileSize254 = "254"
   show TileSize256 = "256"
@@ -61,17 +68,15 @@ instance FromJSON TileSize where
     _ -> fail "invalid tile size"
 
 -- PostgreSQL / Squeal
-type instance PG TileSize = 'PGint4
+instance IsPG TileSize where
+  type PG TileSize = 'PGint4
+instance FromPG TileSize where
+  fromPG = fromJust . fromInteger . fromIntegral <$> fromPG @Int32
+instance ToPG db TileSize where
+  toPG = toPG . toInt32
+instance Inline TileSize where
+  inline = inline . toInt32
 
-instance ToParam TileSize 'PGint4 where
-  toParam TileSize254 = toParam (254 :: Int32)
-  toParam TileSize256 = toParam (256 :: Int32)
-  toParam TileSize510 = toParam (510 :: Int32)
-  toParam TileSize1024 = toParam (1024 :: Int32)
+-- type instance PG TileSize = 'PGint4
 
-instance FromValue 'PGint4 TileSize where
-  -- TODO: What if database value is not a valid?
-  fromValue = convert <$> fromValue @'PGint4
-    where
-      convert :: Int32 -> TileSize
-      convert = fromJust . fromInteger . fromIntegral
+

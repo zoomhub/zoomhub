@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module ZoomHub.Types.DeepZoomImage.TileOverlap
   ( TileOverlap (..),
@@ -14,8 +15,8 @@ where
 import Data.Aeson (FromJSON (parseJSON), ToJSON, Value (Number), toJSON, withScientific)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGint4), ToParam (..))
-import Prelude hiding (fromInteger)
+import Squeal.PostgreSQL (PG, PGType (PGint4), IsPG(..), FromPG(..), ToPG(..), Inline(..))
+import Prelude hiding (fromInteger, toInteger)
 
 data TileOverlap = TileOverlap0 | TileOverlap1
   deriving (Bounded, Enum, Eq)
@@ -29,6 +30,10 @@ fromInteger :: Integer -> Maybe TileOverlap
 fromInteger 1 = Just TileOverlap1
 fromInteger 0 = Just TileOverlap0
 fromInteger _ = Nothing
+
+toInt32 :: TileOverlap -> Int32
+toInt32 TileOverlap1 = 1
+toInt32 TileOverlap0 = 0
 
 -- Show
 instance Show TileOverlap where
@@ -47,15 +52,11 @@ instance FromJSON TileOverlap where
     _ -> fail "invalid tile overlap"
 
 -- PostgreSQL / Squeal
-type instance PG TileOverlap = 'PGint4
-
-instance ToParam TileOverlap 'PGint4 where
-  toParam TileOverlap1 = toParam (1 :: Int32)
-  toParam TileOverlap0 = toParam (0 :: Int32)
-
-instance FromValue 'PGint4 TileOverlap where
-  -- TODO: What if database value is not a valid?
-  fromValue = convert <$> fromValue @'PGint4
-    where
-      convert :: Int32 -> TileOverlap
-      convert = fromJust . fromInteger . fromIntegral
+instance IsPG TileOverlap where
+  type PG TileOverlap = 'PGint4
+instance FromPG TileOverlap where
+  fromPG = fromJust . fromInteger . fromIntegral <$> fromPG @Int32
+instance ToPG db TileOverlap where
+  toPG = toPG . toInt32
+instance Inline TileOverlap where
+  inline = inline . toInt32

@@ -1,9 +1,13 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module ZoomHub.Types.DeepZoomImage.TileFormat
   ( TileFormat (..),
@@ -16,7 +20,7 @@ import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (PG, PGType (PGtext), IsPG(..), ToPG(..), FromPG(..), Inline(..))
 
 data TileFormat = JPEG | JPG | PNG deriving (Eq)
 
@@ -28,6 +32,11 @@ fromText "jpeg" = Just JPEG
 fromText "jpg" = Just JPG
 fromText "png" = Just PNG
 fromText _ = Nothing
+
+toText :: TileFormat -> T.Text
+toText JPEG = "jpeg"
+toText JPG = "jpg"
+toText PNG = "png"
 
 instance Show TileFormat where
   show JPEG = "jpeg"
@@ -43,16 +52,19 @@ instance FromJSON TileFormat where
     "jpeg" -> pure JPEG
     "jpg" -> pure JPG
     "png" -> pure PNG
-    _ -> fail "invalid tile format"
+    invalid -> fail $ "invalid tile format: " <> T.unpack invalid
 
 -- Squeal / PostgreSQL
-instance FromValue 'PGtext TileFormat where
-  -- TODO: What if database value is not a valid?
-  fromValue = fromJust . fromString <$> fromValue @'PGtext
+instance IsPG TileFormat where
+  type PG TileFormat = 'PGtext
+instance FromPG TileFormat where
+  fromPG = fromJust . fromText <$> fromPG @Text
+instance ToPG db TileFormat where
+  toPG = toPG . toText
+instance Inline TileFormat where
+  inline = inline . toText
 
-type instance PG TileFormat = 'PGtext
 
-instance ToParam TileFormat 'PGtext where
-  toParam JPEG = toParam ("jpeg" :: Text)
-  toParam JPG = toParam ("jpg" :: Text)
-  toParam PNG = toParam ("png" :: Text)
+
+
+

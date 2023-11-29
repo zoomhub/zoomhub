@@ -13,10 +13,13 @@ where
 import Data.Int (Int32)
 import Squeal.PostgreSQL
   ( FromValue (..),
-    Literal (..),
+    -- Literal (..),
     PG,
     PGType (PGint4),
     ToParam (..),
+    IsPG,
+    FromPG(fromPG),
+    Inline(inline),
   )
 
 data ContentType
@@ -30,6 +33,7 @@ data ContentType
   | PDF11
   | WebpageThumbnail
   deriving (Eq, Show)
+
 
 -- Squeal / PostgreSQL
 fromPGint4 :: Int32 -> ContentType
@@ -55,14 +59,32 @@ toPGint4 PDF10 = 10
 toPGint4 PDF11 = 11
 toPGint4 WebpageThumbnail = 14
 
-type instance PG ContentType = 'PGint4
+-- type instance PG ContentType = 'PGint4
 
-instance ToParam ContentType 'PGint4 where
-  toParam = toParam . toPGint4
+-- instance ToParam ContentType 'PGint4 where
+--   toParam = toParam . toPGint4
 
-instance FromValue 'PGint4 ContentType where
-  -- TODO: What if database value is not a valid?
-  fromValue = fromPGint4 <$> fromValue @'PGint4
+-- instance FromValue 'PGint4 ContentType where
+--   -- TODO: What if database value is not a valid?
+--   fromValue = fromPGint4 <$> fromValue @'PGint4
 
-instance Literal ContentType where
-  literal = fromIntegral . toPGint4
+-- instance Literal ContentType where
+--   literal = fromIntegral . toPGint4
+
+instance IsPG ContentType where
+  type PG ContentType = 'PGint4
+
+instance Inline ContentType where
+  inline = inline . toPGint4
+
+-- instance Inline (Snowflake a) where
+--   inline = coerce . inline . idAsInt
+
+-- instance IsPG (Snowflake a) where
+--   type PG (Snowflake a) = PG Int64
+
+-- instance ToPG db (Snowflake a) where
+--   toPG = toPG . idAsInt
+
+-- instance FromPG (Snowflake a) where
+--   fromPG = Snowflake . fromIntegral @Int64 @Word64 <$> fromPG

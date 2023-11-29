@@ -1,54 +1,47 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module ZoomHub.Types.ContentId
   ( ContentId,
-    ContentId',
     fromInteger,
     fromString,
     isValid,
-    mkContentId,
     unContentId,
     validChars,
   )
 where
 
 import Data.Aeson
-  ( FromJSON,
+  ( FromJSON(..),
     ToJSON,
-    genericParseJSON,
-    genericToJSON,
     parseJSON,
     toJSON,
   )
-import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.Aeson.Types (typeMismatch)
+import qualified Data.Aeson as Aeson
 import Data.List (intersperse)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (IsPG, ToPG, Inline)
 import Prelude hiding (fromInteger)
 
 -- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
-newtype ContentId' a = ContentId a
-  deriving (Eq, Functor, Generic, Show)
-
-type ContentId = ContentId' String
-
-unContentId :: ContentId -> String
-unContentId (ContentId cId) = cId
-
-mkContentId :: a -> ContentId' a
-mkContentId = ContentId
+newtype ContentId = ContentId { unContentId :: String }
+  deriving stock (Eq, Generic, Show)
+  deriving newtype (IsPG, ToPG db, Inline)
 
 fromInteger :: (Integer -> String) -> Integer -> ContentId
 fromInteger encode intId = fromString $ encode intId
@@ -57,8 +50,7 @@ fromInteger encode intId = fromString $ encode intId
 fromString :: String -> ContentId
 fromString s
   | isValid s = ContentId s
-  | otherwise =
-    error $
+  | otherwise = error $
       "Invalid content ID '" ++ s ++ "'."
         ++ " Valid characters: "
         ++ intersperse ',' validChars
@@ -85,16 +77,19 @@ instance FromHttpApiData ContentId where
 
 -- JSON
 instance ToJSON ContentId where
-  toJSON = genericToJSON $ aesonPrefix camelCase
+  toJSON = Aeson.String . T.pack . unContentId
 
 instance FromJSON ContentId where
-  parseJSON = genericParseJSON $ aesonPrefix camelCase
+  parseJSON (Aeson.String s)
+    | isValid (T.unpack s) = pure $ ContentId $ T.unpack s
+    | otherwise = fail $ "Invalid ContentId: " <> T.unpack s
+  parseJSON invalid = typeMismatch "ContentId" invalid
 
--- Squeal / PostgreSQL
-type instance PG ContentId = 'PGtext
+-- -- Squeal / PostgreSQL
+-- type instance PG ContentId = 'PGtext
 
-instance ToParam ContentId 'PGtext where
-  toParam = toParam . unContentId
+-- instance ToParam ContentId 'PGtext where
+--   toParam = toParam . unContentId
 
-instance FromValue 'PGtext ContentId where
-  fromValue = ContentId <$> fromValue @'PGtext
+-- instance FromValue 'PGtext ContentId where
+--   fromValue = ContentId <$> fromValue @'PGtext

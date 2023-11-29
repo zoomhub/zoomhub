@@ -19,15 +19,15 @@ import Squeal.PostgreSQL
     nullable,
     text,
     (&),
+    IsoQ(..),
   )
-import Squeal.PostgreSQL.Migration (Migration (..))
+import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (Schemas0)
 
-migration :: Migration Definition Schemas0 _
+migration :: Migration (IsoQ Definition) Schemas0 _
 migration =
-  Migration
-    { name = "2021-02-15-1: Add submitter email",
-      up = setup,
+  Migration "2021-02-15-1: Add submitter email" IsoQ
+    { up = setup,
       down = teardown
     }
 
