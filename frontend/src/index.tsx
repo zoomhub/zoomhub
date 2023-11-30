@@ -14,7 +14,14 @@ import { Create } from "./components/Create"
       "#hero-mode-toggle"
     ) as HTMLButtonElement
     const createContainer = document.querySelector("#create-container")
-    const image = { id: "0w5YD", width: 8192, height: 8192 }
+    const image = {
+      id: "0w5YD",
+      width: 8192,
+      height: 8192,
+      tileSize: 254,
+      tileOverlap: 1,
+      tileFormat: "jpg"
+    }
 
     viewer = OpenSeadragon({
       id: "hero-image",
@@ -27,10 +34,10 @@ import { Create } from "./components/Create"
         Image: {
           xmlns: "http://schemas.microsoft.com/deepzoom/2008",
           Size: { Width: image.width, Height: image.height },
-          Format: "jpg",
-          Overlap: 1,
+          Format: image.tileFormat,
+          Overlap: image.tileOverlap,
           Url: `https://cache.zoomhub.net/content/${image.id}_files/`,
-          TileSize: 254,
+          TileSize: image.tileSize,
         },
       },
     })
