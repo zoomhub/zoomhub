@@ -46,7 +46,6 @@ instance ToJSON VerificationToken where
   toJSON = String . UUID.toText . unVerificationToken
 
 -- Squeal / PostgreSQL
-
 instance IsPG VerificationToken where
   type PG VerificationToken = 'PGtext
 instance FromPG VerificationToken where

@@ -35,18 +35,19 @@ import ZoomHub.Types.Content (Content (..))
 import ZoomHub.Types.ContentState (ContentState (Active))
 
 getRecent :: (MonadUnliftIO m, MonadPQ Schemas m) => Word64 -> m [Content]
-getRecent numItems = do
-  result <-
-    runQueryParams
-      ( selectContentBy
-          ( \table ->
-              table
-                & where_ ((#content ! #state) ./= param @1) -- TODO: Remove dummy clause
-                & orderBy [#content ! #initialized_at & Desc]
-                & limit numItems
-          )
-      )
-      (Only Active)
+getRecent _numItems = pure []
+-- getRecent numItems = do
+--   result <-
+--     runQueryParams
+--       ( selectContentBy
+--           ( \table ->
+--               table
+--                 & where_ ((#content ! #state) ./= param @1) -- TODO: Remove dummy clause
+--                 & orderBy [#content ! #initialized_at & Desc]
+--                 & limit numItems
+--           )
+--       )
+--       (Only Active)
 
-  contentRows <- getRows result
-  return $ contentImageRowToContent <$> contentRows
+--   contentRows <- getRows result
+--   return $ contentImageRowToContent <$> contentRows
