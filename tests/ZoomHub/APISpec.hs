@@ -12,7 +12,6 @@ where
 import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
 import Data.Maybe (fromJust)
-import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T

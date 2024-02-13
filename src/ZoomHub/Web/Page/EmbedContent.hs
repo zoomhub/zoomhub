@@ -10,7 +10,6 @@ where
 import Data.Aeson (encode)
 import qualified Data.ByteString.Lazy.Char8 as BLC
 import Data.Maybe (fromJust, fromMaybe)
-import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Lucid as H

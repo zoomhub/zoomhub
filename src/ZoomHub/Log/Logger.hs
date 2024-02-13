@@ -35,7 +35,6 @@ import Data.Aeson.Encode.Pretty
   )
 import Data.Aeson.Types (Pair)
 import qualified Data.ByteString.Lazy as BL
-import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import Data.Text (Text)
 import qualified Data.Text as T

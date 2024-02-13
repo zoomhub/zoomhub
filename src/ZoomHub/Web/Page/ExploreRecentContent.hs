@@ -8,7 +8,6 @@ module ZoomHub.Web.Page.ExploreRecentContent
 where
 
 import Data.Foldable (forM_, for_)
-import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Lucid as H
 import qualified ZoomHub.API.Types.Content as Content
