@@ -5,7 +5,7 @@ module MigrateDatabase
   )
 where
 
-import Squeal.PostgreSQL.Session.Migration (mainMigrate)
+import Squeal.PostgreSQL.Session.Migration (mainMigrateIso)
 import System.Environment (getArgs, lookupEnv, withArgs)
 import System.Exit (die)
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo

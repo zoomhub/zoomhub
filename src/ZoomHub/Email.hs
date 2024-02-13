@@ -11,6 +11,7 @@ where
 
 import Control.Lens ((&), (.~))
 import Data.Text (Text)
+import qualified Amazonka as AWS
 import qualified Amazonka.SES as SES
 import qualified Amazonka.SES.Types as SES
 import qualified ZoomHub.AWS as ZHAWS
@@ -30,7 +31,8 @@ newtype To = To {unTo :: Text}
 
 send :: AWS.Config -> LogLevel -> Email -> IO SES.SendEmailResponse
 send config logLevel Email {..} =
-  ZHAWS.run config logLevel $ SES.newSendEmail (unFrom from) destination message
+  ZHAWS.run config logLevel $ \env ->
+    AWS.send env $ SES.newSendEmail (unFrom from) destination message
   where
     destination = SES.newDestination & SES.destination_toAddresses .~ Just [unTo to]
 

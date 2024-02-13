@@ -116,6 +116,7 @@ library
     , blaze-builder
     , bytestring
     , case-insensitive
+    , conduit
     , containers
     , data-default
     , directory

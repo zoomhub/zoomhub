@@ -71,7 +71,7 @@ import Servant.Auth.Server
     wwwAuthenticatedErr,
   )
 import Servant.HTML.Lucid (HTML)
-import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
+import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
 import qualified ZoomHub.API.Errors as API
@@ -103,7 +103,6 @@ import qualified ZoomHub.Email.Verification as Verification
 import ZoomHub.Log.Logger (logWarning)
 import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
-import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Storage.PostgreSQL as PG
 import ZoomHub.Storage.PostgreSQL.GetRecent as PG
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
@@ -349,7 +348,7 @@ jsonpContentById ::
   Callback ->
   Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById' contentId)
   case maybeContent of
     Nothing ->
       throwError $
@@ -369,7 +368,7 @@ jsonpContentByURL ::
   Callback ->
   Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getByURL' url)
   case maybeContent of
     Nothing ->
       throwError . JSONP.mkError $
@@ -471,9 +470,9 @@ restContentResetById baseURI dbConnPool authResult contentId = do
     Authenticated _ -> do
       maybeContent <-
         liftIO $
-          runPoolPQ
-            (PG.unsafeResetAsInitializedWithVerification contentId)
+          usingConnectionPool
             dbConnPool
+            (PG.unsafeResetAsInitializedWithVerification contentId)
       case maybeContent of
         Nothing ->
           throwError . API.error404 $ contentNotFoundMessage contentId
@@ -493,7 +492,7 @@ restContentVerificationById ::
   VerificationToken ->
   Handler Content
 restContentVerificationById baseURI dbConnPool contentId verificationToken = do
-  result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
+  result <- liftIO $ usingConnectionPool dbConnPool (PG.markAsVerified contentId verificationToken)
   case result of
     Right content ->
       redirectToAPI baseURI $ Internal.contentId content
@@ -521,7 +520,7 @@ restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId
   case authResult of
     Authenticated _ -> do
       maybeContent <- liftIO $
-        flip runPoolPQ dbConnPool $ case completion of
+        usingConnectionPool dbConnPool $ case completion of
           Completion.Success sc ->
             PG.markAsSuccess
               contentId
@@ -549,7 +548,7 @@ restContentById ::
   ContentId ->
   Handler Content
 restContentById baseURI contentBaseURI dbConnPool contentId = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById' contentId)
   case maybeContent of
     Nothing -> throwError . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ Content.fromInternal baseURI contentBaseURI content
@@ -567,14 +566,14 @@ restContentByURL ::
   Maybe Text -> -- Email
   Handler Content
 restContentByURL config baseURI dbConnPool processContent url mEmail = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getByURL' url)
   case (maybeContent, mEmail) of
     (Nothing, Nothing) ->
       missingEmailErrorAPI
     (Nothing, Just email) -> do
       mNewContent <- case processContent of
         ProcessExistingAndNewContent -> do
-          mNewContent <- liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
+          mNewContent <- liftIO $ usingConnectionPool dbConnPool (PG.initialize url email)
           for_ mNewContent $ \newContent -> do
             case ( Internal.contentSubmitterEmail newContent,
                    Internal.contentVerificationToken newContent
@@ -653,7 +652,7 @@ webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
             <> show maxItems
             <> ": "
             <> show numItems
-      content <- liftIO $ runPoolPQ (PG.getRecent (fromIntegral numItems)) dbConnPool
+      content <- liftIO $ usingConnectionPool dbConnPool (PG.getRecent (fromIntegral numItems))
       return
         Page.ExploreRecentContent
           { ercContent = content,
@@ -687,7 +686,7 @@ webEmbedIFrame
   mObjectFit
   mEmbedConstraint
   mEmbedBackground = do
-    maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
+    maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById contentId)
     case maybeContent of
       Nothing ->
         throwError . Web.error404 $ contentNotFoundMessage contentId
@@ -733,7 +732,7 @@ webEmbed
   objectFit
   constraint
   backgroundColor = do
-    maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
+    maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById' contentId)
     case maybeContent of
       Nothing ->
         throwError . Web.error404 $ contentNotFoundMessage contentId
@@ -770,7 +769,7 @@ webContentVerificationById ::
   VerificationToken ->
   Handler Page.VerifyContent
 webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
-  result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
+  result <- liftIO $ usingConnectionPool dbConnPool (PG.markAsVerified contentId verificationToken)
   case result of
     Right internalContent | ContentState.isCompleted (Internal.contentState internalContent) -> do
       redirectToView baseURI (Internal.contentId internalContent)
@@ -791,7 +790,7 @@ webContentById ::
   ContentId ->
   Handler Page.ViewContent
 webContentById baseURI contentBaseURI awsSourcesS3BucketName dbConnPool contentId = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById contentId)
   case maybeContent of
     Nothing ->
       throwError . Web.error404 $ contentNotFoundMessage contentId
@@ -811,7 +810,7 @@ webContentByURL ::
   ContentURI ->
   Handler Page.ViewContent
 webContentByURL baseURI dbConnPool contentURI = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getByURL contentURI) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getByURL contentURI)
   case maybeContent of
     Nothing ->
       noNewContentErrorWeb

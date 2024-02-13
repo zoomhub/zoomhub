@@ -8,34 +8,33 @@ where
 import Control.Monad (when)
 import Data.Functor ((<&>))
 import Data.Binary.Builder (Builder)
-import Data.Typeable (Typeable)
 import qualified Data.Binary.Builder as Builder
 import qualified Data.ByteString.Lazy.UTF8 as BL
 import Data.Text.Encoding (encodeUtf8)
 import qualified Amazonka.Auth as AWS
 import qualified Amazonka as AWS
 import UnliftIO (MonadUnliftIO)
+import Conduit (ResourceT)
 import qualified ZoomHub.Config.AWS as Config
 import qualified ZoomHub.Log.Logger as Logger
 
 run ::
-  (MonadUnliftIO m, AWS.AWSRequest a, Typeable a, Typeable (AWS.AWSResponse a)) =>
+  MonadUnliftIO m =>
   Config.Config ->
   Logger.LogLevel ->
-  a ->
-  m (AWS.AWSResponse a)
+  (AWS.Env -> ResourceT m a) ->
+  m a
 run config logLevel action = do
   let
     accessKey = AWS.AccessKey . encodeUtf8 . Config.configAccessKeyId $ config
     secretKey = AWS.SecretKey . encodeUtf8 . Config.configSecretAccessKey $ config
-  -- baseEnv <- AWS.newEnv ()
   baseEnv <- AWS.newEnvNoAuth <&> AWS.fromKeys accessKey secretKey
   let
     env = baseEnv
           { AWS.logger = logger logLevel
           , AWS.region = Config.configRegion config
           }
-  AWS.runResourceT $ AWS.send env action
+  AWS.runResourceT (action env)
 
 logger :: Logger.LogLevel -> AWS.LogLevel -> Builder -> IO ()
 logger minimumLogLevel logLevel builder =

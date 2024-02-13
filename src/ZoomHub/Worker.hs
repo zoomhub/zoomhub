@@ -22,7 +22,8 @@ import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
 import qualified Amazonka as AWS
 import qualified Amazonka.Lambda as AWSLambda
-import Squeal.PostgreSQL.Pool (runPoolPQ)
+import qualified Amazonka.Lambda.Lens as AWSLambda
+import Squeal.PostgreSQL.Session.Pool (usingConnectionPool)
 import System.Random (randomRIO)
 import qualified ZoomHub.AWS as ZHAWS
 import ZoomHub.Config (Config (..))
@@ -53,21 +54,21 @@ processExistingContent Config {..} workerId = forever $ do
   threadDelay . fromIntegral $ toMicroseconds sleepDuration
   where
     go = do
-      mContent <- liftIO $ runPoolPQ dequeueNextUnprocessed dbConnPool
+      mContent <- liftIO $ usingConnectionPool dbConnPool dequeueNextUnprocessed
       for_ mContent $ \content -> do
         logInfo
           "worker:lambda:start"
           [ "wwwURL" .= wwwURL content,
             "apiURL" .= apiURL content
           ]
-        ZHAWS.run aws logLevel $ do
+        ZHAWS.run aws logLevel $ \env -> do
           response <-
-            AWS.send $
-              AWSLambda.invoke
+            AWS.send env $
+              AWSLambda.newInvoke
                 "processContent"
                 (toStrict . encode $ object ["contentURL" .= apiURL content])
-                & AWSLambda.iQualifier .~ (Just . Environment.toText $ environment)
-          for_ (response ^. AWSLambda.irsPayload) $ \output ->
+                & AWSLambda.invoke_qualifier .~ (Just . Environment.toText $ environment)
+          for_ (response ^. AWSLambda.invokeResponse_payload) $ \output ->
             liftIO $
               logInfo
                 "worker:lambda:response"
