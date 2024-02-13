@@ -16,7 +16,7 @@ import qualified Database.PostgreSQL.Simple as PGS
 import Database.PostgreSQL.Simple.Instances ()
 import Network.URI.Instances ()
 import Network.Wai (Middleware)
-import Squeal.PostgreSQL.Pool (Pool)
+import Squeal.PostgreSQL.Session.Pool (Pool)
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
