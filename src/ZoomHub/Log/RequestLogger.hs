@@ -101,8 +101,6 @@ sockToJSON (SockAddrInet6 pn _ ha _) =
     ]
 sockToJSON (SockAddrUnix sock) =
   object ["unix" .= sock]
-sockToJSON (SockAddrCan i) =
-  object ["can" .= i]
 
 toObject :: ToJSON a => [(Text, a)] -> Value
 toObject = toJSON . HM.fromList
