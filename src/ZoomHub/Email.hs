@@ -9,10 +9,10 @@ module ZoomHub.Email
   )
 where
 
-import Control.Lens ((&), (.~), (?~))
+import Control.Lens ((&), (.~))
 import Data.Text (Text)
-import qualified Amazonka as AWS
 import qualified Amazonka.SES as SES
+import qualified Amazonka.SES.Types as SES
 import qualified ZoomHub.AWS as ZHAWS
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Log.Logger (LogLevel)
@@ -30,12 +30,10 @@ newtype To = To {unTo :: Text}
 
 send :: AWS.Config -> LogLevel -> Email -> IO SES.SendEmailResponse
 send config logLevel Email {..} =
-  ZHAWS.run config logLevel $
-    AWS.send $
-      SES.sendEmail (unFrom from) destination message
+  ZHAWS.run config logLevel $ SES.newSendEmail (unFrom from) destination message
   where
-    destination = SES.destination & SES.dToAddresses .~ [unTo to]
+    destination = SES.newDestination & SES.destination_toAddresses .~ Just [unTo to]
 
-    message = SES.message content' body'
-    content' = SES.content "" & SES.cData .~ subject
-    body' = SES.body & SES.bText ?~ SES.content body
+    message = SES.newMessage subject' body'
+    subject' = SES.newContent subject
+    body' = SES.newBody & SES.body_html .~ Just (SES.newContent body)

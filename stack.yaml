@@ -27,14 +27,14 @@ extra-deps:
   # - protolude-0.2.4@sha256:ec6c01be631050f8c1b9153a782d329a52609d058cb4b461104222862f7792af,2292
 
   - git: https://github.com/brendanhay/amazonka.git
-    commit: e081929d5a81f30397c9c9a219b154da1a922fb8
+    commit: e081929d5a81f30397c9c9a219b154da1a922fb8 # 2.0.0
     subdirs:
-    - lib/amazonka
-    - lib/amazonka-core
-    - lib/services/amazonka-lambda
-    - lib/services/amazonka-ses
-    - lib/services/amazonka-sso
-    - lib/services/amazonka-sts
+      - lib/amazonka
+      - lib/amazonka-core
+      - lib/services/amazonka-lambda
+      - lib/services/amazonka-ses
+      - lib/services/amazonka-sso
+      - lib/services/amazonka-sts
   - crypton-0.33@sha256:5e92f29b9b7104d91fcdda1dec9400c9ad1f1791c231cc41ceebd783fb517dee,18202
 
 # Override default flag values for local packages and extra-deps
@@ -69,7 +69,6 @@ extra-package-dbs: []
 # - /usr/local/opt/libpq/include # use Homebrew x86 includes
 # extra-lib-dirs:
 # - /usr/local/opt/libpq/lib # use Homebrew x86 libs
-
 
 # allow-newer: true
 # allow-newer-deps:

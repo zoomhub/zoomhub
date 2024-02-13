@@ -5,35 +5,37 @@ module ZoomHub.AWS
   )
 where
 
-import Control.Lens ((&), (.~))
 import Control.Monad (when)
-import Control.Monad.Catch (MonadCatch)
+import Data.Functor ((<&>))
 import Data.Binary.Builder (Builder)
+import Data.Typeable (Typeable)
 import qualified Data.Binary.Builder as Builder
 import qualified Data.ByteString.Lazy.UTF8 as BL
 import Data.Text.Encoding (encodeUtf8)
-import Amazonka (AccessKey (AccessKey), Credentials (FromKeys), SecretKey (SecretKey))
+import qualified Amazonka.Auth as AWS
 import qualified Amazonka as AWS
 import UnliftIO (MonadUnliftIO)
 import qualified ZoomHub.Config.AWS as Config
 import qualified ZoomHub.Log.Logger as Logger
 
 run ::
-  (MonadCatch m, MonadUnliftIO m) =>
+  (MonadUnliftIO m, AWS.AWSRequest a, Typeable a, Typeable (AWS.AWSResponse a)) =>
   Config.Config ->
   Logger.LogLevel ->
-  AWS.AWS a ->
-  m a
+  a ->
+  m (AWS.AWSResponse a)
 run config logLevel action = do
-  env <-
-    AWS.newEnv $
-      FromKeys
-        (AccessKey . encodeUtf8 . Config.configAccessKeyId $ config)
-        (SecretKey . encodeUtf8 . Config.configSecretAccessKey $ config)
-  AWS.runResourceT
-    . AWS.runAWS (env & AWS.envLogger .~ logger logLevel)
-    . AWS.within (Config.configRegion config)
-    $ action
+  let
+    accessKey = AWS.AccessKey . encodeUtf8 . Config.configAccessKeyId $ config
+    secretKey = AWS.SecretKey . encodeUtf8 . Config.configSecretAccessKey $ config
+  -- baseEnv <- AWS.newEnv ()
+  baseEnv <- AWS.newEnvNoAuth <&> AWS.fromKeys accessKey secretKey
+  let
+    env = baseEnv
+          { AWS.logger = logger logLevel
+          , AWS.region = Config.configRegion config
+          }
+  AWS.runResourceT $ AWS.send env action
 
 logger :: Logger.LogLevel -> AWS.LogLevel -> Builder -> IO ()
 logger minimumLogLevel logLevel builder =

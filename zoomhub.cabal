@@ -107,6 +107,7 @@ library
     , aeson-casing
     , aeson-pretty
     , amazonka
+    , amazonka-core
     , amazonka-lambda
     , amazonka-ses
     , async
