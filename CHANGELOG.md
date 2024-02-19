@@ -2,9 +2,6 @@
 
 ## Unreleased
 
-- API
-  - Force Rosetta for building Haskell binary.
-
 ## 2022-03-16-1
 
 - API:
