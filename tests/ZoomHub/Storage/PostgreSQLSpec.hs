@@ -467,7 +467,7 @@ spec =
           contentVerifiedAt = Just initializedAt
         }
       where
-        initializedAt = addUTCTime (-age) currentTime
+        initializedAt = addUTCTime (- age) currentTime
     mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkActiveContent id_ currentTime age =
       I.Content
@@ -490,7 +490,7 @@ spec =
         }
       where
         initializedAt = addUTCTime (-1) activeAt
-        activeAt = addUTCTime (-age) currentTime
+        activeAt = addUTCTime (- age) currentTime
     mkSucceededContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkSucceededContent id_ currentTime age =
       let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
@@ -515,7 +515,7 @@ spec =
               contentVerifiedAt = Just initializedAt
             }
       where
-        activeAt = addUTCTime (-age) currentTime
+        activeAt = addUTCTime (- age) currentTime
         initializedAt = addUTCTime (-1) activeAt
 
     testURL :: ContentURI
@@ -527,7 +527,7 @@ spec =
     isWithinSecondsOf :: UTCTime -> NominalDiffTime -> UTCTime -> Bool
     isWithinSecondsOf pivot interval t =
       let upperBound = addUTCTime interval pivot
-          lowerBound = addUTCTime (-interval) pivot
+          lowerBound = addUTCTime (- interval) pivot
        in lowerBound <= t && t <= upperBound
 
     safeGetCurrentTime :: IO UTCTime

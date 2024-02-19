@@ -4,9 +4,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 -- Simplify Squeal query type signatures
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
@@ -19,8 +19,8 @@ module ZoomHub.Storage.PostgreSQL.Internal
 where
 
 import Control.Monad (when)
-import Data.Int (Int32, Int64)
 import Control.Monad.Trans.Control (MonadBaseControl)
+import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime, UTCTime)
 import Data.Time.Units (Second, TimeUnit, toMicroseconds)
@@ -28,8 +28,6 @@ import Database.PostgreSQL.Simple (ConnectInfo (..))
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Generics.SOP.BasicFunctors (K)
-import Squeal.PostgreSQL.Manipulation (pattern Returning_)
-import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
 import Squeal.PostgreSQL
   ( Condition,
     ConflictClause (OnConflictDoRaise),
@@ -43,17 +41,21 @@ import Squeal.PostgreSQL
     PGType (PGint8, PGtext),
     PQ,
     Query,
+    QueryClause (Subquery),
     Query_,
     RowPG,
     TableExpression,
     ToPG,
+    UsingClause (Using),
     as,
     currentTimestamp,
+    deleteFrom,
     firstRow,
     from,
+    inline,
+    insertInto,
     insertInto_,
     leftOuterJoin,
-    inline,
     manipulateParams,
     manipulateParams_,
     null_,
@@ -69,14 +71,12 @@ import Squeal.PostgreSQL
     (&),
     (.&&),
     (.==),
-    insertInto,
-    deleteFrom,
-    QueryClause(Subquery),
-    UsingClause(Using)
   )
+import Squeal.PostgreSQL.Manipulation (pattern Returning_)
+import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
 import qualified Squeal.PostgreSQL.Session.Connection as Connection
-import qualified Squeal.PostgreSQL.Session.Pool as P
 import Squeal.PostgreSQL.Session.Pool (destroyConnectionPool)
+import qualified Squeal.PostgreSQL.Session.Pool as P
 import System.Random (randomRIO)
 import UnliftIO (MonadUnliftIO (..), liftIO)
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
@@ -114,10 +114,11 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
 -- Reads: Content
 getBy ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>
-  Condition 'Ungrouped '[] '[]  Schemas _ _ ->
+  Condition 'Ungrouped '[] '[] Schemas _ _ ->
   Text ->
   m (Maybe Content)
 getBy _condition _parameter = pure Nothing
+
 -- getBy condition parameter = do
 --   result <-
 --     runQueryParams
@@ -132,6 +133,7 @@ getBy' ::
   Text ->
   m (Maybe Content)
 getBy' _condition _parameter = pure Nothing
+
 -- getBy' condition parameter = do
 --   mContent <- getBy condition parameter
 --   case mContent of
@@ -158,6 +160,7 @@ getBy' _condition _parameter = pure Nothing
 
 incrNumViews :: Manipulation_ Schemas (Int64, Text) ()
 incrNumViews = undefined
+
 -- incrNumViews =
 --   update_
 --     #content
@@ -170,6 +173,7 @@ selectContentBy ::
   ) ->
   Query '[] '[] Schemas '[ 'NotNull a] (RowPG ContentImageRow)
 selectContentBy clauses = undefined
+
 -- selectContentBy clauses =
 --   select_
 --     ( #content ! #hash_id `as` #cirHashId
@@ -209,6 +213,7 @@ selectContentBy clauses = undefined
 -- Reads: Image
 getImageById :: Int64 -> PQ Schemas Schemas IO (Maybe DeepZoomImage)
 getImageById cId = undefined
+
 -- getImageById cId = do
 --   result <- runQueryParams (selectImageBy ((#image ! #content_id) .== param @1)) (Only cId)
 --   imageRow <- firstRow result
@@ -218,6 +223,7 @@ selectImageBy ::
   Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGint8] _ ->
   Query_ Schemas (Only Int64) ImageRow
 selectImageBy condition = undefined
+
 -- selectImageBy condition =
 --   select_
 --     ( #image ! #created_at `as` #irCreatedAt
@@ -232,6 +238,7 @@ selectImageBy condition = undefined
 -- Writes: Image
 createImage :: (MonadBaseControl IO m, MonadPQ db m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
 createImage cid initializedAt image = pure 0
+
 -- createImage cid initializedAt image = do
 --   let imageRow = imageToRow cid image initializedAt
 --   result <- manipulateParams insertImage imageRow
@@ -435,6 +442,7 @@ insertContent =
 
 markContentAsActive :: Manipulation_ Schemas (Only Text) ContentRow
 markContentAsActive = undefined
+
 -- markContentAsActive =
 --   update
 --     #content
@@ -478,6 +486,7 @@ markContentAsActive = undefined
 
 markContentAsFailure :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
 markContentAsFailure = undefined
+
 -- markContentAsFailure =
 --   update
 --     #content
@@ -524,6 +533,7 @@ markContentAsSuccess ::
     (Text, Maybe Text, Maybe Int64)
     ContentRow
 markContentAsSuccess = undefined
+
 -- markContentAsSuccess =
 --   update
 --     #content
@@ -563,6 +573,7 @@ markContentAsSuccess = undefined
 
 markContentAsVerified :: Manipulation_ Schemas (Only Text) ContentRow
 markContentAsVerified = undefined
+
 -- markContentAsVerified =
 --   update
 --     #content
@@ -597,6 +608,7 @@ markContentAsVerified = undefined
 
 resetContentAsInitialized :: Manipulation_ Schemas (Only Text) ContentRow
 resetContentAsInitialized = undefined
+
 -- resetContentAsInitialized =
 --   update
 --     #content
@@ -662,6 +674,7 @@ instance SOP.HasDatatypeInfo InsertImageRow
 
 insertImage :: Manipulation_ Schemas InsertImageRow ()
 insertImage = undefined
+
 -- insertImage =
 --   insertInto_
 --     #image
@@ -683,6 +696,7 @@ insertImage = undefined
 
 deleteImage :: Manipulation_ Schemas (Only Text) ()
 deleteImage = undefined
+
 -- deleteImage =
 --   deleteFrom
 --     #image
@@ -696,6 +710,7 @@ unsafeCreateContent ::
   Content ->
   m (Maybe Content)
 unsafeCreateContent content = undefined
+
 -- unsafeCreateContent content =
 --   transactionally_ $ do
 --     result <- manipulateParams unsafeInsertContent (contentToRow content)
@@ -704,6 +719,7 @@ unsafeCreateContent content = undefined
 
 unsafeInsertContent :: Manipulation_ Schemas ContentRow ContentRow
 unsafeInsertContent = undefined
+
 -- unsafeInsertContent =
 --   insertInto
 --     #content

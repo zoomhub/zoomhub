@@ -21,7 +21,7 @@ import qualified Data.Text as T
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (PG, PGType (PGtext), IsPG(..), FromPG(..), ToPG(..), Inline(..))
+import Squeal.PostgreSQL (FromPG (..), Inline (..), IsPG (..), PG, PGType (PGtext), ToPG (..))
 
 newtype VerificationToken = VerificationToken {unVerificationToken :: UUID}
   deriving (Eq)
@@ -48,10 +48,12 @@ instance ToJSON VerificationToken where
 -- Squeal / PostgreSQL
 instance IsPG VerificationToken where
   type PG VerificationToken = 'PGtext
+
 instance FromPG VerificationToken where
   fromPG = fromJust . fromText <$> fromPG @Text
+
 instance ToPG db VerificationToken where
   toPG = toPG . T.pack . show
+
 instance Inline VerificationToken where
   inline = inline . T.pack . show
-

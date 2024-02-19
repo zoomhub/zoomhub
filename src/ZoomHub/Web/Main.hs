@@ -6,6 +6,7 @@ module ZoomHub.Web.Main
   )
 where
 
+import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities, threadDelay)
 import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
@@ -18,7 +19,6 @@ import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
-import qualified Amazonka as AWS
 import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
 import Network.Wai (Request)

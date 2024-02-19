@@ -7,9 +7,9 @@ module ZoomHub.Config.AWS
   )
 where
 
+import qualified Amazonka as AWS
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Amazonka as AWS
 import System.Environment (getEnvironment)
 
 newtype S3BucketName = S3BucketName {unS3BucketName :: Text}

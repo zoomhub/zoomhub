@@ -21,25 +21,25 @@ module ZoomHub.Types.ContentId
 where
 
 import Data.Aeson
-  ( FromJSON(..),
+  ( FromJSON (..),
     ToJSON,
     parseJSON,
     toJSON,
   )
-import Data.Aeson.Types (typeMismatch)
 import qualified Data.Aeson as Aeson
+import Data.Aeson.Types (typeMismatch)
 import Data.List (intersperse)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (IsPG, ToPG, Inline)
+import Squeal.PostgreSQL (Inline, IsPG, ToPG)
 import Prelude hiding (fromInteger)
 
 -- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
-newtype ContentId = ContentId { unContentId :: String }
+newtype ContentId = ContentId {unContentId :: String}
   deriving stock (Eq, Generic, Show)
   deriving newtype (IsPG, ToPG db, Inline)
 
@@ -50,7 +50,8 @@ fromInteger encode intId = fromString $ encode intId
 fromString :: String -> ContentId
 fromString s
   | isValid s = ContentId s
-  | otherwise = error $
+  | otherwise =
+    error $
       "Invalid content ID '" ++ s ++ "'."
         ++ " Valid characters: "
         ++ intersperse ',' validChars

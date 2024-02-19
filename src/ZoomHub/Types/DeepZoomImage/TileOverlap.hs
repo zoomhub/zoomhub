@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 module ZoomHub.Types.DeepZoomImage.TileOverlap
   ( TileOverlap (..),
@@ -15,7 +15,7 @@ where
 import Data.Aeson (FromJSON (parseJSON), ToJSON, Value (Number), toJSON, withScientific)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
-import Squeal.PostgreSQL (PG, PGType (PGint4), IsPG(..), FromPG(..), ToPG(..), Inline(..))
+import Squeal.PostgreSQL (FromPG (..), Inline (..), IsPG (..), PG, PGType (PGint4), ToPG (..))
 import Prelude hiding (fromInteger, toInteger)
 
 data TileOverlap = TileOverlap0 | TileOverlap1
@@ -54,9 +54,12 @@ instance FromJSON TileOverlap where
 -- PostgreSQL / Squeal
 instance IsPG TileOverlap where
   type PG TileOverlap = 'PGint4
+
 instance FromPG TileOverlap where
   fromPG = fromJust . fromInteger . fromIntegral <$> fromPG @Int32
+
 instance ToPG db TileOverlap where
   toPG = toPG . toInt32
+
 instance Inline TileOverlap where
   inline = inline . toInt32

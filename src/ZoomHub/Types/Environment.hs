@@ -9,10 +9,10 @@ module ZoomHub.Types.Environment
   )
 where
 
+import Data.Aeson (ToJSON (toJSON), Value (String))
 import Data.Text (Text)
 import qualified Data.Text as T
 import System.Environment (lookupEnv)
-import Data.Aeson (ToJSON(toJSON), Value (String))
 
 data Environment
   = Development

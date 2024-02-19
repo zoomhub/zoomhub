@@ -11,11 +11,11 @@ module ZoomHub.Storage.PostgreSQL.Schema
 where
 
 import Squeal.PostgreSQL
-  ( Path (Done, (:>>)),
-    Definition,
+  ( Definition,
+    IsoQ,
+    Path (Done, (:>>)),
     Public,
     (>>>),
-    IsoQ
   )
 import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema0 as Schema0

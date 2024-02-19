@@ -22,19 +22,19 @@ where
 import qualified Control.Category as Category
 import Data.String (IsString)
 import Squeal.PostgreSQL
-  ( Path (Done, (:>>)),
-    OnDeleteClause(OnDelete),
-    OnUpdateClause(OnUpdate),
-    inline,
-    ReferentialAction(Cascade),
-    Optionality (Def, NoDef),
-    Definition,
+  ( Definition,
+    IsoQ (..),
     Manipulation (UnsafeManipulation),
     NP ((:*)),
     NullType (NotNull, Null),
+    OnDeleteClause (OnDelete),
+    OnUpdateClause (OnUpdate),
     Optional (Default, Set),
+    Optionality (Def, NoDef),
     PGType (PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
+    Path (Done, (:>>)),
     Public,
+    ReferentialAction (Cascade),
     SchemumType (Table),
     TableConstraint (ForeignKey, PrimaryKey, Unique),
     as,
@@ -48,10 +48,10 @@ import Squeal.PostgreSQL
     doublePrecision,
     dropTable,
     foreignKey,
+    inline,
     insertInto_,
     int,
     int4,
-    -- literal,
     manipulation_,
     notNullable,
     null_,
@@ -65,7 +65,6 @@ import Squeal.PostgreSQL
     (:::),
     (:=>),
     (>>>),
-    IsoQ(..)
   )
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
 import Squeal.PostgreSQL.Session.Migration (Migration (..))
@@ -175,17 +174,21 @@ migrations hashidsSecret =
 
 installPLpgSQLExtension :: Migration (IsoQ Definition) (Public '[]) (Public '[])
 installPLpgSQLExtension =
-  Migration "2019-11-11-1: Install V8 extension" IsoQ
-    { up = manipulation_ . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;",
-      down = manipulation_ . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
-    }
+  Migration
+    "2019-11-11-1: Install V8 extension"
+    IsoQ
+      { up = manipulation_ . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;",
+        down = manipulation_ . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
+      }
 
 initializeHashidsEncode :: Migration (IsoQ Definition) (Public '[]) (Public '[])
 initializeHashidsEncode =
-  Migration "2019-11-11-2: Initialize Hashids encode function" IsoQ
-    { up = concatDefinitions $ manipulation_ . UnsafeManipulation <$> createHashidsFunctions,
-      down = manipulation_ . UnsafeManipulation $ dropHashidsEncode
-    }
+  Migration
+    "2019-11-11-2: Initialize Hashids encode function"
+    IsoQ
+      { up = concatDefinitions $ manipulation_ . UnsafeManipulation <$> createHashidsFunctions,
+        down = manipulation_ . UnsafeManipulation $ dropHashidsEncode
+      }
   where
     dropHashidsEncode :: IsString a => a
     dropHashidsEncode =
@@ -195,10 +198,12 @@ initializeHashidsEncode =
 
 initialSchema :: Migration (IsoQ Definition) (Public '[]) Schemas0
 initialSchema =
-  Migration "2019-11-11-3: Initial setup" IsoQ
-    { up = setup,
-      down = teardown
-    }
+  Migration
+    "2019-11-11-3: Initial setup"
+    IsoQ
+      { up = setup,
+        down = teardown
+      }
   where
     setup :: Definition (Public '[]) Schemas0
     setup =
@@ -299,36 +304,40 @@ initialSchema =
 
 insertHashidsSecret :: String -> Migration (IsoQ Definition) Schemas0 Schemas0
 insertHashidsSecret secret =
-  Migration "2019-11-11-4: Insert Hashids secret" IsoQ
-    { up =
-        manipulation_ $
-          insertInto_
-            #config
-            ( Values_
-                ( Default `as` #id
-                    :* Set "hashids_salt" `as` #key
-                    :* Set (inline secret) `as` #value
-                )
-            ),
-      down =
-        manipulation_ $
-          deleteFrom_ #config (#key .== "hashids_salt")
-    }
+  Migration
+    "2019-11-11-4: Insert Hashids secret"
+    IsoQ
+      { up =
+          manipulation_ $
+            insertInto_
+              #config
+              ( Values_
+                  ( Default `as` #id
+                      :* Set "hashids_salt" `as` #key
+                      :* Set (inline secret) `as` #value
+                  )
+              ),
+        down =
+          manipulation_ $
+            deleteFrom_ #config (#key .== "hashids_salt")
+      }
 
 createContentHashIdTrigger :: Migration (IsoQ Definition) Schemas0 Schemas0
 createContentHashIdTrigger =
-  Migration "2019-11-11-5: Create content hash_id trigger" IsoQ
-    { up =
-        concatDefinitions
-          [ manipulation_ . UnsafeManipulation $ createContentBeforeInsert,
-            manipulation_ . UnsafeManipulation $ createTriggerContentBeforeInsert
-          ],
-      down =
-        concatDefinitions
-          [ manipulation_ . UnsafeManipulation $ dropTriggerContentBeforeInsert,
-            manipulation_ . UnsafeManipulation $ dropContentBeforeInsert
-          ]
-    }
+  Migration
+    "2019-11-11-5: Create content hash_id trigger"
+    IsoQ
+      { up =
+          concatDefinitions
+            [ manipulation_ . UnsafeManipulation $ createContentBeforeInsert,
+              manipulation_ . UnsafeManipulation $ createTriggerContentBeforeInsert
+            ],
+        down =
+          concatDefinitions
+            [ manipulation_ . UnsafeManipulation $ dropTriggerContentBeforeInsert,
+              manipulation_ . UnsafeManipulation $ dropContentBeforeInsert
+            ]
+      }
   where
     createContentBeforeInsert :: IsString a => a
     createContentBeforeInsert =

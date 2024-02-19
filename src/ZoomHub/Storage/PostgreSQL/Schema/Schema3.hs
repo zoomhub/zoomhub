@@ -14,9 +14,10 @@ module ZoomHub.Storage.PostgreSQL.Schema.Schema3
 where
 
 import Squeal.PostgreSQL
-  ( Optionality (Def, NoDef),
-    Definition,
+  ( Definition,
+    IsoQ (..),
     NullType (NotNull, Null),
+    Optionality (Def, NoDef),
     PGType (PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
     Public,
     SchemumType (Table),
@@ -31,7 +32,6 @@ import Squeal.PostgreSQL
     (&),
     (:::),
     (:=>),
-    IsoQ(..),
   )
 import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, FlickrTable0, ImageTable0)
@@ -79,10 +79,12 @@ type ContentTable3 =
 
 migration :: Migration (IsoQ Definition) _ Schemas3
 migration =
-  Migration "2021-09-13-1: Add `verified_at`" IsoQ
-    { up = setup,
-      down = teardown
-    }
+  Migration
+    "2021-09-13-1: Add `verified_at`"
+    IsoQ
+      { up = setup,
+        down = teardown
+      }
 
 setup :: Definition _ Schemas3
 setup = alterTable #content (addColumn #verified_at (timestampWithTimeZone & nullable & default_ null_))

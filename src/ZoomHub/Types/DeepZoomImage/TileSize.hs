@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 module ZoomHub.Types.DeepZoomImage.TileSize
   ( TileSize (..),
@@ -16,7 +16,7 @@ import Data.Aeson (ToJSON, Value (Number), toJSON)
 import Data.Aeson.Types (FromJSON (parseJSON), withScientific)
 import Data.Int (Int32)
 import Data.Maybe (fromJust)
-import Squeal.PostgreSQL (PG, PGType (PGint4), IsPG(..), FromPG(..), ToPG(..), Inline(..))
+import Squeal.PostgreSQL (FromPG (..), Inline (..), IsPG (..), PG, PGType (PGint4), ToPG (..))
 import Prelude hiding (fromInteger)
 
 data TileSize
@@ -70,13 +70,14 @@ instance FromJSON TileSize where
 -- PostgreSQL / Squeal
 instance IsPG TileSize where
   type PG TileSize = 'PGint4
+
 instance FromPG TileSize where
   fromPG = fromJust . fromInteger . fromIntegral <$> fromPG @Int32
+
 instance ToPG db TileSize where
   toPG = toPG . toInt32
+
 instance Inline TileSize where
   inline = inline . toInt32
 
 -- type instance PG TileSize = 'PGint4
-
-

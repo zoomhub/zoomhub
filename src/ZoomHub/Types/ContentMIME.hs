@@ -20,11 +20,10 @@ import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..), IsPG, ToPG(..), inline, Inline, FromPG(..))
+import Squeal.PostgreSQL (FromPG (..), FromValue (..), Inline, IsPG, PG, PGType (PGtext), ToPG (..), ToParam (..), inline)
 
-newtype ContentMIME' a = ContentMIME { unContentMIME :: a }
+newtype ContentMIME' a = ContentMIME {unContentMIME :: a}
   deriving stock (Eq, Show)
-  -- deriving newtype (IsPG, ToPG db, Inline)
 
 type ContentMIME = ContentMIME' Type
 
@@ -41,10 +40,13 @@ instance ToJSON ContentMIME where
 -- Squeal / PostgreSQL
 instance IsPG ContentMIME where
   type PG ContentMIME = 'PGtext
+
 instance FromPG ContentMIME where
   fromPG = ContentMIME . fromJust . parseMIMEType <$> fromPG @Text
+
 instance ToPG db ContentMIME where
   toPG = toPG . toText
+
 instance Inline ContentMIME where
   inline = inline . toText
 

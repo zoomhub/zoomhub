@@ -18,18 +18,17 @@ import qualified Data.String as String
 import Data.Text (Text)
 import qualified Data.Text as T
 import Squeal.PostgreSQL
-  ( FromValue (..),
-    -- Literal (..),
-    PG,
-    PGType (PGtext, PGenum),
-    ToParam (..),
+  ( FromPG (fromPG),
+    FromValue (..),
+    Inline (..),
     IsPG,
-    FromPG(fromPG),
-    ToPG(..),
-    Inline(..),
+    NP ((:*)),
+    PG,
+    PGType (PGenum, PGtext),
+    ToPG (..),
+    ToParam (..),
     enumValue,
     label,
-    NP( (:*) )
   )
 
 data ContentState
@@ -38,7 +37,6 @@ data ContentState
   | CompletedSuccess
   | CompletedFailure
   deriving (Eq, Show)
-
 
 fromString :: String -> Maybe ContentState
 fromString "initialized" = Just Initialized

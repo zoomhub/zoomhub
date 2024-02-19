@@ -9,11 +9,11 @@ module ZoomHub.Email
   )
 where
 
-import Control.Lens ((&), (.~))
-import Data.Text (Text)
 import qualified Amazonka as AWS
 import qualified Amazonka.SES as SES
 import qualified Amazonka.SES.Types as SES
+import Control.Lens ((&), (.~))
+import Data.Text (Text)
 import qualified ZoomHub.AWS as ZHAWS
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Log.Logger (LogLevel)

@@ -12,14 +12,13 @@ where
 
 import Data.Int (Int32)
 import Squeal.PostgreSQL
-  ( FromValue (..),
-    -- Literal (..),
+  ( FromPG (fromPG),
+    FromValue (..),
+    Inline (inline),
+    IsPG,
     PG,
     PGType (PGint4),
     ToParam (..),
-    IsPG,
-    FromPG(fromPG),
-    Inline(inline),
   )
 
 data ContentType
@@ -33,7 +32,6 @@ data ContentType
   | PDF11
   | WebpageThumbnail
   deriving (Eq, Show)
-
 
 -- Squeal / PostgreSQL
 fromPGint4 :: Int32 -> ContentType

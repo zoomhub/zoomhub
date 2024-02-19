@@ -9,6 +9,9 @@ module ZoomHub.Worker
   )
 where
 
+import qualified Amazonka as AWS
+import qualified Amazonka.Lambda as AWSLambda
+import qualified Amazonka.Lambda.Lens as AWSLambda
 import Control.Concurrent (threadDelay)
 import Control.Exception.Enclosed (catchAny)
 import Control.Lens ((&), (.~), (^.))
@@ -20,9 +23,6 @@ import Data.Foldable (for_)
 import Data.Text (Text)
 import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
-import qualified Amazonka as AWS
-import qualified Amazonka.Lambda as AWSLambda
-import qualified Amazonka.Lambda.Lens as AWSLambda
 import Squeal.PostgreSQL.Session.Pool (usingConnectionPool)
 import System.Random (randomRIO)
 import qualified ZoomHub.AWS as ZHAWS

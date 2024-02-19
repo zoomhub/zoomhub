@@ -36,6 +36,7 @@ import ZoomHub.Types.ContentState (ContentState (Active))
 
 getRecent :: (MonadUnliftIO m, MonadPQ Schemas m) => Word64 -> m [Content]
 getRecent _numItems = pure []
+
 -- getRecent numItems = do
 --   result <-
 --     runQueryParams

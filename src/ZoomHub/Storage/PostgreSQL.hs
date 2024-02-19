@@ -48,9 +48,9 @@ import Squeal.PostgreSQL
     SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
     getRows,
+    inline,
     isNotNull,
     limit,
-    inline,
     manipulateParams,
     manipulateParams_,
     orderBy,
@@ -107,14 +107,17 @@ import ZoomHub.Types.VerificationToken (VerificationToken)
 -- Reads
 getById :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
 getById _id = pure Nothing
+
 -- getById = getBy ((#content ! #hash_id) .== param @1)
 
 getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
 getByURL _uri = pure Nothing
+
 -- getByURL = getBy ((#content ! #url) .== param @1)
 
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = pure Nothing
+
 -- getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 -- getNextUnprocessed = do
 --   result <-
@@ -141,6 +144,7 @@ getNextUnprocessed = pure Nothing
 getExpiredActive ::
   (MonadUnliftIO m, MonadPQ Schemas m, TimeUnit t) => t -> m [Content]
 getExpiredActive _ttl = pure []
+
 -- getExpiredActive ttl = do
 --   currentTime <- liftIO getCurrentTime
 --   let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
@@ -163,10 +167,12 @@ getExpiredActive _ttl = pure []
 -- Reads/writes
 getById' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
 getById' _id = pure Nothing
+
 -- getById' = getBy' ((#content ! #hash_id) .== param @1)
 
 getByURL' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
 getByURL' _uri = pure Nothing
+
 -- getByURL' = getBy' ((#content ! #url) .== param @1)
 
 -- Writes
@@ -176,6 +182,7 @@ initialize ::
   Text -> -- Email
   m (Maybe Content)
 initialize _uri _email = pure Nothing
+
 -- initialize uri email = do
 --   verificationToken <- show <$> liftIO UUIDV4.nextRandom
 --   transactionally_ $ do
@@ -194,6 +201,7 @@ markAsActive ::
   ContentId ->
   m (Maybe Content)
 markAsActive _cId = pure Nothing
+
 -- markAsActive cId =
 --   transactionally_ $ do
 --     contentResult <- manipulateParams markContentAsActive (Only cId)
@@ -206,6 +214,7 @@ markAsFailure ::
   Maybe Text ->
   m (Maybe Content)
 markAsFailure _cId _mErrorMessage = pure Nothing
+
 -- markAsFailure cId mErrorMessage =
 --   transactionally_ $ do
 --     manipulateParams_ deleteImage (Only cId)
@@ -221,6 +230,7 @@ markAsSuccess ::
   Maybe Int64 ->
   m (Maybe Content)
 markAsSuccess cId dzi mMIME mSize = pure Nothing
+
 -- markAsSuccess cId dzi mMIME mSize =
 --   transactionally_ $ do
 --     contentResult <- manipulateParams markContentAsSuccess (cId, mMIME, mSize)
@@ -239,6 +249,7 @@ markAsVerified ::
   VerificationToken ->
   m (Either VerificationError Content)
 markAsVerified cId verificationToken = pure $ Left VerificationError.ContentNotFound
+
 -- markAsVerified cId verificationToken =
 --   transactionally_ $ do
 --     mContent <- getById cId
@@ -261,6 +272,7 @@ resetAsInitialized ::
   ContentId ->
   m (Maybe Content)
 resetAsInitialized _cId = pure Nothing
+
 -- resetAsInitialized cId =
 --   transactionally_ $ do
 --     manipulateParams_ deleteImage (Only cId)
@@ -273,6 +285,7 @@ unsafeResetAsInitializedWithVerification ::
   ContentId ->
   m (Maybe Content)
 unsafeResetAsInitializedWithVerification _cId = pure Nothing
+
 -- unsafeResetAsInitializedWithVerification cId =
 --   transactionally_ $ do
 --     manipulateParams_ deleteImage (Only cId)
@@ -285,6 +298,7 @@ dequeueNextUnprocessed ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>
   m (Maybe Content)
 dequeueNextUnprocessed = pure Nothing
+
 -- dequeueNextUnprocessed = do
 --   mNext <- getNextUnprocessed
 --   case mNext of

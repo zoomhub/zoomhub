@@ -16,10 +16,10 @@ where
 
 import Squeal.PostgreSQL
   ( Definition,
+    IsoQ (..),
     Manipulation (UnsafeManipulation),
     Public,
     manipulation_,
-    IsoQ(..),
   )
 import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import Text.RawString.QQ (r)
@@ -31,10 +31,12 @@ type Schemas4 = Public Schema4
 
 migration :: Migration (IsoQ Definition) Schemas4 Schemas4
 migration =
-  Migration "2021-09-28-1: Add content indexes" IsoQ
-    { up = setup,
-      down = teardown
-    }
+  Migration
+    "2021-09-28-1: Add content indexes"
+    IsoQ
+      { up = setup,
+        down = teardown
+      }
   where
     -- TODO: Use `createIndex` once we upgraded to Squeal 0.6:
     setup :: Definition Schemas4 Schemas4

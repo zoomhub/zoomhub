@@ -19,15 +19,14 @@ where
 
 import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Text (Text)
-import GHC.Generics (Generic)
 import qualified Data.Text as T
+import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..), IsPG, ToPG, FromPG(..), Inline)
+import Squeal.PostgreSQL (FromPG (..), FromValue (..), Inline, IsPG, PG, PGType (PGtext), ToPG, ToParam (..))
 
-newtype ContentURI = ContentURI { unContentURI :: Text }
+newtype ContentURI = ContentURI {unContentURI :: Text}
   deriving stock (Eq, Generic)
   deriving newtype (IsPG, ToPG db, Inline)
-
 
 instance Show ContentURI where
   show = T.unpack . unContentURI
