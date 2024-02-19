@@ -4,7 +4,7 @@ set -eo pipefail
 
 if [[ -f ./zoomhub-api.pid ]] ; then
   set +e
-  kill -9 $(cat zoomhub-api.pid) >/dev/null 2>&1
+  kill -9 "$(cat zoomhub-api.pid)" >/dev/null 2>&1
   set -e
 fi
 
@@ -51,6 +51,6 @@ UPLOADS='true' \
 	    --warnings \
 	    --restart ./zoomhub.cabal \
 	    --restart ./stack.yaml \
-  | lenient_jq &
+  | lenient_jq "$@" &
 
 echo $! > zoomhub-api.pid
