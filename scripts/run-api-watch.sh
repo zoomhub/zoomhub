@@ -25,7 +25,7 @@ PGUSER="$(whoami)" HASHIDS_SALT='secret-salt' \
   stack build \
     --fast \
     --no-run-tests \
-    --ghc-options='-Wall' \
+    --ghc-options='-Wall -fllvm' \
     --exec "migrate-database $DEVELOPMENT_DB_NAME migrate"
 
 # NOTE: Preserves existing content IDs:
@@ -46,7 +46,7 @@ PROCESSING_WORKERS='2' \
 S3_SOURCES_BUCKET='zoomhub-sources-development' \
 UPLOADS='true' \
   ghcid \
-	    --command "stack ghci zoomhub" \
+	    --command "stack ghci --ghc-options '-fllvm' zoomhub --main-is zoomhub:exe:zoomhub" \
 	    --test ZoomHub.Web.MainDevelopment.update \
 	    --warnings \
 	    --restart ./zoomhub.cabal \
