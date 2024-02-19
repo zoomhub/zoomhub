@@ -44,7 +44,5 @@ instance ToJSON ContentURI where
   toJSON = String . unContentURI
 
 -- Squeal / PostgreSQL
--- type instance PG ContentURI = 'PGtext
-
 instance FromPG ContentURI where
   fromPG = ContentURI <$> fromPG @Text
