@@ -20,7 +20,7 @@ import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromPG (..), FromValue (..), Inline, IsPG, PG, PGType (PGtext), ToPG (..), ToParam (..), inline)
+import Squeal.PostgreSQL (FromPG (..), Inline, IsPG, PG, PGType (PGtext), ToPG (..), inline)
 
 newtype ContentMIME' a = ContentMIME {unContentMIME :: a}
   deriving stock (Eq, Show)
