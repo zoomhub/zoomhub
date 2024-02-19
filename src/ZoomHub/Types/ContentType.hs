@@ -12,13 +12,11 @@ where
 
 import Data.Int (Int32)
 import Squeal.PostgreSQL
-  ( FromPG (fromPG),
-    FromValue (..),
-    Inline (inline),
+  ( Inline (inline),
     IsPG,
     PG,
     PGType (PGint4),
-    ToParam (..),
+    FromPG(fromPG)
   )
 
 data ContentType
@@ -62,3 +60,6 @@ instance IsPG ContentType where
 
 instance Inline ContentType where
   inline = inline . toPGint4
+
+instance FromPG ContentType where
+  fromPG = fromPGint4 <$> fromPG @Int32

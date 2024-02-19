@@ -22,7 +22,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (FromPG (..), FromValue (..), Inline, IsPG, PG, PGType (PGtext), ToPG, ToParam (..))
+import Squeal.PostgreSQL (FromPG (..), Inline, IsPG, ToPG)
 
 newtype ContentURI = ContentURI {unContentURI :: Text}
   deriving stock (Eq, Generic)

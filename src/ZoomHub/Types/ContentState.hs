@@ -13,21 +13,14 @@ module ZoomHub.Types.ContentState
 where
 
 import Data.Maybe (fromJust)
-import Data.String (IsString)
-import qualified Data.String as String
 import Data.Text (Text)
-import qualified Data.Text as T
 import Squeal.PostgreSQL
   ( FromPG (fromPG),
-    FromValue (..),
     Inline (..),
     IsPG,
-    NP ((:*)),
     PG,
-    PGType (PGenum, PGtext),
+    PGType (PGtext),
     ToPG (..),
-    ToParam (..),
-    enumValue,
     label,
   )
 
