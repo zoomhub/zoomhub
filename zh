@@ -68,7 +68,7 @@ test)
         --fast \
         --test \
         --no-run-tests \
-        --ghc-options='-Wall -fllvm' \
+        --ghc-options='-Wall' \
         --exec "migrate-database $TEST_DB_NAME migrate"
 
     psql --output /dev/null --quiet "$TEST_DB_NAME" < ./data/zoomhub_data.sql
