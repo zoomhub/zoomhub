@@ -52,7 +52,7 @@ instance FromJSON TileFormat where
     "jpeg" -> pure JPEG
     "jpg" -> pure JPG
     "png" -> pure PNG
-    invalid -> fail $ "invalid tile format: " <> T.unpack invalid
+    invalid -> fail $ "Invalid tile format: " <> T.unpack invalid
 
 -- Squeal / PostgreSQL
 instance IsPG TileFormat where
