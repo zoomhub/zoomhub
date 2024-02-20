@@ -1,0 +1,2 @@
+# Preserve CRLF line endings for AWS signature testing
+tests/ZoomHub/payload.txt text eol=crlf
