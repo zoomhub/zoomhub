@@ -9,6 +9,7 @@ module ZoomHub.API
   )
 where
 
+import qualified Amazonka as Amazonka
 import Control.Monad.Except (throwError, void, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
@@ -20,25 +21,9 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Time as Time
 import qualified Data.UUID.V4 as UUIDV4
-import Network.Minio as Minio
-  ( awsCI,
-    fromAWSEnv,
-    runMinio,
-    setCreds,
-    setRegion,
-  )
-import Network.Minio.S3API as S3
-  ( PostPolicyCondition (PPCEquals),
-    newPostPolicy,
-    ppCondBucket,
-    ppCondContentLengthRange,
-    ppCondContentType,
-    ppCondKey,
-    presignedPostPolicy,
-  )
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
@@ -92,6 +77,9 @@ import ZoomHub.API.Types.NonRESTfulResponse
     mkNonRESTful404,
     mkNonRESTful503,
   )
+import qualified ZoomHub.AWS.S3 as S3
+import qualified ZoomHub.AWS.S3.POSTPolicy as S3
+import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
 import qualified ZoomHub.Authentication as Authentication
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
@@ -114,7 +102,6 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
-import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
@@ -407,16 +394,19 @@ restUpload config awsConfig uploads email =
       s3UploadKey <- T.pack . show <$> liftIO UUIDV4.nextRandom
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
           key = "uploads/" <> s3UploadKey
-          s3BucketURL = "https://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
+          s3Region = AWS.configRegion awsConfig
+          s3BucketURL = "https://" <> s3Bucket <> ".s3." <> Amazonka.fromRegion s3Region <> ".amazonaws.com"
           s3URL = s3BucketURL <> "/" <> key
           ePolicy =
-            S3.newPostPolicy
+            S3.mkPOSTPolicy
               expiryTime
-              [ S3.ppCondBucket s3Bucket,
-                S3.ppCondKey key,
-                S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
-                S3.ppCondContentType "image/",
-                PPCEquals
+              [ POSTPolicyCondition.bucket s3Bucket,
+                POSTPolicyCondition.key key,
+                POSTPolicyCondition.contentLengthRange
+                  minUploadSizeBytes
+                  maxUploadSizeBytes,
+                POSTPolicyCondition.contentType "image/",
+                POSTPolicyCondition.Equals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
                   ( fold
@@ -433,18 +423,15 @@ restUpload config awsConfig uploads email =
         Left policyError ->
           return $ HS.singleton "error" (T.pack $ show policyError)
         Right policy -> do
-          mAwsCredentials <- liftIO Minio.fromAWSEnv
-          case mAwsCredentials of
-            Nothing ->
-              return $ HS.singleton "error" "missing credentials"
-            Just awsCredentials -> do
-              let connectInfo = setRegion "us-east-2" $ setCreds awsCredentials Minio.awsCI
-              result <- liftIO $ runMinio connectInfo (S3.presignedPostPolicy policy)
-              case result of
-                Left minioErr ->
-                  return $ HS.singleton "error" (T.pack $ show minioErr)
-                Right (_url, formData) ->
-                  return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
+          formData <-
+            liftIO $
+              HS.map decodeUtf8
+                <$> S3.presignPOSTPolicy
+                  (AWS.configAccessKeyId awsConfig)
+                  (AWS.configSecretAccessKey awsConfig)
+                  (AWS.configRegion awsConfig)
+                  policy
+          return $ HS.insert "url" s3BucketURL formData
       where
         minUploadSizeBytes = 1
         maxUploadSizeBytes =

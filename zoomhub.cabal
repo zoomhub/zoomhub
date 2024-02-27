@@ -37,6 +37,10 @@ library
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Authentication
     , ZoomHub.AWS
+    , ZoomHub.AWS.S3
+    , ZoomHub.AWS.S3.POSTPolicy
+    , ZoomHub.AWS.S3.POSTPolicy.Condition
+    , ZoomHub.AWS.S3.POSTPolicy.Error
     , ZoomHub.Config
     , ZoomHub.Config.AWS
     , ZoomHub.Config.ProcessContent
@@ -108,9 +112,11 @@ library
     , amazonka
     , amazonka-core
     , amazonka-lambda
+    , amazonka-s3
     , amazonka-ses
     , async
     , atomic-write
+    , base64
     , binary
     , blaze-builder
     , bytestring
@@ -137,7 +143,6 @@ library
     , lens-aeson
     , lucid
     , mime
-    , minio-hs
     , monad-control
     , mtl
     , neat-interpolation
@@ -210,6 +215,7 @@ test-suite tests
   other-modules:
     ZoomHub.API.Types.ContentCompletionSpec
     ZoomHub.APISpec
+    ZoomHub.AWSSpec
     ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
@@ -218,6 +224,8 @@ test-suite tests
       base
     , aeson
     , amazonka
+    , amazonka-core
+    , amazonka-s3
     , base64
     , bytestring
     , generics-sop

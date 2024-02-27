@@ -72,5 +72,3 @@ extra-package-dbs: []
 
 # allow-newer: true
 # allow-newer-deps:
-# - minio-hs
-
