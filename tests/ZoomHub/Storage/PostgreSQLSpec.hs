@@ -34,7 +34,7 @@ import Squeal.PostgreSQL
     Manipulation (UnsafeManipulation),
     connectdb,
     finish,
-    manipulate,
+    manipulate_,
     pqThen,
     runPQ,
   )
@@ -163,7 +163,7 @@ withDatabaseConnection = bracket acquire release
           "host=localhost port=5432 dbname=" <> pgDatabase <> " user=" <> pgUser
       (_, conn') <-
         runPQ
-          ( manipulate (UnsafeManipulation "SET client_min_messages TO WARNING;")
+          ( manipulate_ (UnsafeManipulation "SET client_min_messages TO WARNING;")
               & pqThen (migrateUp (migrations hashidsSecret))
           )
           conn
