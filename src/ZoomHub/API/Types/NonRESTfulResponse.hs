@@ -12,6 +12,7 @@ module ZoomHub.API.Types.NonRESTfulResponse
 where
 
 import Data.Aeson (ToJSON, object, toJSON, (.=))
+import qualified Data.Aeson.Key as Key
 import qualified Data.Text as T
 import Network.HTTP.Types.Status
   ( Status,
@@ -89,6 +90,6 @@ instance (ToJSON a) => ToJSON (NonRESTfulResponse a) where
         "redirectLocation" .= redirectLocation
       ]
     where
-      bodyKey = T.pack (nrrBodyKey r)
+      bodyKey = Key.fromText $ T.pack (nrrBodyKey r)
       redirectLocation = toJSON (show <$> nrrRedirectLocation r)
       status = nrrStatus r

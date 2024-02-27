@@ -21,7 +21,6 @@ import Squeal.PostgreSQL
     PG,
     PGType (PGtext),
     ToPG (..),
-    label,
   )
 
 data ContentState

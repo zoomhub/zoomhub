@@ -10,7 +10,8 @@ module ZoomHub.API
 where
 
 import qualified Amazonka as Amazonka
-import Control.Monad.Except (throwError, void, when)
+import Control.Monad (void, when)
+import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Char8 as BC

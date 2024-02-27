@@ -13,7 +13,6 @@ import Data.Binary.Builder (Builder)
 import qualified Data.Binary.Builder as Builder
 import qualified Data.ByteString.Lazy.UTF8 as BL
 import Data.Functor ((<&>))
-import Data.Text.Encoding (encodeUtf8)
 import UnliftIO (MonadUnliftIO)
 import qualified ZoomHub.Config.AWS as Config
 import qualified ZoomHub.Log.Logger as Logger
