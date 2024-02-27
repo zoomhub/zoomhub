@@ -25,8 +25,8 @@ run ::
   (AWS.Env -> ResourceT m a) ->
   m a
 run config logLevel action = do
-  let accessKey = AWS.AccessKey . encodeUtf8 . Config.configAccessKeyId $ config
-      secretKey = AWS.SecretKey . encodeUtf8 . Config.configSecretAccessKey $ config
+  let accessKey = Config.configAccessKeyId config
+      secretKey = Config.configSecretAccessKey config
   baseEnv <- AWS.newEnvNoAuth <&> AWS.fromKeys accessKey secretKey
   let env =
         baseEnv
