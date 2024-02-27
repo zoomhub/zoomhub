@@ -39,7 +39,7 @@ import System.IO
 import qualified ZoomHub.Web.Main as Web
 import Prelude
 
-tshow :: Show a => a -> Text
+tshow :: (Show a) => a -> Text
 tshow = Text.pack . show
 
 runAppDevelopment :: IO ()
@@ -88,20 +88,20 @@ update = do
                  say $ "X    exception     : " <> tshow e
                say "runAppDevelopment terminated"
            )
-        `catch` ( \(SomeException err) -> do
-                    say "finally action"
-                    hFlush stdout
-                    hFlush stderr
-                    putMVar done ()
-                    say $ "Got Exception: " <> tshow err
-                    throwIO err
-                )
-        `finally` ( do
+          `catch` ( \(SomeException err) -> do
                       say "finally action"
                       hFlush stdout
                       hFlush stderr
                       putMVar done ()
+                      say $ "Got Exception: " <> tshow err
+                      throwIO err
                   )
+          `finally` ( do
+                        say "finally action"
+                        hFlush stdout
+                        hFlush stderr
+                        putMVar done ()
+                    )
 
 -- | kill the server
 shutdown :: IO ()

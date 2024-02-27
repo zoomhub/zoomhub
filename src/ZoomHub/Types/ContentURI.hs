@@ -11,7 +11,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module ZoomHub.Types.ContentURI
-  ( ContentURI,
+  ( ContentURI (ContentURI),
     -- TODO: Can we test this without exporting it?
     unContentURI,
   )

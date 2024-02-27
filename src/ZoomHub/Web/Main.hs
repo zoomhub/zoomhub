@@ -212,7 +212,8 @@ webMain = do
         Just uri -> BaseURI uri
         Nothing ->
           error $
-            "'" <> uriString
+            "'"
+              <> uriString
               <> "' is not a valid URL.\
                  \ Please set `"
               <> baseURIEnvName

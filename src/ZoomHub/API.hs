@@ -131,22 +131,26 @@ type API =
       :> "config"
       :> Get '[JSON] API.Config
     -- JSONP: ID
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> Capture "id" ContentId
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
     -- JSONP: Error: ID
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> Capture "id" String
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
     -- JSONP: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> RequiredQueryParam "url" ContentURI
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
     -- JSONP: Error: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> QueryParam "url" String
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
@@ -195,12 +199,14 @@ type API =
     -- API: RESTful: Error: ID
     :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
     -- API: RESTful: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> RequiredQueryParam "url" ContentURI
       :> QueryParam "email" Text
       :> Get '[JSON] Content
     -- API: RESTful: Error: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Explore: Recent

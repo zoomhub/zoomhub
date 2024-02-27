@@ -19,7 +19,7 @@ import qualified ZoomHub.Config.AWS as Config
 import qualified ZoomHub.Log.Logger as Logger
 
 run ::
-  MonadUnliftIO m =>
+  (MonadUnliftIO m) =>
   Config.Config ->
   Logger.LogLevel ->
   (AWS.Env -> ResourceT m a) ->
