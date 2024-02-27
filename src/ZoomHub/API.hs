@@ -101,7 +101,6 @@ import ZoomHub.Config.Uploads (Uploads (..))
 import qualified ZoomHub.Email as Email
 import qualified ZoomHub.Email.Verification as Verification
 import ZoomHub.Log.Logger (logWarning)
-import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL as PG
 import ZoomHub.Storage.PostgreSQL.GetRecent as PG
@@ -250,8 +249,6 @@ type API =
     :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] Page.ViewContent
     -- Web: View: Error: Invalid URL
     :<|> RequiredQueryParam "url" String :> Get '[HTML] Page.ViewContent
-    -- Web: Shortcut: `http://zoomhub.net/http://example.com`:
-    :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] Page.ViewContent
     -- Static files
     :<|> Raw
 
@@ -292,7 +289,6 @@ server config =
     :<|> webContentById baseURI contentBaseURI (AWS.configSourcesS3Bucket awsConfig) dbConnPool
     :<|> webContentByURL baseURI dbConnPool
     :<|> webInvalidURLParam
-    :<|> webContentByURL baseURI dbConnPool
     -- Web: Static files
     :<|> serveDirectory (Config.error404 config) publicPath
   where

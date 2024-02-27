@@ -47,7 +47,6 @@ library
     , ZoomHub.Log.Logger
     , ZoomHub.Log.LogLevel
     , ZoomHub.Log.RequestLogger
-    , ZoomHub.Servant.RawCapture
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.PostgreSQL
     , ZoomHub.Storage.PostgreSQL.ConnectInfo

@@ -117,16 +117,6 @@ restRedirect cId =
     baseURIPrefix = show . Config.baseURI $ config
     expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unContentId cId
 
-viewRedirect :: ContentId -> ResponseMatcher
-viewRedirect cId =
-  ""
-    { matchStatus = 301,
-      matchHeaders = ["Location" <:> BC.pack expectedLocation]
-    }
-  where
-    baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix <> "/" <> unContentId cId
-
 -- Config
 nullLogger :: Middleware
 nullLogger = id
@@ -362,12 +352,6 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
-
-  describe "View by URL (GET /:url)" do
-    it "should return correct redirect existing content" do
-      let (existingId, existingURL) = existingContent
-       in get ("/" <> BC.pack existingURL)
-            `shouldRespondWith` viewRedirect existingId
 
   describe "CORS" do
     it "should allow all origins" do
