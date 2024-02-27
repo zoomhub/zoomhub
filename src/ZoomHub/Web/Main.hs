@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Main
-  ( main,
+  ( webMain,
   )
 where
 
@@ -71,8 +71,8 @@ contentBaseURIEnvName :: String
 contentBaseURIEnvName = "CONTENT_BASE_URI"
 
 -- Main
-main :: IO ()
-main = do
+webMain :: IO ()
+webMain = do
   -- TODO: Migrate configuration to `configurator`:
   -- https://hackage.haskell.org/package/configurator
   env <- getEnvironment

@@ -43,7 +43,7 @@ tshow :: Show a => a -> Text
 tshow = Text.pack . show
 
 runAppDevelopment :: IO ()
-runAppDevelopment = Web.main
+runAppDevelopment = Web.webMain
 
 -- | Start or restart the server.
 -- A Store holds onto some data across ghci reloads
