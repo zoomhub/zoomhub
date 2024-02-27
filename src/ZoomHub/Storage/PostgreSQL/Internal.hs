@@ -15,6 +15,7 @@
 module ZoomHub.Storage.PostgreSQL.Internal
   ( module ZoomHub.Storage.PostgreSQL.Internal,
     destroyConnectionPool,
+    usingConnectionPool,
   )
 where
 
@@ -75,7 +76,7 @@ import Squeal.PostgreSQL
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
 import qualified Squeal.PostgreSQL.Session.Connection as Connection
-import Squeal.PostgreSQL.Session.Pool (destroyConnectionPool)
+import Squeal.PostgreSQL.Session.Pool (destroyConnectionPool, usingConnectionPool)
 import qualified Squeal.PostgreSQL.Session.Pool as P
 import System.Random (randomRIO)
 import UnliftIO (MonadUnliftIO (..), liftIO)

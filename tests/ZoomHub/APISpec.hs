@@ -20,7 +20,7 @@ import Data.Time.Units (Second)
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
-import Squeal.PostgreSQL.Pool (runPoolPQ)
+import Squeal.PostgreSQL.Session.Pool (usingConnectionPool)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
@@ -47,7 +47,7 @@ import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import qualified ZoomHub.Log.LogLevel as LogLevel
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
-import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
+import ZoomHub.Storage.PostgreSQL.Internal (destroyConnectionPool, usingConnectionPool)
 import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVerificationToken)
@@ -181,7 +181,7 @@ config =
     dbConnPoolNumStripes' = 1
 
 closeDatabaseConnection :: Config -> IO ()
-closeDatabaseConnection = destroyAllResources . dbConnPool
+closeDatabaseConnection = destroyConnectionPool . dbConnPool
 
 spec :: Spec
 spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
@@ -218,7 +218,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           `shouldRespondWith` restRedirect (ContentId.fromString newContentId)
         liftIO do
           let pool = Config.dbConnPool config
-          mContent <- runPoolPQ (getById $ ContentId.fromString newContentId) pool
+          mContent <- usingConnectionPool pool (getById $ ContentId.fromString newContentId)
           (mContent >>= contentSubmitterEmail) `shouldBe` Just (T.pack testEmail)
           (mContent >>= (fmap (fromIntegral . length . show) . contentVerificationToken)) `shouldBe` Just (36 :: Integer)
         get ("/v1/content/" <> BC.pack newContentId)
@@ -260,7 +260,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           }
     it "should verify content" do
       let cId = ContentId.fromString newContentId
-      maybeContent <- liftIO $ runPoolPQ (getById cId) (Config.dbConnPool config)
+      maybeContent <- liftIO $ usingConnectionPool (Config.dbConnPool config) (getById cId)
       let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
       put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
         `shouldRespondWith` restRedirect cId
@@ -380,7 +380,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content/yQ4" `shouldRespondWith` 200
         liftIO do
           let pool = Config.dbConnPool config
-          maybeContent <- runPoolPQ (getById $ ContentId.fromString "yQ4") pool
+          maybeContent <- usingConnectionPool pool (getById $ ContentId.fromString "yQ4")
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
   where

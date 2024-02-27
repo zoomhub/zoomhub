@@ -94,7 +94,7 @@ import qualified ZoomHub.Types.ContentId as ContentId
 import qualified ZoomHub.Types.ContentMIME as ContentMIME
 import ZoomHub.Types.ContentState (ContentState (..))
 import ZoomHub.Types.ContentType (ContentType (..))
-import ZoomHub.Types.ContentURI (ContentURI, ContentURI' (ContentURI))
+import ZoomHub.Types.ContentURI (ContentURI (ContentURI))
 import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat (JPEG))
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap (TileOverlap1))
