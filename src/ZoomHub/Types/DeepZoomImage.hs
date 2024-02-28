@@ -50,6 +50,7 @@ mkDeepZoomImage ::
 mkDeepZoomImage dziWidth dziHeight dziTileSize dziTileOverlap dziTileFormat =
   DeepZoomImage {..}
 
+{- ORMOLU_DISABLE -}
 fromXML :: String -> Maybe DeepZoomImage
 fromXML xml =
   parseXMLDoc xml
@@ -72,6 +73,7 @@ fromXML xml =
     tag name = QName name (Just namespace) Nothing
     attr name = findAttr (QName name Nothing Nothing)
     namespace = "http://schemas.microsoft.com/deepzoom/2008"
+{- ORMOLU_ENABLE -}
 
 -- JSON
 instance ToJSON DeepZoomImage where

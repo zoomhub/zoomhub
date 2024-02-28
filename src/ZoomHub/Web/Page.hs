@@ -39,7 +39,7 @@ data Page m a = Page
     pageBody :: H.HtmlT m a
   }
 
-layout :: Monad m => Page m a -> H.HtmlT m a
+layout :: (Monad m) => Page m a -> H.HtmlT m a
 layout Page {..} = do
   H.doctype_
   H.html_ [H.lang_ "en", H.class_ "h-full"] do
@@ -74,7 +74,7 @@ analyticsScript =
     ga('send', 'pageview');
   |]
 
-appleTouchIcons :: Monad m => H.HtmlT m ()
+appleTouchIcons :: (Monad m) => H.HtmlT m ()
 appleTouchIcons = do
   H.link_
     [ H.rel_ "apple-touch-icon",

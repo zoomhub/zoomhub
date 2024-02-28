@@ -28,6 +28,7 @@ import Data.Aeson
   )
 import qualified Data.Aeson as Aeson
 import Data.Aeson.Types (typeMismatch)
+import Data.Foldable (fold)
 import Data.List (intersperse)
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -51,11 +52,11 @@ fromString :: String -> ContentId
 fromString s
   | isValid s = ContentId s
   | otherwise =
-    error $
-      "Invalid content ID '" ++ s ++ "'."
-        ++ " Valid characters: "
-        ++ intersperse ',' validChars
-        ++ "."
+      error $
+        fold
+          [ "Invalid content ID '" <> s <> "'.",
+            " Valid characters: " <> intersperse ',' validChars <> "."
+          ]
 
 -- NOTE: Duplicated from `hashids`: https://git.io/vgpT4
 -- TODO: Use this for `hashids` initialization.

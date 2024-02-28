@@ -190,12 +190,13 @@ initializeHashidsEncode =
         down = manipulation_ . UnsafeManipulation $ dropHashidsEncode
       }
   where
-    dropHashidsEncode :: IsString a => a
+    dropHashidsEncode :: (IsString a) => a
     dropHashidsEncode =
       [r|
       DROP SCHEMA hashids CASCADE;
     |]
 
+{- ORMOLU_DISABLE -}
 initialSchema :: Migration (IsoQ Definition) (Public '[]) Schemas0
 initialSchema =
   Migration
@@ -301,7 +302,9 @@ initialSchema =
         >>> dropTable #image
         >>> dropTable #content
         >>> dropTable #config
+{- ORMOLU_ENABLE -}
 
+{- ORMOLU_DISABLE -}
 insertHashidsSecret :: String -> Migration (IsoQ Definition) Schemas0 Schemas0
 insertHashidsSecret secret =
   Migration
@@ -321,6 +324,7 @@ insertHashidsSecret secret =
           manipulation_ $
             deleteFrom_ #config (#key .== "hashids_salt")
       }
+{- ORMOLU_ENABLE -}
 
 createContentHashIdTrigger :: Migration (IsoQ Definition) Schemas0 Schemas0
 createContentHashIdTrigger =
@@ -339,7 +343,7 @@ createContentHashIdTrigger =
             ]
       }
   where
-    createContentBeforeInsert :: IsString a => a
+    createContentBeforeInsert :: (IsString a) => a
     createContentBeforeInsert =
       [r|
       CREATE FUNCTION content_before_insert() RETURNS trigger AS $$
@@ -384,18 +388,18 @@ createContentHashIdTrigger =
           END;
       $$ LANGUAGE plpgsql;
     |]
-    dropContentBeforeInsert :: IsString a => a
+    dropContentBeforeInsert :: (IsString a) => a
     dropContentBeforeInsert =
       [r|
       DROP FUNCTION content_before_insert();
     |]
-    createTriggerContentBeforeInsert :: IsString a => a
+    createTriggerContentBeforeInsert :: (IsString a) => a
     createTriggerContentBeforeInsert =
       [r|
       CREATE TRIGGER content_before_insert BEFORE INSERT ON content
         FOR EACH ROW EXECUTE PROCEDURE content_before_insert();
     |]
-    dropTriggerContentBeforeInsert :: IsString a => a
+    dropTriggerContentBeforeInsert :: (IsString a) => a
     dropTriggerContentBeforeInsert =
       [r|
       DROP TRIGGER content_before_insert ON content;
@@ -414,7 +418,7 @@ concatDefinitions = foldr (>>>) Category.id
 -- License:
 --  MIT License
 --  Copyright (c) 2018 Andrey Stepanov
-createHashidsFunctions :: IsString a => [a]
+createHashidsFunctions :: (IsString a) => [a]
 createHashidsFunctions =
   [ [r|
       create schema if not exists hashids;

@@ -58,7 +58,7 @@ toJSONString :: String -> Value
 toJSONString = String . T.pack
 
 -- Duplicated from `RequestLogger`:
-toObject :: ToJSON a => [(Text, a)] -> Value
+toObject :: (ToJSON a) => [(Text, a)] -> Value
 toObject = toJSON . HM.fromList
 
 headersToJSON :: ResponseHeaders -> Value

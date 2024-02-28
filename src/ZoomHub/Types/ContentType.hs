@@ -12,11 +12,11 @@ where
 
 import Data.Int (Int32)
 import Squeal.PostgreSQL
-  ( Inline (inline),
+  ( FromPG (fromPG),
+    Inline (inline),
     IsPG,
     PG,
     PGType (PGint4),
-    FromPG(fromPG)
   )
 
 data ContentType

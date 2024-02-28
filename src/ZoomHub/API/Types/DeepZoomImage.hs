@@ -97,13 +97,13 @@ largestSingleTileUrl dzi =
     (error "Invalid DZI tile URL")
     $ parseAbsoluteURI
       . T.unpack
-      $ T.dropEnd
-        (T.length dziExtension)
-        (tshow $ dziUrl dzi)
-        <> "_files/"
-        <> tshow largestSingleTileLevel
-        <> "/0_0."
-        <> tshow (dziTileFormat dzi)
+    $ T.dropEnd
+      (T.length dziExtension)
+      (tshow $ dziUrl dzi)
+      <> "_files/"
+      <> tshow largestSingleTileLevel
+      <> "/0_0."
+      <> tshow (dziTileFormat dzi)
   where
     dziExtension = ".dzi"
     largestSingleTileLevel = 8 :: Int

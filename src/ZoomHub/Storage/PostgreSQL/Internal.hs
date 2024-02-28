@@ -386,6 +386,7 @@ instance SOP.Generic ContentRow
 
 instance SOP.HasDatatypeInfo ContentRow
 
+{- ORMOLU_DISABLE -}
 insertContent :: Manipulation_ Schemas (Text, Maybe Text, Maybe Text) ContentRow
 insertContent =
   insertInto
@@ -440,6 +441,7 @@ insertContent =
             :* #verified_at `as` #crVerifiedAt
         )
     )
+{- ORMOLU_ENABLE -}
 
 markContentAsActive :: Manipulation_ Schemas (Only Text) ContentRow
 markContentAsActive = undefined
@@ -801,7 +803,7 @@ contentToRow c =
       crVerifiedAt = contentVerifiedAt c
     }
 
-toNominalDiffTime :: TimeUnit a => a -> NominalDiffTime
+toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
 toNominalDiffTime duration =
   fromIntegral $
     toMicroseconds duration `div` toMicroseconds (1 :: Second)
