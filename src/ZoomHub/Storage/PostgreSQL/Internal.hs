@@ -224,30 +224,43 @@ selectContentBy clauses = undefined
 {- ORMOLU_ENABLE -}
 
 -- Reads: Image
-getImageById :: Int64 -> PQ Schemas Schemas IO (Maybe ImageRow)
+getImageById :: Int64 -> PQ Schemas Schemas IO (Maybe DeepZoomImage)
 getImageById cId =
   executeParams
     (selectImageBy ((#image ! #content_id) .== param @1))
     (Only cId)
     >>= firstRow
 
-{- ORMOLU_DISABLE -}
 selectImageBy ::
   Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGint8] _ ->
-  Statement Schemas (Only Int64) ImageRow
+  Statement Schemas (Only Int64) DeepZoomImage
 selectImageBy condition = Query enc dec sql
   where
     enc = genericParams
-    dec = decodeImageRow
-    sql = select Star (from (table #image) & where_ condition)
-
-selectImageBy2 :: Statement Schemas (Only Int64) ImageRow
-selectImageBy2 = Query enc dec sql
-  where
-  enc = genericParams
-  dec = decodeImageRow
-  sql = select Star (from (table #image) & where_ (#content_id .== param @1))
-{- ORMOLU_ENABLE -}
+    dec = do
+      width <- #width
+      height <- #height
+      tileSize <- #tile_size
+      tileOverlap <- #tile_overlap
+      tileFormat <- #tile_format
+      pure $
+        mkDeepZoomImage
+          (fromIntegral (width :: Int64))
+          (fromIntegral (height :: Int64))
+          tileSize
+          tileOverlap
+          tileFormat
+    sql =
+      {- ORMOLU_DISABLE -}
+      select_
+        (    #image ! #width
+          :* #image ! #height
+          :* #image ! #tile_size
+          :* #image ! #tile_overlap
+          :* #image ! #tile_format
+        )
+        (from (table #image) & where_ condition)
+      {- ORMOLU_ENABLE -}
 
 -- Writes: Image
 createImage :: (MonadBaseControl IO m, MonadPQ db m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
@@ -310,36 +323,6 @@ data ImageRow = ImageRow
 instance SOP.Generic ImageRow
 
 instance SOP.HasDatatypeInfo ImageRow
-
--- See:
--- https://github.com/morphismtech/squeal/blob/0.9.1.3/RELEASE%20NOTES.md#:~:text=do%20custom%20encodings%20and%20decodings
-decodeImageRow ::
-  DecodeRow
-    '[ "content_id" ::: 'NotNull 'PGint8,
-       "created_at" ::: 'NotNull 'PGtimestamptz,
-       "width" ::: 'NotNull 'PGint8,
-       "height" ::: 'NotNull 'PGint8,
-       "tile_size" ::: 'NotNull 'PGint4,
-       "tile_overlap" ::: 'NotNull 'PGint4,
-       "tile_format" ::: 'NotNull 'PGtext
-     ]
-    ImageRow
-decodeImageRow = do
-  createdAt <- #created_at
-  width <- #width
-  height <- #height
-  tileSize <- #tile_size
-  tileOverlap <- #tile_overlap
-  tileFormat <- #tile_format
-  pure $
-    ImageRow
-      { irCreatedAt = createdAt,
-        irWidth = width,
-        irHeight = height,
-        irTileSize = tileSize,
-        irTileOverlap = tileOverlap,
-        irTileFormat = tileFormat
-      }
 
 contentImageRowToContent :: ContentImageRow -> Content
 contentImageRowToContent cr =
