@@ -8,6 +8,7 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
@@ -21,6 +22,7 @@ where
 
 import Control.Monad (when)
 import Control.Monad.Trans.Control (MonadBaseControl)
+import Data.Functor ((<&>))
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime, UTCTime)
@@ -32,19 +34,25 @@ import Generics.SOP.BasicFunctors (K)
 import Squeal.PostgreSQL
   ( Condition,
     ConflictClause (OnConflictDoRaise),
+    DecodeRow,
+    GenericParams (genericParams),
+    GenericRow (genericRow),
     Grouping (Ungrouped),
     Manipulation_,
-    MonadPQ,
+    MonadPQ (execute, executeParams),
+    MonadResult (getRows),
     NP (Nil, (:*)),
     NullType (NotNull),
     Only (..),
     Optional (Default, Set),
-    PGType (PGint8, PGtext),
+    PGType (PGint4, PGint8, PGtext, PGtimestamptz),
     PQ,
     Query,
     QueryClause (Subquery),
     Query_,
     RowPG,
+    Selection (Star),
+    Statement (Query),
     TableExpression,
     ToPG,
     UsingClause (Using),
@@ -61,7 +69,9 @@ import Squeal.PostgreSQL
     manipulateParams_,
     null_,
     param,
+    query,
     runQueryParams,
+    select,
     select_,
     table,
     transactionally_,
@@ -72,6 +82,7 @@ import Squeal.PostgreSQL
     (&),
     (.&&),
     (.==),
+    (:::),
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
@@ -168,13 +179,13 @@ incrNumViews = undefined
 --     (Set (#num_views + param @1) `as` #num_views)
 --     (#hash_id .== param @2)
 
+{- ORMOLU_DISABLE -}
 selectContentBy ::
   ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _ ->
     TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _
   ) ->
   Query '[] '[] Schemas '[ 'NotNull a] (RowPG ContentImageRow)
 selectContentBy clauses = undefined
-
 -- selectContentBy clauses =
 --   select_
 --     ( #content ! #hash_id `as` #cirHashId
@@ -210,31 +221,33 @@ selectContentBy clauses = undefined
 --         )
 --         & clauses
 --     )
+{- ORMOLU_ENABLE -}
 
 -- Reads: Image
-getImageById :: Int64 -> PQ Schemas Schemas IO (Maybe DeepZoomImage)
-getImageById cId = undefined
+getImageById :: Int64 -> PQ Schemas Schemas IO (Maybe ImageRow)
+getImageById cId =
+  executeParams
+    (selectImageBy ((#image ! #content_id) .== param @1))
+    (Only cId)
+    >>= firstRow
 
--- getImageById cId = do
---   result <- runQueryParams (selectImageBy ((#image ! #content_id) .== param @1)) (Only cId)
---   imageRow <- firstRow result
---   pure (imageRowToImage <$> imageRow)
-
+{- ORMOLU_DISABLE -}
 selectImageBy ::
   Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGint8] _ ->
-  Query_ Schemas (Only Int64) ImageRow
-selectImageBy condition = undefined
+  Statement Schemas (Only Int64) ImageRow
+selectImageBy condition = Query enc dec sql
+  where
+    enc = genericParams
+    dec = decodeImageRow
+    sql = select Star (from (table #image) & where_ condition)
 
--- selectImageBy condition =
---   select_
---     ( #image ! #created_at `as` #irCreatedAt
---         :* #image ! #width `as` #irWidth
---         :* #image ! #height `as` #irHeight
---         :* #image ! #tile_size `as` #irTileSize
---         :* #image ! #tile_overlap `as` #irTileOverlap
---         :* #image ! #tile_format `as` #irTileFormat
---     )
---     (from (table #image) & where_ condition)
+selectImageBy2 :: Statement Schemas (Only Int64) ImageRow
+selectImageBy2 = Query enc dec sql
+  where
+  enc = genericParams
+  dec = decodeImageRow
+  sql = select Star (from (table #image) & where_ (#content_id .== param @1))
+{- ORMOLU_ENABLE -}
 
 -- Writes: Image
 createImage :: (MonadBaseControl IO m, MonadPQ db m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
@@ -297,6 +310,36 @@ data ImageRow = ImageRow
 instance SOP.Generic ImageRow
 
 instance SOP.HasDatatypeInfo ImageRow
+
+-- See:
+-- https://github.com/morphismtech/squeal/blob/0.9.1.3/RELEASE%20NOTES.md#:~:text=do%20custom%20encodings%20and%20decodings
+decodeImageRow ::
+  DecodeRow
+    '[ "content_id" ::: 'NotNull 'PGint8,
+       "created_at" ::: 'NotNull 'PGtimestamptz,
+       "width" ::: 'NotNull 'PGint8,
+       "height" ::: 'NotNull 'PGint8,
+       "tile_size" ::: 'NotNull 'PGint4,
+       "tile_overlap" ::: 'NotNull 'PGint4,
+       "tile_format" ::: 'NotNull 'PGtext
+     ]
+    ImageRow
+decodeImageRow = do
+  createdAt <- #created_at
+  width <- #width
+  height <- #height
+  tileSize <- #tile_size
+  tileOverlap <- #tile_overlap
+  tileFormat <- #tile_format
+  pure $
+    ImageRow
+      { irCreatedAt = createdAt,
+        irWidth = width,
+        irHeight = height,
+        irTileSize = tileSize,
+        irTileOverlap = tileOverlap,
+        irTileFormat = tileFormat
+      }
 
 contentImageRowToContent :: ContentImageRow -> Content
 contentImageRowToContent cr =
