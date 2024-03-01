@@ -237,19 +237,7 @@ selectImageBy ::
 selectImageBy condition = Query enc dec sql
   where
     enc = genericParams
-    dec = do
-      width <- #width
-      height <- #height
-      tileSize <- #tile_size
-      tileOverlap <- #tile_overlap
-      tileFormat <- #tile_format
-      pure $
-        mkDeepZoomImage
-          (fromIntegral (width :: Int64))
-          (fromIntegral (height :: Int64))
-          tileSize
-          tileOverlap
-          tileFormat
+    dec = decodeImage
     sql =
       {- ORMOLU_DISABLE -}
       select_
@@ -324,6 +312,32 @@ instance SOP.Generic ImageRow
 
 instance SOP.HasDatatypeInfo ImageRow
 
+-- See:
+-- https://github.com/morphismtech/squeal/blob/0.9.1.3/RELEASE%20NOTES.md#:~:text=do%20custom%20encodings%20and%20decodings
+decodeImage ::
+  DecodeRow
+    '[ "width" ::: 'NotNull 'PGint8,
+       "height" ::: 'NotNull 'PGint8,
+       "tile_size" ::: 'NotNull 'PGint4,
+       "tile_overlap" ::: 'NotNull 'PGint4,
+       "tile_format" ::: 'NotNull 'PGtext
+     ]
+    DeepZoomImage
+decodeImage = do
+  width <- #width
+  height <- #height
+  tileSize <- #tile_size
+  tileOverlap <- #tile_overlap
+  tileFormat <- #tile_format
+  pure $
+    mkDeepZoomImage
+      (fromIntegral (width :: Int64))
+      (fromIntegral (height :: Int64))
+      tileSize
+      tileOverlap
+      tileFormat
+
+
 contentImageRowToContent :: ContentImageRow -> Content
 contentImageRowToContent cr =
   Content
@@ -353,14 +367,6 @@ contentImageRowToContent cr =
         <*> cirTileOverlap cr
         <*> cirTileFormat cr
 
-imageRowToImage :: ImageRow -> DeepZoomImage
-imageRowToImage ir =
-  mkDeepZoomImage
-    (fromIntegral . irWidth $ ir)
-    (fromIntegral . irHeight $ ir)
-    (irTileSize ir)
-    (irTileOverlap ir)
-    (irTileFormat ir)
 
 contentRowToContent :: ContentRow -> Content
 contentRowToContent result =
