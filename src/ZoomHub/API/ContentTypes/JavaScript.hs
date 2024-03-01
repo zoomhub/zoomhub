@@ -40,7 +40,7 @@ instance (ToJSON a) => ToJS (JSONP a) where
   -- The `typeof` check helps reduce client error noise.
   -- Adopted from Express.js: https://git.io/vaT9r
   toJS jsonp =
-    fold ["/**/ typeof ", callback, " === 'function' && ", callback, "(", body, ");"]
+    fold ["/**/ typeof ", callback, " === \"function\" && ", callback, "(", body, ");"]
     where
       callback = unCallback $ jsonpCallback jsonp
       body = BC.unpack . encode $ jsonpBody jsonp

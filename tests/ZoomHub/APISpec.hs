@@ -341,14 +341,14 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "GET /v1/content?url=…&callback=…" do
       it "should accept `callback` query parameter" $
         get "/v1/content?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":400,"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","statusText":"Bad Request","redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"status":400,"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","statusText":"Bad Request","redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
     describe "GET /v1/content/:id?callback=…" do
       it "should accept `callback` query parameter" do
         get "/v1/content/yQ4?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
