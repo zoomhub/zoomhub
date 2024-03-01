@@ -747,7 +747,7 @@ webEmbed
             }
     where
       contentId = unEmbedId embedId
-      defaultContainerId n = "zoomhub-embed-" ++ show n
+      defaultContainerId n = "zoomhub-embed-" <> show n
 
 -- Web: Verification
 -- TODO: Refactor to call API or extract implementation from API:
@@ -816,7 +816,7 @@ contentNotFoundMessage contentId =
   noContentWithIdMessage (unContentId contentId)
 
 noContentWithIdMessage :: String -> String
-noContentWithIdMessage contentId = "No content with ID: " ++ contentId
+noContentWithIdMessage contentId = "No content with ID: " <> contentId
 
 noNewContentErrorWeb :: Handler Page.ViewContent
 noNewContentErrorWeb = noNewContentError Web.error503
@@ -870,7 +870,7 @@ webRedirectURI = redirectURI "/"
 
 redirectURI :: String -> BaseURI -> ContentId -> URI
 redirectURI pathPrefix baseURI contentId =
-  (fromJust . parseRelativeReference $ pathPrefix ++ unContentId contentId)
+  (fromJust . parseRelativeReference $ pathPrefix <> unContentId contentId)
     `relativeTo` unBaseURI baseURI
 
 -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test

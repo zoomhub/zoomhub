@@ -79,7 +79,7 @@ logError_ :: String -> IO ()
 logError_ = log_ Error
 
 logException :: String -> SomeException -> [Pair] -> IO ()
-logException msg e meta = logError msg (meta ++ ["error" .= show e])
+logException msg e meta = logError msg (meta <> ["error" .= show e])
 
 logException_ :: String -> SomeException -> IO ()
 logException_ msg e = logException msg e []
@@ -93,7 +93,7 @@ logT level msg meta action = do
   log
     level
     msg
-    (meta ++ ["duration" .= (round (duration * 1000) :: Millisecond)])
+    (meta <> ["duration" .= (round (duration * 1000) :: Millisecond)])
   return result
 
 log :: LogLevel -> String -> [Pair] -> IO ()
@@ -113,7 +113,7 @@ log level message meta = do
           "level" .= show level,
           "message" .= message
         ]
-          ++ meta
+          <> meta
     handle Error = stderr
     handle _ = stdout
 

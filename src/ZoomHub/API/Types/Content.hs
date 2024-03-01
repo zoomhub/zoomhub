@@ -67,8 +67,8 @@ fromInternal baseURI contentBaseURI c =
     cId = Internal.contentId c
     shareURI = ContentShareURI $ sharePathURI `relativeTo` unBaseURI baseURI
     sharePathURI = fromJust . parseRelativeReference $ unContentId cId
-    scriptSource = show shareURI ++ ".js?width=auto&height=400px"
-    embedHTML = "<script src=\"" ++ scriptSource ++ "\"></script>"
+    scriptSource = show shareURI <> ".js?width=auto&height=400px"
+    embedHTML = "<script src=\"" <> scriptSource <> "\"></script>"
     dzi = DZ.fromInternal contentBaseURI cId <$> Internal.contentDZI c
 
 -- JSON

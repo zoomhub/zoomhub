@@ -65,7 +65,7 @@ toURI :: String -> URI
 toURI s =
   case parseURIReference s of
     Just uri -> uri
-    _ -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " ++ s
+    _ -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " <> s
 
 existingContent :: (ContentId, String)
 existingContent =
@@ -115,7 +115,7 @@ restRedirect cId =
     }
   where
     baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unContentId cId
+    expectedLocation = baseURIPrefix <> "/v1/content/" <> unContentId cId
 
 -- Config
 nullLogger :: Middleware

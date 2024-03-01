@@ -104,7 +104,7 @@ concatScripts = intercalate ";\n"
 
 tag :: String -> [(String, String)] -> String
 tag name attrs =
-  "<" ++ name ++ " " ++ unwords (map attr attrs) ++ "></" ++ name ++ ">"
+  "<" <> name <> " " <> unwords (map attr attrs) <> "></" <> name <> ">"
 
 attr :: (String, String) -> String
 attr (name, value) = concat [name, "=", "\"", value, "\""]

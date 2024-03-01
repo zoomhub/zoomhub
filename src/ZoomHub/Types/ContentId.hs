@@ -29,9 +29,10 @@ import Data.Aeson
 import qualified Data.Aeson as Aeson
 import Data.Aeson.Types (typeMismatch)
 import Data.Foldable (fold)
-import Data.List (intersperse)
+import qualified Data.List as List
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
@@ -61,7 +62,7 @@ fromString s
 -- NOTE: Duplicated from `hashids`: https://git.io/vgpT4
 -- TODO: Use this for `hashids` initialization.
 validChars :: String
-validChars = ['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9']
+validChars = ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9']
 
 validCharsSet :: Set Char
 validCharsSet = Set.fromList validChars
