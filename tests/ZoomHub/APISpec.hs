@@ -69,7 +69,7 @@ toURI s =
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( ContentId.fromString "yQ4",
+  ( fromJust $ ContentId.fromString "yQ4",
     "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
 

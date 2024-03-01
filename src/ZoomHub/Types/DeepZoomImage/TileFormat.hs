@@ -1,8 +1,6 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -16,13 +14,17 @@ module ZoomHub.Types.DeepZoomImage.TileFormat
   )
 where
 
+import Control.Monad.Except (MonadError (throwError))
 import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText)
-import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Squeal.PostgreSQL (FromPG (..), Inline (..), IsPG (..), PG, PGType (PGtext), ToPG (..))
 
-data TileFormat = JPEG | JPG | PNG deriving (Eq)
+data TileFormat
+  = JPEG
+  | JPG
+  | PNG
+  deriving (Eq)
 
 fromString :: String -> Maybe TileFormat
 fromString = fromText . T.pack
@@ -59,7 +61,11 @@ instance IsPG TileFormat where
   type PG TileFormat = 'PGtext
 
 instance FromPG TileFormat where
-  fromPG = fromJust . fromText <$> fromPG @Text
+  fromPG = do
+    value <- fromPG @Text
+    case fromText value of
+      Just format -> pure format
+      Nothing -> throwError $ "Unknown tile format: \"" <> value <> "\""
 
 instance ToPG db TileFormat where
   toPG = toPG . toText
