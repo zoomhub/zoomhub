@@ -171,6 +171,7 @@ library
     , time
     , time-units
     , timeit
+    , transformers
     , transformers-base
     , unix
     , unliftio

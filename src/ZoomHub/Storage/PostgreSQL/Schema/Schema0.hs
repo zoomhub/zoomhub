@@ -163,7 +163,7 @@ type FlickrTable0 =
                    ]
           )
 
-migrations :: String -> Path (Migration (IsoQ Definition)) (Public '[]) (Schemas0)
+migrations :: String -> Path (Migration (IsoQ Definition)) (Public '[]) Schemas0
 migrations hashidsSecret =
   installPLpgSQLExtension
     :>> initializeHashidsEncode

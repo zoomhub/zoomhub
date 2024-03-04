@@ -7,11 +7,15 @@
 -- Simplify Squeal query type signatures
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
+{-# HLINT ignore "Use <$>" #-}
+
 
 module ZoomHub.Storage.PostgreSQL.Internal
   ( module ZoomHub.Storage.PostgreSQL.Internal,
@@ -42,10 +46,10 @@ import Squeal.PostgreSQL
     MonadPQ (execute, executeParams),
     MonadResult (getRows),
     NP (Nil, (:*)),
-    NullType (NotNull),
+    NullType (NotNull, Null),
     Only (..),
     Optional (Default, Set),
-    PGType (PGint4, PGint8, PGtext, PGtimestamptz),
+    PGType (PGint4, PGint8, PGtext, PGtimestamptz, PGfloat8),
     PQ,
     Query,
     QueryClause (Subquery),
@@ -82,7 +86,7 @@ import Squeal.PostgreSQL
     (&),
     (.&&),
     (.==),
-    (:::),
+    (:::), appendRows, Join,
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
@@ -124,20 +128,15 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
     (fromIntegral maxResourcesPerStripe)
 
 -- Reads: Content
-getBy ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
-  Condition 'Ungrouped '[] '[] Schemas _ _ ->
-  Text ->
-  m (Maybe Content)
-getBy _condition _parameter = pure Nothing
-
--- getBy condition parameter = do
---   result <-
---     runQueryParams
---       (selectContentBy (\t -> t & where_ condition))
---       (Only parameter)
---   contentRow <- firstRow result
---   pure (contentImageRowToContent <$> contentRow)
+-- getBy ::
+--   params ~ '[ 'NotNull 'PGtext ] =>
+--   (MonadUnliftIO m, MonadPQ Schemas m) =>
+--   Condition 'Ungrouped '[] '[] Schemas _ _ ->
+--   params ->
+--   m (Maybe Content)
+getBy condition cId = do
+  result <- executeParams (selectContentBy (\t -> t & where_ condition)) cId
+  firstRow result
 
 getBy' ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>
@@ -180,47 +179,126 @@ incrNumViews = undefined
 --     (#hash_id .== param @2)
 
 {- ORMOLU_DISABLE -}
-selectContentBy ::
-  ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _ ->
-    TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _
-  ) ->
-  Query '[] '[] Schemas '[ 'NotNull a] (RowPG ContentImageRow)
-selectContentBy clauses = undefined
--- selectContentBy clauses =
---   select_
---     ( #content ! #hash_id `as` #cirHashId
---         :* #content ! #type_id `as` #cirTypeId
---         :* #content ! #url `as` #cirURL
---         :* #content ! #state `as` #cirState
---         :* #content ! #initialized_at `as` #cirInitializedAt
---         :* #content ! #active_at `as` #cirActiveAt
---         :* #content ! #completed_at `as` #cirCompletedAt
---         :* #content ! #title `as` #cirTitle
---         :* #content ! #attribution_text `as` #cirAttributionText
---         :* #content ! #attribution_link `as` #cirAttributionLink
---         :* #content ! #mime `as` #cirMIME
---         :* #content ! #size `as` #cirSize
---         :* #content ! #error `as` #cirError
---         :* #content ! #progress `as` #cirProgress
---         :* #content ! #abuse_level_id `as` #cirAbuseLevelId
---         :* #content ! #num_abuse_reports `as` #cirNumAbuseReports
---         :* #content ! #num_views `as` #cirNumViews
---         :* #content ! #version `as` #cirVersion
---         :* #content ! #submitter_email `as` #cirSubmitterEmail
---         :* #content ! #verification_token `as` #cirVerificationToken
---         :* #content ! #verified_at `as` #cirVerifiedAt
---         :* #image ! #width `as` #cirWidth
---         :* #image ! #height `as` #cirHeight
---         :* #image ! #tile_size `as` #cirTileSize
---         :* #image ! #tile_overlap `as` #cirTileOverlap
---         :* #image ! #tile_format `as` #cirTileFormat
---     )
---     ( from
---         ( table #content
---             & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
---         )
---         & clauses
---     )
+-- selectContentBy ::
+--   ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _ ->
+--     TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _
+--   ) ->
+--   Query '[] '[] Schemas '[ 'NotNull a] (RowPG ContentImageRow)
+
+
+selectContentBy :: _ -> Statement Schemas (Only ContentId) Content
+selectContentBy clauses = Query enc dec sql
+  where
+  enc = genericParams
+  dec = decodeContent
+  sql =
+    select_
+      ( #content ! #hash_id -- `as` #cirHashId
+          :* #content ! #type_id -- `as` #cirTypeId
+          :* #content ! #url -- `as` #cirURL
+          :* #content ! #state -- `as` #cirState
+          :* #content ! #initialized_at -- `as` #cirInitializedAt
+          :* #content ! #active_at -- `as` #cirActiveAt
+          :* #content ! #completed_at -- `as` #cirCompletedAt
+          :* #content ! #title -- `as` #cirTitle
+          :* #content ! #attribution_text -- `as` #cirAttributionText
+          :* #content ! #attribution_link -- `as` #cirAttributionLink
+          :* #content ! #mime -- `as` #cirMIME
+          :* #content ! #size -- `as` #cirSize
+          :* #content ! #error -- `as` #cirError
+          :* #content ! #progress -- `as` #cirProgress
+          :* #content ! #abuse_level_id -- `as` #cirAbuseLevelId
+          :* #content ! #num_abuse_reports -- `as` #cirNumAbuseReports
+          :* #content ! #num_views -- `as` #cirNumViews
+          :* #content ! #version -- `as` #cirVersion
+          :* #content ! #submitter_email -- `as` #cirSubmitterEmail
+          :* #content ! #verification_token -- `as` #cirVerificationToken
+          :* #content ! #verified_at -- `as` #cirVerifiedAt
+
+          :* #image ! #width -- `as` #cirWidth
+          :* #image ! #height -- `as` #cirHeight
+          :* #image ! #tile_size -- `as` #cirTileSize
+          :* #image ! #tile_overlap -- `as` #cirTileOverlap
+          :* #image ! #tile_format -- `as` #cirTileFormat
+      )
+      ( from
+          ( table #content
+              & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
+          )
+        & clauses
+      )
+
+
+type ContentRow' =
+  '[ "hash_id" ::: 'NotNull 'PGtext,
+    "type_id" ::: 'NotNull 'PGint4,
+    "url" ::: 'NotNull 'PGtext,
+    "state" ::: 'NotNull 'PGtext,
+    "initialized_at" ::: 'NotNull 'PGtimestamptz,
+    "active_at" ::: 'Null 'PGtimestamptz,
+    "completed_at" ::: 'Null 'PGtimestamptz,
+    "title" ::: 'Null 'PGtext,
+    "attribution_text" ::: 'Null 'PGtext,
+    "attribution_link" ::: 'Null 'PGtext,
+    "mime" ::: 'Null 'PGtext,
+    "size" ::: 'Null 'PGint8,
+    "error" ::: 'Null 'PGtext,
+    "progress" ::: 'NotNull 'PGfloat8,
+    "abuse_level_id" ::: 'NotNull 'PGint4,
+    "num_abuse_reports" ::: 'NotNull 'PGint8,
+    "num_views" ::: 'NotNull 'PGint8,
+    "version" ::: 'NotNull 'PGint4,
+    "submitter_email" ::: 'Null 'PGtext,
+    "verification_token" ::: 'Null 'PGtext,
+    "verified_at" ::: 'Null 'PGtimestamptz
+  ]
+
+type ImageRowNull' =
+    '[ "width" ::: 'Null 'PGint8,
+       "height" ::: 'Null 'PGint8,
+       "tile_size" ::: 'Null 'PGint4,
+       "tile_overlap" ::: 'Null 'PGint4,
+       "tile_format" ::: 'Null 'PGtext
+     ]
+
+type ContentWithImageRow' = Join ContentRow' ImageRowNull'
+
+decodeContent :: DecodeRow ContentWithImageRow' Content
+decodeContent = do
+  contentId <- #hash_id
+  contentType <- #type_id
+  contentURL <- #url
+  contentState <- #state
+  contentInitializedAt <- #initialized_at
+  contentActiveAt <- #active_at
+  contentCompletedAt <- #completed_at
+  contentMIME <- #mime
+  contentSize <- #size
+  contentProgress <- #progress
+  contentNumViews <- #num_views
+  contentError <- #error
+  contentSubmitterEmail <- #submitter_email
+  contentVerificationToken <- #verification_token
+  contentVerifiedAt <- #verified_at
+
+  mWidth <- #width
+  mHeight <- #height
+  mTileSize <- #tile_size
+  mTileOverlap <- #tile_overlap
+  mTileFormat <- #tile_format
+  let contentDZI = do
+        width <- mWidth
+        height <- mHeight
+        tileSize <- mTileSize
+        tileOverlap <- mTileOverlap
+        tileFormat <- mTileFormat
+        pure $ mkDeepZoomImage
+          (fromIntegral (width :: Int64))
+          (fromIntegral (height :: Int64))
+          tileSize
+          tileOverlap
+          tileFormat
+  return Content {..}
 {- ORMOLU_ENABLE -}
 
 -- Reads: Image
@@ -252,7 +330,7 @@ selectImageBy condition = Query enc dec sql
 
 -- Writes: Image
 createImage :: (MonadBaseControl IO m, MonadPQ db m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
-createImage cid initializedAt image = pure 0
+createImage _cid _initializedAt _image = pure 0
 
 -- createImage cid initializedAt image = do
 --   let imageRow = imageToRow cid image initializedAt
@@ -338,6 +416,29 @@ decodeImage = do
       tileOverlap
       tileFormat
 
+-- -- TODO: How to combine this with the above?
+-- type ImageRowNull' =
+--     '[ "width" ::: 'Null 'PGint8,
+--        "height" ::: 'Null 'PGint8,
+--        "tile_size" ::: 'Null 'PGint4,
+--        "tile_overlap" ::: 'Null 'PGint4,
+--        "tile_format" ::: 'Null 'PGtext
+--      ]
+
+-- decodeImage' :: DecodeRow ImageRowNull' (Maybe DeepZoomImage)
+-- decodeImage' = runMaybeT $ do
+--   width <- #width
+--   height <- #height
+--   tileSize <- #tile_size
+--   tileOverlap <- #tile_overlap
+--   tileFormat <- #tile_format
+--   return $
+--     mkDeepZoomImage
+--       (fromIntegral (width :: Int64))
+--       (fromIntegral (height :: Int64))
+--       tileSize
+--       tileOverlap
+--       tileFormat
 
 contentImageRowToContent :: ContentImageRow -> Content
 contentImageRowToContent cr =
@@ -745,7 +846,7 @@ unsafeCreateContent ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>
   Content ->
   m (Maybe Content)
-unsafeCreateContent content = undefined
+unsafeCreateContent _content = undefined
 
 -- unsafeCreateContent content =
 --   transactionally_ $ do
@@ -810,31 +911,31 @@ unsafeInsertContent = undefined
 --         )
 --     )
 
-contentToRow :: Content -> ContentRow
-contentToRow c =
-  ContentRow
-    { crHashId = contentId c,
-      crTypeId = contentType c,
-      crURL = contentURL c,
-      crState = contentState c,
-      crInitializedAt = contentInitializedAt c,
-      crActiveAt = contentActiveAt c,
-      crCompletedAt = contentCompletedAt c,
-      crTitle = Nothing,
-      crAttributionText = Nothing,
-      crAttributionLink = Nothing,
-      crMIME = contentMIME c,
-      crSize = contentSize c,
-      crError = contentError c,
-      crProgress = contentProgress c,
-      crAbuseLevelId = 0, -- TODO: Replace hard-coded value
-      crNumAbuseReports = 0,
-      crNumViews = contentNumViews c,
-      crVersion = Content.version,
-      crSubmitterEmail = contentSubmitterEmail c,
-      crVerificationToken = contentVerificationToken c,
-      crVerifiedAt = contentVerifiedAt c
-    }
+-- contentToRow :: Content -> ContentRow
+-- contentToRow c =
+--   ContentRow
+--     { crHashId = contentId c,
+--       crTypeId = contentType c,
+--       crURL = contentURL c,
+--       crState = contentState c,
+--       crInitializedAt = contentInitializedAt c,
+--       crActiveAt = contentActiveAt c,
+--       crCompletedAt = contentCompletedAt c,
+--       crTitle = Nothing,
+--       crAttributionText = Nothing,
+--       crAttributionLink = Nothing,
+--       crMIME = contentMIME c,
+--       crSize = contentSize c,
+--       crError = contentError c,
+--       crProgress = contentProgress c,
+--       crAbuseLevelId = 0, -- TODO: Replace hard-coded value
+--       crNumAbuseReports = 0,
+--       crNumViews = contentNumViews c,
+--       crVersion = Content.version,
+--       crSubmitterEmail = contentSubmitterEmail c,
+--       crVerificationToken = contentVerificationToken c,
+--       crVerifiedAt = contentVerifiedAt c
+--     }
 
 toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
 toNominalDiffTime duration =

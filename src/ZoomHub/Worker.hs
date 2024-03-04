@@ -86,4 +86,4 @@ processExistingContent Config {..} workerId = forever $ do
       ]
 
 processExpiredActiveContent :: Config -> IO ()
-processExpiredActiveContent Config {..} = pure ()
+processExpiredActiveContent Config {} = pure ()

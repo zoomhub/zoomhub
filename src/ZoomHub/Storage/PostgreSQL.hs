@@ -106,14 +106,10 @@ import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Reads
 getById :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
-getById _id = pure Nothing
-
--- getById = getBy ((#content ! #hash_id) .== param @1)
+getById = getBy ((#content ! #hash_id) .== param @1) . Only
 
 getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
-getByURL _uri = pure Nothing
-
--- getByURL = getBy ((#content ! #url) .== param @1)
+getByURL = undefined -- getBy ((#content ! #url) .== param @1)
 
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = pure Nothing
