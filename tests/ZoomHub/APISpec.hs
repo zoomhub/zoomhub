@@ -69,9 +69,15 @@ toURI s =
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( fromJust $ ContentId.fromString "yQ4",
+  ( unsafeContentId "yQ4",
     "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
+
+unsafeContentId :: String -> ContentId
+unsafeContentId id_ =
+  case ContentId.fromString id_ of
+    Just cId -> cId
+    Nothing -> error $ "Invalid content ID: " <> id_
 
 -- Matchers
 applicationJSON :: MatchHeader
@@ -121,8 +127,8 @@ restRedirect cId =
 nullLogger :: Middleware
 nullLogger = id
 
-newContentId :: String
-newContentId = "Xar"
+newContentId :: ContentId
+newContentId = unsafeContentId "Xar"
 
 newContentURL :: String
 newContentURL = "http://example.com"
@@ -215,13 +221,13 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           `shouldRespondWith` invalidURL
       it "should accept new HTTP URLs" do
         get ("/v1/content?email=" <> BC.pack testEmail <> "&url=" <> BC.pack newContentURL)
-          `shouldRespondWith` restRedirect (ContentId.fromString newContentId)
+          `shouldRespondWith` restRedirect newContentId
         liftIO do
           let pool = Config.dbConnPool config
-          mContent <- usingConnectionPool pool (getById $ ContentId.fromString newContentId)
+          mContent <- usingConnectionPool pool (getById newContentId)
           (mContent >>= contentSubmitterEmail) `shouldBe` Just (T.pack testEmail)
           (mContent >>= (fmap (fromIntegral . length . show) . contentVerificationToken)) `shouldBe` Just (36 :: Integer)
-        get ("/v1/content/" <> BC.pack newContentId)
+        get ("/v1/content/" <> BC.pack (unContentId newContentId))
           `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":false,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
@@ -259,11 +265,10 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             matchHeaders = [plainTextUTF8]
           }
     it "should verify content" do
-      let cId = ContentId.fromString newContentId
-      maybeContent <- liftIO $ usingConnectionPool (Config.dbConnPool config) (getById cId)
+      maybeContent <- liftIO $ usingConnectionPool (Config.dbConnPool config) (getById newContentId)
       let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
       put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
-        `shouldRespondWith` restRedirect cId
+        `shouldRespondWith` restRedirect newContentId
 
     describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
@@ -321,7 +326,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
       context "with valid auth" do
         it "should reset content" do
           authPutJSON "/v1/content/X75/reset" authorizedUser ""
-            `shouldRespondWith` restRedirect (ContentId.fromString "X75")
+            `shouldRespondWith` restRedirect (unsafeContentId "X75")
           get "/v1/content/X75"
             `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":false,"failed":false}|]
               { matchStatus = 200,
@@ -380,7 +385,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content/yQ4" `shouldRespondWith` 200
         liftIO do
           let pool = Config.dbConnPool config
-          maybeContent <- usingConnectionPool pool (getById $ ContentId.fromString "yQ4")
+          maybeContent <- usingConnectionPool pool (getById $ unsafeContentId "yQ4")
           let numViews = maybe 0 contentNumViews maybeContent
           numViews `shouldBe` 5
   where

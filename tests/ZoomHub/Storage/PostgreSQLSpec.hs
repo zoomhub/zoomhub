@@ -90,6 +90,7 @@ import ZoomHub.Types.Content
     contentVerifiedAt,
   )
 import qualified ZoomHub.Types.Content.Internal as I
+import ZoomHub.Types.ContentId (ContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import qualified ZoomHub.Types.ContentMIME as ContentMIME
 import ZoomHub.Types.ContentState (ContentState (..))
@@ -113,6 +114,12 @@ defaultDatabaseName = "zoomhub_test"
 
 hashidsSecret :: String
 hashidsSecret = "secret-salt"
+
+unsafeContentId :: String -> ContentId
+unsafeContentId id_ =
+  case ContentId.fromString id_ of
+    Just cId -> cId
+    Nothing -> error $ "Invalid content ID: " <> id_
 
 setupDatabase :: IO ()
 setupDatabase = do
@@ -184,7 +191,7 @@ spec =
           case mContent of
             Just content -> do
               -- HACK: Hard-coded content ID set by database trigger
-              contentId content `shouldBe` ContentId.fromString "X75"
+              contentId content `shouldBe` (unsafeContentId "X75")
               contentType content `shouldBe` Unknown
               contentURL content `shouldBe` testURL
               contentState content `shouldBe` Initialized
@@ -449,7 +456,7 @@ spec =
     mkUnprocessedContent :: String -> UTCTime -> NominalDiffTime -> Int64 -> I.Content
     mkUnprocessedContent id_ currentTime age numViews =
       I.Content
-        { contentId = ContentId.fromString id_,
+        { contentId = unsafeContentId id_,
           contentType = Unknown,
           contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
           contentState = Initialized,
@@ -471,7 +478,7 @@ spec =
     mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkActiveContent id_ currentTime age =
       I.Content
-        { contentId = ContentId.fromString id_,
+        { contentId = unsafeContentId id_,
           contentType = Unknown,
           contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
           contentState = Active,
@@ -497,7 +504,7 @@ spec =
           mMIME = ContentMIME.fromText "image/jpeg"
           mSize = Just 1234
        in I.Content
-            { contentId = ContentId.fromString id_,
+            { contentId = unsafeContentId id_,
               contentType = Image,
               contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
               contentState = CompletedSuccess,
