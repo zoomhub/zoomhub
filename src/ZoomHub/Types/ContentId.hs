@@ -1,9 +1,7 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -48,14 +46,10 @@ newtype ContentId = ContentId {unContentId :: String}
 fromInteger :: (Integer -> String) -> Integer -> Maybe ContentId
 fromInteger encode intId = fromString $ encode intId
 
--- TODO: Change return type to `Maybe ContentId` to make it a total function:
 fromString :: String -> Maybe ContentId
 fromString s
   | isValid s = Just $ ContentId s
   | otherwise = Nothing
-
--- error $
---
 
 fromText :: Text -> Maybe ContentId
 fromText = fromString . T.unpack
@@ -97,6 +91,7 @@ instance FromJSON ContentId where
   parseJSON invalid = typeMismatch "ContentId" invalid
 
 -- Squeal / PostgreSQL
+-- TODO: Look into newtype deriving
 instance IsPG ContentId where
   type PG ContentId = 'PGtext
 
