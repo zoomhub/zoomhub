@@ -314,22 +314,23 @@ instance SOP.HasDatatypeInfo ImageRow
 
 -- See:
 -- https://github.com/morphismtech/squeal/blob/0.9.1.3/RELEASE%20NOTES.md#:~:text=do%20custom%20encodings%20and%20decodings
-decodeImage ::
-  DecodeRow
+
+type ImageRow' =
     '[ "width" ::: 'NotNull 'PGint8,
        "height" ::: 'NotNull 'PGint8,
        "tile_size" ::: 'NotNull 'PGint4,
        "tile_overlap" ::: 'NotNull 'PGint4,
        "tile_format" ::: 'NotNull 'PGtext
      ]
-    DeepZoomImage
+
+decodeImage :: DecodeRow ImageRow' DeepZoomImage
 decodeImage = do
   width <- #width
   height <- #height
   tileSize <- #tile_size
   tileOverlap <- #tile_overlap
   tileFormat <- #tile_format
-  pure $
+  return $
     mkDeepZoomImage
       (fromIntegral (width :: Int64))
       (fromIntegral (height :: Int64))
