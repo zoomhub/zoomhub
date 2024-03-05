@@ -94,9 +94,11 @@ import ZoomHub.Storage.PostgreSQL.Internal
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content (..))
 import ZoomHub.Types.ContentId (ContentId)
+import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentState (ContentState (Active, Initialized))
-import ZoomHub.Types.ContentURI (ContentURI)
+import ZoomHub.Types.ContentURI (ContentURI (..))
+import qualified ZoomHub.Types.ContentURI as ContentURI
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 import ZoomHub.Types.VerificationError (VerificationError)
 import qualified ZoomHub.Types.VerificationError as VerificationError
@@ -106,10 +108,10 @@ import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Reads
 getById :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
-getById = getBy ((#content ! #hash_id) .== param @1) . Only
+getById id_ = getBy ((#content ! #hash_id) .== param @1) (ContentId.toText id_)
 
 getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
-getByURL = undefined -- getBy ((#content ! #url) .== param @1)
+getByURL uri = getBy ((#content ! #url) .== param @1) (unContentURI uri)
 
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = pure Nothing

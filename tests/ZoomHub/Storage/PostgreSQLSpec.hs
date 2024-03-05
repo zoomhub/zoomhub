@@ -208,6 +208,7 @@ spec =
               contentSubmitterEmail content `shouldBe` Just testEmail
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "markAsActive" do
       it "should mark content as active" do
         \conn -> do

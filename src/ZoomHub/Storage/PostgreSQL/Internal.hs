@@ -135,9 +135,9 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
 --   Condition 'Ungrouped '[] '[] Schemas _ _ ->
 --   params ->
 --   m (Maybe Content)
-getBy :: (MonadUnliftIO m, MonadPQ Schemas m) => _ -> Only ContentId -> m (Maybe Content)
-getBy condition cId = do
-  result <- executeParams (selectContentBy (\t -> t & where_ condition)) cId
+getBy :: (MonadUnliftIO m, MonadPQ Schemas m) => _ -> Text -> m (Maybe Content)
+getBy condition parameter = do
+  result <- executeParams (selectContentBy (\t -> t & where_ condition)) (Only parameter)
   firstRow result
 
 getBy' ::
@@ -188,7 +188,7 @@ incrNumViews = undefined
 --   Query '[] '[] Schemas '[ 'NotNull a] (RowPG ContentImageRow)
 
 
-selectContentBy :: _ -> Statement Schemas (Only ContentId) Content
+selectContentBy :: _ -> Statement Schemas (Only Text) Content
 selectContentBy clauses = Query enc dec sql
   where
   enc = genericParams

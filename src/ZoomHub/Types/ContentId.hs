@@ -15,6 +15,7 @@ module ZoomHub.Types.ContentId
     isValid,
     unContentId,
     validChars,
+    toText,
   )
 where
 
