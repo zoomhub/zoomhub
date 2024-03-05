@@ -26,7 +26,6 @@ where
 
 import Control.Monad (when)
 import Control.Monad.Trans.Control (MonadBaseControl)
-import Data.Functor ((<&>))
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime, UTCTime)
@@ -86,7 +85,9 @@ import Squeal.PostgreSQL
     (&),
     (.&&),
     (.==),
-    (:::), appendRows, Join,
+    (:::),
+    appendRows,
+    Join,
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
@@ -134,6 +135,7 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
 --   Condition 'Ungrouped '[] '[] Schemas _ _ ->
 --   params ->
 --   m (Maybe Content)
+getBy :: (MonadUnliftIO m, MonadPQ Schemas m) => _ -> Only ContentId -> m (Maybe Content)
 getBy condition cId = do
   result <- executeParams (selectContentBy (\t -> t & where_ condition)) cId
   firstRow result
