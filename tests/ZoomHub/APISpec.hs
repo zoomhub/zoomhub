@@ -228,7 +228,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           (mContent >>= contentSubmitterEmail) `shouldBe` Just (T.pack testEmail)
           (mContent >>= (fmap (fromIntegral . length . show) . contentVerificationToken)) `shouldBe` Just (36 :: Integer)
         get ("/v1/content/" <> BC.pack (unContentId newContentId))
-          `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":false,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
+          `shouldRespondWith` [r|{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","failed":false,"id":"Xar","progress":0,"ready":false,"shareUrl":"http://localhost:8000/Xar","url":"http://example.com","verified":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -240,7 +240,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "Get by ID (GET /v1/content/:id)" do
       it "should return correct data for existing content" $
         get "/v1/content/yQ4"
-          `shouldRespondWith` [r|{"dzi":{"height":3750,"url":"http://localhost:9000/_dzis_/yQ4.dzi","width":5058,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":true,"failed":false}|]
+          `shouldRespondWith` [r|{"dzi":{"height":3750,"tileFormat":"jpg","tileOverlap":1,"tileSize":254,"url":"http://localhost:9000/_dzis_/yQ4.dzi","width":5058},"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","failed":false,"id":"yQ4","progress":1,"ready":true,"shareUrl":"http://localhost:8000/yQ4","url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }

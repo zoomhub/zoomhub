@@ -34,8 +34,12 @@ import Database.PostgreSQL.Simple (ConnectInfo (..))
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Generics.SOP.BasicFunctors (K)
+
+import Control.Monad.Catch (MonadMask)
 import Squeal.PostgreSQL
-  ( Condition,
+  ( (.*),
+    (*.),
+    Condition,
     ConflictClause (OnConflictDoRaise),
     DecodeRow,
     GenericParams (genericParams),
@@ -58,7 +62,7 @@ import Squeal.PostgreSQL
     Statement (Query, Manipulation),
     TableExpression,
     ToPG,
-    UsingClause (Using),
+    UsingClause (Using, NoUsing),
     as,
     currentTimestamp,
     deleteFrom,
@@ -87,7 +91,7 @@ import Squeal.PostgreSQL
     (.==),
     (:::),
     appendRows,
-    Join,
+    Join, EncodeParams,
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
@@ -255,6 +259,31 @@ type ImageRowNull' =
      ]
 
 type ContentWithImageRow' = Join ContentRow' ImageRowNull'
+
+encodeContentRow :: EncodeParams Schemas _ ContentRow
+encodeContentRow =
+  crHashId .*
+  crTypeId .*
+  crURL .*
+  crState .*
+  crInitializedAt .*
+  crActiveAt .*
+  crCompletedAt .*
+  crTitle .*
+  crAttributionText .*
+  crAttributionLink .*
+  crMIME .*
+  crSize .*
+  crError .*
+  crProgress .*
+  crAbuseLevelId .*
+  crNumAbuseReports .*
+  crNumViews .*
+  crVersion .*
+  crSubmitterEmail .*
+  crVerificationToken *.
+  crVerifiedAt
+
 
 decodeContent :: DecodeRow ContentRow' Content
 decodeContent = do
@@ -530,214 +559,221 @@ insertContent = Manipulation encode decode sql
               :* #verified_at
           )
       )
-{- ORMOLU_ENABLE -}
 
-markContentAsActive :: Manipulation_ Schemas (Only Text) ContentRow
-markContentAsActive = undefined
+markContentAsActive :: Statement Schemas (Only ContentId) Content
+markContentAsActive = Manipulation encode decode sql
+  where
+    encode = genericParams
+    decode = decodeContent
+    sql = update
+      #content
+      ( Set (inline Unknown) `as` #type_id
+          :* Set (inline Active) `as` #state
+          :* Set currentTimestamp `as` #active_at
+          :* Set null_ `as` #completed_at
+          :* Set null_ `as` #title
+          :* Set null_ `as` #attribution_text
+          :* Set null_ `as` #attribution_link
+          :* Set null_ `as` #mime
+          :* Set null_ `as` #size
+          :* Set null_ `as` #error
+          :* Set 0.0 `as` #progress
+      )
+      NoUsing
+      (#hash_id .== param @1)
+      ( Returning_
+          ( #hash_id
+            :* #type_id
+            :* #url
+            :* #state
+            :* #initialized_at
+            :* #active_at
+            :* #completed_at
+            :* #title
+            :* #attribution_text
+            :* #attribution_link
+            :* #mime
+            :* #size
+            :* #error
+            :* #progress
+            :* #abuse_level_id
+            :* #num_abuse_reports
+            :* #num_views
+            :* #version
+            :* #submitter_email
+            :* #verification_token
+            :* #verified_at
+          )
+      )
 
--- markContentAsActive =
---   update
---     #content
---     ( Set (inline Unknown) `as` #type_id
---         :* Set (inline Active) `as` #state
---         :* Set currentTimestamp `as` #active_at
---         :* Set null_ `as` #completed_at
---         :* Set null_ `as` #title
---         :* Set null_ `as` #attribution_text
---         :* Set null_ `as` #attribution_link
---         :* Set null_ `as` #mime
---         :* Set null_ `as` #size
---         :* Set null_ `as` #error
---         :* Set 0.0 `as` #progress
---     )
---     (#hash_id .== param @1)
---     ( Returning_
---         ( #hash_id `as` #crHashId
---             :* #type_id `as` #crTypeId
---             :* #url `as` #crURL
---             :* #state `as` #crState
---             :* #initialized_at `as` #crInitializedAt
---             :* #active_at `as` #crActiveAt
---             :* #completed_at `as` #crCompletedAt
---             :* #title `as` #crTitle
---             :* #attribution_text `as` #crAttributionText
---             :* #attribution_link `as` #crAttributionLink
---             :* #mime `as` #crMIME
---             :* #size `as` #crSize
---             :* #error `as` #crError
---             :* #progress `as` #crProgress
---             :* #abuse_level_id `as` #crAbuseLevelId
---             :* #num_abuse_reports `as` #crNumAbuseReports
---             :* #num_views `as` #crNumViews
---             :* #version `as` #crVersion
---             :* #submitter_email `as` #crSubmitterEmail
---             :* #verification_token `as` #crVerificationToken
---             :* #verified_at `as` #crVerifiedAt
---         )
---     )
-
-markContentAsFailure :: Manipulation_ Schemas (Text, Maybe Text) ContentRow
-markContentAsFailure = undefined
-
--- markContentAsFailure =
---   update
---     #content
---     ( Set (inline Unknown) `as` #type_id
---         :* Set (inline CompletedFailure) `as` #state
---         :* Set currentTimestamp `as` #completed_at
---         :* Set null_ `as` #title
---         :* Set null_ `as` #attribution_text
---         :* Set null_ `as` #attribution_link
---         :* Set null_ `as` #mime
---         :* Set null_ `as` #size
---         :* Set (param @2) `as` #error
---         :* Set 1.0 `as` #progress
---     )
---     (#hash_id .== param @1)
---     ( Returning_
---         ( #hash_id `as` #crHashId
---             :* #type_id `as` #crTypeId
---             :* #url `as` #crURL
---             :* #state `as` #crState
---             :* #initialized_at `as` #crInitializedAt
---             :* #active_at `as` #crActiveAt
---             :* #completed_at `as` #crCompletedAt
---             :* #title `as` #crTitle
---             :* #attribution_text `as` #crAttributionText
---             :* #attribution_link `as` #crAttributionLink
---             :* #mime `as` #crMIME
---             :* #size `as` #crSize
---             :* #error `as` #crError
---             :* #progress `as` #crProgress
---             :* #abuse_level_id `as` #crAbuseLevelId
---             :* #num_abuse_reports `as` #crNumAbuseReports
---             :* #num_views `as` #crNumViews
---             :* #version `as` #crVersion
---             :* #submitter_email `as` #crSubmitterEmail
---             :* #verification_token `as` #crVerificationToken
---             :* #verified_at `as` #crVerifiedAt
---         )
---     )
+markContentAsFailure :: Statement Schemas (ContentId, Maybe Text) Content
+markContentAsFailure = Manipulation encode decode sql
+  where
+    encode = genericParams
+    decode = decodeContent
+    sql = update
+      #content
+      ( Set (inline Unknown) `as` #type_id
+          :* Set (inline CompletedFailure) `as` #state
+          :* Set currentTimestamp `as` #completed_at
+          :* Set null_ `as` #title
+          :* Set null_ `as` #attribution_text
+          :* Set null_ `as` #attribution_link
+          :* Set null_ `as` #mime
+          :* Set null_ `as` #size
+          :* Set (param @2) `as` #error
+          :* Set 1.0 `as` #progress
+      )
+      NoUsing
+      (#hash_id .== param @1)
+      ( Returning_
+          ( #hash_id
+              :* #type_id
+              :* #url
+              :* #state
+              :* #initialized_at
+              :* #active_at
+              :* #completed_at
+              :* #title
+              :* #attribution_text
+              :* #attribution_link
+              :* #mime
+              :* #size
+              :* #error
+              :* #progress
+              :* #abuse_level_id
+              :* #num_abuse_reports
+              :* #num_views
+              :* #version
+              :* #submitter_email
+              :* #verification_token
+              :* #verified_at
+          )
+      )
 
 markContentAsSuccess ::
-  Manipulation_
-    Schemas
-    (Text, Maybe Text, Maybe Int64)
-    ContentRow
-markContentAsSuccess = undefined
+  Statement Schemas (ContentId, Maybe ContentMIME, Maybe Int64) Content
+markContentAsSuccess = Manipulation encode decode sql
+  where
+    encode = genericParams
+    decode = decodeContent
+    sql = update
+      #content
+      ( Set (inline Image) `as` #type_id
+          :* Set (inline CompletedSuccess) `as` #state
+          :* Set currentTimestamp `as` #completed_at
+          :* Set (param @2) `as` #mime
+          :* Set (param @3) `as` #size
+          :* Set null_ `as` #error
+          :* Set 1.0 `as` #progress -- reset any previous errors
+      )
+      NoUsing
+      (#hash_id .== param @1)
+      ( Returning_
+          ( #hash_id
+              :* #type_id
+              :* #url
+              :* #state
+              :* #initialized_at
+              :* #active_at
+              :* #completed_at
+              :* #title
+              :* #attribution_text
+              :* #attribution_link
+              :* #mime
+              :* #size
+              :* #error
+              :* #progress
+              :* #abuse_level_id
+              :* #num_abuse_reports
+              :* #num_views
+              :* #version
+              :* #submitter_email
+              :* #verification_token
+              :* #verified_at
+          )
+      )
 
--- markContentAsSuccess =
---   update
---     #content
---     ( Set (inline Image) `as` #type_id
---         :* Set (inline CompletedSuccess) `as` #state
---         :* Set currentTimestamp `as` #completed_at
---         :* Set (param @2) `as` #mime
---         :* Set (param @3) `as` #size
---         :* Set null_ `as` #error
---         :* Set 1.0 `as` #progress -- reset any previous errors
---     )
---     (#hash_id .== param @1)
---     ( Returning_
---         ( #hash_id `as` #crHashId
---             :* #type_id `as` #crTypeId
---             :* #url `as` #crURL
---             :* #state `as` #crState
---             :* #initialized_at `as` #crInitializedAt
---             :* #active_at `as` #crActiveAt
---             :* #completed_at `as` #crCompletedAt
---             :* #title `as` #crTitle
---             :* #attribution_text `as` #crAttributionText
---             :* #attribution_link `as` #crAttributionLink
---             :* #mime `as` #crMIME
---             :* #size `as` #crSize
---             :* #error `as` #crError
---             :* #progress `as` #crProgress
---             :* #abuse_level_id `as` #crAbuseLevelId
---             :* #num_abuse_reports `as` #crNumAbuseReports
---             :* #num_views `as` #crNumViews
---             :* #version `as` #crVersion
---             :* #submitter_email `as` #crSubmitterEmail
---             :* #verification_token `as` #crVerificationToken
---             :* #verified_at `as` #crVerifiedAt
---         )
---     )
+markContentAsVerified :: Statement Schemas (Only ContentId) Content
+markContentAsVerified = Manipulation encode decode sql
+  where
+    encode = genericParams
+    decode = decodeContent
+    sql = update
+      #content
+      ( Set currentTimestamp `as` #verified_at
+          :* Set (inline Content.version) `as` #version
+      )
+      NoUsing
+      (#hash_id .== param @1)
+      ( Returning_
+          ( #hash_id
+              :* #type_id
+              :* #url
+              :* #state
+              :* #initialized_at
+              :* #active_at
+              :* #completed_at
+              :* #title
+              :* #attribution_text
+              :* #attribution_link
+              :* #mime
+              :* #size
+              :* #error
+              :* #progress
+              :* #abuse_level_id
+              :* #num_abuse_reports
+              :* #num_views
+              :* #version
+              :* #submitter_email
+              :* #verification_token
+              :* #verified_at
+          )
+      )
 
-markContentAsVerified :: Manipulation_ Schemas (Only Text) ContentRow
-markContentAsVerified = undefined
-
--- markContentAsVerified =
---   update
---     #content
---     ( Set currentTimestamp `as` #verified_at
---         :* Set (inline Content.version) `as` #version
---     )
---     (#hash_id .== param @1)
---     ( Returning_
---         ( #hash_id `as` #crHashId
---             :* #type_id `as` #crTypeId
---             :* #url `as` #crURL
---             :* #state `as` #crState
---             :* #initialized_at `as` #crInitializedAt
---             :* #active_at `as` #crActiveAt
---             :* #completed_at `as` #crCompletedAt
---             :* #title `as` #crTitle
---             :* #attribution_text `as` #crAttributionText
---             :* #attribution_link `as` #crAttributionLink
---             :* #mime `as` #crMIME
---             :* #size `as` #crSize
---             :* #error `as` #crError
---             :* #progress `as` #crProgress
---             :* #abuse_level_id `as` #crAbuseLevelId
---             :* #num_abuse_reports `as` #crNumAbuseReports
---             :* #num_views `as` #crNumViews
---             :* #version `as` #crVersion
---             :* #submitter_email `as` #crSubmitterEmail
---             :* #verification_token `as` #crVerificationToken
---             :* #verified_at `as` #crVerifiedAt
---         )
---     )
-
-resetContentAsInitialized :: Manipulation_ Schemas (Only Text) ContentRow
-resetContentAsInitialized = undefined
-
--- resetContentAsInitialized =
---   update
---     #content
---     ( Set (inline Unknown) `as` #type_id
---         :* Set (inline Initialized) `as` #state
---         :* Set null_ `as` #active_at
---         :* Set null_ `as` #completed_at
---         :* Set null_ `as` #mime
---         :* Set null_ `as` #size
---         :* Set null_ `as` #error -- reset any previous errors
---         :* Set 0.0 `as` #progress
---     )
---     (#hash_id .== param @1)
---     ( Returning_
---         ( #hash_id `as` #crHashId
---             :* #type_id `as` #crTypeId
---             :* #url `as` #crURL
---             :* #state `as` #crState
---             :* #initialized_at `as` #crInitializedAt
---             :* #active_at `as` #crActiveAt
---             :* #completed_at `as` #crCompletedAt
---             :* #title `as` #crTitle
---             :* #attribution_text `as` #crAttributionText
---             :* #attribution_link `as` #crAttributionLink
---             :* #mime `as` #crMIME
---             :* #size `as` #crSize
---             :* #error `as` #crError
---             :* #progress `as` #crProgress
---             :* #abuse_level_id `as` #crAbuseLevelId
---             :* #num_abuse_reports `as` #crNumAbuseReports
---             :* #num_views `as` #crNumViews
---             :* #version `as` #crVersion
---             :* #submitter_email `as` #crSubmitterEmail
---             :* #verification_token `as` #crVerificationToken
---             :* #verified_at `as` #crVerifiedAt
---         )
---     )
+resetContentAsInitialized :: Statement Schemas (Only ContentId) Content
+resetContentAsInitialized = Manipulation encode decode sql
+  where
+    encode = genericParams
+    decode = decodeContent
+    sql = update
+      #content
+      ( Set (inline Unknown) `as` #type_id
+          :* Set (inline Initialized) `as` #state
+          :* Set null_ `as` #active_at
+          :* Set null_ `as` #completed_at
+          :* Set null_ `as` #mime
+          :* Set null_ `as` #size
+          :* Set null_ `as` #error -- reset any previous errors
+          :* Set 0.0 `as` #progress
+      )
+      NoUsing
+      (#hash_id .== param @1)
+      ( Returning_
+          ( #hash_id
+              :* #type_id
+              :* #url
+              :* #state
+              :* #initialized_at
+              :* #active_at
+              :* #completed_at
+              :* #title
+              :* #attribution_text
+              :* #attribution_link
+              :* #mime
+              :* #size
+              :* #error
+              :* #progress
+              :* #abuse_level_id
+              :* #num_abuse_reports
+              :* #num_views
+              :* #version
+              :* #submitter_email
+              :* #verification_token
+              :* #verified_at
+          )
+      )
+{- ORMOLU_ENABLE -}
 
 imageToInsertRow :: ContentId -> DeepZoomImage -> InsertImageRow
 imageToInsertRow cid dzi =
@@ -764,133 +800,136 @@ instance SOP.Generic InsertImageRow
 
 instance SOP.HasDatatypeInfo InsertImageRow
 
-insertImage :: Manipulation_ Schemas InsertImageRow ()
-insertImage = undefined
+insertImage :: Statement Schemas InsertImageRow ()
+insertImage = Manipulation encode decode sql
+  where
+  encode = genericParams
+  decode = genericRow
+  sql =
+    insertInto_
+    #image
+    ( Subquery
+        ( select_
+            ( #content ! #id `as` #content_id
+                :* currentTimestamp `as` #created_at
+                :* param @2 `as` #width
+                :* param @3 `as` #height
+                :* param @4 `as` #tile_size
+                :* param @5 `as` #tile_overlap
+                :* param @6 `as` #tile_format
+            )
+            ( from (table #content)
+                & where_ (#content ! #hash_id .== param @1)
+            )
+        )
+    )
 
--- insertImage =
---   insertInto_
---     #image
---     ( Subquery
---         ( select_
---             ( #content ! #id `as` #content_id
---                 :* currentTimestamp `as` #created_at
---                 :* param @2 `as` #width
---                 :* param @3 `as` #height
---                 :* param @4 `as` #tile_size
---                 :* param @5 `as` #tile_overlap
---                 :* param @6 `as` #tile_format
---             )
---             ( from (table #content)
---                 & where_ (#content ! #hash_id .== param @1)
---             )
---         )
---     )
-
-deleteImage :: Manipulation_ Schemas (Only Text) ()
-deleteImage = undefined
-
--- deleteImage =
---   deleteFrom
---     #image
---     (Using (table #content))
---     ((#content ! #hash_id .== param @1) .&& (#image ! #content_id .== #content ! #id))
---     (Returning_ Nil)
+deleteImage :: Statement Schemas (Only ContentId) ()
+deleteImage = Manipulation encode decode sql
+  where
+  encode = genericParams
+  decode = genericRow
+  sql =
+    deleteFrom
+      #image
+      (Using (table #content))
+      ((#content ! #hash_id .== param @1) .&& (#image ! #content_id .== #content ! #id))
+      (Returning_ Nil)
 
 -- Unsafe
 unsafeCreateContent ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   Content ->
   m (Maybe Content)
-unsafeCreateContent _content = undefined
+unsafeCreateContent content =
+  transactionally_ $ do
+    result <- executeParams unsafeInsertContent (contentToRow content)
+    firstRow result
 
--- unsafeCreateContent content =
---   transactionally_ $ do
---     result <- manipulateParams unsafeInsertContent (contentToRow content)
---     contentRow <- firstRow result
---     pure $ contentRowToContent <$> contentRow
+unsafeInsertContent :: Statement Schemas ContentRow Content
+unsafeInsertContent = Manipulation encode decode sql
+  where
+  encode = encodeContentRow
+  decode = decodeContent
+  sql =
+    insertInto
+      #content
+      ( Values_
+          ( Default `as` #id
+              :* Set (param @1) `as` #hash_id
+              :* Set (param @2) `as` #type_id
+              :* Set (param @3) `as` #url
+              :* Set (param @4) `as` #state
+              :* Set (param @5) `as` #initialized_at
+              :* Set (param @6) `as` #active_at
+              :* Set (param @7) `as` #completed_at
+              :* Set (param @8) `as` #title
+              :* Set (param @9) `as` #attribution_text
+              :* Set (param @10) `as` #attribution_link
+              :* Set (param @11) `as` #mime
+              :* Set (param @12) `as` #size
+              :* Set (param @13) `as` #error
+              :* Set (param @14) `as` #progress
+              :* Set (param @15) `as` #abuse_level_id
+              :* Set (param @16) `as` #num_abuse_reports
+              :* Set (param @17) `as` #num_views
+              :* Set (param @18) `as` #version
+              :* Set (param @19) `as` #submitter_email
+              :* Set (param @20) `as` #verification_token
+              :* Set (param @21) `as` #verified_at
+          )
+      )
+      OnConflictDoRaise
+      ( Returning_
+          ( #hash_id
+              :* #type_id
+              :* #url
+              :* #state
+              :* #initialized_at
+              :* #active_at
+              :* #completed_at
+              :* #title
+              :* #attribution_text
+              :* #attribution_link
+              :* #mime
+              :* #size
+              :* #error
+              :* #progress
+              :* #abuse_level_id
+              :* #num_abuse_reports
+              :* #num_views
+              :* #version
+              :* #submitter_email
+              :* #verification_token
+              :* #verified_at
+          )
+      )
 
-unsafeInsertContent :: Manipulation_ Schemas ContentRow ContentRow
-unsafeInsertContent = undefined
-
--- unsafeInsertContent =
---   insertInto
---     #content
---     ( Values_
---         ( Default `as` #id
---             :* Set (param @1) `as` #hash_id
---             :* Set (param @2) `as` #type_id
---             :* Set (param @3) `as` #url
---             :* Set (param @4) `as` #state
---             :* Set (param @5) `as` #initialized_at
---             :* Set (param @6) `as` #active_at
---             :* Set (param @7) `as` #completed_at
---             :* Set (param @8) `as` #title
---             :* Set (param @9) `as` #attribution_text
---             :* Set (param @10) `as` #attribution_link
---             :* Set (param @11) `as` #mime
---             :* Set (param @12) `as` #size
---             :* Set (param @13) `as` #error
---             :* Set (param @14) `as` #progress
---             :* Set (param @15) `as` #abuse_level_id
---             :* Set (param @16) `as` #num_abuse_reports
---             :* Set (param @17) `as` #num_views
---             :* Set (param @18) `as` #version
---             :* Set (param @19) `as` #submitter_email
---             :* Set (param @20) `as` #verification_token
---             :* Set (param @21) `as` #verified_at
---         )
---     )
---     OnConflictDoRaise
---     ( Returning_
---         ( #hash_id `as` #crHashId
---             :* #type_id `as` #crTypeId
---             :* #url `as` #crURL
---             :* #state `as` #crState
---             :* #initialized_at `as` #crInitializedAt
---             :* #active_at `as` #crActiveAt
---             :* #completed_at `as` #crCompletedAt
---             :* #title `as` #crTitle
---             :* #attribution_text `as` #crAttributionText
---             :* #attribution_link `as` #crAttributionLink
---             :* #mime `as` #crMIME
---             :* #size `as` #crSize
---             :* #error `as` #crError
---             :* #progress `as` #crProgress
---             :* #abuse_level_id `as` #crAbuseLevelId
---             :* #num_abuse_reports `as` #crNumAbuseReports
---             :* #num_views `as` #crNumViews
---             :* #version `as` #crVersion
---             :* #submitter_email `as` #crSubmitterEmail
---             :* #verification_token `as` #crVerificationToken
---             :* #verified_at `as` #crVerifiedAt
---         )
---     )
-
--- contentToRow :: Content -> ContentRow
--- contentToRow c =
---   ContentRow
---     { crHashId = contentId c,
---       crTypeId = contentType c,
---       crURL = contentURL c,
---       crState = contentState c,
---       crInitializedAt = contentInitializedAt c,
---       crActiveAt = contentActiveAt c,
---       crCompletedAt = contentCompletedAt c,
---       crTitle = Nothing,
---       crAttributionText = Nothing,
---       crAttributionLink = Nothing,
---       crMIME = contentMIME c,
---       crSize = contentSize c,
---       crError = contentError c,
---       crProgress = contentProgress c,
---       crAbuseLevelId = 0, -- TODO: Replace hard-coded value
---       crNumAbuseReports = 0,
---       crNumViews = contentNumViews c,
---       crVersion = Content.version,
---       crSubmitterEmail = contentSubmitterEmail c,
---       crVerificationToken = contentVerificationToken c,
---       crVerifiedAt = contentVerifiedAt c
---     }
+contentToRow :: Content -> ContentRow
+contentToRow c =
+  ContentRow
+    { crHashId = contentId c,
+      crTypeId = contentType c,
+      crURL = contentURL c,
+      crState = contentState c,
+      crInitializedAt = contentInitializedAt c,
+      crActiveAt = contentActiveAt c,
+      crCompletedAt = contentCompletedAt c,
+      crTitle = Nothing,
+      crAttributionText = Nothing,
+      crAttributionLink = Nothing,
+      crMIME = contentMIME c,
+      crSize = contentSize c,
+      crError = contentError c,
+      crProgress = contentProgress c,
+      crAbuseLevelId = 0, -- TODO: Replace hard-coded value
+      crNumAbuseReports = 0,
+      crNumViews = contentNumViews c,
+      crVersion = Content.version,
+      crSubmitterEmail = contentSubmitterEmail c,
+      crVerificationToken = contentVerificationToken c,
+      crVerifiedAt = contentVerifiedAt c
+    }
 
 toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
 toNominalDiffTime duration =

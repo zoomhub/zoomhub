@@ -20,6 +20,7 @@ where
 import Data.Aeson (ToJSON, genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
 import GHC.Generics (Generic)
+import qualified Generics.SOP as SOP
 import Text.Read (readMaybe)
 import Text.XML.Light (QName (QName))
 import Text.XML.Light.Input (parseXMLDoc)
@@ -69,3 +70,8 @@ fromXML xml = do
 -- JSON
 instance ToJSON DeepZoomImage where
   toJSON = genericToJSON $ aesonPrefix camelCase
+
+-- PostgreSQL / Squeal
+instance SOP.Generic DeepZoomImage
+
+instance SOP.HasDatatypeInfo DeepZoomImage

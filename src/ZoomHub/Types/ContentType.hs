@@ -17,6 +17,7 @@ import Squeal.PostgreSQL
     IsPG,
     PG,
     PGType (PGint4),
+    ToPG (toPG),
   )
 
 data ContentType
@@ -60,6 +61,9 @@ instance IsPG ContentType where
 
 instance Inline ContentType where
   inline = inline . toPGint4
+
+instance ToPG db ContentType where
+  toPG = toPG . toPGint4
 
 instance FromPG ContentType where
   fromPG = fromPGint4 <$> fromPG @Int32

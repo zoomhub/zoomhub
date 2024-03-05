@@ -44,7 +44,7 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
-  ( MonadPQ (executeParams),
+  ( MonadPQ (executeParams, executeParams_),
     Only (Only),
     SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
@@ -164,69 +164,60 @@ initialize uri email = do
     firstRow result
 
 markAsActive ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   m (Maybe Content)
-markAsActive _cId = pure Nothing
-
--- markAsActive cId =
---   transactionally_ $ do
---     contentResult <- manipulateParams markContentAsActive (Only cId)
---     mContentRow <- firstRow contentResult
---     return $ contentRowToContent <$> mContentRow
+markAsActive cId =
+  transactionally_ $ do
+    result <- executeParams markContentAsActive (Only cId)
+    firstRow result
 
 markAsFailure ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   Maybe Text ->
   m (Maybe Content)
-markAsFailure _cId _mErrorMessage = pure Nothing
-
--- markAsFailure cId mErrorMessage =
---   transactionally_ $ do
---     manipulateParams_ deleteImage (Only cId)
---     contentResult <- manipulateParams markContentAsFailure (cId, mErrorMessage)
---     mContentRow <- firstRow contentResult
---     return $ contentRowToContent <$> mContentRow
+markAsFailure cId mErrorMessage =
+  transactionally_ $ do
+    executeParams_ deleteImage (Only cId)
+    result <- executeParams markContentAsFailure (cId, mErrorMessage)
+    firstRow result
 
 markAsSuccess ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   DeepZoomImage ->
   Maybe ContentMIME ->
   Maybe Int64 ->
   m (Maybe Content)
-markAsSuccess cId dzi mMIME mSize = pure Nothing
-
--- markAsSuccess cId dzi mMIME mSize =
---   transactionally_ $ do
---     contentResult <- manipulateParams markContentAsSuccess (cId, mMIME, mSize)
---     manipulateParams_ insertImage (imageToInsertRow cId dzi)
---     mContentRow <- firstRow contentResult
---     return $ case mContentRow of
---       Just contentRow -> do
---         let content = contentRowToContent contentRow
---         Just content {contentDZI = Just dzi}
---       Nothing ->
---         Nothing
+markAsSuccess cId dzi mMIME mSize =
+  transactionally_ $ do
+    result <- executeParams markContentAsSuccess (cId, mMIME, mSize)
+    executeParams_ insertImage (imageToInsertRow cId dzi)
+    mContent <- firstRow result
+    return $ case mContent of
+      Just content -> do
+        Just content {contentDZI = Just dzi}
+      Nothing ->
+        Nothing
 
 markAsVerified ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   VerificationToken ->
   m (Either VerificationError Content)
-markAsVerified cId verificationToken = pure $ Left VerificationError.ContentNotFound
+markAsVerified _cId _verificationToken = pure $ Left VerificationError.ContentNotFound
 
 -- markAsVerified cId verificationToken =
 --   transactionally_ $ do
 --     mContent <- getById cId
 --     case mContent >>= contentVerificationToken of
 --       Just token | token == verificationToken -> do
---         contentResult <- manipulateParams markContentAsVerified (Only cId)
---         mContentRow <- firstRow contentResult
---         case mContentRow of
---           Just contentRow ->
---             return $ Right $ contentRowToContent contentRow
+--         contentResult <- executeParams markContentAsVerified (Only cId)
+--         mContent' <- firstRow contentResult
+--         case mContent' of
+--           Just content ->
+--             return $ Right content
 --           Nothing ->
 --             return $ Left VerificationError.ContentNotFound
 --       Just _ ->
@@ -235,41 +226,33 @@ markAsVerified cId verificationToken = pure $ Left VerificationError.ContentNotF
 --         return $ Left VerificationError.ContentNotFound
 
 resetAsInitialized ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   m (Maybe Content)
-resetAsInitialized _cId = pure Nothing
-
--- resetAsInitialized cId =
---   transactionally_ $ do
---     manipulateParams_ deleteImage (Only cId)
---     contentResult <- manipulateParams resetContentAsInitialized (Only cId)
---     mContentRow <- firstRow contentResult
---     return $ contentRowToContent <$> mContentRow
+resetAsInitialized cId =
+  transactionally_ $ do
+    executeParams_ deleteImage (Only cId)
+    contentResult <- executeParams resetContentAsInitialized (Only cId)
+    firstRow contentResult
 
 unsafeResetAsInitializedWithVerification ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   m (Maybe Content)
-unsafeResetAsInitializedWithVerification _cId = pure Nothing
-
--- unsafeResetAsInitializedWithVerification cId =
---   transactionally_ $ do
---     manipulateParams_ deleteImage (Only cId)
---     void $ manipulateParams resetContentAsInitialized (Only cId)
---     contentResult <- manipulateParams markContentAsVerified (Only cId)
---     mContentRow <- firstRow contentResult
---     return $ contentRowToContent <$> mContentRow
+unsafeResetAsInitializedWithVerification cId =
+  transactionally_ $ do
+    executeParams_ deleteImage (Only cId)
+    void $ executeParams resetContentAsInitialized (Only cId)
+    contentResult <- executeParams markContentAsVerified (Only cId)
+    firstRow contentResult
 
 dequeueNextUnprocessed ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   m (Maybe Content)
-dequeueNextUnprocessed = pure Nothing
-
--- dequeueNextUnprocessed = do
---   mNext <- getNextUnprocessed
---   case mNext of
---     Just next ->
---       markAsActive $ contentId next
---     Nothing ->
---       pure Nothing
+dequeueNextUnprocessed = do
+  mNext <- getNextUnprocessed
+  case mNext of
+    Just next ->
+      markAsActive $ contentId next
+    Nothing ->
+      pure Nothing
