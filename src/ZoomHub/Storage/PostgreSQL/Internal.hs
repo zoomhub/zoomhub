@@ -87,7 +87,7 @@ import Squeal.PostgreSQL
     (.==),
     (:::),
     appendRows,
-    Join, EncodeParams (EncodeParams), aParam, IsPG, ToParam,
+    Join,
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
@@ -130,18 +130,18 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
 
 -- Reads: Content
 getBy ::
-  (MonadUnliftIO m, MonadPQ Schemas m, ToParam Schemas a p) =>
-  Condition 'Ungrouped '[] '[]  Schemas '[ a ] _ ->
-  p -> -- TODO: Make generic
+  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  Condition 'Ungrouped '[] '[] Schemas _ _ ->
+  Text -> -- TODO: Make generic
   m (Maybe Content)
 getBy condition parameter = do
-  result <- executeParams (selectContentBy (\t -> t & where_ condition)) parameter
+  result <- executeParams (selectContentBy (\t -> t & where_ condition)) (Only parameter)
   firstRow result
 
 getBy' ::
-  (MonadUnliftIO m, MonadPQ Schemas m, ToParam Schemas a p) =>
-  Condition 'Ungrouped '[] '[] Schemas '[ a ] _ ->
-  p ->
+  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext ] _ ->
+  Text ->
   m (Maybe Content)
 getBy' condition parameter = do
   mContent <- getBy condition parameter
@@ -176,17 +176,14 @@ incrNumViews =
 
 {- ORMOLU_DISABLE -}
 selectContentBy ::
-  (ToParam Schemas a p) =>
-  ( TableExpression 'Ungrouped '[] '[] Schemas '[ a ] _ ->
-    TableExpression 'Ungrouped '[] '[] Schemas '[ a ] _
+  ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
+    TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _
   ) ->
-  Statement Schemas p Content
-selectContentBy clauses = Query encode decode sql
+  Statement Schemas (Only Text) Content
+selectContentBy clauses = Query enc dec sql
   where
-  -- encode :: EncodeParams Schemas a p
-  encode :: EncodeParams Schemas a p
-  encode = genericParams -- TODO
-  decode = decodeContent
+  enc = genericParams
+  dec = decodeContent
   sql =
     select_
       ( #content ! #hash_id
