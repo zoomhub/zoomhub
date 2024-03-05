@@ -36,8 +36,10 @@ module ZoomHub.Storage.PostgreSQL
 where
 
 import Control.Monad (void)
+import Control.Monad.Catch (MonadMask)
 import Data.Int (Int64)
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
 import qualified Data.UUID.V4 as UUIDV4
@@ -145,24 +147,21 @@ getByURL' uri = getBy' ((#content ! #url) .== param @1) (unContentURI uri)
 
 -- Writes
 initialize ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentURI ->
   Text -> -- Email
   m (Maybe Content)
-initialize _uri _email = pure Nothing
-
--- initialize uri email = do
---   verificationToken <- show <$> liftIO UUIDV4.nextRandom
---   transactionally_ $ do
---     result <-
---       manipulateParams
---         insertContent
---         ( uri,
---           Just email,
---           Just verificationToken
---         )
---     mRow <- firstRow result
---     return $ contentRowToContent <$> mRow
+initialize uri email = do
+  verificationToken <- T.pack . show <$> liftIO UUIDV4.nextRandom
+  transactionally_ $ do
+    result <-
+      executeParams
+        insertContent
+        ( uri,
+          Just email,
+          Just verificationToken
+        )
+    firstRow result
 
 markAsActive ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>

@@ -55,7 +55,7 @@ import Squeal.PostgreSQL
     Query_,
     RowPG,
     Selection (Star),
-    Statement (Query),
+    Statement (Query, Manipulation),
     TableExpression,
     ToPG,
     UsingClause (Using),
@@ -183,7 +183,7 @@ selectContentBy ::
 selectContentBy clauses = Query enc dec sql
   where
   enc = genericParams
-  dec = decodeContent
+  dec = decodeContentWithImage
   sql =
     select_
       ( #content ! #hash_id
@@ -256,8 +256,29 @@ type ImageRowNull' =
 
 type ContentWithImageRow' = Join ContentRow' ImageRowNull'
 
-decodeContent :: DecodeRow ContentWithImageRow' Content
+decodeContent :: DecodeRow ContentRow' Content
 decodeContent = do
+  contentId <- #hash_id
+  contentType <- #type_id
+  contentURL <- #url
+  contentState <- #state
+  contentInitializedAt <- #initialized_at
+  contentActiveAt <- #active_at
+  contentCompletedAt <- #completed_at
+  contentMIME <- #mime
+  contentSize <- #size
+  contentProgress <- #progress
+  contentNumViews <- #num_views
+  contentError <- #error
+  contentSubmitterEmail <- #submitter_email
+  contentVerificationToken <- #verification_token
+  contentVerifiedAt <- #verified_at
+
+  let contentDZI = Nothing
+  return Content {..}
+
+decodeContentWithImage :: DecodeRow ContentWithImageRow' Content
+decodeContentWithImage = do
   contentId <- #hash_id
   contentType <- #type_id
   contentURL <- #url
@@ -451,60 +472,64 @@ instance SOP.Generic ContentRow
 instance SOP.HasDatatypeInfo ContentRow
 
 {- ORMOLU_DISABLE -}
-insertContent :: Manipulation_ Schemas (Text, Maybe Text, Maybe Text) ContentRow
-insertContent =
-  insertInto
-    #content
-    ( Values_
-        ( Default `as` #id
-            :* Set "$placeholder-overwritten-by-trigger$" `as` #hash_id
-            :* Default `as` #type_id
-            :* Set (param @1) `as` #url
-            :* Default `as` #state
-            :* Default `as` #initialized_at
-            :* Default `as` #active_at
-            :* Default `as` #completed_at
-            :* Default `as` #title
-            :* Default `as` #attribution_text
-            :* Default `as` #attribution_link
-            :* Default `as` #mime
-            :* Default `as` #size
-            :* Default `as` #error
-            :* Default `as` #progress
-            :* Default `as` #abuse_level_id
-            :* Default `as` #num_abuse_reports
-            :* Default `as` #num_views
-            :* Set (inline Content.version) `as` #version
-            :* Set (param @2) `as` #submitter_email
-            :* Set (param @3) `as` #verification_token
-            :* Default `as` #verified_at
-        )
-    )
-    OnConflictDoRaise
-    ( Returning_
-        ( #hash_id `as` #crHashId
-            :* #type_id `as` #crTypeId
-            :* #url `as` #crURL
-            :* #state `as` #crState
-            :* #initialized_at `as` #crInitializedAt
-            :* #active_at `as` #crActiveAt
-            :* #completed_at `as` #crCompletedAt
-            :* #title `as` #crTitle
-            :* #attribution_text `as` #crAttributionText
-            :* #attribution_link `as` #crAttributionLink
-            :* #mime `as` #crMIME
-            :* #size `as` #crSize
-            :* #error `as` #crError
-            :* #progress `as` #crProgress
-            :* #abuse_level_id `as` #crAbuseLevelId
-            :* #num_abuse_reports `as` #crNumAbuseReports
-            :* #num_views `as` #crNumViews
-            :* #version `as` #crVersion
-            :* #submitter_email `as` #crSubmitterEmail
-            :* #verification_token `as` #crVerificationToken
-            :* #verified_at `as` #crVerifiedAt
-        )
-    )
+insertContent :: Statement Schemas (ContentURI, Maybe Text, Maybe Text) Content
+insertContent = Manipulation encode decode sql
+  where
+  encode = genericParams
+  decode = decodeContent
+  sql =
+    insertInto
+      #content
+      ( Values_
+          ( Default `as` #id
+              :* Set "$placeholder-overwritten-by-trigger$" `as` #hash_id
+              :* Default `as` #type_id
+              :* Set (param @1) `as` #url
+              :* Default `as` #state
+              :* Default `as` #initialized_at
+              :* Default `as` #active_at
+              :* Default `as` #completed_at
+              :* Default `as` #title
+              :* Default `as` #attribution_text
+              :* Default `as` #attribution_link
+              :* Default `as` #mime
+              :* Default `as` #size
+              :* Default `as` #error
+              :* Default `as` #progress
+              :* Default `as` #abuse_level_id
+              :* Default `as` #num_abuse_reports
+              :* Default `as` #num_views
+              :* Set (inline Content.version) `as` #version
+              :* Set (param @2) `as` #submitter_email
+              :* Set (param @3) `as` #verification_token
+              :* Default `as` #verified_at
+          )
+      )
+      OnConflictDoRaise
+      ( Returning_
+          ( #hash_id
+              :* #type_id
+              :* #url
+              :* #state
+              :* #initialized_at
+              :* #active_at
+              :* #completed_at
+              :* #title
+              :* #attribution_text
+              :* #attribution_link
+              :* #mime
+              :* #size
+              :* #error
+              :* #progress
+              :* #abuse_level_id
+              :* #num_abuse_reports
+              :* #num_views
+              :* #version
+              :* #submitter_email
+              :* #verification_token
+              :* #verified_at
+          )
+      )
 {- ORMOLU_ENABLE -}
 
 markContentAsActive :: Manipulation_ Schemas (Only Text) ContentRow
