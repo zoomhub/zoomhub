@@ -17,7 +17,6 @@ module ZoomHub.Storage.PostgreSQL
     getById,
     getByURL,
     getNextUnprocessed,
-    getExpiredActive,
 
     -- ** Read operations (with view tracking)
     getById',
@@ -136,29 +135,6 @@ getNextUnprocessed = do
       (Only (Initialized & ContentState.toText))
   firstRow result
 {- ORMOLU_ENABLE -}
-
-getExpiredActive ::
-  (MonadUnliftIO m, MonadPQ Schemas m, TimeUnit t) => t -> m [Content]
-getExpiredActive _ttl = pure []
-
--- getExpiredActive ttl = do
---   currentTime <- liftIO getCurrentTime
---   let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
---   result <-
---     runQueryParams
---       ( selectContentBy
---           ( \table ->
---               table
---                 & where_
---                   ( ((#content ! #active_at) .< param @1)
---                       .&& ((#content ! #state) .== literal Active)
---                   )
---                 & orderBy [#content ! #active_at & DescNullsLast]
---           )
---       )
---       (Only earliestAllowed)
---   contentRows <- getRows result
---   return $ contentImageRowToContent <$> contentRows
 
 -- Reads/writes
 getById' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
