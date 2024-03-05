@@ -129,13 +129,11 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
     (fromIntegral maxResourcesPerStripe)
 
 -- Reads: Content
--- getBy ::
---   params ~ '[ 'NotNull 'PGtext ] =>
---   (MonadUnliftIO m, MonadPQ Schemas m) =>
---   Condition 'Ungrouped '[] '[] Schemas _ _ ->
---   params ->
---   m (Maybe Content)
-getBy :: (MonadUnliftIO m, MonadPQ Schemas m) => _ -> Text -> m (Maybe Content)
+getBy ::
+  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  Condition 'Ungrouped '[] '[] Schemas _ _ ->
+  Text -> -- TODO: Make generic
+  m (Maybe Content)
 getBy condition parameter = do
   result <- executeParams (selectContentBy (\t -> t & where_ condition)) (Only parameter)
   firstRow result
