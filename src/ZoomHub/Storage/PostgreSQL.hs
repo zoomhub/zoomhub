@@ -164,14 +164,10 @@ getExpiredActive _ttl = pure []
 
 -- Reads/writes
 getById' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
-getById' _id = pure Nothing
-
--- getById' = getBy' ((#content ! #hash_id) .== param @1)
+getById' id_ = getBy' ((#content ! #hash_id) .== param @1) (ContentId.toText id_)
 
 getByURL' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
-getByURL' _uri = pure Nothing
-
--- getByURL' = getBy' ((#content ! #url) .== param @1)
+getByURL' uri = getBy' ((#content ! #url) .== param @1) (unContentURI uri)
 
 -- Writes
 initialize ::

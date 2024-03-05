@@ -142,53 +142,51 @@ getBy condition parameter = do
 
 getBy' ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>
-  Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
+  Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext ] _ ->
   Text ->
   m (Maybe Content)
-getBy' _condition _parameter = pure Nothing
-
--- getBy' condition parameter = do
---   mContent <- getBy condition parameter
---   case mContent of
---     Just content -> do
---       -- Sample how often we count views to reduce database load:
---       -- http://stackoverflow.com/a/4762559/125305
---       let cId = contentId content
---       let numViews = contentNumViews content
---       let numViewsSampleRate = sampleRate numViews
---       numViewsSample <- liftIO $ randomRIO (1, numViewsSampleRate)
---       when (numViewsSample == 1) $
---         -- TODO: How can we run this async?
---         manipulateParams_ incrNumViews (numViewsSampleRate, cId)
---       return $ Just content
---     Nothing ->
---       return Nothing
---   where
---     sampleRate :: Int64 -> Int64
---     sampleRate numViews
---       | numViews < 100 = 1
---       | numViews < 1000 = 10
---       | numViews < 10000 = 100
---       | otherwise = 1000
+getBy' condition parameter = do
+  mContent <- getBy condition parameter
+  case mContent of
+    Just content -> do
+      -- Sample how often we count views to reduce database load:
+      -- http://stackoverflow.com/a/4762559/125305
+      let cId = contentId content
+          numViews = contentNumViews content
+          numViewsSampleRate = sampleRate numViews
+      numViewsSample <- liftIO $ randomRIO (1, numViewsSampleRate)
+      when (numViewsSample == 1) $
+        -- TODO: How can we run this async?
+        manipulateParams_ incrNumViews (numViewsSampleRate, cId)
+      return $ Just content
+    Nothing ->
+      return Nothing
+  where
+    sampleRate :: Int64 -> Int64
+    sampleRate numViews
+      | numViews < 100 = 1
+      | numViews < 1000 = 10
+      | numViews < 10000 = 100
+      | otherwise = 1000
 
 incrNumViews :: Manipulation_ Schemas (Int64, Text) ()
-incrNumViews = undefined
-
--- incrNumViews =
---   update_
---     #content
---     (Set (#num_views + param @1) `as` #num_views)
---     (#hash_id .== param @2)
+incrNumViews =
+  update_
+    #content
+    (Set (#num_views + param @1) `as` #num_views)
+    (#hash_id .== param @2)
 
 {- ORMOLU_DISABLE -}
 -- selectContentBy ::
---   ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _ ->
---     TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull a] _
---   ) ->
+
 --   Query '[] '[] Schemas '[ 'NotNull a] (RowPG ContentImageRow)
 
 
-selectContentBy :: _ -> Statement Schemas (Only Text) Content
+selectContentBy ::
+  ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
+    TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _
+  ) ->
+  Statement Schemas (Only Text) Content
 selectContentBy clauses = Query enc dec sql
   where
   enc = genericParams
