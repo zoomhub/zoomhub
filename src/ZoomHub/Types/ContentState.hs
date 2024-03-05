@@ -9,6 +9,8 @@ module ZoomHub.Types.ContentState
   ( ContentState (..),
     fromString,
     isCompleted,
+    -- TODO: Remove this after making `selectContentBy` generic
+    toText,
   )
 where
 

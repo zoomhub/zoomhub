@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
@@ -12,7 +13,7 @@ where
 
 import Data.Binary (Word64)
 import Squeal.PostgreSQL
-  ( MonadPQ,
+  ( MonadPQ (executeParams),
     Only (Only),
     SortExpression (Desc),
     getRows,
@@ -27,28 +28,23 @@ import Squeal.PostgreSQL
   )
 import UnliftIO (MonadUnliftIO)
 import ZoomHub.Storage.PostgreSQL.Internal
-  ( contentImageRowToContent,
-    selectContentBy,
+  ( selectContentBy,
   )
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content (..))
-import ZoomHub.Types.ContentState (ContentState (Active))
 
 getRecent :: (MonadUnliftIO m, MonadPQ Schemas m) => Word64 -> m [Content]
-getRecent _numItems = pure []
-
--- getRecent numItems = do
---   result <-
---     runQueryParams
---       ( selectContentBy
---           ( \table ->
---               table
---                 & where_ ((#content ! #state) ./= param @1) -- TODO: Remove dummy clause
---                 & orderBy [#content ! #initialized_at & Desc]
---                 & limit numItems
---           )
---       )
---       (Only Active)
-
---   contentRows <- getRows result
---   return $ contentImageRowToContent <$> contentRows
+getRecent numItems = do
+  result <-
+    executeParams
+      ( selectContentBy
+          ( \table ->
+              table
+                -- TODO: Remove dummy clause required to pass in parameter
+                & where_ ((#content ! #hash_id) ./= param @1)
+                & orderBy [#content ! #initialized_at & Desc]
+                & limit numItems
+          )
+      )
+      (Only "1")
+  getRows result

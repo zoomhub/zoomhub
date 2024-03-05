@@ -43,7 +43,7 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
-  ( MonadPQ,
+  ( MonadPQ (executeParams),
     Only (Only),
     SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
@@ -74,7 +74,6 @@ import ZoomHub.Storage.PostgreSQL.ConnectInfo
   )
 import ZoomHub.Storage.PostgreSQL.Internal
   ( Connection,
-    contentImageRowToContent,
     contentRowToContent,
     createConnectionPool,
     deleteImage,
@@ -97,6 +96,7 @@ import ZoomHub.Types.ContentId (ContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentMIME (ContentMIME)
 import ZoomHub.Types.ContentState (ContentState (Active, Initialized))
+import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI (..))
 import qualified ZoomHub.Types.ContentURI as ContentURI
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
@@ -113,31 +113,28 @@ getById id_ = getBy ((#content ! #hash_id) .== param @1) (ContentId.toText id_)
 getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
 getByURL uri = getBy ((#content ! #url) .== param @1) (unContentURI uri)
 
+{- ORMOLU_DISABLE -}
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
-getNextUnprocessed = pure Nothing
-
--- getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
--- getNextUnprocessed = do
---   result <-
---     runQueryParams
---       ( selectContentBy $
---           \table ->
---             table
---               & where_
---                 ( (#content ! #state) .== param @1
---                     .&& ( #content ! #version .>= 5
---                             .&& isNotNull (#content ! #verified_at)
---                         )
---                 )
---               & orderBy
---                 [ #content ! #initialized_at & Asc,
---                   #content ! #num_views & Desc
---                 ]
---               & limit 1
---       )
---       (Only Initialized)
---   contentRow <- firstRow result
---   pure (contentImageRowToContent <$> contentRow)
+getNextUnprocessed = do
+  result <- executeParams
+      ( selectContentBy $
+          \table ->
+            table
+              & where_
+                ( (#content ! #state) .== param @1
+                  .&& ( #content ! #version .>= 5
+                        .&& isNotNull (#content ! #verified_at)
+                      )
+                )
+              & orderBy
+                [ #content ! #initialized_at & Asc,
+                  #content ! #num_views & Desc
+                ]
+              & limit 1
+      )
+      (Only (Initialized & ContentState.toText))
+  firstRow result
+{- ORMOLU_ENABLE -}
 
 getExpiredActive ::
   (MonadUnliftIO m, MonadPQ Schemas m, TimeUnit t) => t -> m [Content]
