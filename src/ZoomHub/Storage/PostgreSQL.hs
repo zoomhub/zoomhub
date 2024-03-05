@@ -132,6 +132,7 @@ getNextUnprocessed = do
                 ]
               & limit 1
       )
+      -- TODO: Remove text conversion once `selectContentBy` is generic:
       (Only (Initialized & ContentState.toText))
   firstRow result
 {- ORMOLU_ENABLE -}
