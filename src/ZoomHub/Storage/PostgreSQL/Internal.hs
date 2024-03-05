@@ -186,33 +186,33 @@ selectContentBy clauses = Query enc dec sql
   dec = decodeContent
   sql =
     select_
-      ( #content ! #hash_id -- `as` #cirHashId
-          :* #content ! #type_id -- `as` #cirTypeId
-          :* #content ! #url -- `as` #cirURL
-          :* #content ! #state -- `as` #cirState
-          :* #content ! #initialized_at -- `as` #cirInitializedAt
-          :* #content ! #active_at -- `as` #cirActiveAt
-          :* #content ! #completed_at -- `as` #cirCompletedAt
-          :* #content ! #title -- `as` #cirTitle
-          :* #content ! #attribution_text -- `as` #cirAttributionText
-          :* #content ! #attribution_link -- `as` #cirAttributionLink
-          :* #content ! #mime -- `as` #cirMIME
-          :* #content ! #size -- `as` #cirSize
-          :* #content ! #error -- `as` #cirError
-          :* #content ! #progress -- `as` #cirProgress
-          :* #content ! #abuse_level_id -- `as` #cirAbuseLevelId
-          :* #content ! #num_abuse_reports -- `as` #cirNumAbuseReports
-          :* #content ! #num_views -- `as` #cirNumViews
-          :* #content ! #version -- `as` #cirVersion
-          :* #content ! #submitter_email -- `as` #cirSubmitterEmail
-          :* #content ! #verification_token -- `as` #cirVerificationToken
-          :* #content ! #verified_at -- `as` #cirVerifiedAt
+      ( #content ! #hash_id
+          :* #content ! #type_id
+          :* #content ! #url
+          :* #content ! #state
+          :* #content ! #initialized_at
+          :* #content ! #active_at
+          :* #content ! #completed_at
+          :* #content ! #title
+          :* #content ! #attribution_text
+          :* #content ! #attribution_link
+          :* #content ! #mime
+          :* #content ! #size
+          :* #content ! #error
+          :* #content ! #progress
+          :* #content ! #abuse_level_id
+          :* #content ! #num_abuse_reports
+          :* #content ! #num_views
+          :* #content ! #version
+          :* #content ! #submitter_email
+          :* #content ! #verification_token
+          :* #content ! #verified_at
 
-          :* #image ! #width -- `as` #cirWidth
-          :* #image ! #height -- `as` #cirHeight
-          :* #image ! #tile_size -- `as` #cirTileSize
-          :* #image ! #tile_overlap -- `as` #cirTileOverlap
-          :* #image ! #tile_format -- `as` #cirTileFormat
+          :* #image ! #width
+          :* #image ! #height
+          :* #image ! #tile_size
+          :* #image ! #tile_overlap
+          :* #image ! #tile_format
       )
       ( from
           ( table #content
@@ -322,52 +322,17 @@ selectImageBy condition = Query enc dec sql
       {- ORMOLU_ENABLE -}
 
 -- Writes: Image
-createImage :: (MonadBaseControl IO m, MonadPQ db m) => Int64 -> UTCTime -> DeepZoomImage -> m Int64
+createImage ::
+  (MonadBaseControl IO m, MonadPQ db m) =>
+  Int64 ->
+  UTCTime ->
+  DeepZoomImage ->
+  m Int64
 createImage _cid _initializedAt _image = pure 0
-
 -- createImage cid initializedAt image = do
 --   let imageRow = imageToRow cid image initializedAt
 --   result <- manipulateParams insertImage imageRow
 --   fmap fromOnly . getRow 0 $ result
-
--- TODO: How can we avoid this duplication between `ContentRow`,
--- `ContentImageRow`, and `ImageRow`?
--- TODO: Look into Squeal’s `Join`.
-data ContentImageRow = ContentImageRow
-  { -- content
-    cirHashId :: ContentId,
-    cirTypeId :: ContentType,
-    cirURL :: ContentURI,
-    cirState :: ContentState,
-    cirInitializedAt :: UTCTime,
-    cirActiveAt :: Maybe UTCTime,
-    cirCompletedAt :: Maybe UTCTime,
-    cirTitle :: Maybe Text,
-    cirAttributionText :: Maybe Text,
-    cirAttributionLink :: Maybe Text,
-    cirMIME :: Maybe ContentMIME,
-    cirSize :: Maybe Int64,
-    cirError :: Maybe Text,
-    cirProgress :: Double,
-    cirAbuseLevelId :: Int32,
-    cirNumAbuseReports :: Int64,
-    cirNumViews :: Int64,
-    cirVersion :: Int32,
-    cirSubmitterEmail :: Maybe Text, -- TODO: Introduce `Email` type
-    cirVerificationToken :: Maybe VerificationToken,
-    cirVerifiedAt :: Maybe UTCTime,
-    -- image
-    cirWidth :: Maybe Int64,
-    cirHeight :: Maybe Int64,
-    cirTileSize :: Maybe TileSize,
-    cirTileOverlap :: Maybe TileOverlap,
-    cirTileFormat :: Maybe TileFormat
-  }
-  deriving (Show, GHC.Generic)
-
-instance SOP.Generic ContentImageRow
-
-instance SOP.HasDatatypeInfo ContentImageRow
 
 data ImageRow = ImageRow
   { irCreatedAt :: UTCTime,
@@ -433,34 +398,6 @@ decodeImage = do
 --       tileOverlap
 --       tileFormat
 
-contentImageRowToContent :: ContentImageRow -> Content
-contentImageRowToContent cr =
-  Content
-    { contentId = cirHashId cr,
-      contentType = cirTypeId cr,
-      contentURL = cirURL cr,
-      contentState = cirState cr,
-      contentInitializedAt = cirInitializedAt cr,
-      contentActiveAt = cirActiveAt cr,
-      contentCompletedAt = cirCompletedAt cr,
-      contentMIME = cirMIME cr,
-      contentSize = fromIntegral <$> cirSize cr,
-      contentProgress = cirProgress cr,
-      contentNumViews = fromIntegral (cirNumViews cr),
-      contentError = cirError cr,
-      contentDZI = mDZI,
-      contentSubmitterEmail = cirSubmitterEmail cr,
-      contentVerificationToken = cirVerificationToken cr,
-      contentVerifiedAt = cirVerifiedAt cr
-    }
-  where
-    mDZI =
-      mkDeepZoomImage
-        <$> (fromIntegral <$> cirWidth cr)
-        <*> (fromIntegral <$> cirHeight cr)
-        <*> cirTileSize cr
-        <*> cirTileOverlap cr
-        <*> cirTileFormat cr
 
 
 contentRowToContent :: ContentRow -> Content
