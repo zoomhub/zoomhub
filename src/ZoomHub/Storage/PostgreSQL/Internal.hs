@@ -175,11 +175,6 @@ incrNumViews =
     (#hash_id .== param @2)
 
 {- ORMOLU_DISABLE -}
--- selectContentBy ::
-
---   Query '[] '[] Schemas '[ 'NotNull a] (RowPG ContentImageRow)
-
-
 selectContentBy ::
   ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
     TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _
