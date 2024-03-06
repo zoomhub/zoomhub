@@ -20,7 +20,6 @@ import Data.Time.Units (Second)
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
-import Squeal.PostgreSQL.Session.Pool (usingConnectionPool)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
