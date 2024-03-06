@@ -192,7 +192,7 @@ spec :: Spec
 spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
   describe "RESTful" do
     describe "Upload (GET /v1/content/upload)" do
-      it "should return  503" $
+      it "should return 503" $
         get "/v1/content/upload" `shouldRespondWith` noNewContent
 
     describe "List (GET /v1/content)" do
