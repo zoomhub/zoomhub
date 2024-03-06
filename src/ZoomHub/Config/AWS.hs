@@ -26,7 +26,6 @@ data Config = Config
 fromEnv :: AWS.Region -> IO (Maybe Config)
 fromEnv region = do
   env <- getEnvironment
-  -- TODO: Refactor to use named instead of positional arguments:
   return $ do
     accessKey <- AWS.AccessKey . encodeUtf8 . T.pack <$> lookup "AWS_ACCESS_KEY_ID" env
     secretKey <- AWS.SecretKey . encodeUtf8 . T.pack <$> lookup "AWS_SECRET_ACCESS_KEY" env
