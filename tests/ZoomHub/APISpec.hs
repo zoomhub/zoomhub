@@ -265,8 +265,8 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             matchHeaders = [plainTextUTF8]
           }
     it "should verify content" do
-      maybeContent <- liftIO $ usingConnectionPool (Config.dbConnPool config) (getById newContentId)
-      let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
+      mContent <- liftIO $ usingConnectionPool (Config.dbConnPool config) (getById newContentId)
+      let verificationToken = fromJust $ mContent >>= contentVerificationToken
       put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
         `shouldRespondWith` restRedirect newContentId
 
@@ -297,13 +297,13 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             "/v1/content/X75/completion"
             authorizedUser
             [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
-            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
+            `shouldRespondWith` [r|{"dzi":{"height":789,"tileFormat":"jpg","tileOverlap":1,"tileSize":254,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456},"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","failed":false,"id":"X75","progress":1,"ready":true,"shareUrl":"http://localhost:8000/X75","url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":false}|]
         it "should accept failure" $
           authPutJSON
             "/v1/content/yQ4/completion"
             authorizedUser
             [r|{"type": "failure", "error": "FAIL!"}|]
-            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
+            `shouldRespondWith` [r|{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","failed":true,"id":"yQ4","progress":1,"ready":false,"shareUrl":"http://localhost:8000/yQ4","url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false}|]
 
     describe "Admin: Reset content by ID (PUT /v1/content/:id/reset)" do
       context "without auth" do
@@ -328,7 +328,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           authPutJSON "/v1/content/X75/reset" authorizedUser ""
             `shouldRespondWith` restRedirect (unsafeContentId "X75")
           get "/v1/content/X75"
-            `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":false,"failed":false}|]
+            `shouldRespondWith` [r|{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","failed":false,"id":"X75","progress":0,"ready":false,"shareUrl":"http://localhost:8000/X75","url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true}|]
               { matchStatus = 200,
                 matchHeaders = [applicationJSON]
               }
@@ -346,14 +346,14 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "GET /v1/content?url=…&callback=…" do
       it "should accept `callback` query parameter" $
         get "/v1/content?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"status":400,"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","statusText":"Bad Request","redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","redirectLocation":null,"status":400,"statusText":"Bad Request"});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
     describe "GET /v1/content/:id?callback=…" do
       it "should accept `callback` query parameter" do
         get "/v1/content/yQ4?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"content":{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","failed":true,"id":"yQ4","progress":1,"ready":false,"shareUrl":"http://localhost:8000/yQ4","url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false},"redirectLocation":null,"status":200,"statusText":"OK"});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
@@ -385,8 +385,8 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content/yQ4" `shouldRespondWith` 200
         liftIO do
           let pool = Config.dbConnPool config
-          maybeContent <- usingConnectionPool pool (getById $ unsafeContentId "yQ4")
-          let numViews = maybe 0 contentNumViews maybeContent
+          mContent <- usingConnectionPool pool (getById $ unsafeContentId "yQ4")
+          let numViews = maybe 0 contentNumViews mContent
           numViews `shouldBe` 5
   where
     authPutJSON path user = putJSON' path [(hAuthorization, toBasicAuthHeader user)]

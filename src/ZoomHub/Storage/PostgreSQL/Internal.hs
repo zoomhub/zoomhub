@@ -14,8 +14,8 @@
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
-{-# HLINT ignore "Use <$>" #-}
 
+{-# HLINT ignore "Use <$>" #-}
 
 module ZoomHub.Storage.PostgreSQL.Internal
   ( module ZoomHub.Storage.PostgreSQL.Internal,
@@ -25,7 +25,7 @@ module ZoomHub.Storage.PostgreSQL.Internal
 where
 
 import Control.Monad (when)
-import Control.Monad.Trans.Control (MonadBaseControl)
+import Control.Monad.Catch (MonadMask)
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime, UTCTime)
@@ -34,35 +34,27 @@ import Database.PostgreSQL.Simple (ConnectInfo (..))
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Generics.SOP.BasicFunctors (K)
-
-import Control.Monad.Catch (MonadMask)
 import Squeal.PostgreSQL
-  ( (.*),
-    (*.),
-    Condition,
+  ( Condition,
     ConflictClause (OnConflictDoRaise),
     DecodeRow,
+    EncodeParams,
     GenericParams (genericParams),
     GenericRow (genericRow),
     Grouping (Ungrouped),
+    Join,
     Manipulation_,
-    MonadPQ (execute, executeParams),
-    MonadResult (getRows),
+    MonadPQ (executeParams),
     NP (Nil, (:*)),
     NullType (NotNull, Null),
     Only (..),
     Optional (Default, Set),
-    PGType (PGint4, PGint8, PGtext, PGtimestamptz, PGfloat8),
+    PGType (PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
     PQ,
-    Query,
     QueryClause (Subquery),
-    Query_,
-    RowPG,
-    Selection (Star),
-    Statement (Query, Manipulation),
+    Statement (Manipulation, Query),
     TableExpression,
-    ToPG,
-    UsingClause (Using, NoUsing),
+    UsingClause (NoUsing, Using),
     as,
     currentTimestamp,
     deleteFrom,
@@ -72,13 +64,9 @@ import Squeal.PostgreSQL
     insertInto,
     insertInto_,
     leftOuterJoin,
-    manipulateParams,
     manipulateParams_,
     null_,
     param,
-    query,
-    runQueryParams,
-    select,
     select_,
     table,
     transactionally_,
@@ -87,11 +75,11 @@ import Squeal.PostgreSQL
     where_,
     (!),
     (&),
+    (*.),
     (.&&),
+    (.*),
     (.==),
     (:::),
-    appendRows,
-    Join, EncodeParams,
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
@@ -144,7 +132,7 @@ getBy condition parameter = do
 
 getBy' ::
   (MonadUnliftIO m, MonadPQ Schemas m) =>
-  Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext ] _ ->
+  Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
   Text ->
   m (Maybe Content)
 getBy' condition parameter = do
@@ -360,25 +348,22 @@ selectImageBy condition = Query enc dec sql
     enc = genericParams
     dec = decodeImage
     sql =
-      {- ORMOLU_DISABLE -}
       select_
-        (    #image ! #width
-          :* #image ! #height
-          :* #image ! #tile_size
-          :* #image ! #tile_overlap
-          :* #image ! #tile_format
+        ( (#image ! #width)
+            :* (#image ! #height)
+            :* (#image ! #tile_size)
+            :* (#image ! #tile_overlap)
+            :* (#image ! #tile_format)
         )
         (from (table #image) & where_ condition)
-      {- ORMOLU_ENABLE -}
 
--- Writes: Image
-createImage ::
-  (MonadBaseControl IO m, MonadPQ db m) =>
-  Int64 ->
-  UTCTime ->
-  DeepZoomImage ->
-  m Int64
-createImage _cid _initializedAt _image = pure 0
+-- -- Writes: Image
+-- createImage ::
+--   (MonadBaseControl IO m, MonadPQ db m) =>
+--   Int64 ->
+--   UTCTime ->
+--   DeepZoomImage ->
+--   m Int64
 -- createImage cid initializedAt image = do
 --   let imageRow = imageToRow cid image initializedAt
 --   result <- manipulateParams insertImage imageRow
@@ -402,12 +387,12 @@ instance SOP.HasDatatypeInfo ImageRow
 -- https://github.com/morphismtech/squeal/blob/0.9.1.3/RELEASE%20NOTES.md#:~:text=do%20custom%20encodings%20and%20decodings
 
 type ImageRow' =
-    '[ "width" ::: 'NotNull 'PGint8,
-       "height" ::: 'NotNull 'PGint8,
-       "tile_size" ::: 'NotNull 'PGint4,
-       "tile_overlap" ::: 'NotNull 'PGint4,
-       "tile_format" ::: 'NotNull 'PGtext
-     ]
+  '[ "width" ::: 'NotNull 'PGint8,
+     "height" ::: 'NotNull 'PGint8,
+     "tile_size" ::: 'NotNull 'PGint4,
+     "tile_overlap" ::: 'NotNull 'PGint4,
+     "tile_format" ::: 'NotNull 'PGtext
+   ]
 
 decodeImage :: DecodeRow ImageRow' DeepZoomImage
 decodeImage = do
@@ -423,53 +408,6 @@ decodeImage = do
       tileSize
       tileOverlap
       tileFormat
-
--- -- TODO: How to combine this with the above?
--- type ImageRowNull' =
---     '[ "width" ::: 'Null 'PGint8,
---        "height" ::: 'Null 'PGint8,
---        "tile_size" ::: 'Null 'PGint4,
---        "tile_overlap" ::: 'Null 'PGint4,
---        "tile_format" ::: 'Null 'PGtext
---      ]
-
--- decodeImage' :: DecodeRow ImageRowNull' (Maybe DeepZoomImage)
--- decodeImage' = runMaybeT $ do
---   width <- #width
---   height <- #height
---   tileSize <- #tile_size
---   tileOverlap <- #tile_overlap
---   tileFormat <- #tile_format
---   return $
---     mkDeepZoomImage
---       (fromIntegral (width :: Int64))
---       (fromIntegral (height :: Int64))
---       tileSize
---       tileOverlap
---       tileFormat
-
-
-
-contentRowToContent :: ContentRow -> Content
-contentRowToContent result =
-  Content
-    { contentId = crHashId result,
-      contentType = crTypeId result,
-      contentURL = crURL result,
-      contentState = crState result,
-      contentInitializedAt = crInitializedAt result,
-      contentActiveAt = crActiveAt result,
-      contentCompletedAt = crCompletedAt result,
-      contentMIME = crMIME result,
-      contentSize = crSize result,
-      contentProgress = crProgress result,
-      contentNumViews = crNumViews result,
-      contentError = crError result,
-      contentDZI = Nothing,
-      contentSubmitterEmail = crSubmitterEmail result,
-      contentVerificationToken = crVerificationToken result,
-      contentVerifiedAt = crVerifiedAt result
-    }
 
 data ContentRow = ContentRow
   { crHashId :: ContentId, --  1
@@ -500,156 +438,157 @@ instance SOP.Generic ContentRow
 
 instance SOP.HasDatatypeInfo ContentRow
 
-{- ORMOLU_DISABLE -}
 insertContent :: Statement Schemas (ContentURI, Maybe Text, Maybe Text) Content
 insertContent = Manipulation encode decode sql
   where
-  encode = genericParams
-  decode = decodeContent
-  sql =
-    insertInto
-      #content
-      ( Values_
-          ( Default `as` #id
-              :* Set "$placeholder-overwritten-by-trigger$" `as` #hash_id
-              :* Default `as` #type_id
-              :* Set (param @1) `as` #url
-              :* Default `as` #state
-              :* Default `as` #initialized_at
-              :* Default `as` #active_at
-              :* Default `as` #completed_at
-              :* Default `as` #title
-              :* Default `as` #attribution_text
-              :* Default `as` #attribution_link
-              :* Default `as` #mime
-              :* Default `as` #size
-              :* Default `as` #error
-              :* Default `as` #progress
-              :* Default `as` #abuse_level_id
-              :* Default `as` #num_abuse_reports
-              :* Default `as` #num_views
-              :* Set (inline Content.version) `as` #version
-              :* Set (param @2) `as` #submitter_email
-              :* Set (param @3) `as` #verification_token
-              :* Default `as` #verified_at
-          )
-      )
-      OnConflictDoRaise
-      ( Returning_
-          ( #hash_id
-              :* #type_id
-              :* #url
-              :* #state
-              :* #initialized_at
-              :* #active_at
-              :* #completed_at
-              :* #title
-              :* #attribution_text
-              :* #attribution_link
-              :* #mime
-              :* #size
-              :* #error
-              :* #progress
-              :* #abuse_level_id
-              :* #num_abuse_reports
-              :* #num_views
-              :* #version
-              :* #submitter_email
-              :* #verification_token
-              :* #verified_at
-          )
-      )
+    encode = genericParams
+    decode = decodeContent
+    sql =
+      insertInto
+        #content
+        ( Values_
+            ( (Default `as` #id)
+                :* (Set "$placeholder-overwritten-by-trigger$" `as` #hash_id)
+                :* (Default `as` #type_id)
+                :* (Set (param @1) `as` #url)
+                :* (Default `as` #state)
+                :* (Default `as` #initialized_at)
+                :* (Default `as` #active_at)
+                :* (Default `as` #completed_at)
+                :* (Default `as` #title)
+                :* (Default `as` #attribution_text)
+                :* (Default `as` #attribution_link)
+                :* (Default `as` #mime)
+                :* (Default `as` #size)
+                :* (Default `as` #error)
+                :* (Default `as` #progress)
+                :* (Default `as` #abuse_level_id)
+                :* (Default `as` #num_abuse_reports)
+                :* (Default `as` #num_views)
+                :* (Set (inline Content.version) `as` #version)
+                :* (Set (param @2) `as` #submitter_email)
+                :* (Set (param @3) `as` #verification_token)
+                :* (Default `as` #verified_at)
+            )
+        )
+        OnConflictDoRaise
+        ( Returning_
+            ( #hash_id
+                :* #type_id
+                :* #url
+                :* #state
+                :* #initialized_at
+                :* #active_at
+                :* #completed_at
+                :* #title
+                :* #attribution_text
+                :* #attribution_link
+                :* #mime
+                :* #size
+                :* #error
+                :* #progress
+                :* #abuse_level_id
+                :* #num_abuse_reports
+                :* #num_views
+                :* #version
+                :* #submitter_email
+                :* #verification_token
+                :* #verified_at
+            )
+        )
 
 markContentAsActive :: Statement Schemas (Only ContentId) Content
 markContentAsActive = Manipulation encode decode sql
   where
     encode = genericParams
     decode = decodeContent
-    sql = update
-      #content
-      ( Set (inline Unknown) `as` #type_id
-          :* Set (inline Active) `as` #state
-          :* Set currentTimestamp `as` #active_at
-          :* Set null_ `as` #completed_at
-          :* Set null_ `as` #title
-          :* Set null_ `as` #attribution_text
-          :* Set null_ `as` #attribution_link
-          :* Set null_ `as` #mime
-          :* Set null_ `as` #size
-          :* Set null_ `as` #error
-          :* Set 0.0 `as` #progress
-      )
-      NoUsing
-      (#hash_id .== param @1)
-      ( Returning_
-          ( #hash_id
-            :* #type_id
-            :* #url
-            :* #state
-            :* #initialized_at
-            :* #active_at
-            :* #completed_at
-            :* #title
-            :* #attribution_text
-            :* #attribution_link
-            :* #mime
-            :* #size
-            :* #error
-            :* #progress
-            :* #abuse_level_id
-            :* #num_abuse_reports
-            :* #num_views
-            :* #version
-            :* #submitter_email
-            :* #verification_token
-            :* #verified_at
-          )
-      )
+    sql =
+      update
+        #content
+        ( (Set (inline Unknown) `as` #type_id)
+            :* (Set (inline Active) `as` #state)
+            :* (Set currentTimestamp `as` #active_at)
+            :* (Set null_ `as` #completed_at)
+            :* (Set null_ `as` #title)
+            :* (Set null_ `as` #attribution_text)
+            :* (Set null_ `as` #attribution_link)
+            :* (Set null_ `as` #mime)
+            :* (Set null_ `as` #size)
+            :* (Set null_ `as` #error)
+            :* (Set 0.0 `as` #progress)
+        )
+        NoUsing
+        (#hash_id .== param @1)
+        ( Returning_
+            ( #hash_id
+                :* #type_id
+                :* #url
+                :* #state
+                :* #initialized_at
+                :* #active_at
+                :* #completed_at
+                :* #title
+                :* #attribution_text
+                :* #attribution_link
+                :* #mime
+                :* #size
+                :* #error
+                :* #progress
+                :* #abuse_level_id
+                :* #num_abuse_reports
+                :* #num_views
+                :* #version
+                :* #submitter_email
+                :* #verification_token
+                :* #verified_at
+            )
+        )
 
 markContentAsFailure :: Statement Schemas (ContentId, Maybe Text) Content
 markContentAsFailure = Manipulation encode decode sql
   where
     encode = genericParams
     decode = decodeContent
-    sql = update
-      #content
-      ( Set (inline Unknown) `as` #type_id
-          :* Set (inline CompletedFailure) `as` #state
-          :* Set currentTimestamp `as` #completed_at
-          :* Set null_ `as` #title
-          :* Set null_ `as` #attribution_text
-          :* Set null_ `as` #attribution_link
-          :* Set null_ `as` #mime
-          :* Set null_ `as` #size
-          :* Set (param @2) `as` #error
-          :* Set 1.0 `as` #progress
-      )
-      NoUsing
-      (#hash_id .== param @1)
-      ( Returning_
-          ( #hash_id
-              :* #type_id
-              :* #url
-              :* #state
-              :* #initialized_at
-              :* #active_at
-              :* #completed_at
-              :* #title
-              :* #attribution_text
-              :* #attribution_link
-              :* #mime
-              :* #size
-              :* #error
-              :* #progress
-              :* #abuse_level_id
-              :* #num_abuse_reports
-              :* #num_views
-              :* #version
-              :* #submitter_email
-              :* #verification_token
-              :* #verified_at
-          )
-      )
+    sql =
+      update
+        #content
+        ( (Set (inline Unknown) `as` #type_id)
+            :* (Set (inline CompletedFailure) `as` #state)
+            :* (Set currentTimestamp `as` #completed_at)
+            :* (Set null_ `as` #title)
+            :* (Set null_ `as` #attribution_text)
+            :* (Set null_ `as` #attribution_link)
+            :* (Set null_ `as` #mime)
+            :* (Set null_ `as` #size)
+            :* (Set (param @2) `as` #error)
+            :* (Set 1.0 `as` #progress)
+        )
+        NoUsing
+        (#hash_id .== param @1)
+        ( Returning_
+            ( #hash_id
+                :* #type_id
+                :* #url
+                :* #state
+                :* #initialized_at
+                :* #active_at
+                :* #completed_at
+                :* #title
+                :* #attribution_text
+                :* #attribution_link
+                :* #mime
+                :* #size
+                :* #error
+                :* #progress
+                :* #abuse_level_id
+                :* #num_abuse_reports
+                :* #num_views
+                :* #version
+                :* #submitter_email
+                :* #verification_token
+                :* #verified_at
+            )
+        )
 
 markContentAsSuccess ::
   Statement Schemas (ContentId, Maybe ContentMIME, Maybe Int64) Content
@@ -657,123 +596,125 @@ markContentAsSuccess = Manipulation encode decode sql
   where
     encode = genericParams
     decode = decodeContent
-    sql = update
-      #content
-      ( Set (inline Image) `as` #type_id
-          :* Set (inline CompletedSuccess) `as` #state
-          :* Set currentTimestamp `as` #completed_at
-          :* Set (param @2) `as` #mime
-          :* Set (param @3) `as` #size
-          :* Set null_ `as` #error
-          :* Set 1.0 `as` #progress -- reset any previous errors
-      )
-      NoUsing
-      (#hash_id .== param @1)
-      ( Returning_
-          ( #hash_id
-              :* #type_id
-              :* #url
-              :* #state
-              :* #initialized_at
-              :* #active_at
-              :* #completed_at
-              :* #title
-              :* #attribution_text
-              :* #attribution_link
-              :* #mime
-              :* #size
-              :* #error
-              :* #progress
-              :* #abuse_level_id
-              :* #num_abuse_reports
-              :* #num_views
-              :* #version
-              :* #submitter_email
-              :* #verification_token
-              :* #verified_at
-          )
-      )
+    sql =
+      update
+        #content
+        ( (Set (inline Image) `as` #type_id)
+            :* (Set (inline CompletedSuccess) `as` #state)
+            :* (Set currentTimestamp `as` #completed_at)
+            :* (Set (param @2) `as` #mime)
+            :* (Set (param @3) `as` #size)
+            :* (Set null_ `as` #error) -- reset any previous errors
+            :* (Set 1.0 `as` #progress)
+        )
+        NoUsing
+        (#hash_id .== param @1)
+        ( Returning_
+            ( #hash_id
+                :* #type_id
+                :* #url
+                :* #state
+                :* #initialized_at
+                :* #active_at
+                :* #completed_at
+                :* #title
+                :* #attribution_text
+                :* #attribution_link
+                :* #mime
+                :* #size
+                :* #error
+                :* #progress
+                :* #abuse_level_id
+                :* #num_abuse_reports
+                :* #num_views
+                :* #version
+                :* #submitter_email
+                :* #verification_token
+                :* #verified_at
+            )
+        )
 
 markContentAsVerified :: Statement Schemas (Only ContentId) Content
 markContentAsVerified = Manipulation encode decode sql
   where
     encode = genericParams
     decode = decodeContent
-    sql = update
-      #content
-      ( Set currentTimestamp `as` #verified_at
-          :* Set (inline Content.version) `as` #version
-      )
-      NoUsing
-      (#hash_id .== param @1)
-      ( Returning_
-          ( #hash_id
-              :* #type_id
-              :* #url
-              :* #state
-              :* #initialized_at
-              :* #active_at
-              :* #completed_at
-              :* #title
-              :* #attribution_text
-              :* #attribution_link
-              :* #mime
-              :* #size
-              :* #error
-              :* #progress
-              :* #abuse_level_id
-              :* #num_abuse_reports
-              :* #num_views
-              :* #version
-              :* #submitter_email
-              :* #verification_token
-              :* #verified_at
-          )
-      )
+    sql =
+      update
+        #content
+        ( (Set currentTimestamp `as` #verified_at)
+            :* (Set (inline Content.version) `as` #version)
+        )
+        NoUsing
+        (#hash_id .== param @1)
+        ( Returning_
+            ( #hash_id
+                :* #type_id
+                :* #url
+                :* #state
+                :* #initialized_at
+                :* #active_at
+                :* #completed_at
+                :* #title
+                :* #attribution_text
+                :* #attribution_link
+                :* #mime
+                :* #size
+                :* #error
+                :* #progress
+                :* #abuse_level_id
+                :* #num_abuse_reports
+                :* #num_views
+                :* #version
+                :* #submitter_email
+                :* #verification_token
+                :* #verified_at
+            )
+        )
 
 resetContentAsInitialized :: Statement Schemas (Only ContentId) Content
 resetContentAsInitialized = Manipulation encode decode sql
   where
     encode = genericParams
     decode = decodeContent
-    sql = update
-      #content
-      ( Set (inline Unknown) `as` #type_id
-          :* Set (inline Initialized) `as` #state
-          :* Set null_ `as` #active_at
-          :* Set null_ `as` #completed_at
-          :* Set null_ `as` #mime
-          :* Set null_ `as` #size
-          :* Set null_ `as` #error -- reset any previous errors
-          :* Set 0.0 `as` #progress
-      )
-      NoUsing
-      (#hash_id .== param @1)
-      ( Returning_
-          ( #hash_id
-              :* #type_id
-              :* #url
-              :* #state
-              :* #initialized_at
-              :* #active_at
-              :* #completed_at
-              :* #title
-              :* #attribution_text
-              :* #attribution_link
-              :* #mime
-              :* #size
-              :* #error
-              :* #progress
-              :* #abuse_level_id
-              :* #num_abuse_reports
-              :* #num_views
-              :* #version
-              :* #submitter_email
-              :* #verification_token
-              :* #verified_at
-          )
-      )
-{- ORMOLU_ENABLE -}
+    sql =
+      update
+        #content
+        ( (Set (inline Unknown) `as` #type_id)
+            :* (Set (inline Initialized) `as` #state)
+            :* (Set null_ `as` #active_at)
+            :* (Set null_ `as` #completed_at)
+            :* (Set null_ `as` #mime)
+            :* (Set null_ `as` #size)
+            :* (Set null_ `as` #error) -- reset any previous errors
+            :* (Set 0.0 `as` #progress)
+        )
+        NoUsing
+        (#hash_id .== param @1)
+        ( Returning_
+            ( #hash_id
+                :* #type_id
+                :* #url
+                :* #state
+                :* #initialized_at
+                :* #active_at
+                :* #completed_at
+                :* #title
+                :* #attribution_text
+                :* #attribution_link
+                :* #mime
+                :* #size
+                :* #error
+                :* #progress
+                :* #abuse_level_id
+                :* #num_abuse_reports
+                :* #num_views
+                :* #version
+                :* #submitter_email
+                :* #verification_token
+                :* #verified_at
+            )
+        )
 
 imageToInsertRow :: ContentId -> DeepZoomImage -> InsertImageRow
 imageToInsertRow cid dzi =
@@ -803,38 +744,40 @@ instance SOP.HasDatatypeInfo InsertImageRow
 insertImage :: Statement Schemas InsertImageRow ()
 insertImage = Manipulation encode decode sql
   where
-  encode = genericParams
-  decode = genericRow
-  sql =
-    insertInto_
-    #image
-    ( Subquery
-        ( select_
-            ( #content ! #id `as` #content_id
-                :* currentTimestamp `as` #created_at
-                :* param @2 `as` #width
-                :* param @3 `as` #height
-                :* param @4 `as` #tile_size
-                :* param @5 `as` #tile_overlap
-                :* param @6 `as` #tile_format
-            )
-            ( from (table #content)
-                & where_ (#content ! #hash_id .== param @1)
+    encode = genericParams
+    decode = genericRow
+    sql =
+      insertInto_
+        #image
+        ( Subquery
+            ( select_
+                ( (#content ! #id `as` #content_id)
+                    :* (currentTimestamp `as` #created_at)
+                    :* (param @2 `as` #width)
+                    :* (param @3 `as` #height)
+                    :* (param @4 `as` #tile_size)
+                    :* (param @5 `as` #tile_overlap)
+                    :* (param @6 `as` #tile_format)
+                )
+                ( from (table #content)
+                    & where_ (#content ! #hash_id .== param @1)
+                )
             )
         )
-    )
 
 deleteImage :: Statement Schemas (Only ContentId) ()
 deleteImage = Manipulation encode decode sql
   where
-  encode = genericParams
-  decode = genericRow
-  sql =
-    deleteFrom
-      #image
-      (Using (table #content))
-      ((#content ! #hash_id .== param @1) .&& (#image ! #content_id .== #content ! #id))
-      (Returning_ Nil)
+    encode = genericParams
+    decode = genericRow
+    sql =
+      deleteFrom
+        #image
+        (Using (table #content))
+        ( (#content ! #hash_id .== param @1)
+            .&& (#image ! #content_id .== #content ! #id)
+        )
+        (Returning_ Nil)
 
 -- Unsafe
 unsafeCreateContent ::
@@ -849,61 +792,61 @@ unsafeCreateContent content =
 unsafeInsertContent :: Statement Schemas ContentRow Content
 unsafeInsertContent = Manipulation encode decode sql
   where
-  encode = encodeContentRow
-  decode = decodeContent
-  sql =
-    insertInto
-      #content
-      ( Values_
-          ( Default `as` #id
-              :* Set (param @1) `as` #hash_id
-              :* Set (param @2) `as` #type_id
-              :* Set (param @3) `as` #url
-              :* Set (param @4) `as` #state
-              :* Set (param @5) `as` #initialized_at
-              :* Set (param @6) `as` #active_at
-              :* Set (param @7) `as` #completed_at
-              :* Set (param @8) `as` #title
-              :* Set (param @9) `as` #attribution_text
-              :* Set (param @10) `as` #attribution_link
-              :* Set (param @11) `as` #mime
-              :* Set (param @12) `as` #size
-              :* Set (param @13) `as` #error
-              :* Set (param @14) `as` #progress
-              :* Set (param @15) `as` #abuse_level_id
-              :* Set (param @16) `as` #num_abuse_reports
-              :* Set (param @17) `as` #num_views
-              :* Set (param @18) `as` #version
-              :* Set (param @19) `as` #submitter_email
-              :* Set (param @20) `as` #verification_token
-              :* Set (param @21) `as` #verified_at
-          )
-      )
-      OnConflictDoRaise
-      ( Returning_
-          ( #hash_id
-              :* #type_id
-              :* #url
-              :* #state
-              :* #initialized_at
-              :* #active_at
-              :* #completed_at
-              :* #title
-              :* #attribution_text
-              :* #attribution_link
-              :* #mime
-              :* #size
-              :* #error
-              :* #progress
-              :* #abuse_level_id
-              :* #num_abuse_reports
-              :* #num_views
-              :* #version
-              :* #submitter_email
-              :* #verification_token
-              :* #verified_at
-          )
-      )
+    encode = encodeContentRow
+    decode = decodeContent
+    sql =
+      insertInto
+        #content
+        ( Values_
+            ( (Default `as` #id)
+                :* (Set (param @1) `as` #hash_id)
+                :* (Set (param @2) `as` #type_id)
+                :* (Set (param @3) `as` #url)
+                :* (Set (param @4) `as` #state)
+                :* (Set (param @5) `as` #initialized_at)
+                :* (Set (param @6) `as` #active_at)
+                :* (Set (param @7) `as` #completed_at)
+                :* (Set (param @8) `as` #title)
+                :* (Set (param @9) `as` #attribution_text)
+                :* (Set (param @10) `as` #attribution_link)
+                :* (Set (param @11) `as` #mime)
+                :* (Set (param @12) `as` #size)
+                :* (Set (param @13) `as` #error)
+                :* (Set (param @14) `as` #progress)
+                :* (Set (param @15) `as` #abuse_level_id)
+                :* (Set (param @16) `as` #num_abuse_reports)
+                :* (Set (param @17) `as` #num_views)
+                :* (Set (param @18) `as` #version)
+                :* (Set (param @19) `as` #submitter_email)
+                :* (Set (param @20) `as` #verification_token)
+                :* (Set (param @21) `as` #verified_at)
+            )
+        )
+        OnConflictDoRaise
+        ( Returning_
+            ( #hash_id
+                :* #type_id
+                :* #url
+                :* #state
+                :* #initialized_at
+                :* #active_at
+                :* #completed_at
+                :* #title
+                :* #attribution_text
+                :* #attribution_link
+                :* #mime
+                :* #size
+                :* #error
+                :* #progress
+                :* #abuse_level_id
+                :* #num_abuse_reports
+                :* #num_views
+                :* #version
+                :* #submitter_email
+                :* #verification_token
+                :* #verified_at
+            )
+        )
 
 contentToRow :: Content -> ContentRow
 contentToRow c =

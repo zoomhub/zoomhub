@@ -20,7 +20,6 @@ import Squeal.PostgreSQL
     limit,
     orderBy,
     param,
-    runQueryParams,
     where_,
     (!),
     (&),

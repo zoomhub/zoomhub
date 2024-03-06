@@ -40,29 +40,21 @@ import Control.Monad.Catch (MonadMask)
 import Data.Int (Int64)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Time.Clock (addUTCTime, getCurrentTime)
-import Data.Time.Units (TimeUnit)
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
   ( MonadPQ (executeParams, executeParams_),
     Only (Only),
-    SortExpression (Asc, Desc, DescNullsLast),
+    SortExpression (Asc, Desc),
     firstRow,
-    getRows,
-    inline,
     isNotNull,
     limit,
-    manipulateParams,
-    manipulateParams_,
     orderBy,
     param,
-    runQueryParams,
     transactionally_,
     where_,
     (!),
     (&),
     (.&&),
-    (.<),
     (.==),
     (.>=),
   )
@@ -75,7 +67,6 @@ import ZoomHub.Storage.PostgreSQL.ConnectInfo
   )
 import ZoomHub.Storage.PostgreSQL.Internal
   ( Connection,
-    contentRowToContent,
     createConnectionPool,
     deleteImage,
     getBy,
@@ -89,17 +80,15 @@ import ZoomHub.Storage.PostgreSQL.Internal
     markContentAsVerified,
     resetContentAsInitialized,
     selectContentBy,
-    toNominalDiffTime,
   )
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content (..))
 import ZoomHub.Types.ContentId (ContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState (ContentState (Active, Initialized))
+import ZoomHub.Types.ContentState (ContentState (Initialized))
 import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI (..))
-import qualified ZoomHub.Types.ContentURI as ContentURI
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 import ZoomHub.Types.VerificationError (VerificationError)
 import qualified ZoomHub.Types.VerificationError as VerificationError
@@ -114,18 +103,21 @@ getById id_ = getBy ((#content ! #hash_id) .== param @1) (ContentId.toText id_)
 getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
 getByURL uri = getBy ((#content ! #url) .== param @1) (unContentURI uri)
 
-{- ORMOLU_DISABLE -}
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = do
-  result <- executeParams
+  result <-
+    executeParams
       ( selectContentBy $
           \table ->
             table
               & where_
-                ( (#content ! #state) .== param @1
-                  .&& ( #content ! #version .>= 5
-                        .&& isNotNull (#content ! #verified_at)
-                      )
+                ( (#content ! #state)
+                    .== param @1
+                    .&& ( #content
+                            ! #version
+                            .>= 5
+                            .&& isNotNull (#content ! #verified_at)
+                        )
                 )
               & orderBy
                 [ #content ! #initialized_at & Asc,
@@ -136,7 +128,6 @@ getNextUnprocessed = do
       -- TODO: Remove text conversion once `selectContentBy` is generic:
       (Only (Initialized & ContentState.toText))
   firstRow result
-{- ORMOLU_ENABLE -}
 
 -- Reads/writes
 getById' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
@@ -206,24 +197,22 @@ markAsVerified ::
   ContentId ->
   VerificationToken ->
   m (Either VerificationError Content)
-markAsVerified _cId _verificationToken = pure $ Left VerificationError.ContentNotFound
-
--- markAsVerified cId verificationToken =
---   transactionally_ $ do
---     mContent <- getById cId
---     case mContent >>= contentVerificationToken of
---       Just token | token == verificationToken -> do
---         contentResult <- executeParams markContentAsVerified (Only cId)
---         mContent' <- firstRow contentResult
---         case mContent' of
---           Just content ->
---             return $ Right content
---           Nothing ->
---             return $ Left VerificationError.ContentNotFound
---       Just _ ->
---         return $ Left VerificationError.TokenMismatch
---       Nothing ->
---         return $ Left VerificationError.ContentNotFound
+markAsVerified cId verificationToken = do
+  mContent <- getById cId
+  transactionally_ $ do
+    case mContent >>= contentVerificationToken of
+      Just token | token == verificationToken -> do
+        contentResult <- executeParams markContentAsVerified (Only cId)
+        mContent' <- firstRow contentResult
+        case mContent' of
+          Just content ->
+            return $ Right content
+          Nothing ->
+            return $ Left VerificationError.ContentNotFound
+      Just _ ->
+        return $ Left VerificationError.TokenMismatch
+      Nothing ->
+        return $ Left VerificationError.ContentNotFound
 
 resetAsInitialized ::
   (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
