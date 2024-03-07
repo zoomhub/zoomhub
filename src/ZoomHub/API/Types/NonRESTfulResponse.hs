@@ -90,6 +90,6 @@ instance (ToJSON a) => ToJSON (NonRESTfulResponse a) where
         "redirectLocation" .= redirectLocation
       ]
     where
-      bodyKey = Key.fromText $ T.pack (nrrBodyKey r)
+      bodyKey = Key.fromString $ nrrBodyKey r
       redirectLocation = toJSON (show <$> nrrRedirectLocation r)
       status = nrrStatus r
