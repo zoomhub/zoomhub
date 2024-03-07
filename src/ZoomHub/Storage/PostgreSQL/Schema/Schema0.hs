@@ -196,7 +196,6 @@ initializeHashidsEncode =
       DROP SCHEMA hashids CASCADE;
     |]
 
-{- ORMOLU_DISABLE -}
 initialSchema :: Migration (IsoQ Definition) (Public '[]) Schemas0
 initialSchema =
   Migration
@@ -210,50 +209,51 @@ initialSchema =
     setup =
       createTable
         #config
-        ( bigserial `as` #id
-            :* (text & notNullable) `as` #key
-            :* (text & notNullable) `as` #value
+        ( (bigserial `as` #id)
+            :* ((text & notNullable) `as` #key)
+            :* ((text & notNullable) `as` #value)
         )
-        ( primaryKey #id `as` #pk_config
-            :* unique #key `as` #config_unique_key
+        ( (primaryKey #id `as` #pk_config)
+            :* (unique #key `as` #config_unique_key)
         )
         >>> createTable
           #content
-          ( bigserial `as` #id
-              :* (text & notNullable) `as` #hash_id
-              :* (int4 & notNullable & default_ defaultContentTypeId) `as` #type_id
-              :* (text & notNullable) `as` #url
-              :* (text & notNullable & default_ defaultContentState) `as` #state
-              :* (timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #initialized_at
-              :* (timestampWithTimeZone & nullable & default_ null_) `as` #active_at
-              :* (timestampWithTimeZone & nullable & default_ null_) `as` #completed_at
-              :* (text & nullable & default_ null_) `as` #title
-              :* (text & nullable & default_ null_) `as` #attribution_text
-              :* (text & nullable & default_ null_) `as` #attribution_link
-              :* (text & nullable & default_ null_) `as` #mime
-              :* (bigint & nullable & default_ null_) `as` #size
-              :* (text & nullable & default_ null_) `as` #error
-              :* (doublePrecision & notNullable & default_ 0) `as` #progress
-              :* (int4 & notNullable & default_ 0) `as` #abuse_level_id
-              :* (bigint & notNullable & default_ 0) `as` #num_abuse_reports
-              :* (bigint & notNullable & default_ 0) `as` #num_views
-              :* (int & notNullable & default_ defaultContentVersion) `as` #version
+          ( bigserial
+              `as` #id
+              :* ((text & notNullable) `as` #hash_id)
+              :* ((int4 & notNullable & default_ defaultContentTypeId) `as` #type_id)
+              :* ((text & notNullable) `as` #url)
+              :* ((text & notNullable & default_ defaultContentState) `as` #state)
+              :* ((timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #initialized_at)
+              :* ((timestampWithTimeZone & nullable & default_ null_) `as` #active_at)
+              :* ((timestampWithTimeZone & nullable & default_ null_) `as` #completed_at)
+              :* ((text & nullable & default_ null_) `as` #title)
+              :* ((text & nullable & default_ null_) `as` #attribution_text)
+              :* ((text & nullable & default_ null_) `as` #attribution_link)
+              :* ((text & nullable & default_ null_) `as` #mime)
+              :* ((bigint & nullable & default_ null_) `as` #size)
+              :* ((text & nullable & default_ null_) `as` #error)
+              :* ((doublePrecision & notNullable & default_ 0) `as` #progress)
+              :* ((int4 & notNullable & default_ 0) `as` #abuse_level_id)
+              :* ((bigint & notNullable & default_ 0) `as` #num_abuse_reports)
+              :* ((bigint & notNullable & default_ 0) `as` #num_views)
+              :* ((int & notNullable & default_ defaultContentVersion) `as` #version)
           )
-          ( primaryKey #id `as` #pk_content
-              :* unique #hash_id `as` #content_unique_hash_id
-              :* unique #url `as` #content_unique_url
+          ( (primaryKey #id `as` #pk_content)
+              :* (unique #hash_id `as` #content_unique_hash_id)
+              :* (unique #url `as` #content_unique_url)
           )
         >>> createTable
           #image
-          ( bigserial `as` #content_id
-              :* (timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at
-              :* (bigint & notNullable) `as` #width
-              :* (bigint & notNullable) `as` #height
-              :* (int4 & notNullable) `as` #tile_size
-              :* (int4 & notNullable) `as` #tile_overlap
-              :* (text & notNullable) `as` #tile_format
+          ( (bigserial `as` #content_id)
+              :* ((timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at)
+              :* ((bigint & notNullable) `as` #width)
+              :* ((bigint & notNullable) `as` #height)
+              :* ((int4 & notNullable) `as` #tile_size)
+              :* ((int4 & notNullable) `as` #tile_overlap)
+              :* ((text & notNullable) `as` #tile_format)
           )
-          ( primaryKey #content_id `as` #pk_image
+          ( (primaryKey #content_id `as` #pk_image)
               :* ( foreignKey
                      #content_id
                      #content
@@ -262,26 +262,26 @@ initialSchema =
                      (OnUpdate Cascade)
                      `as` #fk_content_id
                  )
-              :* unique #content_id `as` #image_unique_content_id
+              :* (unique #content_id `as` #image_unique_content_id)
           )
         >>> createTable
           #flickr
-          ( bigserial `as` #content_id
-              :* (int4 & notNullable) `as` #farm_id
-              :* (int4 & notNullable) `as` #server_id
-              :* (text & notNullable) `as` #photo_id
-              :* (text & notNullable) `as` #secret
-              :* (int4 & notNullable) `as` #size_id
-              :* (bool & notNullable) `as` #is_public
-              :* (int4 & notNullable) `as` #license_id
-              :* (text & nullable) `as` #original_extension
-              :* (text & nullable) `as` #original_secret
-              :* (text & notNullable) `as` #owner_nsid
-              :* (text & nullable) `as` #owner_real_name
-              :* (text & notNullable) `as` #owner_username
-              :* (text & nullable) `as` #photo_page_url
+          ( (bigserial `as` #content_id)
+              :* ((int4 & notNullable) `as` #farm_id)
+              :* ((int4 & notNullable) `as` #server_id)
+              :* ((text & notNullable) `as` #photo_id)
+              :* ((text & notNullable) `as` #secret)
+              :* ((int4 & notNullable) `as` #size_id)
+              :* ((bool & notNullable) `as` #is_public)
+              :* ((int4 & notNullable) `as` #license_id)
+              :* ((text & nullable) `as` #original_extension)
+              :* ((text & nullable) `as` #original_secret)
+              :* ((text & notNullable) `as` #owner_nsid)
+              :* ((text & nullable) `as` #owner_real_name)
+              :* ((text & notNullable) `as` #owner_username)
+              :* ((text & nullable) `as` #photo_page_url)
           )
-          ( primaryKey #content_id `as` #pk_flickr
+          ( (primaryKey #content_id `as` #pk_flickr)
               :* ( foreignKey
                      #content_id
                      #content
@@ -290,7 +290,7 @@ initialSchema =
                      (OnUpdate Cascade)
                      `as` #fk_content_id
                  )
-              :* unique #content_id `as` #flickr_unique_content_id
+              :* (unique #content_id `as` #flickr_unique_content_id)
           )
       where
         defaultContentTypeId = inline ContentType.Unknown
@@ -302,9 +302,7 @@ initialSchema =
         >>> dropTable #image
         >>> dropTable #content
         >>> dropTable #config
-{- ORMOLU_ENABLE -}
 
-{- ORMOLU_DISABLE -}
 insertHashidsSecret :: String -> Migration (IsoQ Definition) Schemas0 Schemas0
 insertHashidsSecret secret =
   Migration
@@ -315,16 +313,15 @@ insertHashidsSecret secret =
             insertInto_
               #config
               ( Values_
-                  ( Default `as` #id
-                      :* Set "hashids_salt" `as` #key
-                      :* Set (inline secret) `as` #value
+                  ( (Default `as` #id)
+                      :* (Set "hashids_salt" `as` #key)
+                      :* (Set (inline secret) `as` #value)
                   )
               ),
         down =
           manipulation_ $
             deleteFrom_ #config (#key .== "hashids_salt")
       }
-{- ORMOLU_ENABLE -}
 
 createContentHashIdTrigger :: Migration (IsoQ Definition) Schemas0 Schemas0
 createContentHashIdTrigger =

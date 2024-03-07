@@ -166,7 +166,6 @@ incrNumViews =
     (Set (#num_views + param @1) `as` #num_views)
     (#hash_id .== param @2)
 
-{- ORMOLU_DISABLE -}
 selectContentBy ::
   ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
     TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _
@@ -174,104 +173,101 @@ selectContentBy ::
   Statement Schemas (Only Text) Content
 selectContentBy clauses = Query enc dec sql
   where
-  enc = genericParams
-  dec = decodeContentWithImage
-  sql =
-    select_
-      ( #content ! #hash_id
-          :* #content ! #type_id
-          :* #content ! #url
-          :* #content ! #state
-          :* #content ! #initialized_at
-          :* #content ! #active_at
-          :* #content ! #completed_at
-          :* #content ! #title
-          :* #content ! #attribution_text
-          :* #content ! #attribution_link
-          :* #content ! #mime
-          :* #content ! #size
-          :* #content ! #error
-          :* #content ! #progress
-          :* #content ! #abuse_level_id
-          :* #content ! #num_abuse_reports
-          :* #content ! #num_views
-          :* #content ! #version
-          :* #content ! #submitter_email
-          :* #content ! #verification_token
-          :* #content ! #verified_at
-
-          :* #image ! #width
-          :* #image ! #height
-          :* #image ! #tile_size
-          :* #image ! #tile_overlap
-          :* #image ! #tile_format
-      )
-      ( from
-          ( table #content
-              & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
-          )
-        & clauses
-      )
-
+    enc = genericParams
+    dec = decodeContentWithImage
+    sql =
+      select_
+        ( (#content ! #hash_id)
+            :* (#content ! #type_id)
+            :* (#content ! #url)
+            :* (#content ! #state)
+            :* (#content ! #initialized_at)
+            :* (#content ! #active_at)
+            :* (#content ! #completed_at)
+            :* (#content ! #title)
+            :* (#content ! #attribution_text)
+            :* (#content ! #attribution_link)
+            :* (#content ! #mime)
+            :* (#content ! #size)
+            :* (#content ! #error)
+            :* (#content ! #progress)
+            :* (#content ! #abuse_level_id)
+            :* (#content ! #num_abuse_reports)
+            :* (#content ! #num_views)
+            :* (#content ! #version)
+            :* (#content ! #submitter_email)
+            :* (#content ! #verification_token)
+            :* (#content ! #verified_at)
+            :* (#image ! #width)
+            :* (#image ! #height)
+            :* (#image ! #tile_size)
+            :* (#image ! #tile_overlap)
+            :* (#image ! #tile_format)
+        )
+        ( from
+            ( table #content
+                & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
+            )
+            & clauses
+        )
 
 type ContentRow' =
   '[ "hash_id" ::: 'NotNull 'PGtext,
-    "type_id" ::: 'NotNull 'PGint4,
-    "url" ::: 'NotNull 'PGtext,
-    "state" ::: 'NotNull 'PGtext,
-    "initialized_at" ::: 'NotNull 'PGtimestamptz,
-    "active_at" ::: 'Null 'PGtimestamptz,
-    "completed_at" ::: 'Null 'PGtimestamptz,
-    "title" ::: 'Null 'PGtext,
-    "attribution_text" ::: 'Null 'PGtext,
-    "attribution_link" ::: 'Null 'PGtext,
-    "mime" ::: 'Null 'PGtext,
-    "size" ::: 'Null 'PGint8,
-    "error" ::: 'Null 'PGtext,
-    "progress" ::: 'NotNull 'PGfloat8,
-    "abuse_level_id" ::: 'NotNull 'PGint4,
-    "num_abuse_reports" ::: 'NotNull 'PGint8,
-    "num_views" ::: 'NotNull 'PGint8,
-    "version" ::: 'NotNull 'PGint4,
-    "submitter_email" ::: 'Null 'PGtext,
-    "verification_token" ::: 'Null 'PGtext,
-    "verified_at" ::: 'Null 'PGtimestamptz
-  ]
+     "type_id" ::: 'NotNull 'PGint4,
+     "url" ::: 'NotNull 'PGtext,
+     "state" ::: 'NotNull 'PGtext,
+     "initialized_at" ::: 'NotNull 'PGtimestamptz,
+     "active_at" ::: 'Null 'PGtimestamptz,
+     "completed_at" ::: 'Null 'PGtimestamptz,
+     "title" ::: 'Null 'PGtext,
+     "attribution_text" ::: 'Null 'PGtext,
+     "attribution_link" ::: 'Null 'PGtext,
+     "mime" ::: 'Null 'PGtext,
+     "size" ::: 'Null 'PGint8,
+     "error" ::: 'Null 'PGtext,
+     "progress" ::: 'NotNull 'PGfloat8,
+     "abuse_level_id" ::: 'NotNull 'PGint4,
+     "num_abuse_reports" ::: 'NotNull 'PGint8,
+     "num_views" ::: 'NotNull 'PGint8,
+     "version" ::: 'NotNull 'PGint4,
+     "submitter_email" ::: 'Null 'PGtext,
+     "verification_token" ::: 'Null 'PGtext,
+     "verified_at" ::: 'Null 'PGtimestamptz
+   ]
 
 type ImageRowNull' =
-    '[ "width" ::: 'Null 'PGint8,
-       "height" ::: 'Null 'PGint8,
-       "tile_size" ::: 'Null 'PGint4,
-       "tile_overlap" ::: 'Null 'PGint4,
-       "tile_format" ::: 'Null 'PGtext
-     ]
+  '[ "width" ::: 'Null 'PGint8,
+     "height" ::: 'Null 'PGint8,
+     "tile_size" ::: 'Null 'PGint4,
+     "tile_overlap" ::: 'Null 'PGint4,
+     "tile_format" ::: 'Null 'PGtext
+   ]
 
 type ContentWithImageRow' = Join ContentRow' ImageRowNull'
 
 encodeContentRow :: EncodeParams Schemas _ ContentRow
 encodeContentRow =
-  crHashId .*
-  crTypeId .*
-  crURL .*
-  crState .*
-  crInitializedAt .*
-  crActiveAt .*
-  crCompletedAt .*
-  crTitle .*
-  crAttributionText .*
-  crAttributionLink .*
-  crMIME .*
-  crSize .*
-  crError .*
-  crProgress .*
-  crAbuseLevelId .*
-  crNumAbuseReports .*
-  crNumViews .*
-  crVersion .*
-  crSubmitterEmail .*
-  crVerificationToken *.
-  crVerifiedAt
-
+  crHashId
+    .* crTypeId
+    .* crURL
+    .* crState
+    .* crInitializedAt
+    .* crActiveAt
+    .* crCompletedAt
+    .* crTitle
+    .* crAttributionText
+    .* crAttributionLink
+    .* crMIME
+    .* crSize
+    .* crError
+    .* crProgress
+    .* crAbuseLevelId
+    .* crNumAbuseReports
+    .* crNumViews
+    .* crVersion
+    .* crSubmitterEmail
+    .* crVerificationToken
+    *. crVerifiedAt
 
 decodeContent :: DecodeRow ContentRow' Content
 decodeContent = do
@@ -323,14 +319,14 @@ decodeContentWithImage = do
         tileSize <- mTileSize
         tileOverlap <- mTileOverlap
         tileFormat <- mTileFormat
-        pure $ mkDeepZoomImage
-          (fromIntegral (width :: Int64))
-          (fromIntegral (height :: Int64))
-          tileSize
-          tileOverlap
-          tileFormat
+        pure $
+          mkDeepZoomImage
+            (fromIntegral (width :: Int64))
+            (fromIntegral (height :: Int64))
+            tileSize
+            tileOverlap
+            tileFormat
   return Content {..}
-{- ORMOLU_ENABLE -}
 
 -- Reads: Image
 getImageById :: Int64 -> PQ Schemas Schemas IO (Maybe DeepZoomImage)
