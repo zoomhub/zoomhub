@@ -24,6 +24,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Time as Time
+import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
@@ -398,7 +399,7 @@ restUpload config awsConfig uploads email =
       noNewContentErrorAPI
     UploadsEnabled -> do
       currentTime <- liftIO Time.getCurrentTime
-      s3UploadKey <- T.pack . show <$> liftIO UUIDV4.nextRandom
+      s3UploadKey <- UUID.toText <$> liftIO UUIDV4.nextRandom
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
           key = "uploads/" <> s3UploadKey
           s3Region = AWS.configRegion awsConfig

@@ -40,6 +40,7 @@ import Control.Monad.Catch (MonadMask)
 import Data.Int (Int64)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
   ( MonadPQ (executeParams, executeParams_),
@@ -143,7 +144,7 @@ initialize ::
   Text -> -- Email
   m (Maybe Content)
 initialize uri email = do
-  verificationToken <- T.pack . show <$> liftIO UUIDV4.nextRandom
+  verificationToken <- UUID.toText <$> liftIO UUIDV4.nextRandom
   transactionally_ $ do
     result <-
       executeParams
