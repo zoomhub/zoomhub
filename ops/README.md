@@ -50,7 +50,7 @@ it. This is a convenient way to develop new features before using the vault.
 
 #### Adding new environment
 
-Add new rule to RDS security groups.
+Add new rule to RDS security groups pointing to new environment, e.g. `staging-2`.
 
 ### Lambda + EFS
 
