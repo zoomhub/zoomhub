@@ -13,7 +13,6 @@ where
 
 import Data.Aeson (ToJSON, object, toJSON, (.=))
 import qualified Data.Aeson.Key as Key
-import qualified Data.Text as T
 import Network.HTTP.Types.Status
   ( Status,
     badRequest400,

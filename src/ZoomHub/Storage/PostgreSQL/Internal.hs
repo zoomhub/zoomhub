@@ -1,4 +1,3 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -8,6 +7,7 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -O0 #-}
@@ -46,7 +46,9 @@ import Squeal.PostgreSQL
     Manipulation_,
     MonadPQ (executeParams),
     NP (Nil, (:*)),
+    NullPG,
     NullType (NotNull, Null),
+    OidOfNull,
     Only (..),
     Optional (Default, Set),
     PGType (PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
@@ -54,7 +56,10 @@ import Squeal.PostgreSQL
     QueryClause (Subquery),
     Statement (Manipulation, Query),
     TableExpression,
+    ToPG,
+    ToParam,
     UsingClause (NoUsing, Using),
+    aParam,
     as,
     currentTimestamp,
     deleteFrom,
@@ -122,18 +127,26 @@ createConnectionPool connInfo numStripes idleTime maxResourcesPerStripe =
 
 -- Reads: Content
 getBy ::
+  forall hsty m.
+  (ToParam Schemas (NullPG hsty) hsty) =>
+  (ToPG Schemas hsty) =>
+  (OidOfNull Schemas (NullPG hsty)) =>
   (MonadUnliftIO m, MonadPQ Schemas m) =>
-  Condition 'Ungrouped '[] '[] Schemas _ _ ->
-  Text -> -- TODO: Make generic
+  Condition 'Ungrouped '[] '[] Schemas '[NullPG hsty] _ ->
+  hsty ->
   m (Maybe Content)
 getBy condition parameter = do
-  result <- executeParams (selectContentBy (\t -> t & where_ condition)) (Only parameter)
+  result <- executeParams (selectContentBy (\t -> t & where_ condition)) parameter
   firstRow result
 
 getBy' ::
+  forall hsty m.
+  (ToParam Schemas (NullPG hsty) hsty) =>
+  (ToPG Schemas hsty) =>
+  (OidOfNull Schemas (NullPG hsty)) =>
   (MonadUnliftIO m, MonadPQ Schemas m) =>
-  Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
-  Text ->
+  Condition 'Ungrouped '[] '[] Schemas '[NullPG hsty] _ ->
+  hsty ->
   m (Maybe Content)
 getBy' condition parameter = do
   mContent <- getBy condition parameter
@@ -166,15 +179,57 @@ incrNumViews =
     (Set (#num_views + param @1) `as` #num_views)
     (#hash_id .== param @2)
 
+type ContentWithImageRowTuple =
+  [ '( "content",
+       [ "id" ::: NotNull PGint8,
+         "hash_id" ::: NotNull PGtext,
+         "type_id" ::: NotNull PGint4,
+         "url" ::: NotNull PGtext,
+         "state" ::: NotNull PGtext,
+         "initialized_at" ::: NotNull PGtimestamptz,
+         "active_at" ::: Null PGtimestamptz,
+         "completed_at" ::: Null PGtimestamptz,
+         "title" ::: Null PGtext,
+         "attribution_text" ::: Null PGtext,
+         "attribution_link" ::: Null PGtext,
+         "mime" ::: Null PGtext,
+         "size" ::: Null PGint8,
+         "error" ::: Null PGtext,
+         "progress" ::: NotNull PGfloat8,
+         "abuse_level_id" ::: NotNull PGint4,
+         "num_abuse_reports" ::: NotNull PGint8,
+         "num_views" ::: NotNull PGint8,
+         "version" ::: NotNull PGint4,
+         "submitter_email" ::: Null PGtext,
+         "verification_token" ::: Null PGtext,
+         "verified_at" ::: Null PGtimestamptz
+       ]
+     ),
+    "image"
+      ::: [ "content_id" ::: Null PGint8,
+            "created_at" ::: Null PGtimestamptz,
+            "width" ::: Null PGint8,
+            "height" ::: Null PGint8,
+            "tile_size" ::: Null PGint4,
+            "tile_overlap" ::: Null PGint4,
+            "tile_format" ::: Null PGtext
+          ]
+  ]
+
 selectContentBy ::
-  ( TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _ ->
-    TableExpression 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGtext] _
+  forall hsty from.
+  (ToParam Schemas (NullPG hsty) hsty) =>
+  (ToPG Schemas hsty) =>
+  (OidOfNull Schemas (NullPG hsty)) =>
+  (from ~ ContentWithImageRowTuple) =>
+  ( TableExpression 'Ungrouped '[] '[] Schemas '[NullPG hsty] from ->
+    TableExpression 'Ungrouped '[] '[] Schemas '[NullPG hsty] from
   ) ->
-  Statement Schemas (Only Text) Content
-selectContentBy clauses = Query enc dec sql
+  Statement Schemas hsty Content
+selectContentBy clauses = Query encode decode sql
   where
-    enc = genericParams
-    dec = decodeContentWithImage
+    encode = aParam
+    decode = decodeContentWithImage
     sql =
       select_
         ( (#content ! #hash_id)

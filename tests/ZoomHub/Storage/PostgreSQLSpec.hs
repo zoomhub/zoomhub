@@ -59,6 +59,7 @@ import ZoomHub.Storage.PostgreSQL
     getById',
     getByURL,
     getByURL',
+    getExpiredActive,
     getNextUnprocessed,
     initialize,
     markAsActive,
@@ -438,6 +439,20 @@ spec =
           \conn -> do
             (results, _) <- runPQ getNextUnprocessed conn
             results `shouldBe` Nothing
+    describe "getExpiredActive" do
+      it "should return active content that has expired" do
+        \conn -> do
+          currentTime <- safeGetCurrentTime
+          let minutes n = n * 60
+              -- HACK: Hard-coded content IDs set by database trigger
+              c1 = mkActiveContent "X75" currentTime (15 & minutes)
+              c2 = mkActiveContent "yOJ" currentTime (45 & minutes)
+              c3 = mkActiveContent "yJL" currentTime (60 & minutes)
+              c4 = mkSucceededContent "foo" currentTime (90 & minutes)
+          void . forM_ [c1, c2, c3, c4] $ \c ->
+            runPQ (I.unsafeCreateContent c) conn
+          (results, _) <- runPQ (getExpiredActive (30 :: Minute)) conn
+          results `shouldBe` [c2, c3]
   where
     mkUnprocessedContent :: String -> UTCTime -> NominalDiffTime -> Int64 -> I.Content
     mkUnprocessedContent id_ currentTime age numViews =

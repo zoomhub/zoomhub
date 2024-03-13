@@ -12,9 +12,9 @@ module ZoomHub.Storage.PostgreSQL.GetRecent
 where
 
 import Data.Binary (Word64)
+import Data.Text (Text)
 import Squeal.PostgreSQL
   ( MonadPQ (executeParams),
-    Only (Only),
     SortExpression (Desc),
     getRows,
     limit,
@@ -45,5 +45,5 @@ getRecent numItems = do
                 & limit numItems
           )
       )
-      (Only "1")
+      ("1" :: Text)
   getRows result

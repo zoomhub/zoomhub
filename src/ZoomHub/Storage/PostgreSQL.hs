@@ -32,6 +32,7 @@ module ZoomHub.Storage.PostgreSQL
     unsafeResetAsInitializedWithVerification,
     dequeueNextUnprocessed,
     module ZoomHub.Storage.PostgreSQL.ConnectInfo,
+    getExpiredActive,
   )
 where
 
@@ -39,13 +40,16 @@ import Control.Monad (void)
 import Control.Monad.Catch (MonadMask)
 import Data.Int (Int64)
 import Data.Text (Text)
-import qualified Data.Text as T
+import Data.Time (addUTCTime, getCurrentTime)
+import Data.Time.Units (TimeUnit)
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
-  ( MonadPQ (executeParams, executeParams_),
+  ( Inline (inline),
+    MonadPQ (executeParams, executeParams_),
+    MonadResult (getRows),
     Only (Only),
-    SortExpression (Asc, Desc),
+    SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
     isNotNull,
     limit,
@@ -56,6 +60,7 @@ import Squeal.PostgreSQL
     (!),
     (&),
     (.&&),
+    (.<),
     (.==),
     (.>=),
   )
@@ -81,13 +86,12 @@ import ZoomHub.Storage.PostgreSQL.Internal
     markContentAsVerified,
     resetContentAsInitialized,
     selectContentBy,
+    toNominalDiffTime,
   )
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content (..))
 import ZoomHub.Types.ContentId (ContentId)
-import qualified ZoomHub.Types.ContentId as ContentId
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState (ContentState (Initialized))
 import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI (..))
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
@@ -99,10 +103,10 @@ import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Reads
 getById :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
-getById id_ = getBy ((#content ! #hash_id) .== param @1) (ContentId.toText id_)
+getById = getBy ((#content ! #hash_id) .== param @1)
 
 getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
-getByURL uri = getBy ((#content ! #url) .== param @1) (unContentURI uri)
+getByURL = getBy ((#content ! #url) .== param @1)
 
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = do
@@ -126,16 +130,35 @@ getNextUnprocessed = do
                 ]
               & limit 1
       )
-      -- TODO: Remove text conversion once `selectContentBy` is generic:
-      (Only (Initialized & ContentState.toText))
+      ContentState.Initialized
   firstRow result
+
+getExpiredActive ::
+  (MonadUnliftIO m, MonadPQ Schemas m, TimeUnit t) => t -> m [Content]
+getExpiredActive ttl = do
+  currentTime <- liftIO getCurrentTime
+  let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
+  result <-
+    executeParams
+      ( selectContentBy
+          ( \table ->
+              table
+                & where_
+                  ( ((#content ! #active_at) .< param @1)
+                      .&& ((#content ! #state) .== inline ContentState.Active)
+                  )
+                & orderBy [#content ! #active_at & DescNullsLast]
+          )
+      )
+      earliestAllowed
+  getRows result
 
 -- Reads/writes
 getById' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
-getById' id_ = getBy' ((#content ! #hash_id) .== param @1) (ContentId.toText id_)
+getById' = getBy' ((#content ! #hash_id) .== param @1)
 
 getByURL' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
-getByURL' uri = getBy' ((#content ! #url) .== param @1) (unContentURI uri)
+getByURL' = getBy' ((#content ! #url) .== param @1)
 
 -- Writes
 initialize ::
