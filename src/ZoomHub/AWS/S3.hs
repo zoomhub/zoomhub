@@ -62,7 +62,7 @@ presignPOSTPolicy accessKey secretKey region policy = do
 
       mkPair (POSTPolicyCondition.StartsWith k v) = Just (k, v)
       mkPair (POSTPolicyCondition.Equals k v) = Just (k, v)
-      mkPair (POSTPolicyCondition.Range _ _ _) = Nothing
+      mkPair (POSTPolicyCondition.Range {}) = Nothing
 
       formFromPolicy =
         H.map encodeUtf8 $
