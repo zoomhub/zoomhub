@@ -38,4 +38,4 @@ send config logLevel Email {..} =
 
     message = SES.newMessage subject' body'
     subject' = SES.newContent subject
-    body' = SES.newBody & SES.body_html ?~ SES.newContent body
+    body' = SES.newBody & SES.body_text ?~ SES.newContent body
