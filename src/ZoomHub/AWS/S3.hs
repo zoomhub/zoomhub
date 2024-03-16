@@ -11,7 +11,7 @@ import qualified Amazonka.Data as AWS
 import qualified Amazonka.S3 as S3
 import qualified Amazonka.Sign.V4.Base as AWS
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Base64.URL as Base64
+import qualified Data.ByteString.Base64 as Base64
 import qualified Data.HashMap.Strict as H
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
@@ -71,7 +71,7 @@ presignPOSTPolicy accessKey secretKey region policy = do
               mkPair
               (POSTPolicy.conditions policyWithCredentials)
 
-  let stringToSign = AWS.Tag . Base64.encodeBase64Unpadded' . POSTPolicy.encode $ policyWithCredentials
+  let stringToSign = AWS.Tag . Base64.encodeBase64' . POSTPolicy.encode $ policyWithCredentials
       signature = AWS.signature secretKey scope stringToSign
   pure $
     H.fromList
