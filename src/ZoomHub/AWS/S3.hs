@@ -71,7 +71,7 @@ presignPOSTPolicy accessKey secretKey region policy = do
               mkPair
               (POSTPolicy.conditions policyWithCredentials)
 
-  let stringToSign = AWS.Tag . Base64.encodeBase64' . POSTPolicy.encode $ policyWithCredentials
+  let stringToSign = AWS.Tag . Base64.encodeBase64Unpadded' . POSTPolicy.encode $ policyWithCredentials
       signature = AWS.signature secretKey scope stringToSign
   pure $
     H.fromList
