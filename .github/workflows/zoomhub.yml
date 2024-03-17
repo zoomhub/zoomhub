@@ -118,14 +118,18 @@ jobs:
           enable-stack: true
           stack-version: "latest"
 
-      - name: Sets ZH_API_BASE_URI=https://api.zoomhub.net
+      - name: Set production base URI for website and API
         run: |
           echo "ZH_API_BASE_URI=https://api.zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_WEB_BASE_URI=https://zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_STATIC_BASE_URI=https://static.zoomhub.net" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/main'
 
-      - name: Sets ZH_API_BASE_URI=https://api.staging.zoomhub.net
+      - name: Set staging base URI for website and API
         run: |
           echo "ZH_API_BASE_URI=https://api.staging.zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_WEB_BASE_URI=https://staging.zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_STATIC_BASE_URI=https://static.zoomhub.net" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
       - name: Cache ~/.stack
@@ -177,7 +181,11 @@ jobs:
       - name: Build frontend
         run: |
           npm ci
-          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
+          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" \
+          SNOWPACK_PUBLIC_WEB_BASE_URI="$ZH_WEB_BASE_URI" \
+          SNOWPACK_PUBLIC_STATIC_BASE_URI="$ZH_STATIC_BASE_URI" \
+            npx snowpack build
+
           # NOTE: Delete Haskell source code. This directory is only mounted in
           # Snowpack configuration to enable Tailwind CSS ’purge’ feature. These
           # files are not meant to be shipped to the public website.
