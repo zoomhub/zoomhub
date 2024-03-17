@@ -79,5 +79,3 @@ instance ToPG db TileSize where
 
 instance Inline TileSize where
   inline = inline . toInt32
-
--- type instance PG TileSize = 'PGint4
