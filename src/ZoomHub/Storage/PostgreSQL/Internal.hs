@@ -217,13 +217,12 @@ type ContentWithImageRowTuple =
   ]
 
 selectContentBy ::
-  forall hsty from.
+  forall hsty.
   (ToParam Schemas (NullPG hsty) hsty) =>
   (ToPG Schemas hsty) =>
   (OidOfNull Schemas (NullPG hsty)) =>
-  (from ~ ContentWithImageRowTuple) =>
-  ( TableExpression 'Ungrouped '[] '[] Schemas '[NullPG hsty] from ->
-    TableExpression 'Ungrouped '[] '[] Schemas '[NullPG hsty] from
+  ( TableExpression 'Ungrouped '[] '[] Schemas '[NullPG hsty] ContentWithImageRowTuple ->
+    TableExpression 'Ungrouped '[] '[] Schemas '[NullPG hsty] ContentWithImageRowTuple
   ) ->
   Statement Schemas hsty Content
 selectContentBy clauses = Query encode decode sql
