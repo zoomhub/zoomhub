@@ -19,6 +19,7 @@ where
 
 import Data.Aeson (ToJSON, genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.Int (Int64)
 import GHC.Generics (Generic)
 import qualified Generics.SOP as SOP
 import Text.Read (readMaybe)
@@ -33,8 +34,8 @@ import ZoomHub.Types.DeepZoomImage.TileSize (TileSize (..))
 import qualified ZoomHub.Types.DeepZoomImage.TileSize as TileSize
 
 data DeepZoomImage = DeepZoomImage
-  { dziWidth :: Integer,
-    dziHeight :: Integer,
+  { dziWidth :: Int64,
+    dziHeight :: Int64,
     dziTileSize :: TileSize,
     dziTileOverlap :: TileOverlap,
     dziTileFormat :: TileFormat
@@ -42,8 +43,8 @@ data DeepZoomImage = DeepZoomImage
   deriving (Eq, Generic, Show)
 
 mkDeepZoomImage ::
-  Integer ->
-  Integer ->
+  Int64 ->
+  Int64 ->
   TileSize ->
   TileOverlap ->
   TileFormat ->

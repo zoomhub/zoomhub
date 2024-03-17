@@ -318,23 +318,6 @@ encodeContent =
     .* contentVerificationToken
     *. contentVerifiedAt
 
-encodeImage ::
-  EncodeParams
-    Schemas
-    '[ 'NotNull 'PGint8,
-       'NotNull 'PGint8,
-       'NotNull 'PGint4,
-       'NotNull 'PGint4,
-       'NotNull 'PGtext
-     ]
-    DeepZoomImage
-encodeImage =
-  ((fromIntegral . dziWidth) :: DeepZoomImage -> Int64)
-    .* ((fromIntegral . dziHeight) :: DeepZoomImage -> Int64)
-    .* dziTileSize
-    .* dziTileOverlap
-    *. dziTileFormat
-
 decodeContent :: DecodeRow ContentRow' Content
 decodeContent = do
   contentId <- #hash_id
@@ -752,7 +735,7 @@ resetContentAsInitialized = Manipulation encode decode sql
 insertImage :: Statement Schemas (ContentId, DeepZoomImage) ()
 insertImage = Manipulation encode decode sql
   where
-    encode = contramap fst aParam `appendParams` contramap snd encodeImage
+    encode = contramap fst aParam `appendParams` contramap snd genericParams
     decode = genericRow
     sql =
       insertInto_

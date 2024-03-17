@@ -93,8 +93,8 @@ style Embed {embedContent, embedWidth, embedHeight, embedBorder, embedBackground
       case API.contentDzi embedContent of
         Just dzi ->
           EmbedAspectRatio.Ratio
-            (API.dziWidth dzi)
-            (API.dziHeight dzi)
+            (fromIntegral $ API.dziWidth dzi)
+            (fromIntegral $ API.dziHeight dzi)
         Nothing ->
           EmbedAspectRatio.Auto
 
