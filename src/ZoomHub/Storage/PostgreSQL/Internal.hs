@@ -48,6 +48,7 @@ import Squeal.PostgreSQL
     NP (Nil, (:*)),
     NullPG,
     NullType (NotNull, Null),
+    NullifyRow,
     OidOfNull,
     Only (..),
     Optional (Default, Set),
@@ -289,15 +290,7 @@ type ContentRow' =
      "verified_at" ::: 'Null 'PGtimestamptz
    ]
 
-type ImageRowNull' =
-  '[ "width" ::: 'Null 'PGint8,
-     "height" ::: 'Null 'PGint8,
-     "tile_size" ::: 'Null 'PGint4,
-     "tile_overlap" ::: 'Null 'PGint4,
-     "tile_format" ::: 'Null 'PGtext
-   ]
-
-type ContentWithImageRow' = Join ContentRow' ImageRowNull'
+type ContentWithImageRow' = Join ContentRow' (NullifyRow ImageRow')
 
 encodeContentRow :: EncodeParams Schemas _ ContentRow
 encodeContentRow =
