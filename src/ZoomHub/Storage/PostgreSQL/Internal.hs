@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -29,11 +28,9 @@ import Control.Monad.Catch (MonadMask)
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
-import Data.Time (NominalDiffTime, UTCTime)
+import Data.Time (NominalDiffTime)
 import Data.Time.Units (Second, TimeUnit, toMicroseconds)
 import Database.PostgreSQL.Simple (ConnectInfo (..))
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
 import Generics.SOP.BasicFunctors (K)
 import Squeal.PostgreSQL
   ( Condition,
@@ -268,7 +265,7 @@ selectContentBy clauses = Query encode decode sql
             & clauses
         )
 
-type ContentRow' =
+type ContentRow =
   '[ "hash_id" ::: 'NotNull 'PGtext,
      "type_id" ::: 'NotNull 'PGint4,
      "url" ::: 'NotNull 'PGtext,
@@ -292,7 +289,7 @@ type ContentRow' =
      "verified_at" ::: 'Null 'PGtimestamptz
    ]
 
-type ContentWithImageRow' = Join ContentRow' (NullifyRow ImageRow')
+type ContentWithImageRow = Join ContentRow (NullifyRow ImageRow)
 
 encodeContent :: EncodeParams Schemas _ Content
 encodeContent =
@@ -318,7 +315,7 @@ encodeContent =
     .* contentVerificationToken
     *. contentVerifiedAt
 
-decodeContent :: DecodeRow ContentRow' Content
+decodeContent :: DecodeRow ContentRow Content
 decodeContent = do
   contentId <- #hash_id
   contentType <- #type_id
@@ -339,7 +336,7 @@ decodeContent = do
   let contentDZI = Nothing
   return Content {..}
 
-decodeContentWithImage :: DecodeRow ContentWithImageRow' Content
+decodeContentWithImage :: DecodeRow ContentWithImageRow Content
 decodeContentWithImage = do
   contentId <- #hash_id
   contentType <- #type_id
@@ -368,13 +365,7 @@ decodeContentWithImage = do
         tileSize <- mTileSize
         tileOverlap <- mTileOverlap
         tileFormat <- mTileFormat
-        pure $
-          mkDeepZoomImage
-            (fromIntegral (width :: Int64))
-            (fromIntegral (height :: Int64))
-            tileSize
-            tileOverlap
-            tileFormat
+        pure $ mkDeepZoomImage width height tileSize tileOverlap tileFormat
   return Content {..}
 
 -- Reads: Image
@@ -388,10 +379,10 @@ getImageById cId =
 selectImageBy ::
   Condition 'Ungrouped '[] '[] Schemas '[ 'NotNull 'PGint8] _ ->
   Statement Schemas (Only Int64) DeepZoomImage
-selectImageBy condition = Query enc dec sql
+selectImageBy condition = Query encode decode sql
   where
-    enc = genericParams
-    dec = decodeImage
+    encode = genericParams
+    decode = decodeImage
     sql =
       select_
         ( (#image ! #width)
@@ -402,36 +393,9 @@ selectImageBy condition = Query enc dec sql
         )
         (from (table #image) & where_ condition)
 
--- -- Writes: Image
--- createImage ::
---   (MonadBaseControl IO m, MonadPQ db m) =>
---   Int64 ->
---   UTCTime ->
---   DeepZoomImage ->
---   m Int64
--- createImage cid initializedAt image = do
---   let imageRow = imageToRow cid image initializedAt
---   result <- manipulateParams insertImage imageRow
---   fmap fromOnly . getRow 0 $ result
-
-data ImageRow = ImageRow
-  { irCreatedAt :: UTCTime,
-    irWidth :: Int64,
-    irHeight :: Int64,
-    irTileSize :: TileSize,
-    irTileOverlap :: TileOverlap,
-    irTileFormat :: TileFormat
-  }
-  deriving (Show, GHC.Generic)
-
-instance SOP.Generic ImageRow
-
-instance SOP.HasDatatypeInfo ImageRow
-
 -- See:
 -- https://github.com/morphismtech/squeal/blob/0.9.1.3/RELEASE%20NOTES.md#:~:text=do%20custom%20encodings%20and%20decodings
-
-type ImageRow' =
+type ImageRow =
   '[ "width" ::: 'NotNull 'PGint8,
      "height" ::: 'NotNull 'PGint8,
      "tile_size" ::: 'NotNull 'PGint4,
@@ -439,7 +403,7 @@ type ImageRow' =
      "tile_format" ::: 'NotNull 'PGtext
    ]
 
-decodeImage :: DecodeRow ImageRow' DeepZoomImage
+decodeImage :: DecodeRow ImageRow DeepZoomImage
 decodeImage = do
   width <- #width
   height <- #height
