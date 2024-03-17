@@ -107,7 +107,6 @@ import ZoomHub.Types.DeepZoomImage (DeepZoomImage (..), mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
-import ZoomHub.Types.VerificationToken (VerificationToken)
 
 -- Connection
 type Connection = K Connection.Connection Schemas
@@ -292,29 +291,29 @@ type ContentRow' =
 
 type ContentWithImageRow' = Join ContentRow' (NullifyRow ImageRow')
 
-encodeContentRow :: EncodeParams Schemas _ ContentRow
-encodeContentRow =
-  crHashId
-    .* crTypeId
-    .* crURL
-    .* crState
-    .* crInitializedAt
-    .* crActiveAt
-    .* crCompletedAt
-    .* crTitle
-    .* crAttributionText
-    .* crAttributionLink
-    .* crMIME
-    .* crSize
-    .* crError
-    .* crProgress
-    .* crAbuseLevelId
-    .* crNumAbuseReports
-    .* crNumViews
-    .* crVersion
-    .* crSubmitterEmail
-    .* crVerificationToken
-    *. crVerifiedAt
+encodeContent :: EncodeParams Schemas _ Content
+encodeContent =
+  contentId
+    .* contentType
+    .* contentURL
+    .* contentState
+    .* contentInitializedAt
+    .* contentActiveAt
+    .* contentCompletedAt
+    .* const (Nothing :: Maybe Text) -- contentTitle
+    .* const (Nothing :: Maybe Text) -- contentAttributionText
+    .* const (Nothing :: Maybe Text) -- contentAttributionLink
+    .* contentMIME
+    .* contentSize
+    .* contentError
+    .* contentProgress
+    .* const (0 :: Int32) -- contentAbuseLevelId
+    .* const (0 :: Int64) -- contentNumAbuseReports
+    .* contentNumViews
+    .* const Content.version -- contentVersion
+    .* contentSubmitterEmail
+    .* contentVerificationToken
+    *. contentVerifiedAt
 
 decodeContent :: DecodeRow ContentRow' Content
 decodeContent = do
@@ -451,35 +450,6 @@ decodeImage = do
       tileSize
       tileOverlap
       tileFormat
-
-data ContentRow = ContentRow
-  { crHashId :: ContentId, --  1
-    crTypeId :: ContentType, --  2
-    crURL :: ContentURI, --  3
-    crState :: ContentState, --  4
-    crInitializedAt :: UTCTime, --  5
-    crActiveAt :: Maybe UTCTime, --  6
-    crCompletedAt :: Maybe UTCTime, --  7
-    crTitle :: Maybe Text, --  8
-    crAttributionText :: Maybe Text, --  9
-    crAttributionLink :: Maybe Text, -- 10
-    crMIME :: Maybe ContentMIME, -- 11
-    crSize :: Maybe Int64, -- 12
-    crError :: Maybe Text, -- 13
-    crProgress :: Double, -- 14
-    crAbuseLevelId :: Int32, -- 15
-    crNumAbuseReports :: Int64, -- 16
-    crNumViews :: Int64, -- 17
-    crVersion :: Int32, -- 18
-    crSubmitterEmail :: Maybe Text, -- 19
-    crVerificationToken :: Maybe VerificationToken, -- 20
-    crVerifiedAt :: Maybe UTCTime -- 21
-  }
-  deriving (Show, GHC.Generic)
-
-instance SOP.Generic ContentRow
-
-instance SOP.HasDatatypeInfo ContentRow
 
 insertContent :: Statement Schemas (ContentURI, Maybe Text, Maybe Text) Content
 insertContent = Manipulation encode decode sql
@@ -829,13 +799,13 @@ unsafeCreateContent ::
   m (Maybe Content)
 unsafeCreateContent content =
   transactionally_ $ do
-    result <- executeParams unsafeInsertContent (contentToRow content)
+    result <- executeParams unsafeInsertContent content
     firstRow result
 
-unsafeInsertContent :: Statement Schemas ContentRow Content
+unsafeInsertContent :: Statement Schemas Content Content
 unsafeInsertContent = Manipulation encode decode sql
   where
-    encode = encodeContentRow
+    encode = encodeContent
     decode = decodeContent
     sql =
       insertInto
@@ -890,32 +860,6 @@ unsafeInsertContent = Manipulation encode decode sql
                 :* #verified_at
             )
         )
-
-contentToRow :: Content -> ContentRow
-contentToRow c =
-  ContentRow
-    { crHashId = contentId c,
-      crTypeId = contentType c,
-      crURL = contentURL c,
-      crState = contentState c,
-      crInitializedAt = contentInitializedAt c,
-      crActiveAt = contentActiveAt c,
-      crCompletedAt = contentCompletedAt c,
-      crTitle = Nothing,
-      crAttributionText = Nothing,
-      crAttributionLink = Nothing,
-      crMIME = contentMIME c,
-      crSize = contentSize c,
-      crError = contentError c,
-      crProgress = contentProgress c,
-      crAbuseLevelId = 0, -- TODO: Replace hard-coded value
-      crNumAbuseReports = 0,
-      crNumViews = contentNumViews c,
-      crVersion = Content.version,
-      crSubmitterEmail = contentSubmitterEmail c,
-      crVerificationToken = contentVerificationToken c,
-      crVerifiedAt = contentVerifiedAt c
-    }
 
 toNominalDiffTime :: (TimeUnit a) => a -> NominalDiffTime
 toNominalDiffTime duration =
