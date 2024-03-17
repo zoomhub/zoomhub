@@ -26,6 +26,7 @@ where
 
 import Control.Monad (when)
 import Control.Monad.Catch (MonadMask)
+import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime, UTCTime)
@@ -61,6 +62,7 @@ import Squeal.PostgreSQL
     ToParam,
     UsingClause (NoUsing, Using),
     aParam,
+    appendParams,
     as,
     currentTimestamp,
     deleteFrom,
@@ -315,6 +317,23 @@ encodeContent =
     .* contentSubmitterEmail
     .* contentVerificationToken
     *. contentVerifiedAt
+
+encodeImage ::
+  EncodeParams
+    Schemas
+    '[ 'NotNull 'PGint8,
+       'NotNull 'PGint8,
+       'NotNull 'PGint4,
+       'NotNull 'PGint4,
+       'NotNull 'PGtext
+     ]
+    DeepZoomImage
+encodeImage =
+  ((fromIntegral . dziWidth) :: DeepZoomImage -> Int64)
+    .* ((fromIntegral . dziHeight) :: DeepZoomImage -> Int64)
+    .* dziTileSize
+    .* dziTileOverlap
+    *. dziTileFormat
 
 decodeContent :: DecodeRow ContentRow' Content
 decodeContent = do
@@ -730,35 +749,10 @@ resetContentAsInitialized = Manipulation encode decode sql
             )
         )
 
-imageToInsertRow :: ContentId -> DeepZoomImage -> InsertImageRow
-imageToInsertRow cid dzi =
-  InsertImageRow
-    { iirContentId = cid,
-      iirWidth = fromIntegral . dziWidth $ dzi,
-      iirHeight = fromIntegral . dziHeight $ dzi,
-      iirTileSize = dziTileSize dzi,
-      iirTileOverlap = dziTileOverlap dzi,
-      iirTileFormat = dziTileFormat dzi
-    }
-
-data InsertImageRow = InsertImageRow
-  { iirContentId :: ContentId,
-    iirWidth :: Int64,
-    iirHeight :: Int64,
-    iirTileSize :: TileSize,
-    iirTileOverlap :: TileOverlap,
-    iirTileFormat :: TileFormat
-  }
-  deriving (Show, GHC.Generic)
-
-instance SOP.Generic InsertImageRow
-
-instance SOP.HasDatatypeInfo InsertImageRow
-
-insertImage :: Statement Schemas InsertImageRow ()
+insertImage :: Statement Schemas (ContentId, DeepZoomImage) ()
 insertImage = Manipulation encode decode sql
   where
-    encode = genericParams
+    encode = contramap fst aParam `appendParams` contramap snd encodeImage
     decode = genericRow
     sql =
       insertInto_

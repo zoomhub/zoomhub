@@ -77,7 +77,6 @@ import ZoomHub.Storage.PostgreSQL.Internal
     deleteImage,
     getBy,
     getBy',
-    imageToInsertRow,
     insertContent,
     insertImage,
     markContentAsActive,
@@ -208,7 +207,7 @@ markAsSuccess ::
 markAsSuccess cId dzi mMIME mSize =
   transactionally_ $ do
     result <- executeParams markContentAsSuccess (cId, mMIME, mSize)
-    executeParams_ insertImage (imageToInsertRow cId dzi)
+    executeParams_ insertImage (cId, dzi)
     mContent <- firstRow result
     return $ case mContent of
       Just content -> do
