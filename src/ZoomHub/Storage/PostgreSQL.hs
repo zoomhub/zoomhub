@@ -17,6 +17,7 @@ module ZoomHub.Storage.PostgreSQL
     getById,
     getByURL,
     getNextUnprocessed,
+    getExpiredActive,
 
     -- ** Read operations (with view tracking)
     getById',
@@ -32,7 +33,6 @@ module ZoomHub.Storage.PostgreSQL
     unsafeResetAsInitializedWithVerification,
     dequeueNextUnprocessed,
     module ZoomHub.Storage.PostgreSQL.ConnectInfo,
-    getExpiredActive,
   )
 where
 
