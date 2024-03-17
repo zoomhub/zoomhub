@@ -71,6 +71,7 @@ import Squeal.PostgreSQL
     insertInto_,
     leftOuterJoin,
     manipulateParams_,
+    manipulation,
     null_,
     param,
     select_,
@@ -779,18 +780,15 @@ insertImage = Manipulation encode decode sql
         )
 
 deleteImage :: Statement Schemas (Only ContentId) ()
-deleteImage = Manipulation encode decode sql
-  where
-    encode = genericParams
-    decode = genericRow
-    sql =
-      deleteFrom
-        #image
-        (Using (table #content))
-        ( (#content ! #hash_id .== param @1)
-            .&& (#image ! #content_id .== #content ! #id)
-        )
-        (Returning_ Nil)
+deleteImage =
+  manipulation $
+    deleteFrom
+      #image
+      (Using (table #content))
+      ( (#content ! #hash_id .== param @1)
+          .&& (#image ! #content_id .== #content ! #id)
+      )
+      (Returning_ Nil)
 
 -- Unsafe
 unsafeCreateContent ::
