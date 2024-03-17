@@ -39,7 +39,7 @@ spec =
                 S3.defaultService
                 ( AWS.Endpoint
                     { AWS.scope = "us-east-1",
-                      -- placeholder values
+                      -- unused dummy values
                       AWS.basePath = AWS.rawPath ("" :: ByteString),
                       AWS.host = "",
                       AWS.secure = True,

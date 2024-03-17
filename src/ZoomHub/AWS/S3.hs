@@ -39,7 +39,7 @@ presignPOSTPolicy accessKey secretKey region policy = do
           S3.defaultService
           ( AWS.Endpoint
               { AWS.scope = encodeUtf8 (AWS.fromRegion region),
-                -- placeholder values
+                -- unused dummy values
                 AWS.basePath = AWS.rawPath ("" :: ByteString),
                 AWS.host = "",
                 AWS.secure = True,
