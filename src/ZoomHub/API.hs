@@ -633,7 +633,7 @@ webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
   case authResult of
     Authenticated _ -> do
       let minItems = 1
-          maxItems = 200
+          maxItems = 500
           numItems = fromMaybe 50 mNumItems
       when (numItems > maxItems || numItems < minItems) $
         throwError . Web.error400 $
