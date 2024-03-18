@@ -17,7 +17,6 @@ import Data.Aeson (ToJSON (toJSON))
 import Data.Aeson.Types (Value (String))
 import Data.Maybe (fromJust)
 import Data.Text (Text)
-import qualified Data.Text as T
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Servant (FromHttpApiData, parseUrlPiece)
@@ -53,7 +52,7 @@ instance FromPG VerificationToken where
   fromPG = fromJust . fromText <$> fromPG @Text
 
 instance ToPG db VerificationToken where
-  toPG = toPG . T.pack . show
+  toPG = toPG . UUID.toText . unVerificationToken
 
 instance Inline VerificationToken where
-  inline = inline . T.pack . show
+  inline = inline . UUID.toText . unVerificationToken

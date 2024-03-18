@@ -104,9 +104,6 @@ import ZoomHub.Types.ContentState (ContentState (..))
 import ZoomHub.Types.ContentType (ContentType (..))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage (..), mkDeepZoomImage)
-import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat)
-import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap)
-import ZoomHub.Types.DeepZoomImage.TileSize (TileSize)
 
 -- Connection
 type Connection = K Connection.Connection Schemas
