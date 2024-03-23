@@ -17,18 +17,3 @@ flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []
-# macOS on Apple Silicon
-# arch: aarch64
-# extra-include-dirs:
-#   - /opt/homebrew/opt/libpq/include
-# extra-lib-dirs:
-#   - /opt/homebrew/opt/libpq/lib
-# # macOS on Apple Silicon
-# arch: x86_64 # force Rosetta
-# extra-include-dirs:
-# - /usr/local/opt/libpq/include # use Homebrew x86 includes
-# extra-lib-dirs:
-# - /usr/local/opt/libpq/lib # use Homebrew x86 libs
-
-# allow-newer: true
-# allow-newer-deps:
