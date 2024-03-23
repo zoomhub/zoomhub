@@ -4,7 +4,7 @@ set -eo pipefail
 
 if [[ -f ./zoomhub-api.pid ]] ; then
   set +e
-  kill -9 $(cat zoomhub-api.pid) >/dev/null 2>&1
+  kill -9 "$(cat zoomhub-api.pid)" >/dev/null 2>&1
   set -e
 fi
 
@@ -46,11 +46,11 @@ PROCESSING_WORKERS='2' \
 S3_SOURCES_BUCKET='zoomhub-sources-development' \
 UPLOADS='true' \
   ghcid \
-	    --command "stack ghci zoomhub" \
+	    --command "stack ghci zoomhub --main-is zoomhub:exe:zoomhub" \
 	    --test ZoomHub.Web.MainDevelopment.update \
 	    --warnings \
 	    --restart ./zoomhub.cabal \
 	    --restart ./stack.yaml \
-  | lenient_jq &
+  | lenient_jq "$@" &
 
 echo $! > zoomhub-api.pid

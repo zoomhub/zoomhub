@@ -13,16 +13,14 @@ module ZoomHub.Types.ContentState
 where
 
 import Data.Maybe (fromJust)
-import Data.String (IsString)
-import qualified Data.String as String
 import Data.Text (Text)
-import qualified Data.Text as T
 import Squeal.PostgreSQL
-  ( FromValue (..),
-    Literal (..),
+  ( FromPG (fromPG),
+    Inline (..),
+    IsPG,
     PG,
     PGType (PGtext),
-    ToParam (..),
+    ToPG (..),
   )
 
 data ContentState
@@ -53,17 +51,14 @@ isCompleted state = case state of
   CompletedFailure -> True
 
 -- Squeal / PostgreSQL
-instance FromValue 'PGtext ContentState where
-  -- TODO: What if database value is not a valid?
-  fromValue = fromJust . fromString <$> fromValue @'PGtext
+instance IsPG ContentState where
+  type PG ContentState = 'PGtext
 
-type instance PG ContentState = 'PGtext
+instance FromPG ContentState where
+  fromPG = fromJust . fromString <$> fromPG @String
 
-instance ToParam ContentState 'PGtext where
-  toParam = toParam . toText
+instance ToPG db ContentState where
+  toPG = toPG . toText
 
-toExpression :: IsString a => ContentState -> a
-toExpression = String.fromString . T.unpack . toText
-
-instance Literal ContentState where
-  literal = toExpression
+instance Inline ContentState where
+  inline = inline . toText

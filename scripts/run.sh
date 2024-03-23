@@ -27,7 +27,7 @@ nvm use
 
 if [[ -f ngrok.pid ]] ; then
   set +e
-  kill -9 $(cat ngrok.pid) >/dev/null 2>&1
+  kill -9 "$(cat ngrok.pid)" >/dev/null 2>&1
   set -e
 fi
 

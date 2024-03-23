@@ -5,7 +5,7 @@ module MigrateDatabase
   )
 where
 
-import Squeal.PostgreSQL.Migration (defaultMain)
+import Squeal.PostgreSQL.Session.Migration (mainMigrateIso)
 import System.Environment (getArgs, lookupEnv, withArgs)
 import System.Exit (die)
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
@@ -19,7 +19,7 @@ main = do
     ((database : rest), Just hashidsSecret) -> do
       connectInfo <- ConnectInfo.fromEnv database
       let program =
-            defaultMain
+            mainMigrateIso
               (ConnectInfo.connectionString connectInfo)
               (migrations hashidsSecret)
       withArgs rest program

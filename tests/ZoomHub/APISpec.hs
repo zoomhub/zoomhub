@@ -9,19 +9,17 @@ module ZoomHub.APISpec
   )
 where
 
+import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
 import Data.Maybe (fromJust)
-import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
-import qualified Network.AWS as AWS
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
 import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
-import Squeal.PostgreSQL.Pool (runPoolPQ)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
@@ -48,7 +46,7 @@ import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import qualified ZoomHub.Log.LogLevel as LogLevel
 import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
-import ZoomHub.Storage.PostgreSQL.Internal (destroyAllResources)
+import ZoomHub.Storage.PostgreSQL.Internal (destroyConnectionPool, usingConnectionPool)
 import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVerificationToken)
@@ -66,13 +64,19 @@ toURI :: String -> URI
 toURI s =
   case parseURIReference s of
     Just uri -> uri
-    _ -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " ++ s
+    _ -> error $ "ZoomHub.APISpec.toURI: Failed to parse URI: " <> s
 
 existingContent :: (ContentId, String)
 existingContent =
-  ( ContentId.fromString "yQ4",
+  ( unsafeContentId "yQ4",
     "http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg"
   )
+
+unsafeContentId :: String -> ContentId
+unsafeContentId id_ =
+  case ContentId.fromString id_ of
+    Just cId -> cId
+    Nothing -> error $ "Invalid content ID: " <> id_
 
 -- Matchers
 applicationJSON :: MatchHeader
@@ -116,24 +120,14 @@ restRedirect cId =
     }
   where
     baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix ++ "/v1/content/" ++ unContentId cId
-
-viewRedirect :: ContentId -> ResponseMatcher
-viewRedirect cId =
-  ""
-    { matchStatus = 301,
-      matchHeaders = ["Location" <:> BC.pack expectedLocation]
-    }
-  where
-    baseURIPrefix = show . Config.baseURI $ config
-    expectedLocation = baseURIPrefix <> "/" <> unContentId cId
+    expectedLocation = baseURIPrefix <> "/v1/content/" <> unContentId cId
 
 -- Config
 nullLogger :: Middleware
 nullLogger = id
 
-newContentId :: String
-newContentId = "Xar"
+newContentId :: ContentId
+newContentId = unsafeContentId "Xar"
 
 newContentURL :: String
 newContentURL = "http://example.com"
@@ -192,13 +186,13 @@ config =
     dbConnPoolNumStripes' = 1
 
 closeDatabaseConnection :: Config -> IO ()
-closeDatabaseConnection = destroyAllResources . dbConnPool
+closeDatabaseConnection = destroyConnectionPool . dbConnPool
 
 spec :: Spec
 spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
   describe "RESTful" do
     describe "Upload (GET /v1/content/upload)" do
-      it "should return  503" $
+      it "should return 503" $
         get "/v1/content/upload" `shouldRespondWith` noNewContent
 
     describe "List (GET /v1/content)" do
@@ -226,14 +220,14 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           `shouldRespondWith` invalidURL
       it "should accept new HTTP URLs" do
         get ("/v1/content?email=" <> BC.pack testEmail <> "&url=" <> BC.pack newContentURL)
-          `shouldRespondWith` restRedirect (ContentId.fromString newContentId)
+          `shouldRespondWith` restRedirect newContentId
         liftIO do
           let pool = Config.dbConnPool config
-          mContent <- runPoolPQ (getById $ ContentId.fromString newContentId) pool
+          mContent <- usingConnectionPool pool (getById newContentId)
           (mContent >>= contentSubmitterEmail) `shouldBe` Just (T.pack testEmail)
           (mContent >>= (fmap (fromIntegral . length . show) . contentVerificationToken)) `shouldBe` Just (36 :: Integer)
-        get ("/v1/content/" <> BC.pack newContentId)
-          `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://example.com","verified":false,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/Xar","id":"Xar","ready":false,"failed":false}|]
+        get ("/v1/content/" <> BC.pack (unContentId newContentId))
+          `shouldRespondWith` [r|{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/Xar.js?width=auto&height=400px\"></script>","failed":false,"id":"Xar","progress":0,"ready":false,"shareUrl":"http://localhost:8000/Xar","url":"http://example.com","verified":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -245,7 +239,7 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "Get by ID (GET /v1/content/:id)" do
       it "should return correct data for existing content" $
         get "/v1/content/yQ4"
-          `shouldRespondWith` [r|{"dzi":{"height":3750,"url":"http://localhost:9000/_dzis_/yQ4.dzi","width":5058,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":true,"failed":false}|]
+          `shouldRespondWith` [r|{"dzi":{"height":3750,"tileFormat":"jpg","tileOverlap":1,"tileSize":254,"url":"http://localhost:9000/_dzis_/yQ4.dzi","width":5058},"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","failed":false,"id":"yQ4","progress":1,"ready":true,"shareUrl":"http://localhost:8000/yQ4","url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false}|]
             { matchStatus = 200,
               matchHeaders = [applicationJSON]
             }
@@ -270,11 +264,10 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             matchHeaders = [plainTextUTF8]
           }
     it "should verify content" do
-      let cId = ContentId.fromString newContentId
-      maybeContent <- liftIO $ runPoolPQ (getById cId) (Config.dbConnPool config)
-      let verificationToken = fromJust $ maybeContent >>= contentVerificationToken
+      mContent <- liftIO $ usingConnectionPool (Config.dbConnPool config) (getById newContentId)
+      let verificationToken = fromJust $ mContent >>= contentVerificationToken
       put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
-        `shouldRespondWith` restRedirect cId
+        `shouldRespondWith` restRedirect newContentId
 
     describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
@@ -303,13 +296,13 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
             "/v1/content/X75/completion"
             authorizedUser
             [r|{"type":"success","mime":"image/jpeg","size":1234,"dzi":{"width":456,"height":789,"tileSize":254,"tileOverlap":1,"tileFormat":"jpg"}}|]
-            `shouldRespondWith` [r|{"dzi":{"height":789,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456,"tileOverlap":1,"tileFormat":"jpg","tileSize":254},"progress":1,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":true,"failed":false}|]
+            `shouldRespondWith` [r|{"dzi":{"height":789,"tileFormat":"jpg","tileOverlap":1,"tileSize":254,"url":"http://localhost:9000/_dzis_/X75.dzi","width":456},"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","failed":false,"id":"X75","progress":1,"ready":true,"shareUrl":"http://localhost:8000/X75","url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":false}|]
         it "should accept failure" $
           authPutJSON
             "/v1/content/yQ4/completion"
             authorizedUser
             [r|{"type": "failure", "error": "FAIL!"}|]
-            `shouldRespondWith` [r|{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true}|]
+            `shouldRespondWith` [r|{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","failed":true,"id":"yQ4","progress":1,"ready":false,"shareUrl":"http://localhost:8000/yQ4","url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false}|]
 
     describe "Admin: Reset content by ID (PUT /v1/content/:id/reset)" do
       context "without auth" do
@@ -332,9 +325,9 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
       context "with valid auth" do
         it "should reset content" do
           authPutJSON "/v1/content/X75/reset" authorizedUser ""
-            `shouldRespondWith` restRedirect (ContentId.fromString "X75")
+            `shouldRespondWith` restRedirect (unsafeContentId "X75")
           get "/v1/content/X75"
-            `shouldRespondWith` [r|{"dzi":null,"progress":0,"url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/X75","id":"X75","ready":false,"failed":false}|]
+            `shouldRespondWith` [r|{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/X75.js?width=auto&height=400px\"></script>","failed":false,"id":"X75","progress":0,"ready":false,"shareUrl":"http://localhost:8000/X75","url":"http://e.i.uol.com.br/outros/0907/090731cielao1.jpg","verified":true}|]
               { matchStatus = 200,
                 matchHeaders = [applicationJSON]
               }
@@ -352,23 +345,17 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
     describe "GET /v1/content?url=…&callback=…" do
       it "should accept `callback` query parameter" $
         get "/v1/content?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":400,"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","statusText":"Bad Request","redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"error":"Missing ID or URL. Please provide ID, e.g. `/v1/content/<id>`, or URL via `/v1/content?url=<url>` query parameter.","redirectLocation":null,"status":400,"statusText":"Bad Request"});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
     describe "GET /v1/content/:id?callback=…" do
       it "should accept `callback` query parameter" do
         get "/v1/content/yQ4?callback=handleContent"
-          `shouldRespondWith` [r|/**/ typeof handleContent === 'function' && handleContent({"status":200,"statusText":"OK","content":{"dzi":null,"progress":1,"url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","shareUrl":"http://localhost:8000/yQ4","id":"yQ4","ready":false,"failed":true},"redirectLocation":null});|]
+          `shouldRespondWith` [r|/**/ typeof handleContent === "function" && handleContent({"content":{"dzi":null,"embedHtml":"<script src=\"http://localhost:8000/yQ4.js?width=auto&height=400px\"></script>","failed":true,"id":"yQ4","progress":1,"ready":false,"shareUrl":"http://localhost:8000/yQ4","url":"http://media.stenaline.com/media_SE/lalandia-map-zoomit/lalandia-map.jpg","verified":false},"redirectLocation":null,"status":200,"statusText":"OK"});|]
             { matchStatus = 200,
               matchHeaders = [javaScriptUTF8]
             }
-
-  describe "View by URL (GET /:url)" do
-    it "should return correct redirect existing content" do
-      let (existingId, existingURL) = existingContent
-       in get ("/" <> BC.pack existingURL)
-            `shouldRespondWith` viewRedirect existingId
 
   describe "CORS" do
     it "should allow all origins" do
@@ -397,8 +384,8 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
         get "/v1/content/yQ4" `shouldRespondWith` 200
         liftIO do
           let pool = Config.dbConnPool config
-          maybeContent <- runPoolPQ (getById $ ContentId.fromString "yQ4") pool
-          let numViews = maybe 0 contentNumViews maybeContent
+          mContent <- usingConnectionPool pool (getById $ unsafeContentId "yQ4")
+          let numViews = maybe 0 contentNumViews mContent
           numViews `shouldBe` 5
   where
     authPutJSON path user = putJSON' path [(hAuthorization, toBasicAuthHeader user)]

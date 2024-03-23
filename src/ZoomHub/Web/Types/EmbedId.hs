@@ -19,17 +19,17 @@ import qualified ZoomHub.Types.ContentId as ContentId
 newtype EmbedId = EmbedId {unEmbedId :: ContentId} deriving (Eq, Show)
 
 fromString :: String -> Either String EmbedId
-fromString s = case maybeContentId of
+fromString s = case mContentId of
   Just contentId -> Right $ EmbedId contentId
-  _ -> Left "Invalid embed ID"
+  Nothing -> Left "Invalid embed ID"
   where
     pathAndQuery = decodePath (BC.pack s)
     (pathSegments, _) = pathAndQuery
-    maybeContentId = case pathSegments of
+    mContentId = case pathSegments of
       [p] ->
         let idParts = splitExtension . T.unpack $ p
          in case idParts of
-              (cId, ".js") -> Just $ ContentId.fromString cId
+              (cId, ".js") -> ContentId.fromString cId
               _ -> Nothing
       _ -> Nothing
 

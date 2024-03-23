@@ -9,7 +9,6 @@ where
 
 import Data.Aeson (decode)
 import qualified Data.ByteString.Lazy as LB
-import Data.Maybe (Maybe (..))
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import ZoomHub.API.Types.ContentCompletion (ContentCompletion (..), FailureCompletion (..), SuccessCompletion (..))
 import ZoomHub.API.Types.DeepZoomImageWithoutURL (mkDeepZoomImage)

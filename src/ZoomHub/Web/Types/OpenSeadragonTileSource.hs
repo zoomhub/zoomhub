@@ -33,7 +33,7 @@ instance ToJSON OpenSeadragonTileSource where
       [ "Image"
           .= object
             [ "xmlns" .= ("http://schemas.microsoft.com/deepzoom/2008" :: T.Text),
-              "Url" .= (dropExtension (show $ dziUrl dzi) ++ "_files/"),
+              "Url" .= (dropExtension (show $ dziUrl dzi) <> "_files/"),
               "Format" .= dziTileFormat dzi,
               "Overlap" .= dziTileOverlap dzi,
               "TileSize" .= dziTileSize dzi,

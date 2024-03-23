@@ -22,17 +22,19 @@ where
 import qualified Control.Category as Category
 import Data.String (IsString)
 import Squeal.PostgreSQL
-  ( AlignedList (Done, (:>>)),
-    ColumnConstraint (Def, NoDef),
-    Definition,
+  ( Definition,
+    IsoQ (..),
     Manipulation (UnsafeManipulation),
     NP ((:*)),
-    NullityType (NotNull, Null),
-    OnDeleteClause (OnDeleteCascade),
-    OnUpdateClause (OnUpdateCascade),
+    NullType (NotNull, Null),
+    OnDeleteClause (OnDelete),
+    OnUpdateClause (OnUpdate),
     Optional (Default, Set),
+    Optionality (Def, NoDef),
     PGType (PGbool, PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
+    Path (Done, (:>>)),
     Public,
+    ReferentialAction (Cascade),
     SchemumType (Table),
     TableConstraint (ForeignKey, PrimaryKey, Unique),
     as,
@@ -46,11 +48,11 @@ import Squeal.PostgreSQL
     doublePrecision,
     dropTable,
     foreignKey,
+    inline,
     insertInto_,
     int,
     int4,
-    literal,
-    manipDefinition,
+    manipulation_,
     notNullable,
     null_,
     nullable,
@@ -64,8 +66,8 @@ import Squeal.PostgreSQL
     (:=>),
     (>>>),
   )
-import Squeal.PostgreSQL.Manipulation (pattern Values_)
-import Squeal.PostgreSQL.Migration (Migration (..))
+import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
+import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import Text.RawString.QQ (r)
 import qualified ZoomHub.Types.ContentState as ContentState
 import qualified ZoomHub.Types.ContentType as ContentType
@@ -124,7 +126,7 @@ type ImageTable0 =
   "image"
     ::: 'Table
           ( '[ "pk_image" ::: 'PrimaryKey '["content_id"],
-               "fk_content_id" ::: 'ForeignKey '["content_id"] "content" '["id"],
+               "fk_content_id" ::: 'ForeignKey '["content_id"] "public" "content" '["id"],
                "image_unique_content_id" ::: 'Unique '["content_id"]
              ]
               :=> '[ "content_id" ::: 'Def :=> 'NotNull 'PGint8,
@@ -141,7 +143,7 @@ type FlickrTable0 =
   "flickr"
     ::: 'Table
           ( '[ "pk_flickr" ::: 'PrimaryKey '["content_id"],
-               "fk_content_id" ::: 'ForeignKey '["content_id"] "content" '["id"],
+               "fk_content_id" ::: 'ForeignKey '["content_id"] "public" "content" '["id"],
                "flickr_unique_content_id" ::: 'Unique '["content_id"]
              ]
               :=> '[ "content_id" ::: 'Def :=> 'NotNull 'PGint8,
@@ -161,7 +163,7 @@ type FlickrTable0 =
                    ]
           )
 
-migrations :: String -> AlignedList (Migration Definition) (Public '[]) (Schemas0)
+migrations :: String -> Path (Migration (IsoQ Definition)) (Public '[]) Schemas0
 migrations hashidsSecret =
   installPLpgSQLExtension
     :>> initializeHashidsEncode
@@ -170,125 +172,129 @@ migrations hashidsSecret =
     :>> createContentHashIdTrigger
     :>> Done
 
-installPLpgSQLExtension :: Migration Definition (Public '[]) (Public '[])
+installPLpgSQLExtension :: Migration (IsoQ Definition) (Public '[]) (Public '[])
 installPLpgSQLExtension =
   Migration
-    { name = "2019-11-11-1: Install V8 extension",
-      up = manipDefinition . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;",
-      down = manipDefinition . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
-    }
+    "2019-11-11-1: Install V8 extension"
+    IsoQ
+      { up = manipulation_ . UnsafeManipulation $ "CREATE EXTENSION IF NOT EXISTS plpgsql;",
+        down = manipulation_ . UnsafeManipulation $ "DROP EXTENSION IF EXISTS plpgsql;"
+      }
 
-initializeHashidsEncode :: Migration Definition (Public '[]) (Public '[])
+initializeHashidsEncode :: Migration (IsoQ Definition) (Public '[]) (Public '[])
 initializeHashidsEncode =
   Migration
-    { name = "2019-11-11-2: Initialize Hashids encode function",
-      up = concatDefinitions $ manipDefinition . UnsafeManipulation <$> createHashidsFunctions,
-      down = manipDefinition . UnsafeManipulation $ dropHashidsEncode
-    }
+    "2019-11-11-2: Initialize Hashids encode function"
+    IsoQ
+      { up = concatDefinitions $ manipulation_ . UnsafeManipulation <$> createHashidsFunctions,
+        down = manipulation_ . UnsafeManipulation $ dropHashidsEncode
+      }
   where
-    dropHashidsEncode :: IsString a => a
+    dropHashidsEncode :: (IsString a) => a
     dropHashidsEncode =
       [r|
       DROP SCHEMA hashids CASCADE;
     |]
 
-initialSchema :: Migration Definition (Public '[]) Schemas0
+initialSchema :: Migration (IsoQ Definition) (Public '[]) Schemas0
 initialSchema =
   Migration
-    { name = "2019-11-11-3: Initial setup",
-      up = setup,
-      down = teardown
-    }
+    "2019-11-11-3: Initial setup"
+    IsoQ
+      { up = setup,
+        down = teardown
+      }
   where
     setup :: Definition (Public '[]) Schemas0
     setup =
       createTable
         #config
-        ( bigserial `as` #id
-            :* (text & notNullable) `as` #key
-            :* (text & notNullable) `as` #value
+        ( (bigserial `as` #id)
+            :* ((text & notNullable) `as` #key)
+            :* ((text & notNullable) `as` #value)
         )
-        ( primaryKey #id `as` #pk_config
-            :* unique #key `as` #config_unique_key
+        ( (primaryKey #id `as` #pk_config)
+            :* (unique #key `as` #config_unique_key)
         )
         >>> createTable
           #content
-          ( bigserial `as` #id
-              :* (text & notNullable) `as` #hash_id
-              :* (int4 & notNullable & default_ defaultContentTypeId) `as` #type_id
-              :* (text & notNullable) `as` #url
-              :* (text & notNullable & default_ defaultContentState) `as` #state
-              :* (timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #initialized_at
-              :* (timestampWithTimeZone & nullable & default_ null_) `as` #active_at
-              :* (timestampWithTimeZone & nullable & default_ null_) `as` #completed_at
-              :* (text & nullable & default_ null_) `as` #title
-              :* (text & nullable & default_ null_) `as` #attribution_text
-              :* (text & nullable & default_ null_) `as` #attribution_link
-              :* (text & nullable & default_ null_) `as` #mime
-              :* (bigint & nullable & default_ null_) `as` #size
-              :* (text & nullable & default_ null_) `as` #error
-              :* (doublePrecision & notNullable & default_ 0) `as` #progress
-              :* (int4 & notNullable & default_ 0) `as` #abuse_level_id
-              :* (bigint & notNullable & default_ 0) `as` #num_abuse_reports
-              :* (bigint & notNullable & default_ 0) `as` #num_views
-              :* (int & notNullable & default_ defaultContentVersion) `as` #version
+          ( bigserial
+              `as` #id
+              :* ((text & notNullable) `as` #hash_id)
+              :* ((int4 & notNullable & default_ defaultContentTypeId) `as` #type_id)
+              :* ((text & notNullable) `as` #url)
+              :* ((text & notNullable & default_ defaultContentState) `as` #state)
+              :* ((timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #initialized_at)
+              :* ((timestampWithTimeZone & nullable & default_ null_) `as` #active_at)
+              :* ((timestampWithTimeZone & nullable & default_ null_) `as` #completed_at)
+              :* ((text & nullable & default_ null_) `as` #title)
+              :* ((text & nullable & default_ null_) `as` #attribution_text)
+              :* ((text & nullable & default_ null_) `as` #attribution_link)
+              :* ((text & nullable & default_ null_) `as` #mime)
+              :* ((bigint & nullable & default_ null_) `as` #size)
+              :* ((text & nullable & default_ null_) `as` #error)
+              :* ((doublePrecision & notNullable & default_ 0) `as` #progress)
+              :* ((int4 & notNullable & default_ 0) `as` #abuse_level_id)
+              :* ((bigint & notNullable & default_ 0) `as` #num_abuse_reports)
+              :* ((bigint & notNullable & default_ 0) `as` #num_views)
+              :* ((int & notNullable & default_ defaultContentVersion) `as` #version)
           )
-          ( primaryKey #id `as` #pk_content
-              :* unique #hash_id `as` #content_unique_hash_id
-              :* unique #url `as` #content_unique_url
+          ( (primaryKey #id `as` #pk_content)
+              :* (unique #hash_id `as` #content_unique_hash_id)
+              :* (unique #url `as` #content_unique_url)
           )
         >>> createTable
           #image
-          ( bigserial `as` #content_id
-              :* (timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at
-              :* (bigint & notNullable) `as` #width
-              :* (bigint & notNullable) `as` #height
-              :* (int4 & notNullable) `as` #tile_size
-              :* (int4 & notNullable) `as` #tile_overlap
-              :* (text & notNullable) `as` #tile_format
+          ( (bigserial `as` #content_id)
+              :* ((timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at)
+              :* ((bigint & notNullable) `as` #width)
+              :* ((bigint & notNullable) `as` #height)
+              :* ((int4 & notNullable) `as` #tile_size)
+              :* ((int4 & notNullable) `as` #tile_overlap)
+              :* ((text & notNullable) `as` #tile_format)
           )
-          ( primaryKey #content_id `as` #pk_image
+          ( (primaryKey #content_id `as` #pk_image)
               :* ( foreignKey
                      #content_id
                      #content
                      #id
-                     OnDeleteCascade
-                     OnUpdateCascade
+                     (OnDelete Cascade)
+                     (OnUpdate Cascade)
                      `as` #fk_content_id
                  )
-              :* unique #content_id `as` #image_unique_content_id
+              :* (unique #content_id `as` #image_unique_content_id)
           )
         >>> createTable
           #flickr
-          ( bigserial `as` #content_id
-              :* (int4 & notNullable) `as` #farm_id
-              :* (int4 & notNullable) `as` #server_id
-              :* (text & notNullable) `as` #photo_id
-              :* (text & notNullable) `as` #secret
-              :* (int4 & notNullable) `as` #size_id
-              :* (bool & notNullable) `as` #is_public
-              :* (int4 & notNullable) `as` #license_id
-              :* (text & nullable) `as` #original_extension
-              :* (text & nullable) `as` #original_secret
-              :* (text & notNullable) `as` #owner_nsid
-              :* (text & nullable) `as` #owner_real_name
-              :* (text & notNullable) `as` #owner_username
-              :* (text & nullable) `as` #photo_page_url
+          ( (bigserial `as` #content_id)
+              :* ((int4 & notNullable) `as` #farm_id)
+              :* ((int4 & notNullable) `as` #server_id)
+              :* ((text & notNullable) `as` #photo_id)
+              :* ((text & notNullable) `as` #secret)
+              :* ((int4 & notNullable) `as` #size_id)
+              :* ((bool & notNullable) `as` #is_public)
+              :* ((int4 & notNullable) `as` #license_id)
+              :* ((text & nullable) `as` #original_extension)
+              :* ((text & nullable) `as` #original_secret)
+              :* ((text & notNullable) `as` #owner_nsid)
+              :* ((text & nullable) `as` #owner_real_name)
+              :* ((text & notNullable) `as` #owner_username)
+              :* ((text & nullable) `as` #photo_page_url)
           )
-          ( primaryKey #content_id `as` #pk_flickr
+          ( (primaryKey #content_id `as` #pk_flickr)
               :* ( foreignKey
                      #content_id
                      #content
                      #id
-                     OnDeleteCascade
-                     OnUpdateCascade
+                     (OnDelete Cascade)
+                     (OnUpdate Cascade)
                      `as` #fk_content_id
                  )
-              :* unique #content_id `as` #flickr_unique_content_id
+              :* (unique #content_id `as` #flickr_unique_content_id)
           )
       where
-        defaultContentTypeId = literal ContentType.Unknown
-        defaultContentState = literal ContentState.Initialized
+        defaultContentTypeId = inline ContentType.Unknown
+        defaultContentState = inline ContentState.Initialized
         defaultContentVersion = 4
     teardown :: Definition Schemas0 (Public '[])
     teardown =
@@ -297,42 +303,44 @@ initialSchema =
         >>> dropTable #content
         >>> dropTable #config
 
-insertHashidsSecret :: String -> Migration Definition Schemas0 Schemas0
+insertHashidsSecret :: String -> Migration (IsoQ Definition) Schemas0 Schemas0
 insertHashidsSecret secret =
   Migration
-    { name = "2019-11-11-4: Insert Hashids secret",
-      up =
-        manipDefinition $
-          insertInto_
-            #config
-            ( Values_
-                ( Default `as` #id
-                    :* Set "hashids_salt" `as` #key
-                    :* Set (literal secret) `as` #value
-                )
-            ),
-      down =
-        manipDefinition $
-          deleteFrom_ #config (#key .== "hashids_salt")
-    }
+    "2019-11-11-4: Insert Hashids secret"
+    IsoQ
+      { up =
+          manipulation_ $
+            insertInto_
+              #config
+              ( Values_
+                  ( (Default `as` #id)
+                      :* (Set "hashids_salt" `as` #key)
+                      :* (Set (inline secret) `as` #value)
+                  )
+              ),
+        down =
+          manipulation_ $
+            deleteFrom_ #config (#key .== "hashids_salt")
+      }
 
-createContentHashIdTrigger :: Migration Definition Schemas0 Schemas0
+createContentHashIdTrigger :: Migration (IsoQ Definition) Schemas0 Schemas0
 createContentHashIdTrigger =
   Migration
-    { name = "2019-11-11-5: Create content hash_id trigger",
-      up =
-        concatDefinitions
-          [ manipDefinition . UnsafeManipulation $ createContentBeforeInsert,
-            manipDefinition . UnsafeManipulation $ createTriggerContentBeforeInsert
-          ],
-      down =
-        concatDefinitions
-          [ manipDefinition . UnsafeManipulation $ dropTriggerContentBeforeInsert,
-            manipDefinition . UnsafeManipulation $ dropContentBeforeInsert
-          ]
-    }
+    "2019-11-11-5: Create content hash_id trigger"
+    IsoQ
+      { up =
+          concatDefinitions
+            [ manipulation_ . UnsafeManipulation $ createContentBeforeInsert,
+              manipulation_ . UnsafeManipulation $ createTriggerContentBeforeInsert
+            ],
+        down =
+          concatDefinitions
+            [ manipulation_ . UnsafeManipulation $ dropTriggerContentBeforeInsert,
+              manipulation_ . UnsafeManipulation $ dropContentBeforeInsert
+            ]
+      }
   where
-    createContentBeforeInsert :: IsString a => a
+    createContentBeforeInsert :: (IsString a) => a
     createContentBeforeInsert =
       [r|
       CREATE FUNCTION content_before_insert() RETURNS trigger AS $$
@@ -377,18 +385,18 @@ createContentHashIdTrigger =
           END;
       $$ LANGUAGE plpgsql;
     |]
-    dropContentBeforeInsert :: IsString a => a
+    dropContentBeforeInsert :: (IsString a) => a
     dropContentBeforeInsert =
       [r|
       DROP FUNCTION content_before_insert();
     |]
-    createTriggerContentBeforeInsert :: IsString a => a
+    createTriggerContentBeforeInsert :: (IsString a) => a
     createTriggerContentBeforeInsert =
       [r|
       CREATE TRIGGER content_before_insert BEFORE INSERT ON content
         FOR EACH ROW EXECUTE PROCEDURE content_before_insert();
     |]
-    dropTriggerContentBeforeInsert :: IsString a => a
+    dropTriggerContentBeforeInsert :: (IsString a) => a
     dropTriggerContentBeforeInsert =
       [r|
       DROP TRIGGER content_before_insert ON content;
@@ -407,7 +415,7 @@ concatDefinitions = foldr (>>>) Category.id
 -- License:
 --  MIT License
 --  Copyright (c) 2018 Andrey Stepanov
-createHashidsFunctions :: IsString a => [a]
+createHashidsFunctions :: (IsString a) => [a]
 createHashidsFunctions =
   [ [r|
       create schema if not exists hashids;

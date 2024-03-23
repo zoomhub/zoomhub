@@ -14,7 +14,6 @@ import qualified Data.ByteString.Char8 as BC
 import Data.CaseInsensitive (original)
 import qualified Data.HashMap.Strict as HM
 import Data.IP (fromHostAddress, fromIPv4)
-import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (NominalDiffTime)
@@ -102,10 +101,8 @@ sockToJSON (SockAddrInet6 pn _ ha _) =
     ]
 sockToJSON (SockAddrUnix sock) =
   object ["unix" .= sock]
-sockToJSON (SockAddrCan i) =
-  object ["can" .= i]
 
-toObject :: ToJSON a => [(Text, a)] -> Value
+toObject :: (ToJSON a) => [(Text, a)] -> Value
 toObject = toJSON . HM.fromList
 
 queryItemToJSON :: QueryItem -> (Text, Maybe Value)

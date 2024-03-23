@@ -12,7 +12,7 @@ module ZoomHub.API.Types.NonRESTfulResponse
 where
 
 import Data.Aeson (ToJSON, object, toJSON, (.=))
-import qualified Data.Text as T
+import qualified Data.Aeson.Key as Key
 import Network.HTTP.Types.Status
   ( Status,
     badRequest400,
@@ -26,7 +26,7 @@ import Network.HTTP.Types.Status
 import Network.URI (URI)
 import ZoomHub.Utils (lenientDecodeUtf8)
 
-data NonRESTfulResponse a = ToJSON a =>
+data NonRESTfulResponse a = (ToJSON a) =>
   NonRESTfulResponse
   { nrrStatus :: Status,
     nrrBodyKey :: String,
@@ -34,7 +34,7 @@ data NonRESTfulResponse a = ToJSON a =>
     nrrRedirectLocation :: Maybe URI
   }
 
-mkNonRESTful200 :: ToJSON a => String -> a -> NonRESTfulResponse a
+mkNonRESTful200 :: (ToJSON a) => String -> a -> NonRESTfulResponse a
 mkNonRESTful200 key body =
   NonRESTfulResponse
     { nrrStatus = ok200,
@@ -43,7 +43,7 @@ mkNonRESTful200 key body =
       nrrRedirectLocation = Nothing
     }
 
-mkNonRESTful301 :: ToJSON a => String -> a -> URI -> NonRESTfulResponse a
+mkNonRESTful301 :: (ToJSON a) => String -> a -> URI -> NonRESTfulResponse a
 mkNonRESTful301 key body redirectLocation =
   NonRESTfulResponse
     { nrrStatus = movedPermanently301,
@@ -80,7 +80,7 @@ mkNonRESTful503 message =
     }
 
 -- JSON
-instance ToJSON a => ToJSON (NonRESTfulResponse a) where
+instance (ToJSON a) => ToJSON (NonRESTfulResponse a) where
   toJSON r =
     object
       [ "status" .= statusCode status,
@@ -89,6 +89,6 @@ instance ToJSON a => ToJSON (NonRESTfulResponse a) where
         "redirectLocation" .= redirectLocation
       ]
     where
-      bodyKey = T.pack (nrrBodyKey r)
+      bodyKey = Key.fromString $ nrrBodyKey r
       redirectLocation = toJSON (show <$> nrrRedirectLocation r)
       status = nrrStatus r

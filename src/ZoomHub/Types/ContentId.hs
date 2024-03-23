@@ -1,73 +1,67 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module ZoomHub.Types.ContentId
   ( ContentId,
-    ContentId',
     fromInteger,
     fromString,
     isValid,
-    mkContentId,
     unContentId,
     validChars,
+    toText,
   )
 where
 
+import Control.Monad.Except (MonadError (throwError))
 import Data.Aeson
-  ( FromJSON,
+  ( FromJSON (..),
     ToJSON,
-    genericParseJSON,
-    genericToJSON,
     parseJSON,
     toJSON,
   )
-import Data.Aeson.Casing (aesonPrefix, camelCase)
-import Data.List (intersperse)
+import qualified Data.Aeson as Aeson
+import Data.Aeson.Types (typeMismatch)
+import Data.Foldable (fold)
+import qualified Data.List as List
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (FromPG (fromPG), Inline (inline), IsPG (PG), PGType (PGtext), ToPG (toPG))
 import Prelude hiding (fromInteger)
 
 -- TODO: Use record syntax, i.e. `ContentId { unContentId :: String }` without
 -- introducing `{"id": <id>}` JSON serialization:
-newtype ContentId' a = ContentId a
-  deriving (Eq, Functor, Generic, Show)
+newtype ContentId = ContentId {unContentId :: String}
+  deriving stock (Eq, Generic, Show)
 
-type ContentId = ContentId' String
-
-unContentId :: ContentId -> String
-unContentId (ContentId cId) = cId
-
-mkContentId :: a -> ContentId' a
-mkContentId = ContentId
-
-fromInteger :: (Integer -> String) -> Integer -> ContentId
+fromInteger :: (Integer -> String) -> Integer -> Maybe ContentId
 fromInteger encode intId = fromString $ encode intId
 
--- TODO: Change return type to `Maybe ContentId` to make it a total function:
-fromString :: String -> ContentId
+fromString :: String -> Maybe ContentId
 fromString s
-  | isValid s = ContentId s
-  | otherwise =
-    error $
-      "Invalid content ID '" ++ s ++ "'."
-        ++ " Valid characters: "
-        ++ intersperse ',' validChars
-        ++ "."
+  | isValid s = Just $ ContentId s
+  | otherwise = Nothing
+
+fromText :: Text -> Maybe ContentId
+fromText = fromString . T.unpack
+
+toText :: ContentId -> Text
+toText = T.pack . unContentId
 
 -- NOTE: Duplicated from `hashids`: https://git.io/vgpT4
 -- TODO: Use this for `hashids` initialization.
 validChars :: String
-validChars = ['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9']
+validChars = ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9']
 
 validCharsSet :: Set Char
 validCharsSet = Set.fromList validChars
@@ -77,24 +71,40 @@ isValid = all (`Set.member` validCharsSet)
 
 -- Text
 instance FromHttpApiData ContentId where
-  parseUrlPiece t
-    | isValid s = Right . fromString $ s
-    | otherwise = Left "Invalid content ID"
-    where
-      s = T.unpack t
+  parseUrlPiece t =
+    case fromText t of
+      Just cId -> Right cId
+      Nothing ->
+        Left $
+          fold
+            [ "Invalid content ID '" <> t <> "'.",
+              " Valid characters: " <> T.pack (List.intersperse ',' validChars) <> "."
+            ]
 
 -- JSON
 instance ToJSON ContentId where
-  toJSON = genericToJSON $ aesonPrefix camelCase
+  toJSON = Aeson.String . T.pack . unContentId
 
 instance FromJSON ContentId where
-  parseJSON = genericParseJSON $ aesonPrefix camelCase
+  parseJSON (Aeson.String s)
+    | isValid (T.unpack s) = pure $ ContentId $ T.unpack s
+    | otherwise = fail $ "Invalid ContentId: " <> T.unpack s
+  parseJSON invalid = typeMismatch "ContentId" invalid
 
 -- Squeal / PostgreSQL
-type instance PG ContentId = 'PGtext
+-- TODO: Look into newtype deriving
+instance IsPG ContentId where
+  type PG ContentId = 'PGtext
 
-instance ToParam ContentId 'PGtext where
-  toParam = toParam . unContentId
+instance FromPG ContentId where
+  fromPG = do
+    value <- fromPG @Text
+    case fromText value of
+      Just format -> pure format
+      Nothing -> throwError $ "Invalid content ID: \"" <> value <> "\""
 
-instance FromValue 'PGtext ContentId where
-  fromValue = ContentId <$> fromValue @'PGtext
+instance ToPG db ContentId where
+  toPG = toPG . toText
+
+instance Inline ContentId where
+  inline = inline . toText

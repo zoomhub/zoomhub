@@ -19,6 +19,7 @@ where
 
 import Data.Aeson (FromJSON, ToJSON, Value (String), genericParseJSON, genericToJSON, parseJSON, toJSON, withText)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.Int (Int64)
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
@@ -35,8 +36,8 @@ import ZoomHub.Utils (tshow)
 
 data DeepZoomImage = DeepZoomImage
   { dziUrl :: DeepZoomImageURI,
-    dziWidth :: Integer,
-    dziHeight :: Integer,
+    dziWidth :: Int64,
+    dziHeight :: Int64,
     dziTileSize :: Internal.TileSize,
     dziTileOverlap :: Internal.TileOverlap,
     dziTileFormat :: Internal.TileFormat
@@ -74,8 +75,8 @@ toInternal dzi =
 
 mkDeepZoomImage ::
   DeepZoomImageURI ->
-  Integer ->
-  Integer ->
+  Int64 ->
+  Int64 ->
   Internal.TileSize ->
   Internal.TileOverlap ->
   Internal.TileFormat ->
@@ -97,13 +98,13 @@ largestSingleTileUrl dzi =
     (error "Invalid DZI tile URL")
     $ parseAbsoluteURI
       . T.unpack
-      $ T.dropEnd
-        (T.length dziExtension)
-        (tshow $ dziUrl dzi)
-        <> "_files/"
-        <> tshow largestSingleTileLevel
-        <> "/0_0."
-        <> tshow (dziTileFormat dzi)
+    $ T.dropEnd
+      (T.length dziExtension)
+      (tshow $ dziUrl dzi)
+      <> "_files/"
+      <> tshow largestSingleTileLevel
+      <> "/0_0."
+      <> tshow (dziTileFormat dzi)
   where
     dziExtension = ".dzi"
     largestSingleTileLevel = 8 :: Int

@@ -5,7 +5,7 @@ on: push
 jobs:
   # process-content
   process-content-build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Cache process-content Node.js dependencies
@@ -45,7 +45,7 @@ jobs:
           path: process-content-workspace.tar.gz
 
   process-content-deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     needs: [process-content-build]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -84,7 +84,7 @@ jobs:
 
   # web
   web-build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     env:
       PGHOST: "localhost"
       PGPORT: "5432"
@@ -118,14 +118,18 @@ jobs:
           enable-stack: true
           stack-version: "latest"
 
-      - name: Sets ZH_API_BASE_URI=https://api.zoomhub.net
+      - name: Set production base URI for website and API
         run: |
           echo "ZH_API_BASE_URI=https://api.zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_WEB_BASE_URI=https://zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_STATIC_BASE_URI=https://static.zoomhub.net" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/main'
 
-      - name: Sets ZH_API_BASE_URI=https://api.staging.zoomhub.net
+      - name: Set staging base URI for website and API
         run: |
           echo "ZH_API_BASE_URI=https://api.staging.zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_WEB_BASE_URI=https://staging.zoomhub.net" >> $GITHUB_ENV
+          echo "ZH_STATIC_BASE_URI=https://static.zoomhub.net" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
       - name: Cache ~/.stack
@@ -177,7 +181,11 @@ jobs:
       - name: Build frontend
         run: |
           npm ci
-          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" npx snowpack build
+          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" \
+          SNOWPACK_PUBLIC_WEB_BASE_URI="$ZH_WEB_BASE_URI" \
+          SNOWPACK_PUBLIC_STATIC_BASE_URI="$ZH_STATIC_BASE_URI" \
+            npx snowpack build
+
           # NOTE: Delete Haskell source code. This directory is only mounted in
           # Snowpack configuration to enable Tailwind CSS ’purge’ feature. These
           # files are not meant to be shipped to the public website.
@@ -243,7 +251,7 @@ jobs:
           path: web-workspace.tar.gz
 
   web-deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     needs: [web-build]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -254,12 +262,12 @@ jobs:
     steps:
       - name: Sets ZH_AWS_EB_ENVIRONMENT for production
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=production" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=production-3" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/main'
 
       - name: Sets ZH_AWS_EB_ENVIRONMENT for staging
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=staging" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=staging-2" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
       - name: Download web-workspace

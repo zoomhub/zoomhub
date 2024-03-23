@@ -10,7 +10,6 @@ where
 
 import Data.Foldable (fold)
 import Data.Maybe (fromJust)
-import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Lucid as H

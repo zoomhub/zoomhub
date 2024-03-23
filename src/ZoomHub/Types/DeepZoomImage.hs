@@ -19,7 +19,9 @@ where
 
 import Data.Aeson (ToJSON, genericToJSON, toJSON)
 import Data.Aeson.Casing (aesonPrefix, camelCase)
+import Data.Int (Int64)
 import GHC.Generics (Generic)
+import qualified Generics.SOP as SOP
 import Text.Read (readMaybe)
 import Text.XML.Light (QName (QName))
 import Text.XML.Light.Input (parseXMLDoc)
@@ -32,8 +34,8 @@ import ZoomHub.Types.DeepZoomImage.TileSize (TileSize (..))
 import qualified ZoomHub.Types.DeepZoomImage.TileSize as TileSize
 
 data DeepZoomImage = DeepZoomImage
-  { dziWidth :: Integer,
-    dziHeight :: Integer,
+  { dziWidth :: Int64,
+    dziHeight :: Int64,
     dziTileSize :: TileSize,
     dziTileOverlap :: TileOverlap,
     dziTileFormat :: TileFormat
@@ -41,8 +43,8 @@ data DeepZoomImage = DeepZoomImage
   deriving (Eq, Generic, Show)
 
 mkDeepZoomImage ::
-  Integer ->
-  Integer ->
+  Int64 ->
+  Int64 ->
   TileSize ->
   TileOverlap ->
   TileFormat ->
@@ -51,23 +53,16 @@ mkDeepZoomImage dziWidth dziHeight dziTileSize dziTileOverlap dziTileFormat =
   DeepZoomImage {..}
 
 fromXML :: String -> Maybe DeepZoomImage
-fromXML xml =
-  parseXMLDoc xml
-    >>= findElement (tag "Image")
-    >>= \image ->
-      attr "TileSize" image >>= TileSize.fromString
-        >>= \tileSize ->
-          attr "Overlap" image >>= TileOverlap.fromString
-            >>= \tileOverlap ->
-              attr "Format" image >>= TileFormat.fromString
-                >>= \tileFormat ->
-                  findElement (tag "Size") image
-                    >>= \size ->
-                      attr "Width" size >>= readMaybe
-                        >>= \width ->
-                          attr "Height" size >>= readMaybe
-                            >>= \height ->
-                              Just $ mkDeepZoomImage width height tileSize tileOverlap tileFormat
+fromXML xml = do
+  xmlDoc <- parseXMLDoc xml
+  image <- findElement (tag "Image") xmlDoc
+  tileSize <- attr "TileSize" image >>= TileSize.fromString
+  tileOverlap <- attr "Overlap" image >>= TileOverlap.fromString
+  tileFormat <- attr "Format" image >>= TileFormat.fromString
+  size <- findElement (tag "Size") image
+  width <- attr "Width" size >>= readMaybe
+  height <- attr "Height" size >>= readMaybe
+  pure $ mkDeepZoomImage width height tileSize tileOverlap tileFormat
   where
     tag name = QName name (Just namespace) Nothing
     attr name = findAttr (QName name Nothing Nothing)
@@ -76,3 +71,8 @@ fromXML xml =
 -- JSON
 instance ToJSON DeepZoomImage where
   toJSON = genericToJSON $ aesonPrefix camelCase
+
+-- PostgreSQL / Squeal
+instance SOP.Generic DeepZoomImage
+
+instance SOP.HasDatatypeInfo DeepZoomImage

@@ -9,7 +9,9 @@ module ZoomHub.API
   )
 where
 
-import Control.Monad.Except (throwError, void, when)
+import qualified Amazonka as Amazonka
+import Control.Monad (void, when)
+import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Char8 as BC
@@ -20,25 +22,10 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Time as Time
+import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
-import Network.Minio as Minio
-  ( awsCI,
-    fromAWSEnv,
-    runMinio,
-    setCreds,
-    setRegion,
-  )
-import Network.Minio.S3API as S3
-  ( PostPolicyCondition (PPCEquals),
-    newPostPolicy,
-    ppCondBucket,
-    ppCondContentLengthRange,
-    ppCondContentType,
-    ppCondKey,
-    presignedPostPolicy,
-  )
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
@@ -71,7 +58,7 @@ import Servant.Auth.Server
     wwwAuthenticatedErr,
   )
 import Servant.HTML.Lucid (HTML)
-import Squeal.PostgreSQL.Pool (Pool, runPoolPQ)
+import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
 import qualified ZoomHub.API.Errors as API
@@ -92,6 +79,9 @@ import ZoomHub.API.Types.NonRESTfulResponse
     mkNonRESTful404,
     mkNonRESTful503,
   )
+import qualified ZoomHub.AWS.S3 as S3
+import qualified ZoomHub.AWS.S3.POSTPolicy as S3
+import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
 import qualified ZoomHub.Authentication as Authentication
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
@@ -101,9 +91,7 @@ import ZoomHub.Config.Uploads (Uploads (..))
 import qualified ZoomHub.Email as Email
 import qualified ZoomHub.Email.Verification as Verification
 import ZoomHub.Log.Logger (logWarning)
-import ZoomHub.Servant.RawCapture (RawCapture)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
-import ZoomHub.Storage.PostgreSQL (Connection)
 import ZoomHub.Storage.PostgreSQL as PG
 import ZoomHub.Storage.PostgreSQL.GetRecent as PG
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
@@ -116,7 +104,6 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
-import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
@@ -146,22 +133,26 @@ type API =
       :> "config"
       :> Get '[JSON] API.Config
     -- JSONP: ID
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> Capture "id" ContentId
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
     -- JSONP: Error: ID
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> Capture "id" String
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
     -- JSONP: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> RequiredQueryParam "url" ContentURI
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse Content))
     -- JSONP: Error: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> QueryParam "url" String
       :> RequiredQueryParam "callback" Callback
       :> Get '[JavaScript] (JSONP (NonRESTfulResponse String))
@@ -210,12 +201,14 @@ type API =
     -- API: RESTful: Error: ID
     :<|> "v1" :> "content" :> Capture "id" String :> Get '[JSON] Content
     -- API: RESTful: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> RequiredQueryParam "url" ContentURI
       :> QueryParam "email" Text
       :> Get '[JSON] Content
     -- API: RESTful: Error: URL
-    :<|> "v1" :> "content"
+    :<|> "v1"
+      :> "content"
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Explore: Recent
@@ -251,8 +244,6 @@ type API =
     :<|> RequiredQueryParam "url" ContentURI :> Get '[HTML] Page.ViewContent
     -- Web: View: Error: Invalid URL
     :<|> RequiredQueryParam "url" String :> Get '[HTML] Page.ViewContent
-    -- Web: Shortcut: `http://zoomhub.net/http://example.com`:
-    :<|> RawCapture "viewURI" ContentURI :> Get '[HTML] Page.ViewContent
     -- Static files
     :<|> Raw
 
@@ -293,7 +284,6 @@ server config =
     :<|> webContentById baseURI contentBaseURI (AWS.configSourcesS3Bucket awsConfig) dbConnPool
     :<|> webContentByURL baseURI dbConnPool
     :<|> webInvalidURLParam
-    :<|> webContentByURL baseURI dbConnPool
     -- Web: Static files
     :<|> serveDirectory (Config.error404 config) publicPath
   where
@@ -349,7 +339,7 @@ jsonpContentById ::
   Callback ->
   Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentById baseURI contentBaseURI dbConnPool contentId callback = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById' contentId)
   case maybeContent of
     Nothing ->
       throwError $
@@ -369,7 +359,7 @@ jsonpContentByURL ::
   Callback ->
   Handler (JSONP (NonRESTfulResponse Content))
 jsonpContentByURL baseURI contentBaseURI dbConnPool url callback = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getByURL' url)
   case maybeContent of
     Nothing ->
       throwError . JSONP.mkError $
@@ -409,19 +399,22 @@ restUpload config awsConfig uploads email =
       noNewContentErrorAPI
     UploadsEnabled -> do
       currentTime <- liftIO Time.getCurrentTime
-      s3UploadKey <- T.pack . show <$> liftIO UUIDV4.nextRandom
+      s3UploadKey <- UUID.toText <$> liftIO UUIDV4.nextRandom
       let expiryTime = Time.addUTCTime Time.nominalDay currentTime
           key = "uploads/" <> s3UploadKey
-          s3BucketURL = "https://" <> s3Bucket <> ".s3.us-east-2.amazonaws.com"
+          s3Region = AWS.configRegion awsConfig
+          s3BucketURL = "https://" <> s3Bucket <> ".s3." <> Amazonka.fromRegion s3Region <> ".amazonaws.com"
           s3URL = s3BucketURL <> "/" <> key
           ePolicy =
-            S3.newPostPolicy
+            S3.mkPOSTPolicy
               expiryTime
-              [ S3.ppCondBucket s3Bucket,
-                S3.ppCondKey key,
-                S3.ppCondContentLengthRange minUploadSizeBytes maxUploadSizeBytes,
-                S3.ppCondContentType "image/",
-                PPCEquals
+              [ POSTPolicyCondition.bucket s3Bucket,
+                POSTPolicyCondition.key key,
+                POSTPolicyCondition.contentLengthRange
+                  minUploadSizeBytes
+                  maxUploadSizeBytes,
+                POSTPolicyCondition.contentType "image/",
+                POSTPolicyCondition.Equals
                   "success_action_redirect"
                   -- TODO: Use type-safe links
                   ( fold
@@ -438,18 +431,15 @@ restUpload config awsConfig uploads email =
         Left policyError ->
           return $ HS.singleton "error" (T.pack $ show policyError)
         Right policy -> do
-          mAwsCredentials <- liftIO Minio.fromAWSEnv
-          case mAwsCredentials of
-            Nothing ->
-              return $ HS.singleton "error" "missing credentials"
-            Just awsCredentials -> do
-              let connectInfo = setRegion "us-east-2" $ setCreds awsCredentials Minio.awsCI
-              result <- liftIO $ runMinio connectInfo (S3.presignedPostPolicy policy)
-              case result of
-                Left minioErr ->
-                  return $ HS.singleton "error" (T.pack $ show minioErr)
-                Right (_url, formData) ->
-                  return $ lenientDecodeUtf8 <$> HS.insert "url" (encodeUtf8 s3BucketURL) formData
+          formData <-
+            liftIO $
+              HS.map decodeUtf8
+                <$> S3.presignPOSTPolicy
+                  (AWS.configAccessKeyId awsConfig)
+                  (AWS.configSecretAccessKey awsConfig)
+                  (AWS.configRegion awsConfig)
+                  policy
+          return $ HS.insert "url" s3BucketURL formData
       where
         minUploadSizeBytes = 1
         maxUploadSizeBytes =
@@ -471,9 +461,9 @@ restContentResetById baseURI dbConnPool authResult contentId = do
     Authenticated _ -> do
       maybeContent <-
         liftIO $
-          runPoolPQ
-            (PG.unsafeResetAsInitializedWithVerification contentId)
+          usingConnectionPool
             dbConnPool
+            (PG.unsafeResetAsInitializedWithVerification contentId)
       case maybeContent of
         Nothing ->
           throwError . API.error404 $ contentNotFoundMessage contentId
@@ -493,7 +483,7 @@ restContentVerificationById ::
   VerificationToken ->
   Handler Content
 restContentVerificationById baseURI dbConnPool contentId verificationToken = do
-  result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
+  result <- liftIO $ usingConnectionPool dbConnPool (PG.markAsVerified contentId verificationToken)
   case result of
     Right content ->
       redirectToAPI baseURI $ Internal.contentId content
@@ -521,7 +511,7 @@ restContentCompletionById baseURI contentBaseURI dbConnPool authResult contentId
   case authResult of
     Authenticated _ -> do
       maybeContent <- liftIO $
-        flip runPoolPQ dbConnPool $ case completion of
+        usingConnectionPool dbConnPool $ case completion of
           Completion.Success sc ->
             PG.markAsSuccess
               contentId
@@ -549,7 +539,7 @@ restContentById ::
   ContentId ->
   Handler Content
 restContentById baseURI contentBaseURI dbConnPool contentId = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById' contentId)
   case maybeContent of
     Nothing -> throwError . API.error404 $ contentNotFoundMessage contentId
     Just content -> return $ Content.fromInternal baseURI contentBaseURI content
@@ -567,14 +557,14 @@ restContentByURL ::
   Maybe Text -> -- Email
   Handler Content
 restContentByURL config baseURI dbConnPool processContent url mEmail = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getByURL' url) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getByURL' url)
   case (maybeContent, mEmail) of
     (Nothing, Nothing) ->
       missingEmailErrorAPI
     (Nothing, Just email) -> do
       mNewContent <- case processContent of
         ProcessExistingAndNewContent -> do
-          mNewContent <- liftIO $ runPoolPQ (PG.initialize url email) dbConnPool
+          mNewContent <- liftIO $ usingConnectionPool dbConnPool (PG.initialize url email)
           for_ mNewContent $ \newContent -> do
             case ( Internal.contentSubmitterEmail newContent,
                    Internal.contentVerificationToken newContent
@@ -643,7 +633,7 @@ webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
   case authResult of
     Authenticated _ -> do
       let minItems = 1
-          maxItems = 200
+          maxItems = 500
           numItems = fromMaybe 50 mNumItems
       when (numItems > maxItems || numItems < minItems) $
         throwError . Web.error400 $
@@ -653,7 +643,7 @@ webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
             <> show maxItems
             <> ": "
             <> show numItems
-      content <- liftIO $ runPoolPQ (PG.getRecent (fromIntegral numItems)) dbConnPool
+      content <- liftIO $ usingConnectionPool dbConnPool (PG.getRecent (fromIntegral numItems))
       return
         Page.ExploreRecentContent
           { ercContent = content,
@@ -687,7 +677,7 @@ webEmbedIFrame
   mObjectFit
   mEmbedConstraint
   mEmbedBackground = do
-    maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
+    maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById contentId)
     case maybeContent of
       Nothing ->
         throwError . Web.error404 $ contentNotFoundMessage contentId
@@ -733,7 +723,7 @@ webEmbed
   objectFit
   constraint
   backgroundColor = do
-    maybeContent <- liftIO $ runPoolPQ (PG.getById' contentId) dbConnPool
+    maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById' contentId)
     case maybeContent of
       Nothing ->
         throwError . Web.error404 $ contentNotFoundMessage contentId
@@ -758,7 +748,7 @@ webEmbed
             }
     where
       contentId = unEmbedId embedId
-      defaultContainerId n = "zoomhub-embed-" ++ show n
+      defaultContainerId n = "zoomhub-embed-" <> show n
 
 -- Web: Verification
 -- TODO: Refactor to call API or extract implementation from API:
@@ -770,7 +760,7 @@ webContentVerificationById ::
   VerificationToken ->
   Handler Page.VerifyContent
 webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
-  result <- liftIO $ runPoolPQ (PG.markAsVerified contentId verificationToken) dbConnPool
+  result <- liftIO $ usingConnectionPool dbConnPool (PG.markAsVerified contentId verificationToken)
   case result of
     Right internalContent | ContentState.isCompleted (Internal.contentState internalContent) -> do
       redirectToView baseURI (Internal.contentId internalContent)
@@ -791,7 +781,7 @@ webContentById ::
   ContentId ->
   Handler Page.ViewContent
 webContentById baseURI contentBaseURI awsSourcesS3BucketName dbConnPool contentId = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getById contentId) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById contentId)
   case maybeContent of
     Nothing ->
       throwError . Web.error404 $ contentNotFoundMessage contentId
@@ -811,7 +801,7 @@ webContentByURL ::
   ContentURI ->
   Handler Page.ViewContent
 webContentByURL baseURI dbConnPool contentURI = do
-  maybeContent <- liftIO $ runPoolPQ (PG.getByURL contentURI) dbConnPool
+  maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getByURL contentURI)
   case maybeContent of
     Nothing ->
       noNewContentErrorWeb
@@ -827,7 +817,7 @@ contentNotFoundMessage contentId =
   noContentWithIdMessage (unContentId contentId)
 
 noContentWithIdMessage :: String -> String
-noContentWithIdMessage contentId = "No content with ID: " ++ contentId
+noContentWithIdMessage contentId = "No content with ID: " <> contentId
 
 noNewContentErrorWeb :: Handler Page.ViewContent
 noNewContentErrorWeb = noNewContentError Web.error503
@@ -881,7 +871,7 @@ webRedirectURI = redirectURI "/"
 
 redirectURI :: String -> BaseURI -> ContentId -> URI
 redirectURI pathPrefix baseURI contentId =
-  (fromJust . parseRelativeReference $ pathPrefix ++ unContentId contentId)
+  (fromJust . parseRelativeReference $ pathPrefix <> unContentId contentId)
     `relativeTo` unBaseURI baseURI
 
 -- NOTE: Enable Chrome developer console ‘[x] Disable cache’ to test

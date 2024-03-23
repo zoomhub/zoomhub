@@ -25,7 +25,7 @@ import ZoomHub.API.Types.NonRESTfulResponse (NonRESTfulResponse)
 -- `JSONP (NonRESTful Content)` for success vs `JSONP (NonRESTful String)` for
 -- an error, we need to use `ServerError` as an escape hatch, hence we create a
 -- `ServerError` with HTTP status 200:
-mkError :: ToJSON a => JSONP (NonRESTfulResponse a) -> ServerError
+mkError :: (ToJSON a) => JSONP (NonRESTfulResponse a) -> ServerError
 mkError body =
   ServerError
     { errHTTPCode = statusCode status,

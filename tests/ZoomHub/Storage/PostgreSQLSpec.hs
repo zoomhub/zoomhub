@@ -34,11 +34,11 @@ import Squeal.PostgreSQL
     Manipulation (UnsafeManipulation),
     connectdb,
     finish,
-    manipulate,
+    manipulate_,
     pqThen,
     runPQ,
   )
-import Squeal.PostgreSQL.Migration (migrateDown, migrateUp)
+import Squeal.PostgreSQL.Session.Migration (migrateDown, migrateUp)
 import System.Environment (lookupEnv)
 import System.Process (readProcess)
 import Test.Hspec
@@ -90,11 +90,12 @@ import ZoomHub.Types.Content
     contentVerifiedAt,
   )
 import qualified ZoomHub.Types.Content.Internal as I
+import ZoomHub.Types.ContentId (ContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import qualified ZoomHub.Types.ContentMIME as ContentMIME
 import ZoomHub.Types.ContentState (ContentState (..))
 import ZoomHub.Types.ContentType (ContentType (..))
-import ZoomHub.Types.ContentURI (ContentURI, ContentURI' (ContentURI))
+import ZoomHub.Types.ContentURI (ContentURI (ContentURI))
 import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat (JPEG))
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap (TileOverlap1))
@@ -113,6 +114,12 @@ defaultDatabaseName = "zoomhub_test"
 
 hashidsSecret :: String
 hashidsSecret = "secret-salt"
+
+unsafeContentId :: String -> ContentId
+unsafeContentId id_ =
+  case ContentId.fromString id_ of
+    Just cId -> cId
+    Nothing -> error $ "Invalid content ID: " <> id_
 
 setupDatabase :: IO ()
 setupDatabase = do
@@ -163,7 +170,7 @@ withDatabaseConnection = bracket acquire release
           "host=localhost port=5432 dbname=" <> pgDatabase <> " user=" <> pgUser
       (_, conn') <-
         runPQ
-          ( manipulate (UnsafeManipulation "SET client_min_messages TO WARNING;")
+          ( manipulate_ (UnsafeManipulation "SET client_min_messages TO WARNING;")
               & pqThen (migrateUp (migrations hashidsSecret))
           )
           conn
@@ -184,7 +191,7 @@ spec =
           case mContent of
             Just content -> do
               -- HACK: Hard-coded content ID set by database trigger
-              contentId content `shouldBe` ContentId.fromString "X75"
+              contentId content `shouldBe` (unsafeContentId "X75")
               contentType content `shouldBe` Unknown
               contentURL content `shouldBe` testURL
               contentState content `shouldBe` Initialized
@@ -201,6 +208,7 @@ spec =
               contentSubmitterEmail content `shouldBe` Just testEmail
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "markAsActive" do
       it "should mark content as active" do
         \conn -> do
@@ -449,7 +457,7 @@ spec =
     mkUnprocessedContent :: String -> UTCTime -> NominalDiffTime -> Int64 -> I.Content
     mkUnprocessedContent id_ currentTime age numViews =
       I.Content
-        { contentId = ContentId.fromString id_,
+        { contentId = unsafeContentId id_,
           contentType = Unknown,
           contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
           contentState = Initialized,
@@ -471,7 +479,7 @@ spec =
     mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
     mkActiveContent id_ currentTime age =
       I.Content
-        { contentId = ContentId.fromString id_,
+        { contentId = unsafeContentId id_,
           contentType = Unknown,
           contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
           contentState = Active,
@@ -497,7 +505,7 @@ spec =
           mMIME = ContentMIME.fromText "image/jpeg"
           mSize = Just 1234
        in I.Content
-            { contentId = ContentId.fromString id_,
+            { contentId = unsafeContentId id_,
               contentType = Image,
               contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
               contentState = CompletedSuccess,

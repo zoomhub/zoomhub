@@ -2,10 +2,11 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Web.Main
-  ( main,
+  ( webMain,
   )
 where
 
+import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities, threadDelay)
 import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
@@ -18,7 +19,6 @@ import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
 import GHC.Conc (getNumProcessors)
-import qualified Network.AWS as AWS
 import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
 import Network.Wai (Request)
@@ -71,8 +71,8 @@ contentBaseURIEnvName :: String
 contentBaseURIEnvName = "CONTENT_BASE_URI"
 
 -- Main
-main :: IO ()
-main = do
+webMain :: IO ()
+webMain = do
   -- TODO: Migrate configuration to `configurator`:
   -- https://hackage.haskell.org/package/configurator
   env <- getEnvironment
@@ -212,7 +212,8 @@ main = do
         Just uri -> BaseURI uri
         Nothing ->
           error $
-            "'" <> uriString
+            "'"
+              <> uriString
               <> "' is not a valid URL.\
                  \ Please set `"
               <> baseURIEnvName

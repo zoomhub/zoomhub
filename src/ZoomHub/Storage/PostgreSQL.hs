@@ -37,25 +37,24 @@ module ZoomHub.Storage.PostgreSQL
 where
 
 import Control.Monad (void)
+import Control.Monad.Catch (MonadMask)
 import Data.Int (Int64)
 import Data.Text (Text)
-import Data.Time.Clock (addUTCTime, getCurrentTime)
+import Data.Time (addUTCTime, getCurrentTime)
 import Data.Time.Units (TimeUnit)
+import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
 import Squeal.PostgreSQL
-  ( MonadPQ,
+  ( Inline (inline),
+    MonadPQ (executeParams, executeParams_),
+    MonadResult (getRows),
     Only (Only),
     SortExpression (Asc, Desc, DescNullsLast),
     firstRow,
-    getRows,
     isNotNull,
     limit,
-    literal,
-    manipulateParams,
-    manipulateParams_,
     orderBy,
     param,
-    runQueryParams,
     transactionally_,
     where_,
     (!),
@@ -74,13 +73,10 @@ import ZoomHub.Storage.PostgreSQL.ConnectInfo
   )
 import ZoomHub.Storage.PostgreSQL.Internal
   ( Connection,
-    contentImageRowToContent,
-    contentRowToContent,
     createConnectionPool,
     deleteImage,
     getBy,
     getBy',
-    imageToInsertRow,
     insertContent,
     insertImage,
     markContentAsActive,
@@ -95,8 +91,8 @@ import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.Content (Content (..))
 import ZoomHub.Types.ContentId (ContentId)
 import ZoomHub.Types.ContentMIME (ContentMIME)
-import ZoomHub.Types.ContentState (ContentState (Active, Initialized))
-import ZoomHub.Types.ContentURI (ContentURI)
+import qualified ZoomHub.Types.ContentState as ContentState
+import ZoomHub.Types.ContentURI (ContentURI (..))
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage)
 import ZoomHub.Types.VerificationError (VerificationError)
 import qualified ZoomHub.Types.VerificationError as VerificationError
@@ -114,13 +110,16 @@ getByURL = getBy ((#content ! #url) .== param @1)
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = do
   result <-
-    runQueryParams
+    executeParams
       ( selectContentBy $
           \table ->
             table
               & where_
-                ( (#content ! #state) .== param @1
-                    .&& ( #content ! #version .>= 5
+                ( (#content ! #state)
+                    .== param @1
+                    .&& ( #content
+                            ! #version
+                            .>= 5
                             .&& isNotNull (#content ! #verified_at)
                         )
                 )
@@ -130,9 +129,8 @@ getNextUnprocessed = do
                 ]
               & limit 1
       )
-      (Only Initialized)
-  contentRow <- firstRow result
-  pure (contentImageRowToContent <$> contentRow)
+      ContentState.Initialized
+  firstRow result
 
 getExpiredActive ::
   (MonadUnliftIO m, MonadPQ Schemas m, TimeUnit t) => t -> m [Content]
@@ -140,20 +138,19 @@ getExpiredActive ttl = do
   currentTime <- liftIO getCurrentTime
   let earliestAllowed = addUTCTime (-(toNominalDiffTime ttl)) currentTime
   result <-
-    runQueryParams
+    executeParams
       ( selectContentBy
           ( \table ->
               table
                 & where_
                   ( ((#content ! #active_at) .< param @1)
-                      .&& ((#content ! #state) .== literal Active)
+                      .&& ((#content ! #state) .== inline ContentState.Active)
                   )
                 & orderBy [#content ! #active_at & DescNullsLast]
           )
       )
-      (Only earliestAllowed)
-  contentRows <- getRows result
-  return $ contentImageRowToContent <$> contentRows
+      earliestAllowed
+  getRows result
 
 -- Reads/writes
 getById' :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentId -> m (Maybe Content)
@@ -164,47 +161,44 @@ getByURL' = getBy' ((#content ! #url) .== param @1)
 
 -- Writes
 initialize ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentURI ->
   Text -> -- Email
   m (Maybe Content)
 initialize uri email = do
-  verificationToken <- show <$> liftIO UUIDV4.nextRandom
+  verificationToken <- UUID.toText <$> liftIO UUIDV4.nextRandom
   transactionally_ $ do
     result <-
-      manipulateParams
+      executeParams
         insertContent
         ( uri,
           Just email,
           Just verificationToken
         )
-    mRow <- firstRow result
-    return $ contentRowToContent <$> mRow
+    firstRow result
 
 markAsActive ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   m (Maybe Content)
 markAsActive cId =
   transactionally_ $ do
-    contentResult <- manipulateParams markContentAsActive (Only cId)
-    mContentRow <- firstRow contentResult
-    return $ contentRowToContent <$> mContentRow
+    result <- executeParams markContentAsActive (Only cId)
+    firstRow result
 
 markAsFailure ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   Maybe Text ->
   m (Maybe Content)
 markAsFailure cId mErrorMessage =
   transactionally_ $ do
-    manipulateParams_ deleteImage (Only cId)
-    contentResult <- manipulateParams markContentAsFailure (cId, mErrorMessage)
-    mContentRow <- firstRow contentResult
-    return $ contentRowToContent <$> mContentRow
+    executeParams_ deleteImage (Only cId)
+    result <- executeParams markContentAsFailure (cId, mErrorMessage)
+    firstRow result
 
 markAsSuccess ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   DeepZoomImage ->
   Maybe ContentMIME ->
@@ -212,31 +206,30 @@ markAsSuccess ::
   m (Maybe Content)
 markAsSuccess cId dzi mMIME mSize =
   transactionally_ $ do
-    contentResult <- manipulateParams markContentAsSuccess (cId, mMIME, mSize)
-    manipulateParams_ insertImage (imageToInsertRow cId dzi)
-    mContentRow <- firstRow contentResult
-    return $ case mContentRow of
-      Just contentRow -> do
-        let content = contentRowToContent contentRow
+    result <- executeParams markContentAsSuccess (cId, mMIME, mSize)
+    executeParams_ insertImage (cId, dzi)
+    mContent <- firstRow result
+    return $ case mContent of
+      Just content -> do
         Just content {contentDZI = Just dzi}
       Nothing ->
         Nothing
 
 markAsVerified ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   VerificationToken ->
   m (Either VerificationError Content)
-markAsVerified cId verificationToken =
+markAsVerified cId verificationToken = do
+  mContent <- getById cId
   transactionally_ $ do
-    mContent <- getById cId
     case mContent >>= contentVerificationToken of
       Just token | token == verificationToken -> do
-        contentResult <- manipulateParams markContentAsVerified (Only cId)
-        mContentRow <- firstRow contentResult
-        case mContentRow of
-          Just contentRow ->
-            return $ Right $ contentRowToContent contentRow
+        contentResult <- executeParams markContentAsVerified (Only cId)
+        mContent' <- firstRow contentResult
+        case mContent' of
+          Just content ->
+            return $ Right content
           Nothing ->
             return $ Left VerificationError.ContentNotFound
       Just _ ->
@@ -245,30 +238,28 @@ markAsVerified cId verificationToken =
         return $ Left VerificationError.ContentNotFound
 
 resetAsInitialized ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   m (Maybe Content)
 resetAsInitialized cId =
   transactionally_ $ do
-    manipulateParams_ deleteImage (Only cId)
-    contentResult <- manipulateParams resetContentAsInitialized (Only cId)
-    mContentRow <- firstRow contentResult
-    return $ contentRowToContent <$> mContentRow
+    executeParams_ deleteImage (Only cId)
+    contentResult <- executeParams resetContentAsInitialized (Only cId)
+    firstRow contentResult
 
 unsafeResetAsInitializedWithVerification ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   ContentId ->
   m (Maybe Content)
 unsafeResetAsInitializedWithVerification cId =
   transactionally_ $ do
-    manipulateParams_ deleteImage (Only cId)
-    void $ manipulateParams resetContentAsInitialized (Only cId)
-    contentResult <- manipulateParams markContentAsVerified (Only cId)
-    mContentRow <- firstRow contentResult
-    return $ contentRowToContent <$> mContentRow
+    executeParams_ deleteImage (Only cId)
+    void $ executeParams resetContentAsInitialized (Only cId)
+    contentResult <- executeParams markContentAsVerified (Only cId)
+    firstRow contentResult
 
 dequeueNextUnprocessed ::
-  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
   m (Maybe Content)
 dequeueNextUnprocessed = do
   mNext <- getNextUnprocessed

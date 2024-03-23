@@ -13,6 +13,7 @@ where
 
 import Squeal.PostgreSQL
   ( Definition,
+    IsoQ (..),
     addColumn,
     alterTable,
     dropColumn,
@@ -20,16 +21,17 @@ import Squeal.PostgreSQL
     text,
     (&),
   )
-import Squeal.PostgreSQL.Migration (Migration (..))
+import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (Schemas0)
 
-migration :: Migration Definition Schemas0 _
+migration :: Migration (IsoQ Definition) Schemas0 _
 migration =
   Migration
-    { name = "2021-02-15-1: Add submitter email",
-      up = setup,
-      down = teardown
-    }
+    "2021-02-15-1: Add submitter email"
+    IsoQ
+      { up = setup,
+        down = teardown
+      }
 
 setup :: Definition Schemas0 _
 setup = alterTable #content (addColumn #submitter_email (text & nullable))

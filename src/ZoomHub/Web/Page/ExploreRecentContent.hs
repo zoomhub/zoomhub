@@ -8,7 +8,6 @@ module ZoomHub.Web.Page.ExploreRecentContent
 where
 
 import Data.Foldable (forM_, for_)
-import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Lucid as H
 import qualified ZoomHub.API.Types.Content as Content
@@ -58,7 +57,9 @@ instance H.ToHtml ExploreRecentContent where
                         H.div_ [H.class_ "py-2 text-sm text-red-500"] $
                           H.toHtml errorMessage
                       H.span_ [H.class_ "text-gray-400 text-xs"] $
-                        H.toHtml $ tshow $ Content.contentInitializedAt internalContent
+                        H.toHtml $
+                          tshow $
+                            Content.contentInitializedAt internalContent
           }
       )
 

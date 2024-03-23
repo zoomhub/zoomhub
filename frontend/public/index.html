@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <title>ZoomHub · Share and view full-resolution images easily</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="canonical" href="https://zoomhub.net" />
+    <link rel="canonical" href="%SNOWPACK_PUBLIC_WEB_BASE_URI%" />
 
     <meta name="theme-color" content="#171717" />
 
@@ -170,7 +170,7 @@
 
         <pre
           class="code-listing"
-        >&lt;script src=&quot;https://zoomhub.net/<span class="code-highlight">{id}</span>.js?width=auto&height=400px&quot;&gt;&lt;/script&gt;</pre>
+        >&lt;script src=&quot;%SNOWPACK_PUBLIC_WEB_BASE_URI%/<span class="code-highlight">{id}</span>.js?width=auto&height=400px&quot;&gt;&lt;/script&gt;</pre>
 
         <p class="text-gray-100 mt-3">
           Replace
@@ -224,13 +224,13 @@
         </h2>
         <pre
           class="code-listing"
-        >&gt; curl --location 'https://api.zoomhub.net/v1/content?url=<span class="code-highlight">{url}</span>&email=<span class="code-highlight">{email}</span>'
+        >&gt; curl --location '%SNOWPACK_PUBLIC_API_BASE_URI%/v1/content?url=<span class="code-highlight">{url}</span>&email=<span class="code-highlight">{email}</span>'
 
 {
   "id":"<span class="code-highlight">{id}</span>",
   "url": "<span class="code-highlight">{url}</span>",
-  "shareUrl": "https://zoomhub.net/<span class="code-highlight">{id}</span>",
-  "embedHtml":"&lt;script src=\"https://zoomhub.net/<span class="code-highlight">{id}</span>.js?width=auto&height=400px\"&gt;&lt;/script&gt;",
+  "shareUrl": "%SNOWPACK_PUBLIC_WEB_BASE_URI%/<span class="code-highlight">{id}</span>",
+  "embedHtml":"&lt;script src=\"%SNOWPACK_PUBLIC_WEB_BASE_URI%/<span class="code-highlight">{id}</span>.js?width=auto&height=400px\"&gt;&lt;/script&gt;",
   "dzi": null,
   "ready":false,
   "progress": 0,
@@ -259,7 +259,7 @@
       </div>
     </main>
 
-    <script src="https://static.zoomhub.net/scripts/openseadragon/3.0.0-zoomhub/openseadragon.min.js"></script>
+    <script src="%SNOWPACK_PUBLIC_STATIC_BASE_URI%/scripts/openseadragon/3.0.0-zoomhub/openseadragon.min.js"></script>
     <script type="module" src="/scripts/index.js"></script>
   </body>
 </html>

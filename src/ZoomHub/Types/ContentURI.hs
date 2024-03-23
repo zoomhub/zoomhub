@@ -1,50 +1,68 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module ZoomHub.Types.ContentURI
-  ( ContentURI,
-    ContentURI' (ContentURI),
+  ( ContentURI (ContentURI),
+    fromText,
     -- TODO: Can we test this without exporting it?
     unContentURI,
   )
 where
 
+import Control.Monad.Except (MonadError (throwError))
 import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Text (Text)
 import qualified Data.Text as T
+import GHC.Generics (Generic)
 import Servant (FromHttpApiData, parseUrlPiece)
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (FromPG (..), Inline (inline), IsPG (PG), PGType (PGtext), ToPG (toPG))
 
-newtype ContentURI' a = ContentURI {unContentURI :: a}
-  deriving (Eq, Functor)
-
-type ContentURI = ContentURI' Text
+newtype ContentURI = ContentURI {unContentURI :: Text}
+  deriving stock (Eq, Generic)
 
 instance Show ContentURI where
-  show = T.unpack . unContentURI
+  show = show . unContentURI
+
+fromText :: Text -> Maybe ContentURI
+fromText t
+  | "http://" `T.isPrefixOf` t = Just $ ContentURI t
+  | "https://" `T.isPrefixOf` t = Just $ ContentURI t
+  | "zoomit://thumbnail/" `T.isPrefixOf` t = Just $ ContentURI t
+  | otherwise = Nothing
 
 -- Text
 instance FromHttpApiData ContentURI where
-  parseUrlPiece t
-    | "http://" `T.isPrefixOf` t = Right $ ContentURI t
-    | "https://" `T.isPrefixOf` t = Right $ ContentURI t
-    | "zoomit://thumbnail/" `T.isPrefixOf` t = Right $ ContentURI t
-    | otherwise = Left "Invalid content URI"
+  parseUrlPiece t = case fromText t of
+    Just cURI -> Right cURI
+    Nothing -> Left "Invalid content URI"
 
 -- JSON
 instance ToJSON ContentURI where
   toJSON = String . unContentURI
 
 -- Squeal / PostgreSQL
-type instance PG ContentURI = 'PGtext
+-- TODO: Look into newtype deriving
+instance IsPG ContentURI where
+  type PG ContentURI = 'PGtext
 
-instance ToParam ContentURI 'PGtext where
-  toParam = toParam . unContentURI
+instance ToPG db ContentURI where
+  toPG = toPG . unContentURI
 
-instance FromValue 'PGtext ContentURI where
-  fromValue = ContentURI <$> fromValue @'PGtext
+instance FromPG ContentURI where
+  fromPG = do
+    value <- fromPG @Text
+    case fromText value of
+      Just format -> pure format
+      Nothing -> throwError $ "Invalid content ID: \"" <> value <> "\""
+
+instance Inline ContentURI where
+  inline = inline . unContentURI

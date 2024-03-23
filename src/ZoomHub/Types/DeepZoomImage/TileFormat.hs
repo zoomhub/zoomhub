@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -12,13 +14,17 @@ module ZoomHub.Types.DeepZoomImage.TileFormat
   )
 where
 
+import Control.Monad.Except (MonadError (throwError))
 import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText)
-import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (FromPG (..), Inline (..), IsPG (..), PG, PGType (PGtext), ToPG (..))
 
-data TileFormat = JPEG | JPG | PNG deriving (Eq)
+data TileFormat
+  = JPEG
+  | JPG
+  | PNG
+  deriving (Eq)
 
 fromString :: String -> Maybe TileFormat
 fromString = fromText . T.pack
@@ -28,6 +34,11 @@ fromText "jpeg" = Just JPEG
 fromText "jpg" = Just JPG
 fromText "png" = Just PNG
 fromText _ = Nothing
+
+toText :: TileFormat -> T.Text
+toText JPEG = "jpeg"
+toText JPG = "jpg"
+toText PNG = "png"
 
 instance Show TileFormat where
   show JPEG = "jpeg"
@@ -43,16 +54,21 @@ instance FromJSON TileFormat where
     "jpeg" -> pure JPEG
     "jpg" -> pure JPG
     "png" -> pure PNG
-    _ -> fail "invalid tile format"
+    invalid -> fail $ "Invalid tile format: " <> T.unpack invalid
 
 -- Squeal / PostgreSQL
-instance FromValue 'PGtext TileFormat where
-  -- TODO: What if database value is not a valid?
-  fromValue = fromJust . fromString <$> fromValue @'PGtext
+instance IsPG TileFormat where
+  type PG TileFormat = 'PGtext
 
-type instance PG TileFormat = 'PGtext
+instance FromPG TileFormat where
+  fromPG = do
+    value <- fromPG @Text
+    case fromText value of
+      Just format -> pure format
+      Nothing -> throwError $ "Unknown tile format: \"" <> value <> "\""
 
-instance ToParam TileFormat 'PGtext where
-  toParam JPEG = toParam ("jpeg" :: Text)
-  toParam JPG = toParam ("jpg" :: Text)
-  toParam PNG = toParam ("png" :: Text)
+instance ToPG db TileFormat where
+  toPG = toPG . toText
+
+instance Inline TileFormat where
+  inline = inline . toText

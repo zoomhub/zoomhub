@@ -14,9 +14,10 @@ module ZoomHub.Storage.PostgreSQL.Schema.Schema2
 where
 
 import Squeal.PostgreSQL
-  ( ColumnConstraint (Def, NoDef),
-    Definition,
-    NullityType (NotNull, Null),
+  ( Definition,
+    IsoQ (..),
+    NullType (NotNull, Null),
+    Optionality (Def, NoDef),
     PGType (PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
     Public,
     SchemumType (Table),
@@ -30,7 +31,7 @@ import Squeal.PostgreSQL
     (:::),
     (:=>),
   )
-import Squeal.PostgreSQL.Migration (Migration (..))
+import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, FlickrTable0, ImageTable0)
 
 type Schema2 =
@@ -73,13 +74,14 @@ type ContentTable2 =
                    ]
           )
 
-migration :: Migration Definition _ Schemas2
+migration :: Migration (IsoQ Definition) _ Schemas2
 migration =
   Migration
-    { name = "2021-02-28-1: Add verification token",
-      up = setup,
-      down = teardown
-    }
+    "2021-02-28-1: Add verification token"
+    IsoQ
+      { up = setup,
+        down = teardown
+      }
 
 setup :: Definition _ Schemas2
 setup = alterTable #content (addColumn #verification_token (text & nullable))

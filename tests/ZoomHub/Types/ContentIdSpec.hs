@@ -12,21 +12,20 @@ where
 
 import Data.Aeson (decode, encode)
 import Test.Hspec (Spec, context, describe, hspec, it)
-import Test.QuickCheck (Property, elements, listOf, property, suchThat, (==>))
+import Test.QuickCheck (Property, elements, listOf, property, suchThatMap, (==>))
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Instances ()
 import ZoomHub.Types.ContentId
   ( ContentId,
-    fromString,
     isValid,
     unContentId,
     validChars,
   )
+import qualified ZoomHub.Types.ContentId as ContentId
 
 instance Arbitrary ContentId where
-  arbitrary = do
-    validId <- suchThat (listOf . elements $ validChars) isValid
-    return $ fromString validId
+  arbitrary =
+    (listOf . elements $ validChars) `suchThatMap` ContentId.fromString
 
 prop_invertible :: ContentId -> Property
 prop_invertible x = isValid (unContentId x) ==> (decode . encode) x == Just x

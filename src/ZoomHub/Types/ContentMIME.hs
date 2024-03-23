@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -16,10 +18,12 @@ import Codec.MIME.Parse (parseMIMEType)
 import Codec.MIME.Type (Type, showType)
 import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.Maybe (fromJust)
+import Data.Text (Text)
 import qualified Data.Text as T
-import Squeal.PostgreSQL (FromValue (..), PG, PGType (PGtext), ToParam (..))
+import Squeal.PostgreSQL (FromPG (..), Inline, IsPG, PG, PGType (PGtext), ToPG (..), inline)
 
-newtype ContentMIME' a = ContentMIME {unContentMIME :: a} deriving (Eq, Show)
+newtype ContentMIME' a = ContentMIME {unContentMIME :: a}
+  deriving stock (Eq, Show)
 
 type ContentMIME = ContentMIME' Type
 
@@ -34,11 +38,14 @@ instance ToJSON ContentMIME where
   toJSON = String . toText
 
 -- Squeal / PostgreSQL
-type instance PG ContentMIME = 'PGtext
+instance IsPG ContentMIME where
+  type PG ContentMIME = 'PGtext
 
-instance ToParam ContentMIME 'PGtext where
-  toParam = toParam . toText
+instance FromPG ContentMIME where
+  fromPG = ContentMIME . fromJust . parseMIMEType <$> fromPG @Text
 
-instance FromValue 'PGtext ContentMIME where
-  -- TODO: What if database value is not a valid MIME type?
-  fromValue = ContentMIME . fromJust . parseMIMEType <$> fromValue @'PGtext
+instance ToPG db ContentMIME where
+  toPG = toPG . toText
+
+instance Inline ContentMIME where
+  inline = inline . toText

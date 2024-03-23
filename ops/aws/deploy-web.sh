@@ -2,15 +2,16 @@
 set -euo pipefail
 
 SHA1="$1"
+AWS_REGION='us-east-2'
 
 # Push image to ECR (AWS CLI version 2)
 aws ecr get-login-password \
-    --region us-east-2 \
+    --region $AWS_REGION \
 | docker login \
     --username AWS \
-    --password-stdin $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com
+    --password-stdin "$ZH_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
-docker push $ZH_AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/$ZH_AWS_ECR_REPO:$SHA1
+docker push "$ZH_AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ZH_AWS_ECR_REPO:$SHA1"
 
 # Create new Elastic Beanstalk version
 EB_BUCKET=elasticbeanstalk-$ZH_AWS_EB_PROJECT-deploy-bucket
@@ -23,20 +24,20 @@ sed "s/<TAG>/$SHA1/ ; s/<ZH_AWS_ACCOUNT_ID>/$ZH_AWS_ACCOUNT_ID/ ; s/<ZH_AWS_ECR_
 # - https://stackoverflow.com/a/30926732/125305
 # - https://gist.github.com/ianblenke/dec31660e170cfdfc7d3
 # - https://serverfault.com/questions/887912/using-ebextensions-with-docker-in-aws-elasticbeanstalk
-zip -r $SOURCE_BUNDLE_ZIP Dockerrun.aws.json .ebextensions .platform
+zip -r "$SOURCE_BUNDLE_ZIP" Dockerrun.aws.json .ebextensions .platform
 
 aws s3 cp \
-  $SOURCE_BUNDLE_ZIP \
-  s3://$EB_BUCKET/$SOURCE_BUNDLE_ZIP \
-  --region us-east-2
+  "$SOURCE_BUNDLE_ZIP" \
+  "s3://$EB_BUCKET/$SOURCE_BUNDLE_ZIP" \
+  --region $AWS_REGION
 aws elasticbeanstalk create-application-version \
-    --application-name $ZH_AWS_EB_PROJECT \
-    --version-label $SHA1 \
-    --source-bundle S3Bucket=$EB_BUCKET,S3Key=$SOURCE_BUNDLE_ZIP \
-    --region us-east-2
+    --application-name "$ZH_AWS_EB_PROJECT" \
+    --version-label "$SHA1" \
+    --source-bundle "S3Bucket=$EB_BUCKET,S3Key=$SOURCE_BUNDLE_ZIP" \
+    --region $AWS_REGION
 
 # Update Elastic Beanstalk environment to new version
 aws elasticbeanstalk update-environment \
-    --environment-name $ZH_AWS_EB_ENVIRONMENT \
-    --version-label $SHA1 \
-    --region us-east-2
+    --environment-name "$ZH_AWS_EB_ENVIRONMENT" \
+    --version-label "$SHA1" \
+    --region $AWS_REGION
