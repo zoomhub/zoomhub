@@ -1,6 +1,24 @@
 # ZoomHub
 
-## Unreleased
+## 2024-03-24-1
+
+- Web:
+  - Remove support for `https://zoomhub.net/https://example.com/image.jpeg`
+    shortcut to stop having custom fork of `servant`.
+  - Make `ZH_WEB_BASE_URI` and `ZH_STATIC_BASE_URI` dynamic in HTML via
+    Snowpack.
+- Infrastructure:
+  - Upgrade `stack` LTS from 14.14 (GHC 8.6.5) to 22.6 (GHC 9.6.3) to run more
+    seamlessly on Apple Silicon development machine.
+  - Remove vendoring of `servant` and give up on custom `RawCaptureRouter`.
+  - Port S3 POST policy from `minio-hs` to `amazonka` `2.0.0`.
+  - Upgrade `amazonka` from `1.6.1` to `2.0.0`.
+  - Upgrade `squeal-postgresql` from `0.5.1.0` to `0.9.1.3`.
+  - Upgrade `aeson` from `1.4.6.0` to `2.1.2.1`.
+  - Remove `ansible.cfg`.
+  - Switch `DeepZoomImage` `dziWidth` and `dziHeight` from `Integer` to `Int64`.
+- Ops (CI):
+  - Upgrade GitHub Actions runners from Ubuntu 18.04 to 22.04.
 
 ## 2022-03-16-1
 
