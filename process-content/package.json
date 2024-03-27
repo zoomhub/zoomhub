@@ -18,7 +18,7 @@
     "recursive-readdir": "^2.2.2",
     "replace-ext": "^2.0.0",
     "rmfr": "^2.0.0",
-    "sharp": "^0.32.6",
+    "sharp": "^0.33.3",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
