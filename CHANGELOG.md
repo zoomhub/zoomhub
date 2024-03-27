@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 2024-03-27-1
+
+- Ops
+  - Remove legacy Ansible references.
+
 ## 2024-03-24-1
 
 - Web:
