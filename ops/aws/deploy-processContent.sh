@@ -92,16 +92,14 @@ aws lambda wait function-updated --function-name processContent
 publish_output=$(
   aws lambda publish-version \
       --function-name processContent \
-      --code-sha256 $(jq --raw-output '.CodeSha256' <<< "$update_code_output")
+      --code-sha256 "$(jq --raw-output '.CodeSha256' <<< "$update_code_output")"
 )
 
 aws lambda wait function-updated --function-name processContent
 
-if [ "$ZH_ENV" != "production" ]; then
-  aws lambda update-alias \
-      --function-name processContent \
-      --function-version $(jq --raw-output '.Version' <<< "$publish_output") \
-      --name "$ZH_ENV"
-fi
+aws lambda update-alias \
+    --function-name processContent \
+    --function-version "$(jq --raw-output '.Version' <<< "$publish_output")" \
+    --name "$ZH_ENV"
 
 aws lambda wait function-updated --function-name processContent
