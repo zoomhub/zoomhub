@@ -2,7 +2,6 @@
 set -euo pipefail
 
 CIUSER=ci
-ACCOUNTID=$ZH_AWS_ACCOUNT_ID
 
 # Create ECR repo
 aws ecr create-repository --repository-name $ZH_AWS_ECR_REPO --region us-east-2
