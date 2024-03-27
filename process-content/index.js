@@ -268,7 +268,14 @@ const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
   return Promise.all([...tileOperations, dziManifestOperation])
 }
 
-const uploadFile = async ({ index, numTiles, s3Client, fileName, key, contentType }) => {
+const uploadFile = async ({
+  index,
+  numTiles,
+  s3Client,
+  fileName,
+  key,
+  contentType,
+}) => {
   const fullKey = `content/${key}`
   await s3Client
     .upload({
@@ -280,7 +287,11 @@ const uploadFile = async ({ index, numTiles, s3Client, fileName, key, contentTyp
     })
     .promise()
 
-  if (typeof index === 'number' && typeof numTiles === 'number') {
+  if (
+    typeof numTiles === "number" &&
+    typeof index === "number" &&
+    index % 500 == 0
+  ) {
     log("DZI: tile uploaded", {
       key: fullKey,
       contentType,
