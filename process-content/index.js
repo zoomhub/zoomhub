@@ -290,7 +290,7 @@ const uploadFile = async ({
   if (
     typeof numTiles === "number" &&
     typeof index === "number" &&
-    index % 500 == 0
+    (index + 1) % 100 == 0
   ) {
     log("DZI: tile uploaded", {
       key: fullKey,
