@@ -9,7 +9,7 @@ import Squeal.PostgreSQL.Session.Migration (mainMigrateIso)
 import System.Environment (getArgs, lookupEnv, withArgs)
 import System.Exit (die)
 import qualified ZoomHub.Storage.PostgreSQL.ConnectInfo as ConnectInfo
-import ZoomHub.Storage.PostgreSQL.Schema (migrations)
+import qualified ZoomHub.Storage.PostgreSQL.Schema as Schema
 
 main :: IO ()
 main = do
@@ -21,7 +21,7 @@ main = do
       let program =
             mainMigrateIso
               (ConnectInfo.connectionString connectInfo)
-              (migrations hashidsSecret)
+              (Schema.migrations hashidsSecret)
       withArgs rest program
     (_, Nothing) ->
       die "Missing environment variable HASHIDS_SALT"

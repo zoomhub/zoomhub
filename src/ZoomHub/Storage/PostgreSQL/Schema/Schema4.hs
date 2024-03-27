@@ -10,6 +10,7 @@
 
 module ZoomHub.Storage.PostgreSQL.Schema.Schema4
   ( Schema4,
+    Schemas4,
     migration,
   )
 where
@@ -38,7 +39,6 @@ migration =
         down = teardown
       }
   where
-    -- TODO: Use `createIndex` once we upgraded to Squeal 0.6:
     setup :: Definition Schemas4 Schemas4
     setup =
       manipulation_ $
@@ -52,16 +52,15 @@ migration =
             CREATE INDEX "content_version_idx" ON "content" USING btree ("version" DESC NULLS LAST);
           |]
 
-    -- TODO: Use `dropIndex` once we upgraded to Squeal 0.6:
     teardown :: Definition Schemas4 Schemas4
     teardown =
       manipulation_ $
         UnsafeManipulation
           [r|
-            DROP INDEX "content_active_at_idx";
-            DROP INDEX "content_initialized_at_idx";
-            DROP INDEX "content_num_views_idx";
-            DROP INDEX "content_state_idx";
-            DROP INDEX "content_verified_at_idx";
-            DROP INDEX "content_version_idx";
+            DROP INDEX IF EXISTS "content_active_at_idx";
+            DROP INDEX IF EXISTS "content_initialized_at_idx";
+            DROP INDEX IF EXISTS "content_num_views_idx";
+            DROP INDEX IF EXISTS "content_state_idx";
+            DROP INDEX IF EXISTS "content_verified_at_idx";
+            DROP INDEX IF EXISTS "content_version_idx";
           |]
