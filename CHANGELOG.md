@@ -1,5 +1,11 @@
 # ZoomHub
 
+## 2024-03-27-2
+
+- Index `content.submitter_email` for faster querying.
+  - Use Squeal type-safe indexes that track indexes in the type, see
+    `ZoomHub.Storage.PostgreSQL.Schema.Schema5`.
+
 ## 2024-03-27-1
 
 - Ops
