@@ -236,15 +236,18 @@ const fetchGenericURL = async (url) =>
 
 const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
   const tileFileNames = await readdir(`${basePath}_files`)
+  const numTiles = tileFileNames.length
   const manifestFileName = `${basePath}.dzi`
-  log("DZI", { manifestFileName })
+  log("DZI", { manifestFileName, numTiles })
 
-  const tileOperations = tileFileNames.map((fileName) =>
+  const tileOperations = tileFileNames.map((fileName, index) =>
     limit(() => {
       const baseKey = path.relative(ROOT_PATH, fileName)
       const key =
         tileFormat.id === "jpg" ? replaceExt(baseKey, ".jpg") : baseKey
       return uploadFile({
+        index,
+        numTiles,
         s3Client,
         fileName,
         key,
@@ -265,16 +268,37 @@ const uploadDZI = async ({ s3Client, basePath, tileFormat }) => {
   return Promise.all([...tileOperations, dziManifestOperation])
 }
 
-const uploadFile = async ({ s3Client, fileName, key, contentType }) => {
+const uploadFile = async ({
+  index,
+  numTiles,
+  s3Client,
+  fileName,
+  key,
+  contentType,
+}) => {
+  const fullKey = `content/${key}`
   await s3Client
     .upload({
       ACL: "public-read",
       Body: fs.createReadStream(fileName),
       Bucket: process.env.S3_CACHE_BUCKET,
       ContentType: contentType,
-      Key: `content/${key}`,
+      Key: fullKey,
     })
     .promise()
+
+  if (
+    typeof numTiles === "number" &&
+    typeof index === "number" &&
+    (index + 1) % 100 == 0
+  ) {
+    log("DZI: tile uploaded", {
+      key: fullKey,
+      contentType,
+      index: index + 1,
+      numTiles,
+    })
+  }
 }
 
 const markAsSuccess = async ({ contentURL, mime, size, dzi }) => {

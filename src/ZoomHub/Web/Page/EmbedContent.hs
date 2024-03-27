@@ -19,7 +19,7 @@ import ZoomHub.API.Types.Content (Content (contentDzi, contentReady), contentId)
 import ZoomHub.API.Types.DeepZoomImage (DeepZoomImageURI (DeepZoomImageURI), mkDeepZoomImage)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentId (unContentId)
-import ZoomHub.Types.DeepZoomImage (TileOverlap (TileOverlap1), TileSize (TileSize256))
+import ZoomHub.Types.DeepZoomImage (TileOverlap (TileOverlap1), TileSize (TileSize254))
 import qualified ZoomHub.Types.DeepZoomImage as TileFormat
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
@@ -81,7 +81,7 @@ instance H.ToHtml EmbedContent where
       openSeadragonConfig = T.pack $ BLC.unpack $ encode viewerConfig
       maybeDZI = contentDzi content
       queuedDZI =
-        mkDeepZoomImage queuedDZIURI 8000 6000 TileSize256 TileOverlap1 TileFormat.PNG
+        mkDeepZoomImage queuedDZIURI 8000 6000 TileSize254 TileOverlap1 TileFormat.PNG
       queuedDZIURI =
         DeepZoomImageURI $ queuedDZIPath `relativeTo` unStaticBaseURI staticBaseURI
       queuedDZIPath = fromJust (parseRelativeReference "queued.dzi")

@@ -26,7 +26,7 @@ import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.DeepZoomImage
   ( TileFormat (PNG),
     TileOverlap (TileOverlap1),
-    TileSize (TileSize256),
+    TileSize (TileSize254),
   )
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import qualified ZoomHub.Web.Types.EmbedAspectRatio as EmbedAspectRatio
@@ -142,7 +142,7 @@ instance ToJS Embed where
       content = embedContent
       maybeDZI = contentDzi content
       queuedDZI =
-        mkDeepZoomImage queuedDZIURI 8000 6000 TileSize256 TileOverlap1 PNG
+        mkDeepZoomImage queuedDZIURI 8000 6000 TileSize254 TileOverlap1 PNG
       queuedDZIURI =
         DeepZoomImageURI $
           queuedDZIPath `relativeTo` unStaticBaseURI embedStaticBaseURI
