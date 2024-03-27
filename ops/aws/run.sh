@@ -38,7 +38,7 @@ if [[  "$eb_environment_type" == "SingleInstance" || ("$eb_environment_type" == 
   # fi
 
   echo "{$(json_log_time), \"message\": \"Migrate database\", \"script\": \"run.sh\"}"
-  /opt/zoomhub/migrate-database $PGDATABASE migrate
+  /opt/zoomhub/migrate-database "$PGDATABASE" migrate
 fi
 
 echo "{$(json_log_time), \"message\": \"Run app\", \"script\": \"run.sh\"}"

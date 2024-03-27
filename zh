@@ -42,7 +42,7 @@ format)
       mode='inplace'
       ;;
     *)
-        echo "Unknown command: $0 $@. Try $0 $1 [check|install]"
+        echo "Unknown command: $0 $*. Try $0 $1 [check|install]"
         exit 1
     esac
     files=$(git ls-files '*.hs' | grep --invert 'vendor/')
@@ -90,12 +90,12 @@ db)
       pg_dump "$DEVELOPMENT_DB_NAME"
       ;;
     *)
-        echo "Unknown command: $0 $@. Try $0 $1 dump"
+        echo "Unknown command: $0 $*. Try $0 $1 dump"
         exit 1
     esac
     ;;
 
 *)
-    echo "Unknown command: $0 $@. Try: $0 format|init|lint|run|test"
+    echo "Unknown command: $0 $*. Try: $0 format|init|lint|run|test"
     ;;
 esac
