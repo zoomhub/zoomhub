@@ -62,6 +62,7 @@ library
     , ZoomHub.Storage.PostgreSQL.Schema.Schema2
     , ZoomHub.Storage.PostgreSQL.Schema.Schema3
     , ZoomHub.Storage.PostgreSQL.Schema.Schema4
+    , ZoomHub.Storage.PostgreSQL.Schema.Schema5
     , ZoomHub.Types.APIUser
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content

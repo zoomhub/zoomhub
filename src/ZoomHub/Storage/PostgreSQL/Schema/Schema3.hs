@@ -9,6 +9,7 @@
 
 module ZoomHub.Storage.PostgreSQL.Schema.Schema3
   ( Schema3,
+    Schemas3,
     migration,
   )
 where
