@@ -55,24 +55,28 @@ layout Page {..} = do
       H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ "https://rsms.me/inter/inter.css"]
       H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ "/styles/global.css"]
 
-      H.script_ analyticsScript
+      analyticsScript
     H.body_ [H.class_ "h-full bg-black m-0 p-0"] pageBody
 
--- TODO: Improve how we represent analytics code.
--- TODO: Pass through `UA-XXXXXXXX-X` Google Analytics ID.
-analyticsScript :: Text
-analyticsScript =
-  [text|
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+--- TODO: Improve how we represent analytics code.
+--- TODO: Pass through `G-*` Google Analytics measurement ID.
+analyticsScript :: (Monad m) => H.HtmlT m ()
+analyticsScript = do
+  H.script_
+    [ H.async_ "async",
+      H.src_ ("https://www.googletagmanager.com/gtag/js?id=" <> measurementId)
+    ]
+    ("" :: Text)
+  H.script_
+    [text|
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    ga('create', 'UA-55808703-1', 'auto');
-    ga('_setDomainName', 'zoomhub.net');
-    ga('_setAllowLinker', true);
-    ga('send', 'pageview');
-  |]
+      gtag('config', "$measurementId");
+    |]
+  where
+    measurementId = "G-XLBYM4SR3W" :: Text
 
 appleTouchIcons :: (Monad m) => H.HtmlT m ()
 appleTouchIcons = do
