@@ -3,11 +3,8 @@
 ## 2024-03-27-3
 
 - `processContent`
-  - Upgrade Lambda runtime from Node.js 12.x LTS to 20.x LTS
-  - Upgrade `sharp` from `0.30.2` to `0.32.6`
-- Ops (CI):
-  - Upgrade GitHub Actions runner from Ubuntu 18 to 22.
-
+  - Upgrade Lambda runtime from Node.js 12.x LTS to 20.x LTS.
+  - Upgrade `sharp` from `0.30.2` to `0.33.3`.
 
 ## 2024-03-27-2
 
