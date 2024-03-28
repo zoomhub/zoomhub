@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 2024-03-28-1
+
+- Web: Upgrade Universal Analytics to Google Analytics 4, including script
+  embeds.
+
 ## 2024-03-27-3
 
 - `processContent`
