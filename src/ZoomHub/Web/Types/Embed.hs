@@ -22,6 +22,7 @@ import ZoomHub.API.Types.Content (Content, contentDzi, contentReady)
 import qualified ZoomHub.API.Types.Content as API
 import ZoomHub.API.Types.DeepZoomImage (DeepZoomImageURI (..), mkDeepZoomImage)
 import qualified ZoomHub.API.Types.DeepZoomImage as API
+import qualified ZoomHub.Config as Config
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.DeepZoomImage
   ( TileFormat (PNG),
@@ -132,8 +133,21 @@ instance ToJS Embed where
               viewer.canvas.style.backgroundColor =
                 fullPage ? "black" : "$backgroundColor"
             })
+
+            // Google Analytics 4
+            const script = document.createElement('script')
+            script.async = true
+            script.src = "https://www.googletagmanager.com/gtag/js?id=$measurementId"
+            document.head.appendChild(script)
+
+            window.dataLayer = window.dataLayer || []
+            window.gtag = window.gtag || function gtag() { dataLayer.push(arguments) }
+            gtag("js", new Date())
+
+            gtag("config", "$measurementId")
           })()
         |]
+      measurementId = Config.googleAnalyticsMeasurementId
       openSeadragonConfig = T.pack $ BLC.unpack $ encode viewerConfig
       backgroundColor =
         EmbedBackground.toCSSValue $
