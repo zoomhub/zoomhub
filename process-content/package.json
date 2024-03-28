@@ -12,7 +12,7 @@
     "amazon-s3-uri": "^0.1.0",
     "axios": "^0.21.2",
     "check-disk-space": "^3.2.0",
-    "file-type": "^16.0.1",
+    "file-type": "^16.5.4",
     "mkdirp": "^1.0.4",
     "p-limit": "^3.0.2",
     "recursive-readdir": "^2.2.2",
