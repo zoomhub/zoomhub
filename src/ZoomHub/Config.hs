@@ -3,13 +3,15 @@
 
 module ZoomHub.Config
   ( Config (..),
-    defaultPort,
     APIUser,
+    defaultPort,
+    googleAnalyticsMeasurementId,
   )
 where
 
 import Data.Aeson (ToJSON, object, toJSON, (.=))
 import qualified Data.ByteString.Lazy as BL
+import Data.Text (Text)
 import Data.Time.Units (Second)
 import Data.Time.Units.Instances ()
 import qualified Database.PostgreSQL.Simple as PGS
@@ -30,6 +32,9 @@ import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 
 defaultPort :: Integer
 defaultPort = 8000
+
+googleAnalyticsMeasurementId :: Text
+googleAnalyticsMeasurementId = "G-XLBYM4SR3W"
 
 data Config = Config
   { apiUser :: APIUser,

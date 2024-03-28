@@ -17,6 +17,7 @@ import Control.Monad (forM_)
 import Data.Text (Text)
 import qualified Lucid as H
 import NeatInterpolation (text)
+import qualified ZoomHub.Config as Config
 
 title :: Text
 title = "ZoomHub · Share and view full-resolution images easily"
@@ -76,7 +77,7 @@ analyticsScript = do
       gtag('config', "$measurementId");
     |]
   where
-    measurementId = "G-XLBYM4SR3W" :: Text
+    measurementId = Config.googleAnalyticsMeasurementId
 
 appleTouchIcons :: (Monad m) => H.HtmlT m ()
 appleTouchIcons = do
