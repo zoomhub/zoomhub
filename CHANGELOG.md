@@ -1,5 +1,10 @@
 # ZoomHub
 
+## 2024-03-28-2
+
+- Web: Fix ‘View source’ functionality. Remove extraneous quotes from running
+  `show`.
+
 ## 2024-03-28-1
 
 - Web: Upgrade Universal Analytics to Google Analytics 4, including script

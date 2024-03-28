@@ -21,6 +21,7 @@ import ZoomHub.Config.AWS (S3BucketName (unS3BucketName))
 import qualified ZoomHub.Config.AWS as AWS
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import ZoomHub.Types.ContentId (unContentId)
+import ZoomHub.Types.ContentURI (ContentURI (unContentURI))
 import ZoomHub.Utils (tshow)
 import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
 import qualified ZoomHub.Web.Page as Page
@@ -70,7 +71,7 @@ instance H.ToHtml ViewContent where
       baseURI = vcBaseURI vc
 
       isUpload = unS3BucketName (vcAWSSourcesS3BucketName vc) `T.isInfixOf` rawContentURL
-      rawContentURL = tshow . contentUrl $ content
+      rawContentURL = unContentURI . contentUrl $ content
 
       scriptBaseURI = tshow $ scriptPath `relativeTo` unBaseURI baseURI
       scriptPath = fromJust . parseRelativeReference $ cId <> ".js"
