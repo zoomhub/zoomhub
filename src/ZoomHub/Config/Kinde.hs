@@ -1,9 +1,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ZoomHub.Config.Kinde
   ( Config (..),
+    ClientId (..),
+    Domain (..),
     fromEnv,
   )
 where
@@ -16,10 +18,10 @@ import Flow
 import Network.URI (URI, parseAbsoluteURI)
 import System.Environment (getEnvironment)
 
-newtype Domain = Domain Text
+newtype Domain = Domain {unDomain :: Text}
   deriving (ToJSON)
 
-newtype ClientId = ClientId Text
+newtype ClientId = ClientId {unClientId :: Text}
   deriving (ToJSON)
 
 newtype ClientSecret = ClientSecret Text
@@ -42,17 +44,10 @@ fromEnv = do
     clientSecret <- (env |> lookup "KINDE_CLIENT_SECRET") <&> T.pack .> ClientSecret
     redirectURI <- (env |> lookup "KINDE_REDIRECT_URI") >>= parseAbsoluteURI
     logoutRedirectURI <- (env |> lookup "KINDE_LOGOUT_REDIRECT_URI") >>= parseAbsoluteURI
-    pure $
-      Config
-        { domain = domain,
-          clientId = clientId,
-          clientSecret = clientSecret,
-          redirectURI = redirectURI,
-          logoutRedirectURI = logoutRedirectURI
-        }
+    pure Config {..}
 
 instance ToJSON Config where
-  toJSON (Config domain clientId _clientSecret redirectURI logoutRedirectURI) =
+  toJSON (Config {..}) =
     object
       [ "domain" .= domain,
         "clientId" .= clientId,
