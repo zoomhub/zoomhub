@@ -44,6 +44,7 @@ library
     , ZoomHub.AWS.S3.POSTPolicy.Error
     , ZoomHub.Config
     , ZoomHub.Config.AWS
+    , ZoomHub.Config.Kinde
     , ZoomHub.Config.ProcessContent
     , ZoomHub.Config.Uploads
     , ZoomHub.Debug
