@@ -36,6 +36,7 @@ library
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Authentication.Basic
+    , ZoomHub.Authentication.OAuth
     , ZoomHub.AWS
     , ZoomHub.AWS.S3
     , ZoomHub.AWS.S3.POSTPolicy
@@ -125,6 +126,7 @@ library
     , case-insensitive
     , conduit
     , containers
+    , crypton
     , data-default
     , directory
     , enclosed-exceptions
