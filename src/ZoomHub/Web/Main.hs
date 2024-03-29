@@ -145,15 +145,16 @@ webMain = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
+
+  let config = Config {..}
+  logInfo_ $ "Welcome to ZoomHub. Go to <" <> show baseURI <> "> and have fun!"
+
   logInfo
     "Config: Database connection pool"
     [ "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
       "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
       "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
     ]
-
-  let config = Config {..}
-  logInfo_ $ "Welcome to ZoomHub. Go to <" <> show baseURI <> "> and have fun!"
   logInfo
     "Config: App"
     ["config" .= config]
