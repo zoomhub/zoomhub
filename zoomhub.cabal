@@ -37,6 +37,7 @@ library
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Authentication.Basic
     , ZoomHub.Authentication.OAuth
+    , ZoomHub.Authentication.OAuth.Kinde
     , ZoomHub.AWS
     , ZoomHub.AWS.S3
     , ZoomHub.AWS.S3.POSTPolicy
@@ -139,6 +140,7 @@ library
     , foreign-store
     , generics-sop
     , hashids
+    , hoauth2
     , hostname
     , http-api-data
     , http-client
@@ -182,6 +184,7 @@ library
     , unix
     , unliftio
     , unordered-containers
+    , uri-bytestring
     , uri-encode
     , utf8-string
     , uuid
