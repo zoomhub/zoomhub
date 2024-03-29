@@ -14,6 +14,7 @@ module ZoomHub.Web.Page
 where
 
 import Control.Monad (forM_)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Lucid as H
 import NeatInterpolation (text)
@@ -37,7 +38,9 @@ instance H.ToHtml Path where
 data Page m a = Page
   { pageTitle :: Title,
     pageCanonicalPath :: Maybe Path,
-    pageBody :: H.HtmlT m a
+    pageHeadStyles :: Maybe (H.HtmlT m a),
+    pageBody :: H.HtmlT m a,
+    pageBodyClassName :: Maybe Text
   }
 
 layout :: (Monad m) => Page m a -> H.HtmlT m a
@@ -57,7 +60,10 @@ layout Page {..} = do
       H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ "/styles/global.css"]
 
       analyticsScript
-    H.body_ [H.class_ "h-full bg-black m-0 p-0"] pageBody
+
+      forM_ pageHeadStyles id
+    H.body_ [H.class_ (fromMaybe "h-full bg-black m-0 p-0" pageBodyClassName)] $
+      pageBody
 
 --- TODO: Improve how we represent analytics code.
 --- TODO: Pass through `G-*` Google Analytics measurement ID.
