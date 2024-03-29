@@ -4,7 +4,8 @@
 
 module ZoomHub.Config.Kinde
   ( Config (..),
-    ClientId (..),
+    ClientId (unClientId),
+    ClientSecret (unClientSecret),
     Domain (..),
     fromEnv,
   )
@@ -24,7 +25,7 @@ newtype Domain = Domain {unDomain :: Text}
 newtype ClientId = ClientId {unClientId :: Text}
   deriving (ToJSON)
 
-newtype ClientSecret = ClientSecret Text
+newtype ClientSecret = ClientSecret {unClientSecret :: Text}
   deriving (ToJSON)
 
 data Config = Config
