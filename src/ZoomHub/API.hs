@@ -17,7 +17,6 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Char8 as BC
 import Data.Foldable (fold, for_)
-import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
@@ -27,12 +26,11 @@ import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
-import qualified Data.Text.Lazy as TL
 import qualified Data.Time as Time
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
 import Flow
-import Network.OAuth2.Experiment (AuthorizeState (AuthorizeState), mkAuthorizationRequest)
+import Network.OAuth2.Experiment (mkAuthorizationRequest)
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
@@ -660,7 +658,7 @@ restInvalidRequest maybeURL = case maybeURL of
 -- Web: Auth: Kinde
 webLogin :: BaseURI -> Kinde.Config -> Handler Text
 webLogin _baseURI kindeConfig = do
-  state <- liftIO generateState <&> (AuthorizeState <. TL.fromStrict)
+  state <- liftIO generateState
   let authorizationRedirectURI = mkAuthorizationRequest $ mkApp kindeConfig state
   void $ redirect302 $ uriByteStringToURI authorizationRedirectURI
   return ""

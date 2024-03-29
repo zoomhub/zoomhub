@@ -15,7 +15,9 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 import Flow
+import Network.OAuth2.Experiment.Types (AuthorizeState (..))
 import Servant (FromHttpApiData (parseQueryParam))
 
 newtype AuthorizationCode = AuthorizationCode {unAuthorizationCode :: Text}
@@ -33,7 +35,7 @@ instance FromHttpApiData Scopes where
           then Left "Missing scopes"
           else Right $ Scopes scopes
 
-generateState :: IO Text
+generateState :: IO AuthorizeState
 generateState = do
   randomBytes <- getRandomBytes 32
-  return (randomBytes |> URL.encodeBase64)
+  return (randomBytes |> URL.encodeBase64 |> TL.fromStrict |> AuthorizeState)
