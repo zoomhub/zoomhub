@@ -30,14 +30,27 @@ fi
 source ~/.nvm/nvm.sh
 nvm use
 
-if [[ -f ngrok.pid ]] ; then
+function cleanup() {
+  echo "$0: Terminating child script: ngrok..."
   set +e
-  kill -9 "$(cat ngrok.pid)" >/dev/null 2>&1
+  kill -SIGTERM "$ngrok_pid"
+  wait "$ngrok_pid"
   set -e
-fi
+
+  echo "$0: Terminating child script: concurrently..."
+  set +e
+  kill -SIGTERM "$concurrently_pid"
+  wait "$concurrently_pid"
+  set -e
+
+  echo "$0: Child scripts terminated. Exiting."
+}
+
+trap cleanup SIGINT SIGTERM
+
 
 ngrok http 8000 --log=stdout > ngrok.log &
-echo $! > ngrok.pid
+ngrok_pid=$!
 
 echo -n "Get ngrok public URL."
 NGROK_PUBLIC_URL=""
@@ -55,12 +68,14 @@ while [ -z "$NGROK_PUBLIC_URL" ]; do
 done
 echo ''
 
-
 BASE_URI=$NGROK_PUBLIC_URL \
 PUBLIC_PATH='frontend/build' \
   npx concurrently \
-    --raw \
     --kill-others \
     --names "api,web" \
     "./scripts/run-api-watch.sh" \
-    "export API_BASE_URI=$NGROK_PUBLIC_URL && ./scripts/run-web.sh"
+    "export API_BASE_URI=$NGROK_PUBLIC_URL && ./scripts/run-web.sh" &
+concurrently_pid=$!
+
+wait $concurrently_pid
+echo "$0: Child script has stopped. Parent script will now exit."
