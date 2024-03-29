@@ -131,6 +131,7 @@ library
     , exceptions
     , fast-logger
     , filepath
+    , flow
     , foreign-store
     , generics-sop
     , hashids
