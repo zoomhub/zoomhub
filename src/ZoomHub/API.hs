@@ -17,16 +17,22 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Char8 as BC
 import Data.Foldable (fold, for_)
+import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
+import qualified Data.Text.Lazy as TL
 import qualified Data.Time as Time
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
+import Flow
+import Network.OAuth2.Experiment (AuthorizeState (AuthorizeState), mkAuthorizationRequest)
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
@@ -37,6 +43,7 @@ import Servant
     Get,
     Handler,
     JSON,
+    PlainText,
     Put,
     QueryParam,
     Raw,
@@ -85,7 +92,9 @@ import qualified ZoomHub.AWS.S3 as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
 import qualified ZoomHub.Authentication.Basic as BasicAuthentication
+import ZoomHub.Authentication.OAuth (AuthorizationCode (unAuthorizationCode), Scopes (unScopes), State (unState), generateState)
 import qualified ZoomHub.Authentication.OAuth as OAuth
+import ZoomHub.Authentication.OAuth.Kinde (mkApp)
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -108,12 +117,12 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
+import ZoomHub.Utils (uriByteStringToURI)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
 import ZoomHub.Web.Page.ExploreRecentContent (ExploreRecentContent (..))
 import qualified ZoomHub.Web.Page.ExploreRecentContent as Page
-import qualified ZoomHub.Web.Page.Homepage as Page
 import qualified ZoomHub.Web.Page.VerifyContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
 import ZoomHub.Web.Page.ViewContent (ViewContent (..))
@@ -129,11 +138,9 @@ import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit)
 
 -- API
 type API =
-  -- Homepage
-  Get '[HTML] Page.Homepage
-    -- Meta
-    :<|> "health" :> Get '[HTML] Text
-    :<|> "version" :> Get '[HTML] Text
+  -- Meta
+  "health" :> Get '[PlainText] Text
+    :<|> "version" :> Get '[PlainText] Text
     -- Config
     :<|> "internal"
       :> "config"
@@ -218,6 +225,7 @@ type API =
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Auth
+    :<|> "login" :> Get '[PlainText] Text
     :<|> "auth"
       :> "kinde"
       :> "callback"
@@ -267,10 +275,8 @@ api = Proxy
 
 server :: Config -> Server API
 server config =
-  -- Homepage
-  webHomepage config.kinde
-    -- Meta
-    :<|> health
+  -- Meta
+  health
     :<|> version (Config.version config)
     :<|> restConfig config
     -- API: JSONP
@@ -290,6 +296,7 @@ server config =
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Auth
+    :<|> webLogin baseURI config.kinde
     :<|> webAuthKindeCallback baseURI
     -- Web: Explore: Recent
     :<|> webExploreRecent baseURI contentBaseURI dbConnPool
@@ -331,16 +338,16 @@ app config = do
 
 -- Handlers
 
--- Homepage
-webHomepage :: Kinde.Config -> Handler Page.Homepage
-webHomepage kindeConfig = do
-  kindeOAuthState <- liftIO OAuth.generateState
-  -- TODO: Save in session
-  return
-    Page.Homepage
-      { Page.kindeOAuthState = kindeOAuthState,
-        Page.kindeConfig = kindeConfig
-      }
+-- -- Homepage
+-- webHomepage :: Kinde.Config -> Handler Page.Homepage
+-- webHomepage kindeConfig = do
+--   kindeOAuthState <- liftIO OAuth.generateState
+--   -- TODO: Save in session
+--   return
+--     Page.Homepage
+--       { Page.kindeOAuthState = kindeOAuthState,
+--         Page.kindeConfig = kindeConfig
+--       }
 
 -- Meta
 health :: Handler Text
@@ -651,19 +658,31 @@ restInvalidRequest maybeURL = case maybeURL of
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
 
 -- Web: Auth: Kinde
+webLogin :: BaseURI -> Kinde.Config -> Handler Text
+webLogin _baseURI kindeConfig = do
+  state <- liftIO generateState <&> (AuthorizeState <. TL.fromStrict)
+  let authorizationRedirectURI = mkAuthorizationRequest $ mkApp kindeConfig state
+  void $ redirect302 $ uriByteStringToURI authorizationRedirectURI
+  return ""
+
 webAuthKindeCallback ::
   BaseURI ->
   OAuth.AuthorizationCode ->
   OAuth.State ->
   Maybe OAuth.Scopes ->
   Handler Text
-webAuthKindeCallback baseURI _code _state _scope = do
+webAuthKindeCallback _baseURI code state scopes = do
   -- TODO:
   -- Grab existing state from session
   -- Ensure given state matches our state; if not, abort
   -- Exchange code for access token
-  void $ redirect302 $ unBaseURI baseURI
-  return "redirect"
+  return $
+    T.intercalate
+      "\n"
+      [ "code: " <> (code |> unAuthorizationCode),
+        "state: " <> (state |> unState),
+        "scope: " <> (scopes |> fromMaybe (OAuth.Scopes (Set.empty :: Set Text)) |> unScopes |> Set.toList |> T.intercalate ", ")
+      ]
 
 -- Web: Explore: Recent
 webExploreRecent ::

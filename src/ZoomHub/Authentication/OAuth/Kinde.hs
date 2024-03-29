@@ -3,8 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Authentication.OAuth.Kinde
-  ( idp,
-    app,
+  ( mkApp,
   )
 where
 
@@ -20,8 +19,8 @@ import URI.ByteString (parseURI, strictURIParserOptions)
 import ZoomHub.Config.Kinde (ClientId (unClientId), ClientSecret (unClientSecret), Domain (unDomain))
 import qualified ZoomHub.Config.Kinde as Kinde
 
-idp :: Domain -> Idp "kinde"
-idp domain =
+mkIdp :: Domain -> Idp "kinde"
+mkIdp domain =
   Idp
     { idpAuthorizeEndpoint = uriFromText $ "https://" <> domain' <> ".us.kinde.com/oauth2/auth",
       idpTokenEndpoint = uriFromText $ "https://" <> domain' <> ".us.kinde.com/oauth2/token",
@@ -35,8 +34,8 @@ idp domain =
         Left uriParseError -> error $ "uriFromText: Invalid URI: " <> show uriParseError
         Right parsedURI -> parsedURI
 
-authCodeApp :: Kinde.Config -> AuthorizeState -> AuthorizationCodeApplication
-authCodeApp config state =
+mkAuthCodeApp :: Kinde.Config -> AuthorizeState -> AuthorizationCodeApplication
+mkAuthCodeApp config state =
   AuthorizationCodeApplication
     { acClientId = config.clientId |> unClientId |> L.fromStrict |> ClientId,
       acClientSecret = config.clientSecret |> unClientSecret |> L.fromStrict |> ClientSecret,
@@ -53,9 +52,9 @@ authCodeApp config state =
         Left uriParseError -> error $ "fromURI: Invalid URI: " <> show uriParseError
         Right parsedURI -> parsedURI
 
-app :: Kinde.Config -> AuthorizeState -> IdpApplication "kinde" AuthorizationCodeApplication
-app config state =
+mkApp :: Kinde.Config -> AuthorizeState -> IdpApplication "kinde" AuthorizationCodeApplication
+mkApp config state =
   IdpApplication
-    { OAuth2.idp = idp config.domain,
-      OAuth2.application = authCodeApp config state
+    { OAuth2.idp = mkIdp config.domain,
+      OAuth2.application = mkAuthCodeApp config state
     }
