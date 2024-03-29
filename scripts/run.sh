@@ -58,6 +58,9 @@ else
   ngrok_pid=$!
 fi
 
+ngrok http 8000 --log=stdout > ngrok.log &
+ngrok_pid=$!
+
 echo -n "Get ngrok public URL."
 NGROK_PUBLIC_URL=""
 while [ -z "$NGROK_PUBLIC_URL" ]; do
@@ -85,7 +88,6 @@ cd ..
 BASE_URI="$NGROK_PUBLIC_URL" \
 PUBLIC_PATH='frontend/dist' \
   npx concurrently \
-    --raw \
     --kill-others \
     --names "api,web" \
     "./scripts/run-api-watch.sh" \
