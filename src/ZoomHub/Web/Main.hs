@@ -13,6 +13,7 @@ import Control.Monad (forM_, guard, when)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
+import Data.Functor ((<&>))
 import Data.Maybe (fromJust, fromMaybe)
 import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)

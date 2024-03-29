@@ -9,7 +9,7 @@ module ZoomHub.API
   )
 where
 
-import qualified Amazonka as Amazonka
+import qualified Amazonka
 import Control.Monad (void, when)
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
