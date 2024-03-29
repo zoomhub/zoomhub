@@ -8,17 +8,15 @@ module ZoomHub.Types.ContentBaseURI
   )
 where
 
-import Data.Aeson (ToJSON, object, toJSON, (.=))
+import Data.Aeson (ToJSON, Value (String), toJSON)
 import Data.List (isSuffixOf)
+import qualified Data.Text as T
 import Network.URI (URI, uriIsAbsolute, uriPath)
 
 newtype ContentBaseURI = ContentBaseURI {unContentBaseURI :: URI} deriving (Eq)
 
 instance ToJSON ContentBaseURI where
-  toJSON ContentBaseURI {..} =
-    object
-      [ "unContentBaseURI" .= show unContentBaseURI
-      ]
+  toJSON ContentBaseURI {..} = String . T.pack . show $ unContentBaseURI
 
 mkContentBaseURI :: URI -> Maybe ContentBaseURI
 mkContentBaseURI uri
