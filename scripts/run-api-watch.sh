@@ -29,7 +29,7 @@ PGUSER="$(whoami)" \
 PROCESS_CONTENT='ProcessExistingAndNewContent' \
 PROCESSING_WORKERS='2' \
 S3_SOURCES_BUCKET='zoomhub-sources-development' \
-KINDE_REDIRECT_URI="$BASE_URI/auth/callbacks/" \
+KINDE_REDIRECT_URI="$BASE_URI/auth/kinde/callback" \
 KINDE_LOGOUT_REDIRECT_URI="$BASE_URI" \
 UPLOADS='true' \
   ghcid \
