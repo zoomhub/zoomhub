@@ -82,7 +82,7 @@ import ZoomHub.API.Types.NonRESTfulResponse
 import qualified ZoomHub.AWS.S3 as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
-import qualified ZoomHub.Authentication as Authentication
+import qualified ZoomHub.Authentication.Basic as BasicAuthentication
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -168,7 +168,7 @@ type API =
       :> "upload"
       :> Get '[JSON] (HashMap Text Text)
     -- API: RESTful: Reset
-    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "v1"
       :> "content"
       :> Capture "id" ContentId
@@ -189,7 +189,7 @@ type API =
       :> Capture "token" String
       :> Put '[JSON] Content
     -- API: RESTful: Completion
-    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "v1"
       :> "content"
       :> Capture "id" ContentId
@@ -212,7 +212,7 @@ type API =
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Explore: Recent
-    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "explore"
       :> "recent"
       :> QueryParam "items" Int
@@ -307,7 +307,7 @@ app config = do
     cfg jwtKey =
       defaultJWTSettings jwtKey
         :. defaultCookieSettings
-        :. Authentication.check (Config.apiUser config)
+        :. BasicAuthentication.check (Config.apiUser config)
         :. EmptyContext
     logger = Config.logger config
 
@@ -453,7 +453,7 @@ restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
 restContentResetById ::
   BaseURI ->
   Pool Connection ->
-  AuthResult Authentication.AuthenticatedUser ->
+  AuthResult BasicAuthentication.AuthenticatedUser ->
   ContentId ->
   Handler Content
 restContentResetById baseURI dbConnPool authResult contentId = do
@@ -503,7 +503,7 @@ restContentCompletionById ::
   BaseURI ->
   ContentBaseURI ->
   Pool Connection ->
-  AuthResult Authentication.AuthenticatedUser ->
+  AuthResult BasicAuthentication.AuthenticatedUser ->
   ContentId ->
   ContentCompletion ->
   Handler Content
@@ -626,7 +626,7 @@ webExploreRecent ::
   BaseURI ->
   ContentBaseURI ->
   Pool Connection ->
-  AuthResult Authentication.AuthenticatedUser ->
+  AuthResult BasicAuthentication.AuthenticatedUser ->
   Maybe Int ->
   Handler Page.ExploreRecentContent
 webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =

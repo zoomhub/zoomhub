@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
-module ZoomHub.Authentication
+module ZoomHub.Authentication.Basic
   ( AuthenticatedUser,
     check,
   )
