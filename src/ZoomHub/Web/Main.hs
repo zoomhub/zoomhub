@@ -14,6 +14,7 @@ import Control.Monad (forM_, guard, when)
 import Data.Aeson ((.=))
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
+import Data.Functor ((<&>))
 import Data.Maybe (fromJust, fromMaybe)
 import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
@@ -95,10 +96,7 @@ webMain = do
   logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
-  aws <-
-    fromMaybe
-      (error "ZoomHub.Main: Failed to parse AWS configuration.")
-      <$> AWSConfig.fromEnv AWS.Ohio -- TODO: Grab AWS region from environment?
+  aws <- AWSConfig.fromEnv <&> fromMaybe (error "ZoomHub.Main: Failed to parse AWS configuration.")
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env

@@ -11,6 +11,11 @@ if [[ -z "$AWS_ACCESS_KEY_ID" ]]; then
   exit 1
 fi
 
+if [[ -z "$AWS_REGION" ]]; then
+  echo "Please set 'AWS_REGION' environment variable"
+  exit 1
+fi
+
 if [[ -z "$API_USERNAME" ]]; then
   echo "Please set 'API_USERNAME' environment variable"
   exit 1

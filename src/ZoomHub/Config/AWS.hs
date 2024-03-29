@@ -8,6 +8,7 @@ module ZoomHub.Config.AWS
 where
 
 import qualified Amazonka as AWS
+import qualified Amazonka.Data as AWS
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
@@ -23,12 +24,13 @@ data Config = Config
     configRegion :: AWS.Region
   }
 
-fromEnv :: AWS.Region -> IO (Maybe Config)
-fromEnv region = do
+fromEnv :: IO (Maybe Config)
+fromEnv = do
   env <- getEnvironment
   return $ do
     accessKey <- AWS.AccessKey . encodeUtf8 . T.pack <$> lookup "AWS_ACCESS_KEY_ID" env
     secretKey <- AWS.SecretKey . encodeUtf8 . T.pack <$> lookup "AWS_SECRET_ACCESS_KEY" env
+    region <- rightToMaybe . AWS.fromText . T.pack =<< lookup "AWS_REGION" env
     sourcesS3Bucket <- S3BucketName . T.pack <$> lookup "S3_SOURCES_BUCKET" env
     pure $
       Config
@@ -37,3 +39,5 @@ fromEnv region = do
           configSourcesS3Bucket = sourcesS3Bucket,
           configRegion = region
         }
+  where
+    rightToMaybe = either (const Nothing) Just
