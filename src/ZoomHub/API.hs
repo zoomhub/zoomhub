@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -43,6 +44,7 @@ import Servant
     Server,
     ServerError,
     err301,
+    err302,
     errHeaders,
     serveWithContext,
     (:<|>) (..),
@@ -83,6 +85,7 @@ import qualified ZoomHub.AWS.S3 as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
 import qualified ZoomHub.Authentication.Basic as BasicAuthentication
+import qualified ZoomHub.Authentication.OAuth as OAuth
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -214,6 +217,14 @@ type API =
       :> "content"
       :> QueryParam "url" String
       :> Get '[JSON] Content
+    -- Web: Auth
+    :<|> "auth"
+      :> "kinde"
+      :> "callback"
+      :> RequiredQueryParam "code" OAuth.AuthorizationCode
+      :> RequiredQueryParam "state" OAuth.State
+      :> QueryParam "scope" OAuth.Scopes
+      :> Get '[HTML] Text
     -- Web: Explore: Recent
     :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "explore"
@@ -278,6 +289,8 @@ server config =
     :<|> restInvalidContentId
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
+    -- Web: Auth
+    :<|> webAuthKindeCallback baseURI
     -- Web: Explore: Recent
     :<|> webExploreRecent baseURI contentBaseURI dbConnPool
     -- Web: Embed (iframe)
@@ -637,6 +650,21 @@ restInvalidRequest maybeURL = case maybeURL of
   Nothing -> throwError . API.error400 $ apiMissingIdOrURLMessage
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
 
+-- Web: Auth: Kinde
+webAuthKindeCallback ::
+  BaseURI ->
+  OAuth.AuthorizationCode ->
+  OAuth.State ->
+  Maybe OAuth.Scopes ->
+  Handler Text
+webAuthKindeCallback baseURI _code _state _scope = do
+  -- TODO:
+  -- Grab existing state from session
+  -- Ensure given state matches our state; if not, abort
+  -- Exchange code for access token
+  void $ redirect302 $ unBaseURI baseURI
+  return "redirect"
+
 -- Web: Explore: Recent
 webExploreRecent ::
   BaseURI ->
@@ -896,3 +924,8 @@ redirect :: URI -> Handler a
 redirect location =
   -- HACK: Redirect using error: http://git.io/vBCz9
   throwError $ err301 {errHeaders = [("Location", BC.pack (show location))]}
+
+redirect302 :: URI -> Handler a
+redirect302 location =
+  -- HACK: Redirect using error: http://git.io/vBCz9
+  throwError $ err302 {errHeaders = [("Location", BC.pack (show location))]}
