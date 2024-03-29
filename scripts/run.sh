@@ -68,13 +68,13 @@ while [ -z "$NGROK_PUBLIC_URL" ]; do
 done
 echo ''
 
-BASE_URI=$NGROK_PUBLIC_URL \
+BASE_URI="$NGROK_PUBLIC_URL" \
 PUBLIC_PATH='frontend/build' \
   npx concurrently \
     --kill-others \
     --names "api,web" \
     "./scripts/run-api-watch.sh" \
-    "export API_BASE_URI=$NGROK_PUBLIC_URL && ./scripts/run-web.sh" &
+    "API_BASE_URI=$NGROK_PUBLIC_URL ./scripts/run-web.sh" &
 concurrently_pid=$!
 
 wait $concurrently_pid
