@@ -125,9 +125,8 @@ import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit)
 -- API
 type API =
   -- TODO: Route to homepage (`/`) using: `:<|> Get '[HTML]`
-  -- Meta
-  "health" :> Get '[HTML] String
-    :<|> "version" :> Get '[HTML] String
+  "health" :> Get '[HTML] Text
+    :<|> "version" :> Get '[HTML] Text
     -- Config
     :<|> "internal"
       :> "config"
@@ -314,10 +313,10 @@ app config = do
 -- Handlers
 
 -- Meta
-health :: Handler String
+health :: Handler Text
 health = return "up"
 
-version :: String -> Handler String
+version :: Text -> Handler Text
 version = return
 
 restConfig :: Config -> Handler API.Config

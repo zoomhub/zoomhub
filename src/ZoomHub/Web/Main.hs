@@ -15,9 +15,11 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
 import Data.Functor ((<&>))
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
+import Flow
 import GHC.Conc (getNumProcessors)
 import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
@@ -218,12 +220,12 @@ webMain = do
               <> baseURIEnvName
               <> "` to override usage of hostname."
 
-    readVersion :: FilePath -> IO String
+    readVersion :: FilePath -> IO Text
     readVersion currentDirectory = do
       r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
       return $ case r of
-        Left _ -> "unknown"
-        Right version -> version
+        Left _ -> "<unknown>"
+        Right version -> version |> T.pack
       where
         versionPath = currentDirectory </> "version.txt"
 
