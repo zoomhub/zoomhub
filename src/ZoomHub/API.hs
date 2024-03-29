@@ -86,6 +86,7 @@ import qualified ZoomHub.Authentication.Basic as BasicAuthentication
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
+import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import qualified ZoomHub.Email as Email
@@ -109,6 +110,7 @@ import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
 import ZoomHub.Web.Page.ExploreRecentContent (ExploreRecentContent (..))
 import qualified ZoomHub.Web.Page.ExploreRecentContent as Page
+import qualified ZoomHub.Web.Page.Homepage as Page
 import qualified ZoomHub.Web.Page.VerifyContent as Page
 import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
 import ZoomHub.Web.Page.ViewContent (ViewContent (..))
@@ -124,8 +126,10 @@ import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit)
 
 -- API
 type API =
-  -- TODO: Route to homepage (`/`) using: `:<|> Get '[HTML]`
-  "health" :> Get '[HTML] Text
+  -- Homepage
+  Get '[HTML] Page.Homepage
+    -- Meta
+    :<|> "health" :> Get '[HTML] Text
     :<|> "version" :> Get '[HTML] Text
     -- Config
     :<|> "internal"
@@ -252,8 +256,10 @@ api = Proxy
 
 server :: Config -> Server API
 server config =
-  -- Meta
-  health
+  -- Homepage
+  webHomepage config.kinde
+    -- Meta
+    :<|> health
     :<|> version (Config.version config)
     :<|> restConfig config
     -- API: JSONP
@@ -311,6 +317,17 @@ app config = do
     logger = Config.logger config
 
 -- Handlers
+
+-- Homepage
+webHomepage :: Kinde.Config -> Handler Page.Homepage
+webHomepage kindeConfig = do
+  kindeOAuthState <- liftIO OAuth.generateState
+  -- TODO: Save in session
+  return
+    Page.Homepage
+      { Page.kindeOAuthState = kindeOAuthState,
+        Page.kindeConfig = kindeConfig
+      }
 
 -- Meta
 health :: Handler Text
