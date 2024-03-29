@@ -6,7 +6,6 @@ module ZoomHub.Web.Main
   )
 where
 
-import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities, threadDelay)
 import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
