@@ -36,14 +36,17 @@ psql --output /dev/null --quiet "$DEVELOPMENT_DB_NAME" \
   < ./data/zoomhub_sequences.sql
 
 # jq: Ignore non-JSON lines using `fromjson?`: https://blog.nem.ec/code-snippets/jq-ignore-errors/
+BASE_URI="${BASE_URI:-http://localhost:8000}"
+
 ZH_ENV='development' \
-BASE_URI="${BASE_URI:-http://localhost:8000}" \
 CONTENT_BASE_URI='https://cache-development.zoomhub.net/content' \
 PGDATABASE='zoomhub_development' \
 PGUSER="$(whoami)" \
 PROCESS_CONTENT='ProcessExistingAndNewContent' \
 PROCESSING_WORKERS='2' \
 S3_SOURCES_BUCKET='zoomhub-sources-development' \
+KINDE_REDIRECT_URI="$BASE_URI/auth/callbacks/" \
+KINDE_LOGOUT_REDIRECT_URI="$BASE_URI" \
 UPLOADS='true' \
   ghcid \
 	    --command "stack ghci zoomhub --main-is zoomhub:exe:zoomhub" \

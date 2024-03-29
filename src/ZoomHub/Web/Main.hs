@@ -47,6 +47,7 @@ import ZoomHub.Config
     defaultPort,
   )
 import qualified ZoomHub.Config.AWS as AWSConfig
+import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import qualified ZoomHub.Config.ProcessContent as ProcessContent
 import ZoomHub.Config.Uploads (Uploads (..))
@@ -97,6 +98,7 @@ webMain = do
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
   aws <- AWSConfig.fromEnv <&> fromMaybe (error "ZoomHub.Main: Failed to parse AWS configuration.")
+  kinde <- Kinde.fromEnv <&> fromMaybe (error "ZoomHub.Main: Failed to parse Kinde configuration.")
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env

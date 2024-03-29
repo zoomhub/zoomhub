@@ -20,6 +20,7 @@ import Network.URI.Instances ()
 import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Session.Pool (Pool)
 import qualified ZoomHub.Config.AWS as AWS
+import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import ZoomHub.Log.LogLevel (LogLevel)
@@ -39,6 +40,7 @@ googleAnalyticsMeasurementId = "G-XLBYM4SR3W"
 data Config = Config
   { apiUser :: APIUser,
     aws :: AWS.Config,
+    kinde :: Kinde.Config,
     baseURI :: BaseURI,
     contentBaseURI :: ContentBaseURI,
     dbConnInfo :: PGS.ConnectInfo,
@@ -70,6 +72,7 @@ instance ToJSON Config where
         "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe,
         "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
         "environment" .= environment,
+        "kinde" .= kinde,
         "logLevel" .= show logLevel,
         "maxUploadSizeMegabytes" .= maxUploadSizeMegabytes,
         "port" .= port,
