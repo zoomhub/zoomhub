@@ -85,6 +85,7 @@ cd ..
 BASE_URI="$NGROK_PUBLIC_URL" \
 PUBLIC_PATH='frontend/dist' \
   npx concurrently \
+    --raw \
     --kill-others \
     --names "api,web" \
     "./scripts/run-api-watch.sh" \
