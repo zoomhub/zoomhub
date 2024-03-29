@@ -61,7 +61,7 @@ data Config = Config
     publicPath :: FilePath,
     staticBaseURI :: StaticBaseURI,
     uploads :: Uploads,
-    version :: String
+    version :: Text
   }
 
 instance ToJSON Config where
