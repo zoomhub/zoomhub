@@ -36,6 +36,8 @@ instance H.ToHtml ExploreRecentContent where
           { pageTitle = Title $ "Explore: Recent — " <> Page.title,
             pageCanonicalPath = Nothing,
             pageStylesheetPath = ercStylesheetPath,
+            pageHeadStyles = Nothing,
+            pageBodyClassName = Nothing,
             pageBody =
               H.div_ [H.class_ "flex flex-col justify-center max-w-max mx-auto py-6"] do
                 H.h1_ [H.class_ "text-3xl text-white font-bold mb-2"] "Explore: Recent"

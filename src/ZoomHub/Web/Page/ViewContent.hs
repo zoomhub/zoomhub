@@ -42,6 +42,8 @@ instance H.ToHtml ViewContent where
         { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
           pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
           pageStylesheetPath = vcStylesheetPath vc,
+          pageHeadStyles = Nothing,
+          pageBodyClassName = Nothing,
           pageBody = do
             H.script_ [H.src_ scriptURI] ("" :: Text)
             H.div_
