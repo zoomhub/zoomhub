@@ -89,7 +89,7 @@ update = do
                say "runAppDevelopment terminated"
            )
           `catch` ( \(SomeException err) -> do
-                      say "finally action"
+                      say "catch action"
                       hFlush stdout
                       hFlush stderr
                       putMVar done ()
