@@ -22,6 +22,7 @@ import Data.Time.Clock (UTCTime (UTCTime, utctDay), getCurrentTime)
 import ZoomHub.AWS.S3.POSTPolicy (POSTPolicy)
 import qualified ZoomHub.AWS.S3.POSTPolicy as POSTPolicy
 import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
+import ZoomHub.Utils (lenientDecodeUtf8)
 
 presignPOSTPolicy ::
   AWS.AccessKey ->

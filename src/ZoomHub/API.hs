@@ -116,6 +116,7 @@ import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (uriByteStringToURI)
+import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
