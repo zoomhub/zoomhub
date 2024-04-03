@@ -11,8 +11,12 @@ import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
 import Control.Monad (forM_, guard, when)
 import Data.Aeson ((.=))
+import Data.Bifunctor (Bifunctor (first))
+import qualified Data.ByteString.Base64 as Base64
+import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
+import Data.Either (fromRight)
 import Data.Functor ((<&>))
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Text (Text)
@@ -42,6 +46,7 @@ import System.FilePath ((</>))
 import System.IO.Error (isDoesNotExistError)
 import System.Random (randomRIO)
 import Text.Read (readMaybe)
+import qualified Web.ClientSession as ClientSession
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config (..),
@@ -137,6 +142,22 @@ webMain = do
               password <- T.pack <$> lookup "API_PASSWORD" env
               pure $ APIUser {..}
           )
+      clientSessionKey =
+        ( env
+            |> lookup "CLIENT_SESSION_KEY_BASE64"
+            |> fromMaybe
+              ( error $
+                  "ZoomHub.main: Missing 'CLIENT_SESSION_KEY_BASE64'."
+                    <> " Generate using one using `Web.ClientSession.randomKeyEnv`."
+              )
+            |> BC.pack
+            |> Base64.decodeBase64
+            |> first T.unpack
+        )
+          >>= ClientSession.initKey
+          |> fromRight
+            (error "ZoomHub.main: Failed to decode 'CLIENT_SESSION_KEY_BASE64'")
+
   -- Database connection pool
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-

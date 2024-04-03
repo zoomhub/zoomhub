@@ -126,6 +126,7 @@ library
     , blaze-builder
     , bytestring
     , case-insensitive
+    , clientsession
     , conduit
     , containers
     , crypton

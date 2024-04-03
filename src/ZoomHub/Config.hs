@@ -19,6 +19,7 @@ import Database.PostgreSQL.Simple.Instances ()
 import Network.URI.Instances ()
 import Network.Wai (Middleware)
 import Squeal.PostgreSQL.Session.Pool (Pool)
+import Web.ClientSession (Key)
 import qualified ZoomHub.Config.AWS as AWS
 import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
@@ -42,6 +43,7 @@ data Config = Config
     aws :: AWS.Config,
     kinde :: Kinde.Config,
     baseURI :: BaseURI,
+    clientSessionKey :: !Key,
     contentBaseURI :: ContentBaseURI,
     dbConnInfo :: PGS.ConnectInfo,
     dbConnPool :: Pool Connection,
@@ -66,6 +68,7 @@ instance ToJSON Config where
   toJSON Config {..} =
     object
       [ "baseURI" .= baseURI,
+        "clientSessionKey" .= ("<redacted>" :: Text),
         "contentBaseURI" .= contentBaseURI,
         "dbConnInfo" .= dbConnInfo,
         "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
