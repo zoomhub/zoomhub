@@ -28,10 +28,6 @@ lenientDecodeUtf8 = decodeUtf8With lenientDecode
 tshow :: (Show a) => a -> T.Text
 tshow = T.pack . show
 
-uriByteStringToURI :: BS.URI -> URI
+uriByteStringToURI :: BS.URI -> Maybe URI
 uriByteStringToURI uriBS =
-  uriBS
-    |> serializeURIRef'
-    |> BC.unpack
-    |> parseAbsoluteURI
-    |> fromMaybe (error $ "Invalid URI: " <> show uriBS)
+  uriBS |> serializeURIRef' |> BC.unpack |> parseAbsoluteURI
