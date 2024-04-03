@@ -131,6 +131,7 @@ library
     , clientsession
     , conduit
     , containers
+    , cookie
     , crypton
     , data-default
     , directory
