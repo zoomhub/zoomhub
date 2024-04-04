@@ -49,7 +49,7 @@ mkAuthCodeApp config state =
   AuthorizationCodeApplication
     { acClientId = config.clientId |> unClientId |> L.fromStrict |> ClientId,
       acClientSecret = config.clientSecret |> unClientSecret |> L.fromStrict |> ClientSecret,
-      acScope = Set.fromList ["openid", "profile", "email"],
+      acScope = Set.fromList ["openid", "profile", "email", "offline"],
       acAuthorizeState = state,
       acRedirectUri = uriFromNetworkURI config.redirectURI,
       acName = "zoomhub",
