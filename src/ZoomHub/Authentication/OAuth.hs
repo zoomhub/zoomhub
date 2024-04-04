@@ -5,6 +5,7 @@ module ZoomHub.Authentication.OAuth
   ( AuthorizationCode (..),
     State (..),
     Scopes (..),
+    AccessToken (..),
     generateState,
   )
 where
@@ -27,6 +28,8 @@ newtype State = State {unState :: Text}
   deriving (FromHttpApiData)
 
 newtype Scopes = Scopes {unScopes :: Set Text}
+
+newtype AccessToken = AccessToken {unAccessToken :: Text}
 
 instance FromHttpApiData Scopes where
   parseQueryParam t =
