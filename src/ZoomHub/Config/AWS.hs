@@ -13,6 +13,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import System.Environment (getEnvironment)
+import ZoomHub.Utils (hush)
 
 newtype S3BucketName = S3BucketName {unS3BucketName :: Text}
   deriving (Eq, Show)
@@ -30,7 +31,7 @@ fromEnv = do
   return $ do
     accessKey <- AWS.AccessKey . encodeUtf8 . T.pack <$> lookup "AWS_ACCESS_KEY_ID" env
     secretKey <- AWS.SecretKey . encodeUtf8 . T.pack <$> lookup "AWS_SECRET_ACCESS_KEY" env
-    region <- rightToMaybe . AWS.fromText . T.pack =<< lookup "AWS_REGION" env
+    region <- hush . AWS.fromText . T.pack =<< lookup "AWS_REGION" env
     sourcesS3Bucket <- S3BucketName . T.pack <$> lookup "S3_SOURCES_BUCKET" env
     pure $
       Config
@@ -39,5 +40,3 @@ fromEnv = do
           configSourcesS3Bucket = sourcesS3Bucket,
           configRegion = region
         }
-  where
-    rightToMaybe = either (const Nothing) Just

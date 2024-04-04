@@ -2,6 +2,7 @@ module ZoomHub.Utils
   ( intercalate,
     lenientDecodeUtf8,
     tshow,
+    hush,
     appendQueryParams,
   )
 where
@@ -23,6 +24,9 @@ lenientDecodeUtf8 = decodeUtf8With lenientDecode
 
 tshow :: (Show a) => a -> T.Text
 tshow = T.pack . show
+
+hush :: Either a b -> Maybe b
+hush = either (const Nothing) Just
 
 appendQueryParams :: [(ByteString, ByteString)] -> URIRef a -> URIRef a
 appendQueryParams params =
