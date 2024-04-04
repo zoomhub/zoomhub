@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -57,6 +56,7 @@ import Servant
     ReqBody,
     Server,
     ServerError,
+    ToHttpApiData (toUrlPiece),
     addHeader,
     err301,
     errHeaders,
@@ -77,8 +77,7 @@ import Servant.Auth.Server
 import Servant.HTML.Lucid (HTML)
 import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
-import URI.ByteString (serializeURIRef')
-import qualified URI.ByteString as BSURI
+import URI.ByteString.Instances ()
 import Web.ClientSession (Key)
 import qualified Web.ClientSession as ClientSession
 import Web.Cookie
@@ -86,7 +85,7 @@ import Web.Cookie
     SetCookie (..),
     defaultSetCookie,
     parseCookiesText,
-    sameSiteLax,
+    sameSiteStrict,
   )
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
 import qualified ZoomHub.API.Errors as API
@@ -113,7 +112,8 @@ import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
 import qualified ZoomHub.Authentication.Basic as BasicAuthentication
 import ZoomHub.Authentication.OAuth (State (unState), generateState)
 import qualified ZoomHub.Authentication.OAuth as OAuth
-import ZoomHub.Authentication.OAuth.Kinde (fetchAccessToken, mkApp, mkIdp)
+import ZoomHub.Authentication.OAuth.Kinde (fetchTokensFor, mkApp, mkIdp)
+import qualified ZoomHub.Authentication.OAuth.Kinde as Kinde
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -136,7 +136,7 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
-import ZoomHub.Utils (lenientDecodeUtf8)
+import ZoomHub.Utils (appendQueryParams, lenientDecodeUtf8, tshow)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
@@ -244,6 +244,7 @@ type API =
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Auth
+    :<|> "register" :> Verb 'GET 302 '[HTML] RedirectWithCookie
     :<|> "login" :> Verb 'GET 302 '[HTML] RedirectWithCookie
     :<|> "logout" :> Verb 'GET 302 '[HTML] RedirectWithCookie
     :<|> "auth"
@@ -252,8 +253,8 @@ type API =
       :> Header "Cookie" Text
       :> RequiredQueryParam "code" OAuth.AuthorizationCode
       :> RequiredQueryParam "state" OAuth.State
-      :> QueryParam "scope" OAuth.Scopes
-      :> Get '[HTML] Text
+      :> QueryParam "scope" OAuth.Scope
+      :> Get '[HTML] (ResetOAuth2StateCookie Text)
     -- Web: Explore: Recent
     :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "explore"
@@ -317,6 +318,7 @@ server config =
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Auth
+    :<|> webRegister baseURI config.kinde config.clientSessionKey
     :<|> webLogin baseURI config.kinde config.clientSessionKey
     :<|> webLogout baseURI config.kinde
     :<|> webAuthKindeCallback baseURI config.clientSessionKey config.kinde
@@ -680,16 +682,24 @@ restInvalidRequest maybeURL = case maybeURL of
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
 
 -- Web: Auth: Kinde
+
 type RedirectWithCookie =
   Headers '[Header "Location" Text, Header "Set-Cookie" SetCookie] NoContent
+
+type ResetOAuth2StateCookie body =
+  Headers
+    '[ Header "Set-Cookie" SetCookie,
+       Header "Set-Cookie" SetCookie
+     ]
+    body
 
 newtype CookieName = CookieName {unCookieName :: ByteString}
 
 sessionCookieName :: CookieName
-sessionCookieName = CookieName "zoomhub_session"
+sessionCookieName = CookieName "__Host-zoomhub_session"
 
 oauth2StateCookieName :: CookieName
-oauth2StateCookieName = CookieName "zoomhub_oauth2_state"
+oauth2StateCookieName = CookieName "__Host-zoomhub_oauth2_state"
 
 emptyCookie :: CookieName -> SetCookie
 emptyCookie name =
@@ -698,23 +708,29 @@ emptyCookie name =
       setCookieValue = "",
       setCookieMaxAge = Just 0,
       setCookiePath = Just "/",
-      setCookieSameSite = Just sameSiteLax,
+      setCookieSameSite = Just sameSiteStrict,
       setCookieHttpOnly = True,
-      setCookieSecure = False
+      -- TODO: Support `False` on `localhost` (development) if needed
+      setCookieSecure = True
     }
 
-oauth2StateCookie :: Key -> AuthorizeState -> IO SetCookie
-oauth2StateCookie key authorizeState = do
-  encrypted <- ClientSession.encryptIO key $ BSL.toStrict $ Binary.encode $ unAuthorizeState authorizeState
+oauth2StateCookieHeader :: Key -> AuthorizeState -> IO SetCookie
+oauth2StateCookieHeader key authorizeState = do
+  encrypted <-
+    ClientSession.encryptIO key $
+      BSL.toStrict $
+        Binary.encode $
+          unAuthorizeState authorizeState
   pure $
     defaultSetCookie
       { setCookieName = unCookieName oauth2StateCookieName,
         setCookieValue = Base64URL.encodeBase64 encrypted |> T.encodeUtf8,
         setCookieMaxAge = oneHour,
         setCookiePath = Just "/",
-        setCookieSameSite = Just sameSiteLax,
+        setCookieSameSite = Just sameSiteStrict,
         setCookieHttpOnly = True,
-        setCookieSecure = False -- TODO: Set to `True` for production
+        -- TODO: Support `False` on `localhost` (development) if needed
+        setCookieSecure = True
       }
   where
     oneHour = Just 3600
@@ -728,9 +744,10 @@ sessionCookie key sessionId = do
         setCookieValue = Base64URL.encodeBase64 encrypted |> T.encodeUtf8,
         setCookieMaxAge = twoWeeks,
         setCookiePath = Just "/",
-        setCookieSameSite = Just sameSiteLax,
+        setCookieSameSite = Just sameSiteStrict,
         setCookieHttpOnly = True,
-        setCookieSecure = False -- TODO: Set to `True` for production
+        -- TODO: Support `False` on `localhost` (development) if needed
+        setCookieSecure = True
       }
   where
     twoWeeks = Just $ 3600 * 24 * 14
@@ -745,25 +762,36 @@ cookieValue cookies key cookieName = mValue
       x <- ClientSession.decrypt key e
       fromEither (\(_, _, c) -> Just c) $ Binary.decodeOrFail (BSL.fromStrict x)
 
-uriToText :: BSURI.URI -> T.Text
-uriToText = lenientDecodeUtf8 . serializeURIRef'
+webRegister :: BaseURI -> Kinde.Config -> Key -> Handler RedirectWithCookie
+webRegister _baseURI kindeConfig clientSessionKey = do
+  state <- liftIO generateState
+  setCookieHeader <- liftIO $ oauth2StateCookieHeader clientSessionKey state
+  let authorizationRedirectURI =
+        mkAuthorizationRequest $ mkApp kindeConfig state
+  return $
+    addHeader (toUrlPiece (authorizationRedirectURI |> appendQueryParams [("prompt", "create")])) $
+      addHeader setCookieHeader NoContent
 
 webLogin :: BaseURI -> Kinde.Config -> Key -> Handler RedirectWithCookie
 webLogin _baseURI kindeConfig clientSessionKey = do
   state <- liftIO generateState
-  setCookie <- liftIO $ oauth2StateCookie clientSessionKey state
+  setCookieHeader <- liftIO $ oauth2StateCookieHeader clientSessionKey state
   let authorizationRedirectURI =
         mkAuthorizationRequest $ mkApp kindeConfig state
   return $
-    addHeader (uriToText authorizationRedirectURI) $
-      addHeader setCookie NoContent
+    addHeader (toUrlPiece authorizationRedirectURI) $
+      addHeader setCookieHeader NoContent
 
 webLogout :: BaseURI -> Kinde.Config -> Handler RedirectWithCookie
-webLogout _baseURI _kindeConfig =
-  return $
-    -- TODO: Use dynamic URL
-    addHeader "https://zoomhub-development.us.kinde.com/logout?redirect=http%3A%2F%2Flocalhost%3A8000" $
-      addHeader (emptyCookie sessionCookieName) NoContent
+webLogout _baseURI kindeConfig = do
+  let mLogoutRedirectURI = Kinde.logoutURI kindeConfig
+  case mLogoutRedirectURI of
+    Just logoutRedirectURI ->
+      return $
+        addHeader (toUrlPiece logoutRedirectURI) $
+          addHeader (emptyCookie sessionCookieName) NoContent
+    Nothing ->
+      throwError $ Web.error503 "Invalid logout URL"
 
 webAuthKindeCallback ::
   BaseURI ->
@@ -772,26 +800,28 @@ webAuthKindeCallback ::
   Maybe Text -> -- cookie header
   OAuth.AuthorizationCode ->
   OAuth.State ->
-  Maybe OAuth.Scopes ->
-  Handler Text
-webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code state _scopes =
+  Maybe OAuth.Scope ->
+  Handler (ResetOAuth2StateCookie Text)
+webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code state _scope = do
   let mExpectedState = do
         cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8)
         value <- cookieValue cookies clientSessionKey oauth2StateCookieName
         return $ AuthorizeState value
       actualState = state |> unState |> TL.fromStrict |> AuthorizeState
-   in case mExpectedState of
-        Just expectedState | expectedState == actualState -> do
-          mAccessToken <- liftIO $ fetchAccessToken (mkIdp kindeConfig.domain) kindeConfig code
-          case mAccessToken of
-            Just accessToken ->
-              return $ "access_token: " <> (accessToken |> OAuth.unAccessToken)
-            Nothing ->
-              return "Failed to receive access token"
-        Just _ ->
-          return "OAuth2 state does not match."
-        Nothing ->
-          return "Missing OAuth2 state."
+  body <-
+    case mExpectedState of
+      Just expectedState | expectedState == actualState -> do
+        mTokens <- liftIO $ fetchTokensFor (mkIdp kindeConfig.domain) kindeConfig code
+        case mTokens of
+          Just tokens ->
+            return $ "tokens: " <> tshow tokens
+          Nothing ->
+            return "Failed to receive tokens"
+      Just _ ->
+        return "OAuth2 state does not match."
+      Nothing ->
+        return "OAuth2 state is missing."
+  return $ addHeader (emptyCookie oauth2StateCookieName) $ addHeader sessionCookie $ body
 
 -- Web: Explore: Recent
 webExploreRecent ::

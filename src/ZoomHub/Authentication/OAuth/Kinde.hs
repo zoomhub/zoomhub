@@ -5,29 +5,33 @@
 module ZoomHub.Authentication.OAuth.Kinde
   ( mkApp,
     mkIdp,
-    fetchAccessToken,
+    fetchTokensFor,
+    logoutURI,
   )
 where
 
 import Control.Lens ((.~), (^?))
-import qualified Data.Aeson as JSON
-import Data.Aeson.Lens (key, _String)
+import qualified Data.Aeson as JSON (decode)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as L
 import Flow
 import Network.OAuth2.Experiment (AuthorizationCodeApplication (..), AuthorizeState, ClientId (ClientId), ClientSecret (ClientSecret), Idp (..), IdpApplication (IdpApplication))
 import qualified Network.OAuth2.Experiment as OAuth2
 import Network.Wreq (FormParam ((:=)), defaults, header, postWith, responseBody)
-import URI.ByteString (parseURI, serializeURIRef', strictURIParserOptions)
-import ZoomHub.Authentication.OAuth (AccessToken (AccessToken), AuthorizationCode (unAuthorizationCode))
+import Servant (ToHttpApiData (toUrlPiece))
+import URI.ByteString (URI, parseURI, strictURIParserOptions)
+import URI.ByteString.Instances ()
+import ZoomHub.Authentication.OAuth (AuthorizationCode (unAuthorizationCode))
+import ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse (OAuth2CodeExchangeResponse)
 import ZoomHub.Config.Kinde (ClientId (unClientId), ClientSecret (unClientSecret), Domain (unDomain))
 import qualified ZoomHub.Config.Kinde as Kinde
-import ZoomHub.Utils (lenientDecodeUtf8)
+import ZoomHub.Utils (hush, tshow)
 
 mkIdp :: Domain -> Idp "kinde"
 mkIdp domain =
@@ -69,24 +73,38 @@ mkApp config state =
       OAuth2.application = mkAuthCodeApp config state
     }
 
-fetchAccessToken :: Idp "kinde" -> Kinde.Config -> AuthorizationCode -> IO (Maybe AccessToken)
-fetchAccessToken idp config code = do
-  let opts = defaults |> header "Content-Type" .~ ["application/x-www-form-urlencoded; charset=UTF-8"]
-      tokenUrl = idp |> idpTokenEndpoint |> uriToText |> T.unpack
+logoutURI :: Kinde.Config -> Maybe URI
+logoutURI config =
+  parseURI
+    strictURIParserOptions
+    ( ( "https://"
+          <> (config.domain |> unDomain)
+          <> ".us.kinde.com/logout?redirect="
+          <> (config.logoutRedirectURI |> tshow)
+      )
+        |> T.encodeUtf8
+    )
+    |> hush
+
+fetchTokensFor ::
+  Idp "kinde" ->
+  Kinde.Config ->
+  AuthorizationCode ->
+  IO (Maybe OAuth2CodeExchangeResponse)
+fetchTokensFor idp config authCode = do
+  let opts =
+        defaults
+          |> header "Content-Type" .~ ["application/x-www-form-urlencoded; charset=UTF-8"]
+          |> header "Kinde-SDK" .~ ["Haskell/0.0.0"]
+      tokenUrl = idp |> idpTokenEndpoint |> toUrlPiece |> T.unpack
       payload =
         [ "client_id" := (config.clientId |> unClientId),
           "client_secret" := (config.clientSecret |> unClientSecret),
           "grant_type" := ("authorization_code" :: Text),
           "redirect_uri" := (config.redirectURI |> show),
-          "code" := (code |> unAuthorizationCode)
+          "code" := (authCode |> unAuthorizationCode)
         ]
 
   response <- postWith opts tokenUrl payload
-  let accessToken = do
-        body <- response ^? responseBody
-        json <- (body |> JSON.decode) :: Maybe JSON.Value
-        accessTokenStr <- json ^? key "access_token" . _String
-        return $ AccessToken accessTokenStr
-  return accessToken
-  where
-    uriToText uri = uri |> serializeURIRef' |> lenientDecodeUtf8
+  -- TODO: Handle errors
+  return $ response ^? responseBody >>= JSON.decode
