@@ -1,6 +1,7 @@
 module ZoomHub.Utils
   ( intercalate,
     tshow,
+    appendQueryParams,
     uriByteStringToURI,
   )
 where
