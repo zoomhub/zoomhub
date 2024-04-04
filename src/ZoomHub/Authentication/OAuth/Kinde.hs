@@ -28,7 +28,7 @@ mkIdp domain =
       idpDeviceAuthorizationEndpoint = Nothing
     }
   where
-    domain' = unDomain domain |> encodeUtf8
+    domain' = domain |> unDomain |> encodeUtf8
     uriFromText uri =
       case parseURI strictURIParserOptions uri of
         Left uriParseError -> error $ "uriFromText: Invalid URI: " <> show uriParseError
