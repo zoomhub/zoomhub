@@ -54,13 +54,13 @@ update = do
   mtidStore <- lookupStore tidStoreNum
   case mtidStore of
     Nothing -> do
-      say "no server running"
+      sayErr "no server running"
       done <- storeAction doneStore newEmptyMVar
       tid <- start done
       _ <- storeAction (Store tidStoreNum) (newIORef tid)
       return ()
     Just tidStore -> do
-      say "restarting app..."
+      sayErr "restarting app..."
       restartAppInNewThread tidStore
   where
     doneStore :: Store (MVar ())
@@ -69,9 +69,9 @@ update = do
     -- shut the server down with killThread and wait for the done signal
     restartAppInNewThread :: Store (IORef ThreadId) -> IO ()
     restartAppInNewThread tidStore = modifyStoredIORef tidStore $ \tid -> do
-      say $ "killing thread: " <> tshow tid
+      sayErr $ "killing thread: " <> tshow tid
       killThread tid
-      say "taking mvar"
+      sayErr "taking mvar"
       withStore doneStore takeMVar
       readStore doneStore >>= start
 
@@ -81,23 +81,23 @@ update = do
     start done =
       myThreadId
         <* ( do
-               say "in forkFinally"
+               sayErr "in forkFinally"
                runAppDevelopment `catch` \(SomeException e) -> do
-                 say "!!! exception in runAppDevelopment !!!"
-                 say $ "X    exception type: " <> tshow (typeOf e)
-                 say $ "X    exception     : " <> tshow e
-               say "runAppDevelopment terminated"
+                 sayErr "===> ERROR: runAppDevelopment"
+                 sayErr $ "     exception type: " <> tshow (typeOf e)
+                 sayErr $ "     exception     : " <> tshow e
+               sayErr "runAppDevelopment terminated"
            )
           `catch` ( \(SomeException err) -> do
-                      say "catch action"
+                      sayErr "catch action"
                       hFlush stdout
                       hFlush stderr
                       putMVar done ()
-                      say $ "Got Exception: " <> tshow err
+                      sayErr $ "Got Exception: " <> tshow err
                       throwIO err
                   )
           `finally` ( do
-                        say "finally action"
+                        sayErr "finally action"
                         hFlush stdout
                         hFlush stderr
                         putMVar done ()
