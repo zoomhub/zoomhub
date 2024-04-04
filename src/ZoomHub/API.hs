@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -15,22 +16,27 @@ import Control.Monad (void, when)
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson ((.=))
+import qualified Data.Binary as Binary
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Base64.URL as Base64URL
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Lazy as BSL
 import Data.Foldable (fold, for_)
+import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
+import qualified Data.List as List
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
-import Data.Set (Set)
-import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8)
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
 import qualified Data.Time as Time
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
 import Flow
-import Network.OAuth2.Experiment (mkAuthorizationRequest)
+import Network.OAuth2.Experiment (AuthorizeState (AuthorizeState, unAuthorizeState), mkAuthorizationRequest)
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application)
@@ -40,7 +46,10 @@ import Servant
     Context (EmptyContext, (:.)),
     Get,
     Handler,
+    Header,
+    Headers,
     JSON,
+    NoContent (..),
     PlainText,
     Put,
     QueryParam,
@@ -48,13 +57,14 @@ import Servant
     ReqBody,
     Server,
     ServerError,
+    addHeader,
     err301,
-    err302,
     errHeaders,
     serveWithContext,
     (:<|>) (..),
     (:>),
   )
+import Servant.API.Verbs (StdMethod (GET), Verb)
 import Servant.Auth.Server
   ( Auth,
     AuthResult (Authenticated, BadPassword, Indefinite, NoSuchUser),
@@ -67,6 +77,17 @@ import Servant.Auth.Server
 import Servant.HTML.Lucid (HTML)
 import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
+import URI.ByteString (serializeURIRef')
+import qualified URI.ByteString as BSURI
+import Web.ClientSession (Key)
+import qualified Web.ClientSession as ClientSession
+import Web.Cookie
+  ( CookiesText,
+    SetCookie (..),
+    defaultSetCookie,
+    parseCookiesText,
+    sameSiteLax,
+  )
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
 import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
@@ -90,9 +111,9 @@ import qualified ZoomHub.AWS.S3 as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
 import qualified ZoomHub.Authentication.Basic as BasicAuthentication
-import ZoomHub.Authentication.OAuth (AuthorizationCode (unAuthorizationCode), Scopes (unScopes), State (unState), generateState)
+import ZoomHub.Authentication.OAuth (State (unState), generateState)
 import qualified ZoomHub.Authentication.OAuth as OAuth
-import ZoomHub.Authentication.OAuth.Kinde (mkApp)
+import ZoomHub.Authentication.OAuth.Kinde (fetchAccessToken, mkApp, mkIdp)
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -115,7 +136,6 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
-import ZoomHub.Utils (uriByteStringToURI)
 import ZoomHub.Utils (lenientDecodeUtf8)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
@@ -224,10 +244,12 @@ type API =
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Auth
-    :<|> "login" :> Get '[PlainText] Text
+    :<|> "login" :> Verb 'GET 302 '[HTML] RedirectWithCookie
+    :<|> "logout" :> Verb 'GET 302 '[HTML] RedirectWithCookie
     :<|> "auth"
       :> "kinde"
       :> "callback"
+      :> Header "Cookie" Text
       :> RequiredQueryParam "code" OAuth.AuthorizationCode
       :> RequiredQueryParam "state" OAuth.State
       :> QueryParam "scope" OAuth.Scopes
@@ -295,8 +317,9 @@ server config =
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Auth
-    :<|> webLogin baseURI config.kinde
-    :<|> webAuthKindeCallback baseURI
+    :<|> webLogin baseURI config.kinde config.clientSessionKey
+    :<|> webLogout baseURI config.kinde
+    :<|> webAuthKindeCallback baseURI config.clientSessionKey config.kinde
     -- Web: Explore: Recent
     :<|> webExploreRecent baseURI contentBaseURI dbConnPool
     -- Web: Embed (iframe)
@@ -657,31 +680,118 @@ restInvalidRequest maybeURL = case maybeURL of
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
 
 -- Web: Auth: Kinde
-webLogin :: BaseURI -> Kinde.Config -> Handler Text
-webLogin _baseURI kindeConfig = do
+type RedirectWithCookie =
+  Headers '[Header "Location" Text, Header "Set-Cookie" SetCookie] NoContent
+
+newtype CookieName = CookieName {unCookieName :: ByteString}
+
+sessionCookieName :: CookieName
+sessionCookieName = CookieName "zoomhub_session"
+
+oauth2StateCookieName :: CookieName
+oauth2StateCookieName = CookieName "zoomhub_oauth2_state"
+
+emptyCookie :: CookieName -> SetCookie
+emptyCookie name =
+  defaultSetCookie
+    { setCookieName = unCookieName name,
+      setCookieValue = "",
+      setCookieMaxAge = Just 0,
+      setCookiePath = Just "/",
+      setCookieSameSite = Just sameSiteLax,
+      setCookieHttpOnly = True,
+      setCookieSecure = False
+    }
+
+oauth2StateCookie :: Key -> AuthorizeState -> IO SetCookie
+oauth2StateCookie key authorizeState = do
+  encrypted <- ClientSession.encryptIO key $ BSL.toStrict $ Binary.encode $ unAuthorizeState authorizeState
+  pure $
+    defaultSetCookie
+      { setCookieName = unCookieName oauth2StateCookieName,
+        setCookieValue = Base64URL.encodeBase64 encrypted |> T.encodeUtf8,
+        setCookieMaxAge = oneHour,
+        setCookiePath = Just "/",
+        setCookieSameSite = Just sameSiteLax,
+        setCookieHttpOnly = True,
+        setCookieSecure = False -- TODO: Set to `True` for production
+      }
+  where
+    oneHour = Just 3600
+
+sessionCookie :: (Binary.Binary s) => Key -> s -> IO SetCookie
+sessionCookie key sessionId = do
+  encrypted <- ClientSession.encryptIO key $ BSL.toStrict $ Binary.encode sessionId
+  pure $
+    defaultSetCookie
+      { setCookieName = unCookieName sessionCookieName,
+        setCookieValue = Base64URL.encodeBase64 encrypted |> T.encodeUtf8,
+        setCookieMaxAge = twoWeeks,
+        setCookiePath = Just "/",
+        setCookieSameSite = Just sameSiteLax,
+        setCookieHttpOnly = True,
+        setCookieSecure = False -- TODO: Set to `True` for production
+      }
+  where
+    twoWeeks = Just $ 3600 * 24 * 14
+
+cookieValue :: (Binary.Binary s) => CookiesText -> Key -> CookieName -> Maybe s
+cookieValue cookies key cookieName = mValue
+  where
+    fromEither = either (const Nothing)
+    mValue = do
+      value <- List.lookup (cookieName |> unCookieName |> lenientDecodeUtf8) cookies
+      e <- fromEither Just $ Base64URL.decodeBase64 (T.encodeUtf8 value)
+      x <- ClientSession.decrypt key e
+      fromEither (\(_, _, c) -> Just c) $ Binary.decodeOrFail (BSL.fromStrict x)
+
+uriToText :: BSURI.URI -> T.Text
+uriToText = lenientDecodeUtf8 . serializeURIRef'
+
+webLogin :: BaseURI -> Kinde.Config -> Key -> Handler RedirectWithCookie
+webLogin _baseURI kindeConfig clientSessionKey = do
   state <- liftIO generateState
-  let authorizationRedirectURI = mkAuthorizationRequest $ mkApp kindeConfig state
-  void $ redirect302 $ uriByteStringToURI authorizationRedirectURI
-  return ""
+  setCookie <- liftIO $ oauth2StateCookie clientSessionKey state
+  let authorizationRedirectURI =
+        mkAuthorizationRequest $ mkApp kindeConfig state
+  return $
+    addHeader (uriToText authorizationRedirectURI) $
+      addHeader setCookie NoContent
+
+webLogout :: BaseURI -> Kinde.Config -> Handler RedirectWithCookie
+webLogout _baseURI _kindeConfig =
+  return $
+    -- TODO: Use dynamic URL
+    addHeader "https://zoomhub-development.us.kinde.com/logout?redirect=http%3A%2F%2Flocalhost%3A8000" $
+      addHeader (emptyCookie sessionCookieName) NoContent
 
 webAuthKindeCallback ::
   BaseURI ->
+  Key ->
+  Kinde.Config ->
+  Maybe Text -> -- cookie header
   OAuth.AuthorizationCode ->
   OAuth.State ->
   Maybe OAuth.Scopes ->
   Handler Text
-webAuthKindeCallback _baseURI code state scopes = do
-  -- TODO:
-  -- Grab existing state from session
-  -- Ensure given state matches our state; if not, abort
-  -- Exchange code for access token
-  return $
-    T.intercalate
-      "\n"
-      [ "code: " <> (code |> unAuthorizationCode),
-        "state: " <> (state |> unState),
-        "scope: " <> (scopes |> fromMaybe (OAuth.Scopes (Set.empty :: Set Text)) |> unScopes |> Set.toList |> T.intercalate ", ")
-      ]
+webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code state _scopes =
+  let mExpectedState = do
+        cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8)
+        value <- cookieValue cookies clientSessionKey oauth2StateCookieName
+        return $ AuthorizeState value
+      actualState = state |> unState |> TL.fromStrict |> AuthorizeState
+   in case mExpectedState of
+        Just expectedState | expectedState == actualState -> do
+          mAccessToken <- liftIO $ fetchAccessToken (mkIdp kindeConfig.domain) kindeConfig code
+          case mAccessToken of
+            Just accessToken ->
+              return $ "access_token: " <> (accessToken |> OAuth.unAccessToken)
+            Nothing ->
+              return "Failed to receive access token"
+        Just _ ->
+          return "OAuth2 state does not match."
+        Nothing ->
+          return "Missing OAuth2 state."
 
 -- Web: Explore: Recent
 webExploreRecent ::
@@ -942,8 +1052,3 @@ redirect :: URI -> Handler a
 redirect location =
   -- HACK: Redirect using error: http://git.io/vBCz9
   throwError $ err301 {errHeaders = [("Location", BC.pack (show location))]}
-
-redirect302 :: URI -> Handler a
-redirect302 location =
-  -- HACK: Redirect using error: http://git.io/vBCz9
-  throwError $ err302 {errHeaders = [("Location", BC.pack (show location))]}
