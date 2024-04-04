@@ -23,6 +23,7 @@ library
     , Database.PostgreSQL.Simple.Instances
     , Network.HTTP.Client.Instances
     , Network.URI.Instances
+    , URI.ByteString.Instances
     , ZoomHub.API
     , ZoomHub.API.ContentTypes.JavaScript
     , ZoomHub.API.Errors
