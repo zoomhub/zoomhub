@@ -12,15 +12,14 @@ import Data.ByteString (ByteString)
 import Data.List (intersperse)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8With)
-import Data.Text.Encoding.Error (lenientDecode)
+import Data.Text.Encoding (decodeUtf8Lenient)
 import URI.ByteString (URIRef, queryL, queryPairsL)
 
 intercalate :: (Monoid a) => a -> [a] -> a
 intercalate xs xss = mconcat (intersperse xs xss)
 
 lenientDecodeUtf8 :: ByteString -> Text
-lenientDecodeUtf8 = decodeUtf8With lenientDecode
+lenientDecodeUtf8 = decodeUtf8Lenient
 
 tshow :: (Show a) => a -> T.Text
 tshow = T.pack . show
