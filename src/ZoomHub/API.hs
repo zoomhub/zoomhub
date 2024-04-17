@@ -146,7 +146,7 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
-import ZoomHub.Utils (appendQueryParams, lenientDecodeUtf8, tshow)
+import ZoomHub.Utils (appendQueryParams, tshow)
 import qualified ZoomHub.Web.Errors as Web
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
@@ -509,7 +509,7 @@ restUpload config awsConfig uploads email =
         Right policy -> do
           formData <-
             liftIO $
-              HS.map lenientDecodeUtf8
+              HS.map decodeUtf8Lenient
                 <$> S3.presignPOSTPolicy
                   (AWS.configAccessKeyId awsConfig)
                   (AWS.configSecretAccessKey awsConfig)
@@ -779,7 +779,7 @@ cookieValue key cookieName cookies = mValue
   where
     fromEither = either (const Nothing)
     mValue = do
-      value <- List.lookup (cookieName |> unCookieName |> lenientDecodeUtf8) cookies
+      value <- List.lookup (cookieName |> unCookieName |> decodeUtf8Lenient) cookies
       e <- fromEither Just $ Base64URL.decodeBase64 (T.encodeUtf8 value)
       x <- ClientSession.decrypt key e
       fromEither (\(_, _, c) -> Just c) $ Binary.decodeOrFail (BSL.fromStrict x)
