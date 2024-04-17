@@ -91,7 +91,6 @@ import Web.Cookie
   ( CookiesText,
     SetCookie (..),
     defaultSetCookie,
-    parseCookies,
     parseCookiesText,
     sameSiteStrict,
   )
