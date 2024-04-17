@@ -39,8 +39,8 @@ library
     , ZoomHub.Authentication.Basic
     , ZoomHub.Authentication.OAuth
     , ZoomHub.Authentication.OAuth.Kinde
-    , ZoomHub.Authentication.OAuth.Kinde.TokenCollection
     , ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse
+    , ZoomHub.Authentication.OAuth.Kinde.TokenCollection
     , ZoomHub.Authentication.Session
     , ZoomHub.AWS
     , ZoomHub.AWS.S3
