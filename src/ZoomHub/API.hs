@@ -874,11 +874,11 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
   sessionSetCookieHeader <- case eSession of
     Left _ -> pure $ emptyCookie sessionCookieName
     Right session -> liftIO $ sessionCookie clientSessionKey session
-  let errorMessage = case eSession of
-        Left message -> "?errorMessage=" <> (message |> URIEncode.encodeText)
-        Right _ -> ""
+  let redirectPath = case eSession of
+        Left message -> "/?errorMessage=" <> (message |> URIEncode.encodeText)
+        Right _ -> "/auth/session/debug"
   return $
-    addHeader ("/" <> errorMessage) $
+    addHeader redirectPath $
       addHeader (emptyCookie oauth2StateCookieName) $
         addHeader sessionSetCookieHeader NoContent
   where
