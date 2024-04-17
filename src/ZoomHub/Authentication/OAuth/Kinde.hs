@@ -7,6 +7,7 @@ module ZoomHub.Authentication.OAuth.Kinde
     mkIdp,
     fetchTokensFor,
     logoutURI,
+    TokenCollection (..),
   )
 where
 
@@ -29,6 +30,7 @@ import URI.ByteString (URI, parseURI, strictURIParserOptions)
 import URI.ByteString.Instances ()
 import ZoomHub.Authentication.OAuth (AuthorizationCode (unAuthorizationCode))
 import ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse (OAuth2CodeExchangeResponse)
+import ZoomHub.Authentication.OAuth.Kinde.TokenCollection (TokenCollection (TokenCollection))
 import ZoomHub.Config.Kinde (ClientId (unClientId), ClientSecret (unClientSecret), Domain (unDomain))
 import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Utils (hush, tshow)

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -12,10 +13,10 @@ module ZoomHub.Authentication.OAuth
   )
 where
 
-import Amazonka.Data (FromJSON (parseJSON))
 import Crypto.Random (MonadRandom (getRandomBytes))
-import Data.Aeson (Value (String))
+import Data.Aeson (FromJSON (parseJSON), ToJSON, Value (String))
 import Data.Aeson.Types (typeMismatch)
+import Data.Binary (Binary)
 import qualified Data.ByteString.Base64.URL as URL
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -23,6 +24,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Flow
+import GHC.Generics (Generic)
 import Network.OAuth2.Experiment.Types (AuthorizeState (..))
 import Servant (FromHttpApiData (parseQueryParam))
 
@@ -33,19 +35,19 @@ newtype State = State {unState :: Text}
   deriving (FromHttpApiData)
 
 newtype AccessToken = AccessToken {unAccessToken :: Text}
-  deriving (FromJSON)
+  deriving (FromJSON, ToJSON, Generic, Binary)
 
 instance Show AccessToken where
   show _ = "<ZoomHub.Authentication.OAuth.AccessToken>"
 
 newtype RefreshToken = RefreshToken {unRefreshToken :: Text}
-  deriving (FromJSON)
+  deriving (FromJSON, ToJSON, Generic, Binary)
 
 instance Show RefreshToken where
   show _ = "<ZoomHub.Authentication.OAuth.RefreshToken>"
 
 newtype IdToken = IdToken {unIdToken :: Text}
-  deriving (FromJSON)
+  deriving (FromJSON, ToJSON, Generic, Binary)
 
 instance Show IdToken where
   show _ = "<ZoomHub.Authentication.OAuth.IdToken>"
