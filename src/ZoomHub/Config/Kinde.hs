@@ -11,10 +11,13 @@ module ZoomHub.Config.Kinde
   )
 where
 
+import Crypto.JOSE (JWK)
 import Data.Aeson (ToJSON, object, toJSON, (.=))
+import qualified Data.Aeson as JSON
 import Data.Functor ((<&>))
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 import Flow
 import Network.URI (URI, parseAbsoluteURI)
 import System.Environment (getEnvironment)
@@ -33,7 +36,8 @@ data Config = Config
     clientId :: ClientId,
     clientSecret :: ClientSecret,
     redirectURI :: URI,
-    logoutRedirectURI :: URI
+    logoutRedirectURI :: URI,
+    jwk :: JWK
   }
 
 fromEnv :: IO (Maybe Config)
@@ -45,6 +49,7 @@ fromEnv = do
     clientSecret <- (env |> lookup "KINDE_CLIENT_SECRET") <&> T.pack .> ClientSecret
     redirectURI <- (env |> lookup "KINDE_REDIRECT_URI") >>= parseAbsoluteURI
     logoutRedirectURI <- (env |> lookup "KINDE_LOGOUT_REDIRECT_URI") >>= parseAbsoluteURI
+    jwk <- (env |> lookup "KINDE_JWK") <&> T.pack .> encodeUtf8 >>= JSON.decodeStrict
     pure Config {..}
 
 instance ToJSON Config where
