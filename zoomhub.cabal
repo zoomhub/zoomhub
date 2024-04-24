@@ -40,6 +40,7 @@ library
     , ZoomHub.Authentication.OAuth
     , ZoomHub.Authentication.OAuth.Kinde
     , ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse
+    , ZoomHub.Authentication.OAuth.Kinde.Prompt
     , ZoomHub.Authentication.OAuth.Kinde.TokenCollection
     , ZoomHub.Authentication.Session
     , ZoomHub.AWS
