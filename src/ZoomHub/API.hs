@@ -78,9 +78,9 @@ import Servant.Auth.Server
     BasicAuth,
     defaultCookieSettings,
     defaultJWTSettings,
-    generateKey,
     wwwAuthenticatedErr,
   )
+import qualified Servant.Auth.Server as Auth
 import Servant.HTML.Lucid (HTML)
 import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
@@ -364,7 +364,7 @@ server config =
 -- App
 app :: Config -> IO Application
 app config = do
-  jwtKey <- generateKey
+  jwtKey <- Auth.generateKey
   return $ logger . simpleCors $ serveWithContext api (cfg jwtKey) (server config)
   where
     -- TODO: Can we use `BasicAuth` without JWT and cookies?
