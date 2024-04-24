@@ -122,6 +122,8 @@ import qualified ZoomHub.Authentication.OAuth as OAuth
 import ZoomHub.Authentication.OAuth.Kinde (fetchTokensFor, mkApp, mkIdp)
 import qualified ZoomHub.Authentication.OAuth.Kinde as Kinde
 import qualified ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse as OAuth2CodeExchangeResponse
+import ZoomHub.Authentication.OAuth.Kinde.Prompt (Prompt)
+import qualified ZoomHub.Authentication.OAuth.Kinde.Prompt as Prompt
 import ZoomHub.Authentication.Session (DecodedIdToken (..), Session (..))
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
@@ -253,9 +255,9 @@ type API =
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Auth
-    :<|> "register" :> Verb 'GET 302 '[HTML] RedirectWithCookie
-    :<|> "login" :> Verb 'GET 302 '[HTML] RedirectWithCookie
-    :<|> "logout" :> Verb 'GET 302 '[HTML] RedirectWithCookie
+    :<|> "register" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
+    :<|> "login" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
+    :<|> "logout" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
     :<|> "auth"
       :> "kinde"
       :> "callback"
@@ -698,8 +700,8 @@ restInvalidRequest maybeURL = case maybeURL of
 
 -- Web: Auth: Kinde
 
-type RedirectWithCookie =
-  Headers '[Header "Location" Text, Header "Set-Cookie" SetCookie] NoContent
+type SetCookieAndRedirect =
+  Headers '[Header "Set-Cookie" SetCookie, Header "Location" Text] NoContent
 
 type KindeCallback =
   Headers
@@ -781,42 +783,37 @@ cookieValue key cookieName cookies = mValue
       x <- ClientSession.decrypt key e
       fromEither (\(_, _, c) -> Just c) $ Binary.decodeOrFail (BSL.fromStrict x)
 
-webRegister :: BaseURI -> Kinde.Config -> Key -> Handler RedirectWithCookie
-webRegister _baseURI kindeConfig clientSessionKey = do
+webRegister :: BaseURI -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webRegister _baseURI = webAuthRedirect Prompt.Create
+
+webLogin :: BaseURI -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webLogin _baseURI = webAuthRedirect Prompt.Login
+
+webAuthRedirect :: Prompt -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webAuthRedirect prompt kindeConfig clientSessionKey = do
   state <- liftIO generateState
   setCookieHeader <-
-    liftIO $
-      oauth2StateCookieHeader
-        clientSessionKey
-        (SerializableAuthorizeState state)
+    liftIO $ oauth2StateCookieHeader clientSessionKey (SerializableAuthorizeState state)
   let authorizationRedirectURI =
         mkAuthorizationRequest $ mkApp kindeConfig state
   return $
-    addHeader (toUrlPiece (authorizationRedirectURI |> appendQueryParams [("prompt", "create")])) $
-      addHeader setCookieHeader NoContent
+    addHeader setCookieHeader $
+      addHeader
+        ( toUrlPiece
+            ( authorizationRedirectURI
+                |> appendQueryParams [("prompt", Prompt.toByteString prompt)]
+            )
+        )
+        NoContent
 
-webLogin :: BaseURI -> Kinde.Config -> Key -> Handler RedirectWithCookie
-webLogin _baseURI kindeConfig clientSessionKey = do
-  state <- liftIO generateState
-  setCookieHeader <-
-    liftIO $
-      oauth2StateCookieHeader
-        clientSessionKey
-        (SerializableAuthorizeState state)
-  let authorizationRedirectURI =
-        mkAuthorizationRequest $ mkApp kindeConfig state
-  return $
-    addHeader (toUrlPiece (authorizationRedirectURI |> appendQueryParams [("prompt", "login")])) $
-      addHeader setCookieHeader NoContent
-
-webLogout :: BaseURI -> Kinde.Config -> Handler RedirectWithCookie
+webLogout :: BaseURI -> Kinde.Config -> Handler SetCookieAndRedirect
 webLogout _baseURI kindeConfig = do
   let mLogoutRedirectURI = Kinde.logoutURI kindeConfig
   case mLogoutRedirectURI of
     Just logoutRedirectURI ->
       return $
-        addHeader (toUrlPiece logoutRedirectURI) $
-          addHeader (emptyCookie sessionCookieName) NoContent
+        addHeader (emptyCookie sessionCookieName) $
+          addHeader (toUrlPiece logoutRedirectURI) NoContent
     Nothing ->
       throwError $ Web.error503 "Invalid logout URL"
 
