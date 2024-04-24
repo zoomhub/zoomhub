@@ -734,9 +734,7 @@ newtype SerializableAuthorizeState = SerializableAuthorizeState AuthorizeState
 
 instance Binary SerializableAuthorizeState where
   put (SerializableAuthorizeState s) = put (unAuthorizeState s)
-  get = do
-    state <- get
-    return $ SerializableAuthorizeState (AuthorizeState state)
+  get = SerializableAuthorizeState . AuthorizeState <$> get
 
 oauth2StateCookieHeader :: Key -> SerializableAuthorizeState -> IO SetCookie
 oauth2StateCookieHeader key authorizeState =
