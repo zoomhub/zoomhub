@@ -9,7 +9,6 @@ where
 import Control.Lens (over)
 import Data.ByteString (ByteString)
 import Data.List (intersperse)
-import Data.Text (Text)
 import qualified Data.Text as T
 import URI.ByteString (URIRef, queryL, queryPairsL)
 
