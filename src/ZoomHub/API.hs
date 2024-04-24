@@ -92,7 +92,7 @@ import Web.Cookie
     SetCookie (..),
     defaultSetCookie,
     parseCookiesText,
-    sameSiteStrict,
+    sameSiteLax,
   )
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
 import qualified ZoomHub.API.Errors as API
@@ -724,7 +724,7 @@ emptyCookie name =
       setCookieValue = "",
       setCookieMaxAge = Just 0,
       setCookiePath = Just "/",
-      setCookieSameSite = Just sameSiteStrict,
+      setCookieSameSite = Just sameSiteLax,
       setCookieHttpOnly = True,
       -- TODO: Support `False` on `localhost` (development) if needed
       setCookieSecure = True
@@ -765,7 +765,7 @@ setEncryptedCookie key (CookieName name) content (MaxAge maxAge) = do
         setCookieValue = Base64URL.encodeBase64 encrypted |> T.encodeUtf8,
         setCookieMaxAge = Just maxAge,
         setCookiePath = Just "/",
-        setCookieSameSite = Just sameSiteStrict,
+        setCookieSameSite = Just sameSiteLax,
         setCookieHttpOnly = True,
         -- TODO: Support `False` on `localhost` (development) if needed:
         setCookieSecure = True
