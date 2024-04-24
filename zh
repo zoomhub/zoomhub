@@ -57,7 +57,7 @@ format)
     fi
     ;;
 run)
-    ./scripts/run.sh
+    npx dotenvx run --env-file .env -- ./scripts/run.sh
     ;;
 test)
     dropdb --if-exists "$TEST_DB_NAME"

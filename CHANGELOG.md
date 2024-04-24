@@ -1,5 +1,9 @@
 # ZoomHub
 
+## 2024-04-25-1
+
+- Infrastructure: Adopt `dotenvx` for environment variable management.
+
 ## 2024-03-28-2
 
 - Web: Fix ‘View source’ functionality. Remove extraneous quotes from running

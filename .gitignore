@@ -1,4 +1,7 @@
-# Mac OS X
+# configuration
+.env
+
+# macOS
 .DS_Store
 
 # Haskell
