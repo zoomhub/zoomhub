@@ -45,6 +45,3 @@
 
 # Node.js
 /node_modules
-
-# Shortcuts
-run-local.sh
