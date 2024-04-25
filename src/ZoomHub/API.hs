@@ -854,7 +854,7 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
               Left jwtError ->
                 return $ Left $ "Failed to decode JWT: " <> tshow jwtError
               Right signedJWT -> do
-                jwtResult <- liftIO $ doJwtVerify kindeConfig.jwk signedJWT
+                jwtResult <- liftIO $ verifyJWT kindeConfig.jwk signedJWT
                 case jwtResult of
                   Left jwtError ->
                     return $ Left $ "Failed to verify JWT: " <> tshow jwtError
@@ -877,10 +877,11 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
       addHeader (emptyCookie oauth2StateCookieName) $
         addHeader sessionSetCookieHeader NoContent
   where
-    doJwtVerify :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
-    doJwtVerify jwk jwt = JWT.runJOSE $ do
-      let aud' = "https://zoomhub-development.us.kinde.com"
-      let config = JWT.defaultJWTValidationSettings (== aud')
+    verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
+    verifyJWT jwk jwt = JWT.runJOSE $ do
+      -- TODO: Pass in `aud` parameter
+      let aud = "https://zoomhub-development.us.kinde.com"
+      let config = JWT.defaultJWTValidationSettings (== aud)
       JWT.verifyJWT config jwk jwt
 
 webAuthSessionDebug ::
