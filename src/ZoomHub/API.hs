@@ -128,7 +128,6 @@ import qualified ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse a
 import ZoomHub.Authentication.OAuth.Kinde.Prompt (Prompt)
 import qualified ZoomHub.Authentication.OAuth.Kinde.Prompt as Prompt
 import ZoomHub.Authentication.Session (DecodedIdToken (..), Session (..))
-import qualified ZoomHub.Authentication.Session as Session
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -867,9 +866,9 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
                     return $
                       Right
                         Session
-                          { currentUser = pure decodedIdToken.user,
-                            accessToken = pure response.accessToken,
-                            refreshToken = pure response.refreshToken
+                          { currentUser = decodedIdToken.user,
+                            accessToken = response.accessToken,
+                            refreshToken = response.refreshToken
                           }
   sessionSetCookieHeader <- case eSession of
     Left _ -> pure $ emptyCookie sessionCookieName
@@ -891,10 +890,12 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
 
 webAuthSessionDebug ::
   BaseURI ->
-  Session ->
+  Maybe Session ->
   Handler Text
-webAuthSessionDebug _baseURI session =
-  return (session |> JSON.encode |> BSL.toStrict |> decodeUtf8Lenient)
+webAuthSessionDebug _baseURI mSession = return $
+  case mSession of
+    Just session -> session |> JSON.encode |> BSL.toStrict |> decodeUtf8Lenient
+    Nothing -> "(no session )"
 
 -- Web: Explore: Recent
 webExploreRecent ::
@@ -1158,13 +1159,10 @@ redirect location =
 
 --- Authentication using session cookie
 -- Based on https://docs.servant.dev/en/stable/tutorial/Authentication.html
-decodeSession :: ClientSession.Key -> CookiesText -> Handler Session
-decodeSession key cookiesText =
-  case cookieValue key sessionCookieName cookiesText of
-    Just session -> return session
-    Nothing -> return Session.empty
+decodeSession :: ClientSession.Key -> CookiesText -> Handler (Maybe Session)
+decodeSession key cookiesText = return $ cookieValue key sessionCookieName cookiesText
 
-sessionAuthHandler :: ClientSession.Key -> AuthHandler Request Session
+sessionAuthHandler :: ClientSession.Key -> AuthHandler Request (Maybe Session)
 sessionAuthHandler clientSessionKey = mkAuthHandler handler
   where
     maybeToEither e = maybe (Left e) Right
@@ -1174,4 +1172,4 @@ sessionAuthHandler clientSessionKey = mkAuthHandler handler
       Right $ parseCookiesText cookie
 
 -- | We need to specify the data returned after authentication
-type instance AuthServerData (AuthProtect "cookie-session") = Session
+type instance AuthServerData (AuthProtect "cookie-session") = Maybe Session
