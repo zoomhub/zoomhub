@@ -33,7 +33,7 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
+import Data.Text.Encoding (decodeUtf8Lenient)
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
@@ -45,7 +45,7 @@ import Flow
 import Network.OAuth2.Experiment (AuthorizeState (AuthorizeState, unAuthorizeState), mkAuthorizationRequest)
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
-import Network.Wai (Application)
+import Network.Wai (Application, Request (requestHeaders))
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
   ( Capture,
@@ -62,15 +62,18 @@ import Servant
     Raw,
     ReqBody,
     Server,
-    ServerError,
+    ServerError (errBody),
     ToHttpApiData (toUrlPiece),
     addHeader,
     err301,
+    err401,
+    err403,
     errHeaders,
     serveWithContext,
     (:<|>) (..),
     (:>),
   )
+import Servant.API.Experimental.Auth (AuthProtect)
 import Servant.API.Verbs (StdMethod (GET), Verb)
 import Servant.Auth.Server
   ( Auth,
@@ -82,6 +85,7 @@ import Servant.Auth.Server
   )
 import qualified Servant.Auth.Server as Auth
 import Servant.HTML.Lucid (HTML)
+import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData, mkAuthHandler)
 import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
 import URI.ByteString.Instances ()
@@ -266,10 +270,10 @@ type API =
       :> RequiredQueryParam "state" OAuth.State
       :> QueryParam "scope" OAuth.Scope
       :> Verb 'GET 302 '[HTML] KindeCallback
-    :<|> "auth"
+    :<|> AuthProtect "cookie-session"
+      :> "auth"
       :> "session"
       :> "debug"
-      :> Header "Cookie" Text
       :> Get '[PlainText] Text
     -- Web: Explore: Recent
     :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
@@ -338,7 +342,7 @@ server config =
     :<|> webLogin baseURI config.kinde config.clientSessionKey
     :<|> webLogout baseURI config.kinde
     :<|> webAuthKindeCallback baseURI config.clientSessionKey config.kinde
-    :<|> webAuthSessionDebug baseURI config.clientSessionKey
+    :<|> webAuthSessionDebug baseURI
     -- Web: Explore: Recent
     :<|> webExploreRecent baseURI contentBaseURI dbConnPool
     -- Web: Embed (iframe)
@@ -367,13 +371,14 @@ server config =
 app :: Config -> IO Application
 app config = do
   jwtKey <- Auth.generateKey
-  return $ logger . simpleCors $ serveWithContext api (cfg jwtKey) (server config)
+  return $ logger . simpleCors $ serveWithContext api (context jwtKey) (server config)
   where
     -- TODO: Can we use `BasicAuth` without JWT and cookies?
-    cfg jwtKey =
+    context jwtKey =
       defaultJWTSettings jwtKey
         :. defaultCookieSettings
         :. BasicAuthentication.check (Config.apiUser config)
+        :. sessionAuthHandler config.clientSessionKey
         :. EmptyContext
     logger = Config.logger config
 
@@ -886,19 +891,10 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
 
 webAuthSessionDebug ::
   BaseURI ->
-  Key ->
-  Maybe Text -> -- Cookie
+  Session ->
   Handler Text
-webAuthSessionDebug _baseURI clientSessionKey mCookie =
-  case mCookie of
-    Nothing ->
-      return "No cookies"
-    Just cookie -> do
-      let mSession = cookie |> encodeUtf8 |> parseCookiesText |> cookieValue clientSessionKey sessionCookieName
-      case (mSession :: Maybe Session) of
-        Nothing -> return "No valid session"
-        Just session -> do
-          return (session |> JSON.encode |> BSL.toStrict |> decodeUtf8Lenient)
+webAuthSessionDebug _baseURI session =
+  return (session |> JSON.encode |> BSL.toStrict |> decodeUtf8Lenient)
 
 -- Web: Explore: Recent
 webExploreRecent ::
@@ -1159,3 +1155,23 @@ redirect :: URI -> Handler a
 redirect location =
   -- HACK: Redirect using error: http://git.io/vBCz9
   throwError $ err301 {errHeaders = [("Location", BC.pack (show location))]}
+
+--- Authentication using session cookie
+-- Based on https://docs.servant.dev/en/stable/tutorial/Authentication.html
+decodeSession :: ClientSession.Key -> CookiesText -> Handler Session
+decodeSession key cookiesText = case cookieValue key sessionCookieName cookiesText of
+  Nothing -> throwError (err403 {errBody = "Missing session cookie"})
+  Just session -> return session
+
+--- | The auth handler wraps a function from Request -> Handler Account.
+sessionAuthHandler :: ClientSession.Key -> AuthHandler Request Session
+sessionAuthHandler clientSessionKey = mkAuthHandler handler
+  where
+    maybeToEither e = maybe (Left e) Right
+    throw401 msg = throwError $ err401 {errBody = msg}
+    handler req = either throw401 (decodeSession clientSessionKey) $ do
+      cookie <- maybeToEither "Missing cookie header" $ lookup "cookie" $ requestHeaders req
+      Right $ parseCookiesText cookie
+
+-- | We need to specify the data returned after authentication
+type instance AuthServerData (AuthProtect "cookie-session") = Session
