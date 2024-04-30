@@ -67,7 +67,6 @@ import Servant
     addHeader,
     err301,
     err401,
-    err403,
     errHeaders,
     serveWithContext,
     (:<|>) (..),
@@ -129,6 +128,7 @@ import qualified ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse a
 import ZoomHub.Authentication.OAuth.Kinde.Prompt (Prompt)
 import qualified ZoomHub.Authentication.OAuth.Kinde.Prompt as Prompt
 import ZoomHub.Authentication.Session (DecodedIdToken (..), Session (..))
+import qualified ZoomHub.Authentication.Session as Session
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -1159,11 +1159,11 @@ redirect location =
 --- Authentication using session cookie
 -- Based on https://docs.servant.dev/en/stable/tutorial/Authentication.html
 decodeSession :: ClientSession.Key -> CookiesText -> Handler Session
-decodeSession key cookiesText = case cookieValue key sessionCookieName cookiesText of
-  Nothing -> throwError (err403 {errBody = "Missing session cookie"})
-  Just session -> return session
+decodeSession key cookiesText =
+  case cookieValue key sessionCookieName cookiesText of
+    Just session -> return session
+    Nothing -> return Session.empty
 
---- | The auth handler wraps a function from Request -> Handler Account.
 sessionAuthHandler :: ClientSession.Key -> AuthHandler Request Session
 sessionAuthHandler clientSessionKey = mkAuthHandler handler
   where

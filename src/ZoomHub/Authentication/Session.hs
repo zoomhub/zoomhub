@@ -11,6 +11,7 @@ module ZoomHub.Authentication.Session
   ( Session (..),
     User (..),
     DecodedIdToken (..),
+    empty,
   )
 where
 
@@ -29,6 +30,14 @@ data Session = Session
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON, Binary)
+
+empty :: Session
+empty =
+  Session
+    { currentUser = Nothing,
+      accessToken = Nothing,
+      refreshToken = Nothing
+    }
 
 data User = User
   { picture :: Maybe Text,
