@@ -11,7 +11,6 @@ module ZoomHub.Authentication.Session
   ( Session (..),
     User (..),
     DecodedIdToken (..),
-    empty,
   )
 where
 
@@ -24,20 +23,12 @@ import ZoomHub.Authentication.OAuth (AccessToken, RefreshToken)
 import Prelude hiding (id)
 
 data Session = Session
-  { currentUser :: !(Maybe User),
-    accessToken :: !(Maybe AccessToken),
-    refreshToken :: !(Maybe RefreshToken)
+  { currentUser :: !User,
+    accessToken :: !AccessToken,
+    refreshToken :: !RefreshToken
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON, Binary)
-
-empty :: Session
-empty =
-  Session
-    { currentUser = Nothing,
-      accessToken = Nothing,
-      refreshToken = Nothing
-    }
 
 data User = User
   { picture :: Maybe Text,
