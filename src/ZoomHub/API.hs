@@ -18,17 +18,12 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Crypto.JWT as JWT
 import Data.Aeson ((.=))
 import qualified Data.Aeson as JSON
-import Data.Binary (Binary, get, put)
-import qualified Data.Binary as Binary (decodeOrFail, encode)
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Base64.URL as Base64URL
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (fold, for_)
 import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
-import qualified Data.List as List
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import qualified Data.String as String
@@ -38,11 +33,11 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.Time as Time
-import Data.Time.Clock (DiffTime)
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
 import Flow
-import Network.OAuth2.Experiment (AuthorizeState (AuthorizeState, unAuthorizeState), mkAuthorizationRequest)
+import Network.OAuth2.Experiment (mkAuthorizationRequest)
+import qualified Network.OAuth2.Experiment as NOA2
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
 import Network.Wai (Application, Request (requestHeaders))
@@ -93,11 +88,10 @@ import qualified Web.ClientSession as ClientSession
 import Web.Cookie
   ( CookiesText,
     SetCookie (..),
-    defaultSetCookie,
     parseCookiesText,
-    sameSiteLax,
   )
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
+import qualified ZoomHub.API.Cookie as API
 import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
 import ZoomHub.API.Types.Callback (Callback)
@@ -120,7 +114,8 @@ import qualified ZoomHub.AWS.S3 as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
 import qualified ZoomHub.Authentication.Basic as BasicAuthentication
-import ZoomHub.Authentication.OAuth (IdToken (..), State (unState), generateState)
+import qualified ZoomHub.Authentication.Cookie as Cookie
+import ZoomHub.Authentication.OAuth (AuthorizeState (..), IdToken (..), State (unState), generateState)
 import qualified ZoomHub.Authentication.OAuth as OAuth
 import ZoomHub.Authentication.OAuth.Kinde (fetchTokensFor, mkApp, mkIdp)
 import qualified ZoomHub.Authentication.OAuth.Kinde as Kinde
@@ -715,78 +710,6 @@ type KindeCallback =
      ]
     NoContent
 
-newtype CookieName = CookieName {unCookieName :: ByteString}
-
-sessionCookieName :: CookieName
-sessionCookieName = CookieName "__Host-zoomhub_session"
-
-oauth2StateCookieName :: CookieName
-oauth2StateCookieName = CookieName "__Host-zoomhub_oauth2_state"
-
-emptyCookie :: CookieName -> SetCookie
-emptyCookie name =
-  defaultSetCookie
-    { setCookieName = unCookieName name,
-      setCookieValue = "",
-      setCookieMaxAge = Just 0,
-      setCookiePath = Just "/",
-      setCookieSameSite = Just sameSiteLax,
-      setCookieHttpOnly = True,
-      -- TODO: Support `False` on `localhost` (development) if needed
-      setCookieSecure = True
-    }
-
-newtype SerializableAuthorizeState = SerializableAuthorizeState AuthorizeState
-
-instance Binary SerializableAuthorizeState where
-  put (SerializableAuthorizeState s) = put (unAuthorizeState s)
-  get = SerializableAuthorizeState . AuthorizeState <$> get
-
-oauth2StateCookieHeader :: Key -> SerializableAuthorizeState -> IO SetCookie
-oauth2StateCookieHeader key authorizeState =
-  setEncryptedCookie key oauth2StateCookieName authorizeState (MaxAge oneHour)
-  where
-    oneHour = 3600
-
-sessionCookie :: Key -> Session -> IO SetCookie
-sessionCookie key session =
-  setEncryptedCookie key sessionCookieName session (MaxAge oneWeek)
-  where
-    oneWeek = 3600 * 24 * 7
-
-newtype MaxAge = MaxAge DiffTime
-
-setEncryptedCookie ::
-  (Binary content) =>
-  Key ->
-  CookieName ->
-  content ->
-  MaxAge ->
-  IO SetCookie
-setEncryptedCookie key (CookieName name) content (MaxAge maxAge) = do
-  encrypted <- ClientSession.encryptIO key $ BL.toStrict $ Binary.encode content
-  pure $
-    defaultSetCookie
-      { setCookieName = name,
-        setCookieValue = Base64URL.encodeBase64 encrypted |> T.encodeUtf8,
-        setCookieMaxAge = Just maxAge,
-        setCookiePath = Just "/",
-        setCookieSameSite = Just sameSiteLax,
-        setCookieHttpOnly = True,
-        -- TODO: Support `False` on `localhost` (development) if needed:
-        setCookieSecure = True
-      }
-
-cookieValue :: (Binary s) => Key -> CookieName -> CookiesText -> Maybe s
-cookieValue key cookieName cookies = mValue
-  where
-    fromEither = either (const Nothing)
-    mValue = do
-      value <- List.lookup (cookieName |> unCookieName |> T.decodeUtf8Lenient) cookies
-      e <- fromEither Just $ Base64URL.decodeBase64 (T.encodeUtf8 value)
-      x <- ClientSession.decrypt key e
-      fromEither (\(_, _, c) -> Just c) $ Binary.decodeOrFail (BL.fromStrict x)
-
 webRegister :: BaseURI -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
 webRegister _baseURI = webAuthRedirect Prompt.Create
 
@@ -796,10 +719,9 @@ webLogin _baseURI = webAuthRedirect Prompt.Login
 webAuthRedirect :: Prompt -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
 webAuthRedirect prompt kindeConfig clientSessionKey = do
   state <- liftIO generateState
-  setCookieHeader <-
-    liftIO $ oauth2StateCookieHeader clientSessionKey (SerializableAuthorizeState state)
+  setCookieHeader <- liftIO $ API.oauth2StateCookieHeader clientSessionKey state
   let authorizationRedirectURI =
-        mkAuthorizationRequest $ mkApp kindeConfig state
+        mkAuthorizationRequest $ mkApp kindeConfig (unAuthorizeState state)
   return $
     addHeader setCookieHeader $
       addHeader
@@ -816,7 +738,7 @@ webLogout _baseURI kindeConfig = do
   case mLogoutRedirectURI of
     Just logoutRedirectURI ->
       return $
-        addHeader (emptyCookie sessionCookieName) $
+        addHeader (Cookie.empty API.sessionCookieName) $
           addHeader (toUrlPiece logoutRedirectURI) NoContent
     Nothing ->
       throwError $ Web.error503 "Invalid logout URL"
@@ -833,9 +755,8 @@ webAuthKindeCallback ::
 webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code state _scope = do
   let mExpectedState = do
         cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8)
-        value <- cookieValue clientSessionKey oauth2StateCookieName cookies
-        return $ AuthorizeState value
-      actualState = state |> unState |> TL.fromStrict |> AuthorizeState
+        Cookie.value clientSessionKey API.oauth2StateCookieName cookies
+      actualState = state |> unState |> TL.fromStrict |> NOA2.AuthorizeState |> AuthorizeState
   eResponse <-
     case mExpectedState of
       Just expectedState | expectedState == actualState -> do
@@ -871,14 +792,14 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
                             refreshToken = response.refreshToken
                           }
   sessionSetCookieHeader <- case eSession of
-    Left _ -> pure $ emptyCookie sessionCookieName
-    Right session -> liftIO $ sessionCookie clientSessionKey session
+    Left _ -> pure $ Cookie.empty API.sessionCookieName
+    Right session -> liftIO $ API.sessionCookie clientSessionKey session
   let redirectPath = case eSession of
         Left message -> "/?errorMessage=" <> (message |> URIEncode.encodeText)
         Right _ -> "/auth/session/debug"
   return $
     addHeader redirectPath $
-      addHeader (emptyCookie oauth2StateCookieName) $
+      addHeader (Cookie.empty API.oauth2StateCookieName) $
         addHeader sessionSetCookieHeader NoContent
   where
     verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
@@ -1166,7 +1087,7 @@ redirect location =
 --- Authentication using session cookie
 -- Based on https://docs.servant.dev/en/stable/tutorial/Authentication.html
 decodeSession :: ClientSession.Key -> CookiesText -> Handler (Maybe Session)
-decodeSession key cookiesText = return $ cookieValue key sessionCookieName cookiesText
+decodeSession key cookiesText = return $ Cookie.value key API.sessionCookieName cookiesText
 
 sessionAuthHandler :: ClientSession.Key -> AuthHandler Request (Maybe Session)
 sessionAuthHandler clientSessionKey = mkAuthHandler handler

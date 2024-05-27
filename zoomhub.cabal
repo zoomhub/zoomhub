@@ -26,6 +26,7 @@ library
     , URI.ByteString.Instances
     , ZoomHub.API
     , ZoomHub.API.ContentTypes.JavaScript
+    , ZoomHub.API.Cookie
     , ZoomHub.API.Errors
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
@@ -37,6 +38,7 @@ library
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
     , ZoomHub.Authentication.Basic
+    , ZoomHub.Authentication.Cookie
     , ZoomHub.Authentication.OAuth
     , ZoomHub.Authentication.OAuth.Kinde
     , ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse
