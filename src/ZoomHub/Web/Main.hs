@@ -103,8 +103,13 @@ webMain = do
   logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
+  let baseURI = case lookup baseURIEnvName env of
+        Just uriString ->
+          toBaseURI uriString
+        Nothing ->
+          toBaseURI $ "http://" <> hostname
   aws <- AWSConfig.fromEnv <&> fromMaybe (error "ZoomHub.Main: Failed to parse AWS configuration.")
-  kinde <- Kinde.fromEnv <&> fromMaybe (error "ZoomHub.Main: Failed to parse Kinde configuration.")
+  kinde <- Kinde.fromEnv baseURI <&> fromMaybe (error "ZoomHub.Main: Failed to parse Kinde configuration.")
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env
@@ -115,11 +120,6 @@ webMain = do
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers = lookup "PROCESSING_WORKERS" env >>= readMaybe
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
-      baseURI = case lookup baseURIEnvName env of
-        Just uriString ->
-          toBaseURI uriString
-        Nothing ->
-          toBaseURI $ "http://" <> hostname
       defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "https://static.zoomhub.net"
       mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup "STATIC_BASE_URI" env)
       staticBaseURI = fromMaybe defaultStaticBaseURI mStaticBaseURI
