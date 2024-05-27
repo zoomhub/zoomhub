@@ -37,6 +37,7 @@ import Test.Hspec.Wai
     (<:>),
   )
 import Text.RawString.QQ (r)
+import qualified Web.ClientSession as ClientSession
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
@@ -144,7 +145,7 @@ config =
   Config
     { apiUser = authorizedUser,
       -- TODO: How can we avoid `unsafePerformIO`?
-      aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv AWS.Ohio,
+      aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv,
       baseURI = BaseURI (toURI "http://localhost:8000"),
       contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
         Just uri -> uri
@@ -156,6 +157,7 @@ config =
       dbConnPoolNumStripes = dbConnPoolNumStripes',
       environment = Environment.Test,
       error404 = "404",
+      clientSessionKey = unsafePerformIO ClientSession.getDefaultKey,
       logger = nullLogger,
       logLevel = LogLevel.Debug,
       maxUploadSizeMegabytes = 50,

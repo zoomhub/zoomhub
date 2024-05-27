@@ -247,6 +247,7 @@ test-suite tests
     , amazonka-s3
     , base64
     , bytestring
+    , clientsession
     , generics-sop
     , hspec == 2.*
     , hspec-wai
