@@ -3,6 +3,12 @@ set -euo pipefail
 
 SHA1="$1"
 
+if [[ -z "$AWS_REGION" ]]; then
+  echo "Please set 'AWS_REGION' environment variable"
+  exit 1
+fi
+
+
 # Push image to ECR (AWS CLI version 2)
 aws ecr get-login-password \
     --region "$AWS_REGION" \
