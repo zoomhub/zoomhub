@@ -31,11 +31,11 @@ data Session = Session
   deriving anyclass (FromJSON, ToJSON, Binary)
 
 data User = User
-  { picture :: Maybe Text,
-    familyName :: Maybe Text,
-    givenName :: Maybe Text,
-    email :: Text,
-    id :: Maybe Text
+  { picture :: !(Maybe Text),
+    familyName :: !(Maybe Text),
+    givenName :: !(Maybe Text),
+    email :: !Text,
+    id :: !(Maybe Text)
   }
   deriving (Show, Generic)
 
