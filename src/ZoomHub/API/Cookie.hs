@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.API.Cookie
-  ( sessionCookieName,
-    oauth2StateCookieHeader,
+  ( oauth2StateCookieHeader,
     oauth2StateCookieName,
-    sessionCookie,
+    sessionCookieHeader,
+    sessionCookieName,
   )
 where
 
@@ -20,8 +20,8 @@ sessionCookieName = Cookie.Name "__Host-zoomhub_session"
 oauth2StateCookieName :: Cookie.Name
 oauth2StateCookieName = Cookie.Name "__Host-zoomhub_oauth2_state"
 
-sessionCookie :: Key -> Session -> IO SetCookie
-sessionCookie key session =
+sessionCookieHeader :: Key -> Session -> IO SetCookie
+sessionCookieHeader key session =
   Cookie.setEncryptedCookie key sessionCookieName session (Cookie.MaxAge oneWeek)
   where
     oneWeek = 3600 * 24 * 7

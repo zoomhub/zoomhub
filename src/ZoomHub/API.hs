@@ -781,7 +781,7 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
                           }
   sessionSetCookieHeader <- case eSession of
     Left _ -> pure $ Cookie.empty API.sessionCookieName
-    Right session -> liftIO $ API.sessionCookie clientSessionKey session
+    Right session -> liftIO $ API.sessionCookieHeader clientSessionKey session
   let redirectPath = case eSession of
         Left message -> "/?errorMessage=" <> (message |> URIEncode.encodeText)
         Right _ -> "/auth/session/debug"
@@ -1069,7 +1069,7 @@ redirect location =
   -- HACK: Redirect using error: http://git.io/vBCz9
   throwError $ err301 {errHeaders = [("Location", BC.pack (show location))]}
 
---- Authentication using session cookie
+-- Authentication using session cookie
 -- Based on https://docs.servant.dev/en/stable/tutorial/Authentication.html
 decodeSession :: ClientSession.Key -> CookiesText -> Handler (Maybe Session)
 decodeSession key cookiesText = return $ Cookie.value key API.sessionCookieName cookiesText
