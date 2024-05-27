@@ -9,17 +9,24 @@ module ZoomHub.APISpec
   )
 where
 
-import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities)
+import Crypto.JOSE (JWK)
+import Data.Aeson (ToJSON, object, toJSON, (.=))
+import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Char8 as BC
+import Data.Functor ((<&>))
 import Data.Maybe (fromJust)
+import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
+import Flow
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
-import Network.URI (URI, parseURIReference)
+import Network.URI (URI, parseRelativeReference, parseURIReference, relativeTo)
 import Network.Wai (Middleware)
+import System.Environment (getEnvironment)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
@@ -42,6 +49,7 @@ import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWSConfig
+import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
 import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import qualified ZoomHub.Log.LogLevel as LogLevel
@@ -49,7 +57,7 @@ import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
 import ZoomHub.Storage.PostgreSQL.Internal (destroyConnectionPool, usingConnectionPool)
 import ZoomHub.Types.APIUser (APIUser (..))
-import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
+import ZoomHub.Types.BaseURI (BaseURI (..))
 import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVerificationToken)
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
@@ -139,36 +147,54 @@ testEmail = "test@example.com"
 authorizedUser :: APIUser
 authorizedUser = APIUser {username = "worker", password = "secr3t"}
 
+jwk :: JWK
+jwk =
+  [r|{"e": "AQAB", "n": "qimcpjxm08XT-DptI0QrmXUhyOb6ZVvJuZmnArLA3prEw5uzqxQU_rzxSxR04PjnrVuTQphwRg2L9M-CzyX4ZRPQ377xKbdatMBsM8am_6yeo5h4oplHiY6DH1ZPDVSnj85c6lwiVo9MU-_cRj0d9ybj9cmoSCThV7eyqhKypP9zULsSVK1xkxHWIFXTZP0gVDB0J9FKG8WKctZhIbC8j_rb8W7bblZHaXvPZl1HG0PMt_ly8tTDkIxI6y9B6kNzYAF4Vx3Dmg8IPM36W7poc6KbdSrFU8HIXOB5q4sXxMAO9kAgA8abDTeOuzJwpk72Gn3eH3fltVE0hzbTWOsHgQ", "alg": "RS256", "kid": "08:1d:5c:bb:cb:06:ba:15:5e:af:48:51:60:77:e2:f0", "kty": "RSA", "use": "sig"}|]
+    |> T.pack
+    |> encodeUtf8
+    |> JSON.decodeStrict
+    |> fromJust
+
 {-# NOINLINE config #-}
 config :: Config
 config =
-  Config
-    { apiUser = authorizedUser,
-      -- TODO: How can we avoid `unsafePerformIO`?
-      aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv,
-      baseURI = BaseURI (toURI "http://localhost:8000"),
-      contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
-        Just uri -> uri
-        _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`.",
-      dbConnInfo = dbConnInfo',
-      dbConnPool = dbConnPool',
-      dbConnPoolIdleTime = dbConnPoolIdleTime',
-      dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe',
-      dbConnPoolNumStripes = dbConnPoolNumStripes',
-      environment = Environment.Test,
-      error404 = "404",
-      clientSessionKey = unsafePerformIO ClientSession.getDefaultKey,
-      logger = nullLogger,
-      logLevel = LogLevel.Debug,
-      maxUploadSizeMegabytes = 50,
-      openSeadragonScript = "osd",
-      port = 8000,
-      processContent = ProcessExistingAndNewContent,
-      publicPath = "./public",
-      staticBaseURI = StaticBaseURI (toURI "https://static.zoomhub.net"),
-      uploads = UploadsDisabled,
-      version = "test"
-    }
+  let baseURI = BaseURI (toURI "http://localhost:8000")
+   in Config
+        { apiUser = authorizedUser,
+          -- TODO: How can we avoid `unsafePerformIO`?
+          aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv,
+          baseURI = BaseURI (toURI "http://localhost:8000"),
+          contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
+            Just uri -> uri
+            _ -> error "ZoomHub.APISpec: Failed to parse `Config.contentBaseURI`.",
+          dbConnInfo = dbConnInfo',
+          dbConnPool = dbConnPool',
+          dbConnPoolIdleTime = dbConnPoolIdleTime',
+          dbConnPoolMaxResourcesPerStripe = dbConnPoolMaxResourcesPerStripe',
+          dbConnPoolNumStripes = dbConnPoolNumStripes',
+          environment = Environment.Test,
+          error404 = "404",
+          clientSessionKey = unsafePerformIO ClientSession.getDefaultKey,
+          kinde =
+            Kinde.Config
+              { Kinde.domain = Kinde.Domain "TODO",
+                Kinde.clientId = Kinde.ClientId "TODO",
+                Kinde.clientSecret = Kinde.ClientSecret "TODO",
+                Kinde.redirectURI = baseURI |> unBaseURI,
+                Kinde.logoutRedirectURI = baseURI |> unBaseURI,
+                Kinde.jwk = jwk
+              },
+          logger = nullLogger,
+          logLevel = LogLevel.Debug,
+          maxUploadSizeMegabytes = 50,
+          openSeadragonScript = "osd",
+          port = 8000,
+          processContent = ProcessExistingAndNewContent,
+          publicPath = "./public",
+          staticBaseURI = StaticBaseURI (toURI "https://static.zoomhub.net"),
+          uploads = UploadsDisabled,
+          version = "test"
+        }
   where
     numSpindles = 1
     -- TODO: How can we avoid `unsafePerformIO`?

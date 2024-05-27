@@ -248,10 +248,12 @@ test-suite tests
     , base64
     , bytestring
     , clientsession
+    , flow
     , generics-sop
     , hspec == 2.*
     , hspec-wai
     , http-types
+    , jose
     , network-uri
     , postgresql-simple
     , process

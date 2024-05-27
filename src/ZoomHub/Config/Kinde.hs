@@ -4,8 +4,8 @@
 
 module ZoomHub.Config.Kinde
   ( Config (..),
-    ClientId (unClientId),
-    ClientSecret (unClientSecret),
+    ClientId (..),
+    ClientSecret (..),
     Domain (..),
     fromEnv,
   )
