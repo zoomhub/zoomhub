@@ -1072,7 +1072,8 @@ redirect location =
 -- Authentication using session cookie
 -- Based on https://docs.servant.dev/en/stable/tutorial/Authentication.html
 decodeSession :: ClientSession.Key -> CookiesText -> Handler (Maybe Session)
-decodeSession key cookiesText = return $ Cookie.value key API.sessionCookieName cookiesText
+decodeSession key cookiesText =
+  return $ Cookie.value key API.sessionCookieName cookiesText
 
 sessionAuthHandler :: ClientSession.Key -> AuthHandler Request (Maybe Session)
 sessionAuthHandler clientSessionKey = mkAuthHandler handler
@@ -1080,7 +1081,10 @@ sessionAuthHandler clientSessionKey = mkAuthHandler handler
     maybeToEither e = maybe (Left e) Right
     throw401 msg = throwError $ err401 {errBody = msg}
     handler req = either throw401 (decodeSession clientSessionKey) $ do
-      cookie <- maybeToEither "Missing cookie header" $ lookup "cookie" $ requestHeaders req
+      cookie <-
+        maybeToEither "Missing cookie header" $
+          lookup "cookie" $
+            requestHeaders req
       Right $ parseCookiesText cookie
 
 -- | We need to specify the data returned after authentication
