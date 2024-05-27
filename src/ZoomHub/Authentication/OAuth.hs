@@ -10,13 +10,14 @@ module ZoomHub.Authentication.OAuth
     RefreshToken (..),
     IdToken (..),
     generateState,
+    AuthorizeState (..),
   )
 where
 
 import Crypto.Random (MonadRandom (getRandomBytes))
 import Data.Aeson (FromJSON (parseJSON), ToJSON, Value (String))
 import Data.Aeson.Types (typeMismatch)
-import Data.Binary (Binary)
+import Data.Binary (Binary (get, put))
 import qualified Data.ByteString.Base64.URL as URL
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -25,8 +26,15 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Flow
 import GHC.Generics (Generic)
-import Network.OAuth2.Experiment.Types (AuthorizeState (..))
+import qualified Network.OAuth2.Experiment.Types as NOA2
 import Servant (FromHttpApiData (parseQueryParam))
+
+newtype AuthorizeState = AuthorizeState {unAuthorizeState :: NOA2.AuthorizeState}
+  deriving (Eq)
+
+instance Binary AuthorizeState where
+  put (AuthorizeState s) = s |> NOA2.unAuthorizeState |> put
+  get = AuthorizeState . NOA2.AuthorizeState <$> get
 
 newtype AuthorizationCode = AuthorizationCode {unAuthorizationCode :: Text}
   deriving (FromHttpApiData)
@@ -75,4 +83,10 @@ instance FromJSON Scope where
 generateState :: IO AuthorizeState
 generateState = do
   randomBytes <- getRandomBytes 32
-  return (randomBytes |> URL.encodeBase64 |> TL.fromStrict |> AuthorizeState)
+  return
+    ( randomBytes
+        |> URL.encodeBase64
+        |> TL.fromStrict
+        |> NOA2.AuthorizeState
+        |> AuthorizeState
+    )
