@@ -36,6 +36,7 @@ import Test.Hspec.Wai
     (<:>),
   )
 import Text.RawString.QQ (r)
+import qualified Web.ClientSession as ClientSession
 import ZoomHub.API (app)
 import ZoomHub.Config (Config (..))
 import qualified ZoomHub.Config as Config
@@ -156,6 +157,7 @@ config =
       dbConnPoolNumStripes = dbConnPoolNumStripes',
       environment = Environment.Test,
       error404 = "404",
+      clientSessionKey = unsafePerformIO ClientSession.getDefaultKey,
       logger = nullLogger,
       logLevel = LogLevel.Debug,
       maxUploadSizeMegabytes = 50,
