@@ -19,8 +19,9 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Flow
-import Network.URI (URI, parseAbsoluteURI)
+import Network.URI (URI, parseRelativeReference, relativeTo)
 import System.Environment (getEnvironment)
+import ZoomHub.Types.BaseURI (BaseURI (..))
 
 newtype Domain = Domain {unDomain :: Text}
   deriving (ToJSON)
@@ -40,15 +41,16 @@ data Config = Config
     jwk :: JWK
   }
 
-fromEnv :: IO (Maybe Config)
-fromEnv = do
+fromEnv :: BaseURI -> IO (Maybe Config)
+fromEnv baseURI = do
   env <- getEnvironment
   return $ do
     domain <- (env |> lookup "KINDE_DOMAIN") <&> T.pack .> Domain
     clientId <- (env |> lookup "KINDE_CLIENT_ID") <&> T.pack .> ClientId
     clientSecret <- (env |> lookup "KINDE_CLIENT_SECRET") <&> T.pack .> ClientSecret
-    redirectURI <- (env |> lookup "KINDE_REDIRECT_URI") >>= parseAbsoluteURI
-    logoutRedirectURI <- (env |> lookup "KINDE_LOGOUT_REDIRECT_URI") >>= parseAbsoluteURI
+    callbackPath <- parseRelativeReference "/auth/kinde/callback"
+    let redirectURI = callbackPath `relativeTo` (unBaseURI baseURI)
+    let logoutRedirectURI = unBaseURI baseURI
     jwk <- (env |> lookup "KINDE_JWK") <&> T.pack .> encodeUtf8 >>= JSON.decodeStrict
     pure Config {..}
 
