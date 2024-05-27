@@ -31,6 +31,7 @@ import qualified Data.HashMap.Strict as HS
 import qualified Data.List as List
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
+import qualified Data.String as String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -882,8 +883,14 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
   where
     verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
     verifyJWT jwk jwt = JWT.runJOSE $ do
-      -- TODO: Pass in `aud` parameter
-      let aud = "https://zoomhub-development.us.kinde.com"
+      -- NOTE: The `aud` parameter used to be the URL but now it’s only the
+      -- client ID:
+      let aud =
+            kindeConfig
+              |> Kinde.clientId
+              |> Kinde.unClientId
+              |> T.unpack
+              |> String.fromString
       let config = JWT.defaultJWTValidationSettings (== aud)
       JWT.verifyJWT config jwk jwt
 
