@@ -11,12 +11,9 @@ where
 
 import Control.Concurrent (getNumCapabilities)
 import Crypto.JOSE (JWK)
-import Data.Aeson (ToJSON, object, toJSON, (.=))
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Char8 as BC
-import Data.Functor ((<&>))
 import Data.Maybe (fromJust)
-import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text.Encoding as T
@@ -24,9 +21,8 @@ import qualified Data.Text.Encoding.Base64 as T
 import Data.Time.Units (Second)
 import Flow
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
-import Network.URI (URI, parseRelativeReference, parseURIReference, relativeTo)
+import Network.URI (URI, parseURIReference)
 import Network.Wai (Middleware)
-import System.Environment (getEnvironment)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Spec, afterAll_, context, describe, hspec, it, shouldBe)
 import Test.Hspec.Wai
