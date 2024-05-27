@@ -259,7 +259,7 @@ type API =
     :<|> "auth"
       :> "kinde"
       :> "callback"
-      :> Header "Cookie" Text
+      :> Header "Cookie" Cookie.Header
       :> RequiredQueryParam "code" OAuth.AuthorizationCode
       :> RequiredQueryParam "state" OAuth.State
       :> QueryParam "scope" OAuth.Scope
@@ -377,17 +377,6 @@ app config = do
     logger = Config.logger config
 
 -- Handlers
-
--- -- Homepage
--- webHomepage :: Kinde.Config -> Handler Page.Homepage
--- webHomepage kindeConfig = do
---   kindeOAuthState <- liftIO OAuth.generateState
---   -- TODO: Save in session
---   return
---     Page.Homepage
---       { Page.kindeOAuthState = kindeOAuthState,
---         Page.kindeConfig = kindeConfig
---       }
 
 -- Meta
 health :: Handler Text
@@ -747,14 +736,14 @@ webAuthKindeCallback ::
   BaseURI ->
   Key ->
   Kinde.Config ->
-  Maybe Text -> -- cookie header
+  Maybe Cookie.Header ->
   OAuth.AuthorizationCode ->
   OAuth.State ->
   Maybe OAuth.Scope ->
   Handler KindeCallback
 webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code state _scope = do
   let mExpectedState = do
-        cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8)
+        cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8 . Cookie.unHeader)
         Cookie.value clientSessionKey API.oauth2StateCookieName cookies
       actualState = state |> unState |> TL.fromStrict |> NOA2.AuthorizeState |> AuthorizeState
   eResponse <-
