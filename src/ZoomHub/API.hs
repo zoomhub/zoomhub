@@ -333,11 +333,11 @@ server config =
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Auth
-    :<|> webRegister baseURI config.kinde config.clientSessionKey
-    :<|> webLogin baseURI config.kinde config.clientSessionKey
-    :<|> webLogout baseURI config.kinde
-    :<|> webAuthKindeCallback baseURI config.clientSessionKey config.kinde
-    :<|> webAuthSessionDebug baseURI
+    :<|> webRegister config.kinde config.clientSessionKey
+    :<|> webLogin config.kinde config.clientSessionKey
+    :<|> webLogout config.kinde
+    :<|> webAuthKindeCallback config.clientSessionKey config.kinde
+    :<|> webAuthSessionDebug
     -- Web: Explore: Recent
     :<|> webExploreRecent baseURI contentBaseURI stylesheetPath dbConnPool
     -- Web: Embed (iframe)
@@ -701,11 +701,11 @@ type KindeCallback =
      ]
     NoContent
 
-webRegister :: BaseURI -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
-webRegister _baseURI = webAuthRedirect Prompt.Create
+webRegister :: Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webRegister = webAuthRedirect Prompt.Create
 
-webLogin :: BaseURI -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
-webLogin _baseURI = webAuthRedirect Prompt.Login
+webLogin :: Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webLogin = webAuthRedirect Prompt.Login
 
 webAuthRedirect :: Prompt -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
 webAuthRedirect prompt kindeConfig clientSessionKey = do
@@ -723,8 +723,8 @@ webAuthRedirect prompt kindeConfig clientSessionKey = do
         )
         NoContent
 
-webLogout :: BaseURI -> Kinde.Config -> Handler SetCookieAndRedirect
-webLogout _baseURI kindeConfig = do
+webLogout :: Kinde.Config -> Handler SetCookieAndRedirect
+webLogout kindeConfig = do
   let mLogoutRedirectURI = Kinde.logoutURI kindeConfig
   case mLogoutRedirectURI of
     Just logoutRedirectURI ->
@@ -735,7 +735,6 @@ webLogout _baseURI kindeConfig = do
       throwError $ Web.error503 "Invalid logout URL"
 
 webAuthKindeCallback ::
-  BaseURI ->
   Key ->
   Kinde.Config ->
   Maybe Cookie.Header ->
@@ -743,7 +742,7 @@ webAuthKindeCallback ::
   OAuth.State ->
   Maybe OAuth.Scope ->
   Handler KindeCallback
-webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code state _scope = do
+webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scope = do
   let mExpectedState = do
         cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8 . Cookie.unHeader)
         Cookie.value clientSessionKey API.oauth2StateCookieName cookies
@@ -806,11 +805,8 @@ webAuthKindeCallback _baseURI clientSessionKey kindeConfig mCookieHeader code st
       let config = JWT.defaultJWTValidationSettings (== aud)
       JWT.verifyJWT config jwk jwt
 
-webAuthSessionDebug ::
-  BaseURI ->
-  Maybe Session ->
-  Handler Text
-webAuthSessionDebug _baseURI mSession = return $
+webAuthSessionDebug :: Maybe Session -> Handler Text
+webAuthSessionDebug mSession = return $
   case mSession of
     Just session -> session |> JSON.encode |> BL.toStrict |> T.decodeUtf8Lenient
     Nothing -> "(no session)"
