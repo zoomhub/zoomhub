@@ -33,7 +33,7 @@ aws elasticbeanstalk create-application-version \
     --application-name "$ZH_AWS_EB_PROJECT" \
     --version-label "$SHA1" \
     --source-bundle "S3Bucket=$EB_BUCKET,S3Key=$SOURCE_BUNDLE_ZIP" \
-    --region" $AWS_REGION"
+    --region "$AWS_REGION"
 
 # Update Elastic Beanstalk environment to new version
 aws elasticbeanstalk update-environment \
