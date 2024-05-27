@@ -210,7 +210,6 @@ jobs:
             --test
 
       - name: Run backend tests
-        if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
           HASHIDS_SALT='secret-salt' ./bin/migrate-database $PGDATABASE migrate
 
