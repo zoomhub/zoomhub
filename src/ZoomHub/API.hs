@@ -264,7 +264,8 @@ type API =
       :> RequiredQueryParam "state" OAuth.State
       :> QueryParam "scope" OAuth.Scope
       :> Verb 'GET 302 '[HTML] KindeCallback
-    :<|> AuthProtect "cookie-session"
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
+      :> AuthProtect "cookie-session"
       :> "auth"
       :> "session"
       :> "debug"
@@ -803,11 +804,21 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
       let config = JWT.defaultJWTValidationSettings (== aud)
       JWT.verifyJWT config jwk jwt
 
-webAuthSessionDebug :: Maybe Session -> Handler Text
-webAuthSessionDebug mSession = return $
-  case mSession of
-    Just session -> session |> JSON.encode |> BL.toStrict |> T.decodeUtf8Lenient
-    Nothing -> "(no session)"
+webAuthSessionDebug ::
+  AuthResult BasicAuthentication.AuthenticatedUser -> Maybe Session -> Handler Text
+webAuthSessionDebug authResult mSession =
+  case authResult of
+    Authenticated _ -> do
+      case mSession of
+        Just session ->
+          return (session |> JSON.encode |> BL.toStrict |> T.decodeUtf8Lenient)
+        Nothing -> return "(no session)"
+    NoSuchUser ->
+      throwError . Web.error401 $ "Invalid auth"
+    BadPassword ->
+      throwError . Web.error401 $ "Invalid auth"
+    Indefinite ->
+      throwError $ wwwAuthenticatedErr "ZoomHub"
 
 -- Web: Explore: Recent
 webExploreRecent ::
