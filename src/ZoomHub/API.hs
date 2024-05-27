@@ -23,7 +23,7 @@ import qualified Data.Binary as Binary (decodeOrFail, encode)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Base64.URL as Base64URL
 import qualified Data.ByteString.Char8 as BC
-import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (fold, for_)
 import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
@@ -33,7 +33,6 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8Lenient)
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
@@ -514,7 +513,7 @@ restUpload config awsConfig uploads email =
         Right policy -> do
           formData <-
             liftIO $
-              HS.map decodeUtf8Lenient
+              HS.map T.decodeUtf8Lenient
                 <$> S3.presignPOSTPolicy
                   (AWS.configAccessKeyId awsConfig)
                   (AWS.configSecretAccessKey awsConfig)
@@ -764,7 +763,7 @@ setEncryptedCookie ::
   MaxAge ->
   IO SetCookie
 setEncryptedCookie key (CookieName name) content (MaxAge maxAge) = do
-  encrypted <- ClientSession.encryptIO key $ BSL.toStrict $ Binary.encode content
+  encrypted <- ClientSession.encryptIO key $ BL.toStrict $ Binary.encode content
   pure $
     defaultSetCookie
       { setCookieName = name,
@@ -782,10 +781,10 @@ cookieValue key cookieName cookies = mValue
   where
     fromEither = either (const Nothing)
     mValue = do
-      value <- List.lookup (cookieName |> unCookieName |> decodeUtf8Lenient) cookies
+      value <- List.lookup (cookieName |> unCookieName |> T.decodeUtf8Lenient) cookies
       e <- fromEither Just $ Base64URL.decodeBase64 (T.encodeUtf8 value)
       x <- ClientSession.decrypt key e
-      fromEither (\(_, _, c) -> Just c) $ Binary.decodeOrFail (BSL.fromStrict x)
+      fromEither (\(_, _, c) -> Just c) $ Binary.decodeOrFail (BL.fromStrict x)
 
 webRegister :: BaseURI -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
 webRegister _baseURI = webAuthRedirect Prompt.Create
@@ -894,8 +893,8 @@ webAuthSessionDebug ::
   Handler Text
 webAuthSessionDebug _baseURI mSession = return $
   case mSession of
-    Just session -> session |> JSON.encode |> BSL.toStrict |> decodeUtf8Lenient
-    Nothing -> "(no session )"
+    Just session -> session |> JSON.encode |> BL.toStrict |> T.decodeUtf8Lenient
+    Nothing -> "(no session)"
 
 -- Web: Explore: Recent
 webExploreRecent ::
