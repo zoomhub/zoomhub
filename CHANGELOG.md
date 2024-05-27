@@ -2,6 +2,17 @@
 
 ## unreleased
 
+- Web:
+  - Integrate with Kinde to enable user account registration using OAuth2.
+    - New environment variables:
+      - `KINDE_CLIENT_ID`
+      - `KINDE_CLIENT_SECRET`
+      - `KINDE_DOMAIN`
+      - `KINDE_JWK`
+  - Introduce `Session` stored in encrypted cookie.
+    - New environment variable:
+      - `CLIENT_SESSION_KEY_BASE64`
+
 ## 2026-02-18-1
 
 - Build:
