@@ -98,7 +98,6 @@ library
     , ZoomHub.Web.Page
     , ZoomHub.Web.Page.EmbedContent
     , ZoomHub.Web.Page.ExploreRecentContent
-    , ZoomHub.Web.Page.Homepage
     , ZoomHub.Web.Page.VerifyContent
     , ZoomHub.Web.Page.ViewContent
     , ZoomHub.Web.Static

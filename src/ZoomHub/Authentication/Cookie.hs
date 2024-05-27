@@ -1,7 +1,9 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ZoomHub.Authentication.Cookie
   ( Name (..),
+    Header (..),
     empty,
     setEncryptedCookie,
     value,
@@ -15,14 +17,19 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Base64.URL as Base64URL
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.List as List
+import Data.Text (Text)
 import qualified Data.Text.Encoding as T
 import Data.Time.Clock (DiffTime)
 import Flow
 import Web.ClientSession (Key)
 import qualified Web.ClientSession as ClientSession
 import Web.Cookie (CookiesText, SetCookie (setCookieHttpOnly, setCookieMaxAge, setCookieName, setCookiePath, setCookieSameSite, setCookieSecure, setCookieValue), defaultSetCookie, sameSiteLax)
+import Web.HttpApiData (FromHttpApiData)
 
 newtype Name = Name {unName :: ByteString}
+
+newtype Header = Header {unHeader :: Text}
+  deriving (FromHttpApiData)
 
 empty :: Name -> SetCookie
 empty name =
