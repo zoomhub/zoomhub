@@ -1,5 +1,6 @@
 # configuration
 .env
+.env.*
 
 # macOS
 .DS_Store
@@ -45,6 +46,3 @@
 
 # Node.js
 /node_modules
-
-# Shortcuts
-run-local.sh

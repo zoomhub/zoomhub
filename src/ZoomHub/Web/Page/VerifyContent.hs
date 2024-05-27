@@ -61,6 +61,8 @@ instance H.ToHtml VerifyContent where
       Page
         { pageTitle = Title Page.title,
           pageCanonicalPath = Nothing,
+          pageHeadStyles = Nothing,
+          pageBodyClassName = Nothing,
           pageBody =
             H.div_
               [H.class_ "h-screen flex flex-col items-center justify-center"]

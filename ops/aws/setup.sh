@@ -2,15 +2,16 @@
 set -euo pipefail
 
 CIUSER=ci
+AWS_REGION='us-east-2'
 
 # Create ECR repo
-aws ecr create-repository --repository-name "$ZH_AWS_ECR_REPO" --region us-east-2
+aws ecr create-repository --repository-name "$ZH_AWS_ECR_REPO" --region "$AWS_REGION"
 
 # Create S3 bucket
 aws s3api create-bucket \
   --bucket "elasticbeanstalk-$ZH_AWS_EB_PROJECT-deploy-bucket" \
   --region us-east-2 \
-  --create-bucket-configuration LocationConstraint=us-east-2
+  --create-bucket-configuration LocationConstraint=$AWS_REGION
 
 # Create the CI user with appropricate permissions
 aws iam create-user --user-name $CIUSER

@@ -6,18 +6,24 @@ module ZoomHub.Web.Main
   )
 where
 
-import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities, threadDelay)
 import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
 import Control.Monad (forM_, guard, when)
 import Data.Aeson ((.=))
+import Data.Bifunctor (Bifunctor (first))
+import qualified Data.ByteString.Base64 as Base64
+import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
 import Data.Default (def)
+import Data.Either (fromRight)
+import Data.Functor ((<&>))
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time.Units (Second, toMicroseconds)
 import Data.Time.Units.Instances ()
+import Flow
 import GHC.Conc (getNumProcessors)
 import Network.HostName (getHostName)
 import Network.URI (parseAbsoluteURI)
@@ -40,12 +46,14 @@ import System.FilePath ((</>))
 import System.IO.Error (isDoesNotExistError)
 import System.Random (randomRIO)
 import Text.Read (readMaybe)
+import qualified Web.ClientSession as ClientSession
 import ZoomHub.API (app)
 import ZoomHub.Config
   ( Config (..),
     defaultPort,
   )
 import qualified ZoomHub.Config.AWS as AWSConfig
+import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import qualified ZoomHub.Config.ProcessContent as ProcessContent
 import ZoomHub.Config.Uploads (Uploads (..))
@@ -95,10 +103,13 @@ webMain = do
   logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
   numCapabilities <- getNumCapabilities
-  aws <-
-    fromMaybe
-      (error "ZoomHub.Main: Failed to parse AWS configuration.")
-      <$> AWSConfig.fromEnv AWS.Ohio -- TODO: Grab AWS region from environment?
+  let baseURI = case lookup baseURIEnvName env of
+        Just uriString ->
+          toBaseURI uriString
+        Nothing ->
+          toBaseURI $ "http://" <> hostname
+  aws <- AWSConfig.fromEnv <&> fromMaybe (error "ZoomHub.Main: Failed to parse AWS configuration.")
+  kinde <- Kinde.fromEnv baseURI <&> fromMaybe (error "ZoomHub.Main: Failed to parse Kinde configuration.")
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env
@@ -109,11 +120,6 @@ webMain = do
       defaultNumProcessingWorkers = 0 :: Integer
       maybeNumProcessingWorkers = lookup "PROCESSING_WORKERS" env >>= readMaybe
       numProcessingWorkers = fromMaybe defaultNumProcessingWorkers maybeNumProcessingWorkers
-      baseURI = case lookup baseURIEnvName env of
-        Just uriString ->
-          toBaseURI uriString
-        Nothing ->
-          toBaseURI $ "http://" <> hostname
       defaultStaticBaseURI = StaticBaseURI . fromJust . parseAbsoluteURI $ "https://static.zoomhub.net"
       mStaticBaseURI = StaticBaseURI <$> (parseAbsoluteURI =<< lookup "STATIC_BASE_URI" env)
       staticBaseURI = fromMaybe defaultStaticBaseURI mStaticBaseURI
@@ -136,6 +142,22 @@ webMain = do
               password <- T.pack <$> lookup "API_PASSWORD" env
               pure $ APIUser {..}
           )
+      clientSessionKey =
+        ( env
+            |> lookup "CLIENT_SESSION_KEY_BASE64"
+            |> fromMaybe
+              ( error $
+                  "ZoomHub.main: Missing 'CLIENT_SESSION_KEY_BASE64'."
+                    <> " Generate using one using `Web.ClientSession.randomKeyEnv`."
+              )
+            |> BC.pack
+            |> Base64.decodeBase64
+            |> first T.unpack
+        )
+          >>= ClientSession.initKey
+          |> fromRight
+            (error "ZoomHub.main: Failed to decode 'CLIENT_SESSION_KEY_BASE64'")
+
   -- Database connection pool
   dbConnInfo <- ConnectInfo.fromEnv defaultDBName
   dbConnPool <-
@@ -144,15 +166,16 @@ webMain = do
       dbConnPoolNumStripes
       dbConnPoolIdleTime
       dbConnPoolMaxResourcesPerStripe
+
+  let config = Config {..}
+  logInfo_ $ "Welcome to ZoomHub. Go to <" <> show baseURI <> "> and have fun!"
+
   logInfo
     "Config: Database connection pool"
     [ "dbConnPoolNumStripes" .= dbConnPoolNumStripes,
       "dbConnPoolIdleTime" .= dbConnPoolIdleTime,
       "dbConnPoolMaxResourcesPerStripe" .= dbConnPoolMaxResourcesPerStripe
     ]
-
-  let config = Config {..}
-  logInfo_ $ "Welcome to ZoomHub. Go to <" <> show baseURI <> "> and have fun!"
   logInfo
     "Config: App"
     ["config" .= config]
@@ -219,12 +242,12 @@ webMain = do
               <> baseURIEnvName
               <> "` to override usage of hostname."
 
-    readVersion :: FilePath -> IO String
+    readVersion :: FilePath -> IO Text
     readVersion currentDirectory = do
       r <- tryJust (guard . isDoesNotExistError) $ readFile versionPath
       return $ case r of
-        Left _ -> "unknown"
-        Right version -> version
+        Left _ -> "<unknown>"
+        Right version -> version |> T.pack
       where
         versionPath = currentDirectory </> "version.txt"
 
