@@ -763,7 +763,7 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
           Just tokens' ->
             pure $ Right tokens'
           Nothing ->
-            pure $ Left ("Failed to fetch tokens." :: Text)
+            pure $ Left "Failed to fetch tokens."
       Just _ ->
         pure $ Left "OAuth2 state does not match."
       Nothing ->
