@@ -117,7 +117,6 @@ import qualified ZoomHub.Authentication.Basic as BasicAuthentication
 import qualified ZoomHub.Authentication.Cookie as Cookie
 import ZoomHub.Authentication.OAuth (AuthorizeState (..), IdToken (..), State (unState), generateState)
 import qualified ZoomHub.Authentication.OAuth as OAuth
-import ZoomHub.Authentication.OAuth.Kinde (fetchTokensFor, mkApp, mkIdp)
 import qualified ZoomHub.Authentication.OAuth.Kinde as Kinde
 import qualified ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse as OAuth2CodeExchangeResponse
 import ZoomHub.Authentication.OAuth.Kinde.Prompt (Prompt)
@@ -721,7 +720,7 @@ webAuthRedirect prompt kindeConfig clientSessionKey = do
   state <- liftIO generateState
   setCookieHeader <- liftIO $ API.oauth2StateCookieHeader clientSessionKey state
   let authorizationRedirectURI =
-        mkAuthorizationRequest $ mkApp kindeConfig (unAuthorizeState state)
+        mkAuthorizationRequest $ Kinde.mkApp kindeConfig (unAuthorizeState state)
   return $
     addHeader setCookieHeader $
       addHeader
@@ -759,7 +758,7 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
   eResponse <-
     case mExpectedState of
       Just expectedState | expectedState == actualState -> do
-        mTokens <- liftIO $ fetchTokensFor (mkIdp kindeConfig.domain) kindeConfig code
+        mTokens <- liftIO $ Kinde.fetchTokensFor (Kinde.mkIdp kindeConfig.domain) kindeConfig code
         case mTokens of
           Just tokens' ->
             pure $ Right tokens'
