@@ -98,7 +98,7 @@ fetchTokensFor idp config authCode = do
   let opts =
         defaults
           |> header "Content-Type" .~ ["application/x-www-form-urlencoded; charset=UTF-8"]
-          |> header "Kinde-SDK" .~ ["Haskell/0.0.0"]
+          |> header "Kinde-SDK" .~ ["Haskell/0.0.1"]
       tokenUrl = idp |> idpTokenEndpoint |> toUrlPiece |> T.unpack
       payload =
         [ "client_id" := (config.clientId |> unClientId),
