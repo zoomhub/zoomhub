@@ -819,8 +819,8 @@ webDashboard dbConnPool mSession = case mSession of
     content <- liftIO $ usingConnectionPool dbConnPool (PG.getByEmail (session |> Session.currentUser |> User.email))
     return $
       Page.Dashboard
-        { Page.dbSession = session,
-          Page.dbContent = content
+        { Page.session = session,
+          Page.content = content
         }
   Nothing ->
     throwError . Web.error401 $ "No session"
