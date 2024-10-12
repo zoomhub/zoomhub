@@ -49,7 +49,7 @@ fromEnv baseURI = do
     clientId <- (env |> lookup "KINDE_CLIENT_ID") <&> T.pack .> ClientId
     clientSecret <- (env |> lookup "KINDE_CLIENT_SECRET") <&> T.pack .> ClientSecret
     callbackPath <- parseRelativeReference "/auth/kinde/callback"
-    let redirectURI = callbackPath `relativeTo` (unBaseURI baseURI)
+    let redirectURI = callbackPath `relativeTo` unBaseURI baseURI
     let logoutRedirectURI = unBaseURI baseURI
     jwk <- (env |> lookup "KINDE_JWK") <&> T.pack .> encodeUtf8 >>= JSON.decodeStrict
     pure Config {..}
