@@ -123,6 +123,8 @@ import qualified ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse a
 import ZoomHub.Authentication.OAuth.Kinde.Prompt (Prompt)
 import qualified ZoomHub.Authentication.OAuth.Kinde.Prompt as Prompt
 import ZoomHub.Authentication.Session (DecodedIdToken (..), Session (..))
+import qualified ZoomHub.Authentication.Session as Session
+import qualified ZoomHub.Authentication.Session as User
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -134,6 +136,7 @@ import qualified ZoomHub.Email.Verification as Verification
 import ZoomHub.Log.Logger (logWarning)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL as PG
+import ZoomHub.Storage.PostgreSQL.Dashboard as PG
 import ZoomHub.Storage.PostgreSQL.GetRecent as PG
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
@@ -147,6 +150,7 @@ import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (appendQueryParams, tshow)
 import qualified ZoomHub.Web.Errors as Web
+import qualified ZoomHub.Web.Page.Dashboard as Page
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
 import ZoomHub.Web.Page.ExploreRecentContent (ExploreRecentContent (..))
@@ -253,6 +257,10 @@ type API =
       :> QueryParam "url" String
       :> Get '[JSON] Content
     -- Web: Auth
+    :<|> AuthProtect "cookie-session"
+      :> "dashboard"
+      :> Get '[HTML] Page.Dashboard
+    -- Web: Auth
     :<|> "register" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
     :<|> "login" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
     :<|> "logout" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
@@ -332,6 +340,8 @@ server config =
     :<|> restInvalidContentId
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
+    -- Web: Dashboard
+    :<|> webDashboard dbConnPool
     -- Web: Auth
     :<|> webRegister config.kinde config.clientSessionKey
     :<|> webLogin config.kinde config.clientSessionKey
@@ -803,6 +813,18 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
               |> String.fromString
       let config = JWT.defaultJWTValidationSettings (== aud)
       JWT.verifyJWT config jwk jwt
+
+webDashboard :: Pool Connection -> Maybe Session -> Handler Page.Dashboard
+webDashboard dbConnPool mSession = case mSession of
+  Just session -> do
+    content <- liftIO $ usingConnectionPool dbConnPool (PG.getByEmail (session |> Session.currentUser |> User.email))
+    return $
+      Page.Dashboard
+        { Page.dbSession = session,
+          Page.dbContent = content
+        }
+  Nothing ->
+    throwError . Web.error401 $ "No session"
 
 webAuthSessionDebug ::
   AuthResult BasicAuthentication.AuthenticatedUser -> Maybe Session -> Handler Text
