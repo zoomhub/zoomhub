@@ -15,10 +15,12 @@ import ZoomHub.Authentication.Session (Session)
 import qualified ZoomHub.Authentication.Session as User
 import qualified ZoomHub.Authentication.Session as Session
 import ZoomHub.Types.Content (Content (contentURL))
+import ZoomHub.Types.ContentURI (ContentURI(unContentURI))
+import Control.Monad (forM_)
 
 data Dashboard = Dashboard
-  { dbSession :: Session
-  , dbContent :: [Content]
+  { session :: Session
+  , content :: [Content]
   }
 
 instance H.ToHtml Dashboard where
@@ -38,10 +40,11 @@ instance H.ToHtml Dashboard where
                       Just givenName -> "Hi " <> givenName
                       Nothing -> "Hello"
                   H.ol_ [] $
-                    mapM_ (\c -> H.li_ [] (H.toHtml (c |> contentURL |> show))) dbContent
+                    forM_ content \c ->
+                      H.li_ [] (H.toHtml (c |> contentURL |> unContentURI))
           }
       )
     where
-      currentUser = dbSession |> Session.currentUser
+      currentUser = session |> Session.currentUser
 
   toHtmlRaw = H.toHtml
