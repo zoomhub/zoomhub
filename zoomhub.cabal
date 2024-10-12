@@ -173,6 +173,7 @@ library
     , product-profunctors
     , random
     , raw-strings-qq
+    , regex-pcre
     , resource-pool
     , retry
     , safe
