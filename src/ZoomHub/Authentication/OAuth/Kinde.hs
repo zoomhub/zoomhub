@@ -24,7 +24,7 @@ import qualified Data.Text.Lazy as L
 import Flow
 import Network.OAuth2.Experiment (AuthorizationCodeApplication (..), AuthorizeState, ClientId (ClientId), ClientSecret (ClientSecret), Idp (..), IdpApplication (IdpApplication))
 import qualified Network.OAuth2.Experiment as OAuth2
-import Network.Wreq (FormParam ((:=)), defaults, header, postWith, responseBody)
+import Network.Wreq (FormParam ((:=)), defaults, header, responseBody)
 import Servant (ToHttpApiData (toUrlPiece))
 import URI.ByteString (URI, parseURI, strictURIParserOptions)
 import URI.ByteString.Instances ()
@@ -34,6 +34,7 @@ import ZoomHub.Authentication.OAuth.Kinde.TokenCollection (TokenCollection (Toke
 import ZoomHub.Config.Kinde (ClientId (unClientId), ClientSecret (unClientSecret), Domain (unDomain))
 import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Utils (hush, tshow)
+import qualified Network.Wreq as Wreq
 
 mkIdp :: Domain -> Idp "kinde"
 mkIdp domain =
@@ -107,6 +108,6 @@ fetchTokensFor idp config authCode = do
           "code" := (authCode |> unAuthorizationCode)
         ]
 
-  response <- postWith opts tokenUrl payload
+  response <- Wreq.postWith opts tokenUrl payload
   -- TODO: Handle errors
   return $ response ^? responseBody >>= JSON.decode
