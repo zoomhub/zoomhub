@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -9,58 +11,87 @@ module ZoomHub.API
   )
 where
 
-import qualified Amazonka as Amazonka
+import qualified Amazonka
 import Control.Monad (void, when)
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (liftIO)
+import qualified Crypto.JWT as JWT
 import Data.Aeson ((.=))
+import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (fold, for_)
+import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HS
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Proxy (Proxy (Proxy))
+import qualified Data.String as String
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8)
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.Time as Time
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUIDV4
+import Flow
+import Network.OAuth2.Experiment (mkAuthorizationRequest)
+import qualified Network.OAuth2.Experiment as NOA2
 import Network.URI (URI, parseRelativeReference, relativeTo)
 import qualified Network.URI.Encode as URIEncode
-import Network.Wai (Application)
+import Network.Wai (Application, Request (requestHeaders))
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
   ( Capture,
     Context (EmptyContext, (:.)),
     Get,
     Handler,
+    Header,
+    Headers,
     JSON,
+    NoContent (..),
+    PlainText,
     Put,
     QueryParam,
     Raw,
     ReqBody,
     Server,
-    ServerError,
+    ServerError (errBody),
+    ToHttpApiData (toUrlPiece),
+    addHeader,
     err301,
+    err401,
     errHeaders,
     serveWithContext,
     (:<|>) (..),
     (:>),
   )
+import Servant.API.Experimental.Auth (AuthProtect)
+import Servant.API.Verbs (StdMethod (GET), Verb)
 import Servant.Auth.Server
   ( Auth,
     AuthResult (Authenticated, BadPassword, Indefinite, NoSuchUser),
     BasicAuth,
     defaultCookieSettings,
     defaultJWTSettings,
-    generateKey,
     wwwAuthenticatedErr,
   )
+import qualified Servant.Auth.Server as Auth
 import Servant.HTML.Lucid (HTML)
+import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData, mkAuthHandler)
 import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
+import URI.ByteString.Instances ()
+import Web.ClientSession (Key)
+import qualified Web.ClientSession as ClientSession
+import Web.Cookie
+  ( CookiesText,
+    SetCookie (..),
+    parseCookiesText,
+  )
 import ZoomHub.API.ContentTypes.JavaScript (JavaScript)
+import qualified ZoomHub.API.Cookie as API
 import qualified ZoomHub.API.Errors as API
 import qualified ZoomHub.API.JSONP.Errors as JSONP
 import ZoomHub.API.Types.Callback (Callback)
@@ -82,10 +113,21 @@ import ZoomHub.API.Types.NonRESTfulResponse
 import qualified ZoomHub.AWS.S3 as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy as S3
 import qualified ZoomHub.AWS.S3.POSTPolicy.Condition as POSTPolicyCondition
-import qualified ZoomHub.Authentication as Authentication
+import qualified ZoomHub.Authentication.Basic as BasicAuthentication
+import qualified ZoomHub.Authentication.Cookie as Cookie
+import ZoomHub.Authentication.OAuth (AuthorizeState (..), IdToken (..), State (unState), generateState)
+import qualified ZoomHub.Authentication.OAuth as OAuth
+import qualified ZoomHub.Authentication.OAuth.Kinde as Kinde
+import qualified ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse as OAuth2CodeExchangeResponse
+import ZoomHub.Authentication.OAuth.Kinde.Prompt (Prompt)
+import qualified ZoomHub.Authentication.OAuth.Kinde.Prompt as Prompt
+import ZoomHub.Authentication.Session (DecodedIdToken (..), Session (..))
+import qualified ZoomHub.Authentication.Session as Session
+import qualified ZoomHub.Authentication.Session as User
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
+import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (..))
 import ZoomHub.Config.Uploads (Uploads (..))
 import qualified ZoomHub.Email as Email
@@ -93,6 +135,7 @@ import qualified ZoomHub.Email.Verification as Verification
 import ZoomHub.Log.Logger (logWarning)
 import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL as PG
+import ZoomHub.Storage.PostgreSQL.Dashboard as PG
 import ZoomHub.Storage.PostgreSQL.GetRecent as PG
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
@@ -104,7 +147,9 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
+import ZoomHub.Utils (appendQueryParams, tshow)
 import qualified ZoomHub.Web.Errors as Web
+import qualified ZoomHub.Web.Page.Dashboard as Page
 import ZoomHub.Web.Page.EmbedContent (EmbedContent (..))
 import qualified ZoomHub.Web.Page.EmbedContent as Page
 import ZoomHub.Web.Page.ExploreRecentContent (ExploreRecentContent (..))
@@ -124,10 +169,9 @@ import ZoomHub.Web.Types.EmbedObjectFit (EmbedObjectFit)
 
 -- API
 type API =
-  -- TODO: Route to homepage (`/`) using: `:<|> Get '[HTML]`
   -- Meta
-  "health" :> Get '[HTML] String
-    :<|> "version" :> Get '[HTML] String
+  "health" :> Get '[PlainText] Text
+    :<|> "version" :> Get '[PlainText] Text
     -- Config
     :<|> "internal"
       :> "config"
@@ -168,7 +212,7 @@ type API =
       :> "upload"
       :> Get '[JSON] (HashMap Text Text)
     -- API: RESTful: Reset
-    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "v1"
       :> "content"
       :> Capture "id" ContentId
@@ -189,7 +233,7 @@ type API =
       :> Capture "token" String
       :> Put '[JSON] Content
     -- API: RESTful: Completion
-    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "v1"
       :> "content"
       :> Capture "id" ContentId
@@ -211,8 +255,30 @@ type API =
       :> "content"
       :> QueryParam "url" String
       :> Get '[JSON] Content
+    -- Web: Auth
+    :<|> AuthProtect "cookie-session"
+      :> "dashboard"
+      :> Get '[HTML] Page.Dashboard
+    -- Web: Auth
+    :<|> "register" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
+    :<|> "login" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
+    :<|> "logout" :> Verb 'GET 302 '[HTML] SetCookieAndRedirect
+    :<|> "auth"
+      :> "kinde"
+      :> "callback"
+      :> Header "Cookie" Cookie.Header
+      :> RequiredQueryParam "code" OAuth.AuthorizationCode
+      :> RequiredQueryParam "state" OAuth.State
+      :> QueryParam "scope" OAuth.Scope
+      :> Verb 'GET 302 '[HTML] KindeCallback
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
+      :> AuthProtect "cookie-session"
+      :> "auth"
+      :> "session"
+      :> "debug"
+      :> Get '[PlainText] Text
     -- Web: Explore: Recent
-    :<|> Auth '[BasicAuth] Authentication.AuthenticatedUser
+    :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> "explore"
       :> "recent"
       :> QueryParam "items" Int
@@ -273,6 +339,14 @@ server config =
     :<|> restInvalidContentId
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
+    -- Web: Dashboard
+    :<|> webDashboard baseURI contentBaseURI dbConnPool
+    -- Web: Auth
+    :<|> webRegister config.kinde config.clientSessionKey
+    :<|> webLogin config.kinde config.clientSessionKey
+    :<|> webLogout config.kinde
+    :<|> webAuthKindeCallback config.clientSessionKey config.kinde
+    :<|> webAuthSessionDebug
     -- Web: Explore: Recent
     :<|> webExploreRecent baseURI contentBaseURI dbConnPool
     -- Web: Embed (iframe)
@@ -300,24 +374,25 @@ server config =
 -- App
 app :: Config -> IO Application
 app config = do
-  jwtKey <- generateKey
-  return $ logger . simpleCors $ serveWithContext api (cfg jwtKey) (server config)
+  jwtKey <- Auth.generateKey
+  return $ logger . simpleCors $ serveWithContext api (context jwtKey) (server config)
   where
     -- TODO: Can we use `BasicAuth` without JWT and cookies?
-    cfg jwtKey =
+    context jwtKey =
       defaultJWTSettings jwtKey
         :. defaultCookieSettings
-        :. Authentication.check (Config.apiUser config)
+        :. BasicAuthentication.check (Config.apiUser config)
+        :. sessionAuthHandler config.clientSessionKey
         :. EmptyContext
     logger = Config.logger config
 
 -- Handlers
 
 -- Meta
-health :: Handler String
+health :: Handler Text
 health = return "up"
 
-version :: String -> Handler String
+version :: Text -> Handler Text
 version = return
 
 restConfig :: Config -> Handler API.Config
@@ -433,7 +508,7 @@ restUpload config awsConfig uploads email =
         Right policy -> do
           formData <-
             liftIO $
-              HS.map decodeUtf8
+              HS.map T.decodeUtf8Lenient
                 <$> S3.presignPOSTPolicy
                   (AWS.configAccessKeyId awsConfig)
                   (AWS.configSecretAccessKey awsConfig)
@@ -453,7 +528,7 @@ restUploadWithoutEmail UploadsEnabled = missingEmailErrorAPI
 restContentResetById ::
   BaseURI ->
   Pool Connection ->
-  AuthResult Authentication.AuthenticatedUser ->
+  AuthResult BasicAuthentication.AuthenticatedUser ->
   ContentId ->
   Handler Content
 restContentResetById baseURI dbConnPool authResult contentId = do
@@ -503,7 +578,7 @@ restContentCompletionById ::
   BaseURI ->
   ContentBaseURI ->
   Pool Connection ->
-  AuthResult Authentication.AuthenticatedUser ->
+  AuthResult BasicAuthentication.AuthenticatedUser ->
   ContentId ->
   ContentCompletion ->
   Handler Content
@@ -621,12 +696,165 @@ restInvalidRequest maybeURL = case maybeURL of
   Nothing -> throwError . API.error400 $ apiMissingIdOrURLMessage
   Just _ -> throwError . API.error400 $ invalidURLErrorMessage
 
+-- Web: Auth: Kinde
+
+type SetCookieAndRedirect =
+  Headers '[Header "Set-Cookie" SetCookie, Header "Location" Text] NoContent
+
+type KindeCallback =
+  Headers
+    '[ Header "Location" Text,
+       Header "Set-Cookie" SetCookie,
+       Header "Set-Cookie" SetCookie
+     ]
+    NoContent
+
+webRegister :: Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webRegister = webAuthRedirect Prompt.Create
+
+webLogin :: Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webLogin = webAuthRedirect Prompt.Login
+
+webAuthRedirect :: Prompt -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webAuthRedirect prompt kindeConfig clientSessionKey = do
+  state <- liftIO generateState
+  setCookieHeader <- liftIO $ API.oauth2StateCookieHeader clientSessionKey state
+  let authorizationRedirectURI =
+        mkAuthorizationRequest $ Kinde.mkApp kindeConfig (unAuthorizeState state)
+  return $
+    addHeader setCookieHeader $
+      addHeader
+        ( toUrlPiece
+            ( authorizationRedirectURI
+                |> appendQueryParams [("prompt", Prompt.toByteString prompt)]
+            )
+        )
+        NoContent
+
+webLogout :: Kinde.Config -> Handler SetCookieAndRedirect
+webLogout kindeConfig = do
+  let mLogoutRedirectURI = Kinde.logoutURI kindeConfig
+  case mLogoutRedirectURI of
+    Just logoutRedirectURI ->
+      return $
+        addHeader (Cookie.empty API.sessionCookieName) $
+          addHeader (toUrlPiece logoutRedirectURI) NoContent
+    Nothing ->
+      throwError $ Web.error503 "Invalid logout URL"
+
+webAuthKindeCallback ::
+  Key ->
+  Kinde.Config ->
+  Maybe Cookie.Header ->
+  OAuth.AuthorizationCode ->
+  OAuth.State ->
+  Maybe OAuth.Scope ->
+  Handler KindeCallback
+webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scope = do
+  let mExpectedState = do
+        cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8 . Cookie.unHeader)
+        Cookie.value clientSessionKey API.oauth2StateCookieName cookies
+      actualState = state |> unState |> TL.fromStrict |> NOA2.AuthorizeState |> AuthorizeState
+  eResponse <-
+    case mExpectedState of
+      Just expectedState | expectedState == actualState -> do
+        mTokens <- liftIO $ Kinde.fetchTokensFor (Kinde.mkIdp kindeConfig.domain) kindeConfig code
+        case mTokens of
+          Just tokens' ->
+            pure $ Right tokens'
+          Nothing ->
+            pure $ Left "Failed to fetch tokens."
+      Just _ ->
+        pure $ Left "OAuth2 state does not match."
+      Nothing ->
+        pure $ Left "OAuth2 state is missing."
+  eSession <- do
+    case eResponse of
+      Left message -> pure $ Left message
+      Right response ->
+        let jwtBS = response.idToken |> unIdToken |> TL.fromStrict |> TL.encodeUtf8
+         in case JWT.decodeCompact @JWT.SignedJWT jwtBS :: Either JWT.JWTError JWT.SignedJWT of
+              Left jwtError ->
+                return $ Left $ "Failed to decode JWT: " <> tshow jwtError
+              Right signedJWT -> do
+                jwtResult <- liftIO $ verifyJWT kindeConfig.jwk signedJWT
+                case jwtResult of
+                  Left jwtError ->
+                    return $ Left $ "Failed to verify JWT: " <> tshow jwtError
+                  Right decodedIdToken ->
+                    return $
+                      Right
+                        Session
+                          { currentUser = decodedIdToken.user,
+                            accessToken = response.accessToken,
+                            refreshToken = response.refreshToken
+                          }
+  sessionSetCookieHeader <- case eSession of
+    Left _ -> pure $ Cookie.empty API.sessionCookieName
+    Right session -> liftIO $ API.sessionCookieHeader clientSessionKey session
+  let redirectPath = case eSession of
+        Left message -> "/?errorMessage=" <> (message |> URIEncode.encodeText)
+        Right _ -> "/dashboard"
+  return $
+    addHeader redirectPath $
+      addHeader (Cookie.empty API.oauth2StateCookieName) $
+        addHeader sessionSetCookieHeader NoContent
+  where
+    verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
+    verifyJWT jwk jwt = JWT.runJOSE $ do
+      -- NOTE: The `aud` parameter used to be the URL but now it’s only the
+      -- client ID:
+      let aud =
+            kindeConfig
+              |> Kinde.clientId
+              |> Kinde.unClientId
+              |> T.unpack
+              |> String.fromString
+      let config = JWT.defaultJWTValidationSettings (== aud)
+      JWT.verifyJWT config jwk jwt
+
+webDashboard ::
+  BaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  Maybe Session ->
+  Handler Page.Dashboard
+webDashboard baseURI contentBaseURI dbConnPool mSession = case mSession of
+  Just session -> do
+    content <- liftIO $ usingConnectionPool dbConnPool
+      (PG.getByEmail (session |> Session.currentUser |> User.email))
+    return $
+      Page.Dashboard
+        { Page.session = session,
+          Page.content = content,
+          Page.baseURI = baseURI,
+          Page.contentBaseURI = contentBaseURI
+        }
+  Nothing ->
+    throwError . Web.error401 $ "No session"
+
+webAuthSessionDebug ::
+  AuthResult BasicAuthentication.AuthenticatedUser -> Maybe Session -> Handler Text
+webAuthSessionDebug authResult mSession =
+  case authResult of
+    Authenticated _ -> do
+      case mSession of
+        Just session ->
+          return (session |> JSON.encode |> BL.toStrict |> T.decodeUtf8Lenient)
+        Nothing -> return "(no session)"
+    NoSuchUser ->
+      throwError . Web.error401 $ "Invalid auth"
+    BadPassword ->
+      throwError . Web.error401 $ "Invalid auth"
+    Indefinite ->
+      throwError $ wwwAuthenticatedErr "ZoomHub"
+
 -- Web: Explore: Recent
 webExploreRecent ::
   BaseURI ->
   ContentBaseURI ->
   Pool Connection ->
-  AuthResult Authentication.AuthenticatedUser ->
+  AuthResult BasicAuthentication.AuthenticatedUser ->
   Maybe Int ->
   Handler Page.ExploreRecentContent
 webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
@@ -880,3 +1108,24 @@ redirect :: URI -> Handler a
 redirect location =
   -- HACK: Redirect using error: http://git.io/vBCz9
   throwError $ err301 {errHeaders = [("Location", BC.pack (show location))]}
+
+-- Authentication using session cookie
+-- Based on https://docs.servant.dev/en/stable/tutorial/Authentication.html
+decodeSession :: ClientSession.Key -> CookiesText -> Handler (Maybe Session)
+decodeSession key cookiesText =
+  return $ Cookie.value key API.sessionCookieName cookiesText
+
+sessionAuthHandler :: ClientSession.Key -> AuthHandler Request (Maybe Session)
+sessionAuthHandler clientSessionKey = mkAuthHandler handler
+  where
+    maybeToEither e = maybe (Left e) Right
+    throw401 msg = throwError $ err401 {errBody = msg}
+    handler req = either throw401 (decodeSession clientSessionKey) $ do
+      cookie <-
+        maybeToEither "Missing cookie header" $
+          lookup "cookie" $
+            requestHeaders req
+      Right $ parseCookiesText cookie
+
+-- | We need to specify the data returned after authentication
+type instance AuthServerData (AuthProtect "cookie-session") = Maybe Session

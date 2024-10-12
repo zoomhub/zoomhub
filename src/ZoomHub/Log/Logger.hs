@@ -38,6 +38,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Ord (comparing)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8Lenient)
 import qualified Data.Text.IO as TIO
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Units (Millisecond)
@@ -45,7 +46,6 @@ import Data.Time.Units.Instances ()
 import System.IO (hSetEncoding, stderr, stdout, utf8)
 import System.TimeIt (timeItT)
 import ZoomHub.Log.LogLevel (LogLevel (..))
-import ZoomHub.Utils (lenientDecodeUtf8)
 import Prelude hiding (log)
 
 logDebug :: String -> [Pair] -> IO ()
@@ -118,7 +118,7 @@ log level message meta = do
     handle _ = stdout
 
 encodeLogLine :: Value -> Text
-encodeLogLine = removeNewlines . lenientDecodeUtf8 . BL.toStrict . prettyEncode
+encodeLogLine = removeNewlines . decodeUtf8Lenient . BL.toStrict . prettyEncode
   where
     removeNewlines = T.intercalate "" . T.lines
     prettyEncode = encodePretty' prettyEncodeConfig

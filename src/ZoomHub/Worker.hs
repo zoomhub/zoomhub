@@ -21,6 +21,7 @@ import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Lazy (toStrict)
 import Data.Foldable (for_)
 import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Time.Units (Second, fromMicroseconds, toMicroseconds)
 import Data.Time.Units.Instances ()
 import Squeal.PostgreSQL.Session.Pool (usingConnectionPool)
@@ -32,7 +33,6 @@ import ZoomHub.Storage.PostgreSQL (dequeueNextUnprocessed)
 import ZoomHub.Types.Content (Content (contentId))
 import ZoomHub.Types.ContentId (unContentId)
 import qualified ZoomHub.Types.Environment as Environment
-import ZoomHub.Utils (lenientDecodeUtf8)
 
 -- Constants
 processExistingContentInterval :: Second
@@ -72,7 +72,7 @@ processExistingContent Config {..} workerId = forever $ do
             liftIO $
               logInfo
                 "worker:lambda:response"
-                [ "output" .= lenientDecodeUtf8 output,
+                [ "output" .= decodeUtf8Lenient output,
                   "wwwURL" .= wwwURL content,
                   "apiURL" .= apiURL content
                 ]

@@ -1,7 +1,7 @@
 {
   "AWSEBDockerrunVersion": "1",
   "Image": {
-    "Name": "<ZH_AWS_ACCOUNT_ID>.dkr.ecr.us-east-2.amazonaws.com/<ZH_AWS_ECR_REPO>:<TAG>",
+    "Name": "<ZH_AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<ZH_AWS_ECR_REPO>:<TAG>",
     "Update": "true"
   },
   "Ports": [

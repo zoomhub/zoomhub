@@ -6,8 +6,8 @@ separator () {
     echo '------------------------------------------------------------------------------'
 }
 
-export DEVELOPMENT_DB_NAME='zoomhub_development'
-export TEST_DB_NAME='zoomhub_test'
+DEVELOPMENT_DB_NAME='zoomhub_development'
+TEST_DB_NAME='zoomhub_test'
 
 # Commands
 case "$1" in
@@ -57,7 +57,7 @@ format)
     fi
     ;;
 run)
-    npx dotenvx run --env-file .env -- ./scripts/run.sh
+    AWS_REGION='us-east-2' npx dotenvx run --env-file .env -- ./scripts/run.sh
     ;;
 test)
     dropdb --if-exists "$TEST_DB_NAME"
@@ -77,6 +77,7 @@ test)
     # See: https://github.com/commercialhaskell/stack/issues/2210
     MODULES="$2"
 
+    AWS_REGION='us-east-2' \
     PGUSER="$(whoami)" \
     PGDATABASE="$TEST_DB_NAME" \
       stack test \

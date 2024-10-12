@@ -113,7 +113,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: haskell/actions/setup@v1
         with:
-          ghc-version: "8.6.5"
+          ghc-version: "9.6.3"
           cabal-version: "latest"
           enable-stack: true
           stack-version: "latest"
@@ -132,23 +132,15 @@ jobs:
           echo "ZH_STATIC_BASE_URI=https://static.zoomhub.net" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
-      - name: Cache ~/.stack
+      - name: Cache Haskell Stack dependencies
+        id: cache-stack-dependencies
         uses: actions/cache@v2
         env:
-          cache-name: cache-stack
+          cache-name: cache-stack-dependencies-v4
         with:
-          path: ~/.stack
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
-          restore-keys: |
-            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
-            web-build-v1-${{ runner.os }}-
-
-      - name: Cache .stack-work
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-stack-work
-        with:
-          path: .stack-work
+          path: |
+            ~/.stack
+            .stack-work
           key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
           restore-keys: |
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
@@ -165,7 +157,7 @@ jobs:
             web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
             web-build-v1-${{ runner.os }}-
 
-      - name: Cache binaries
+      - name: Cache app binaries
         id: cache-stack-binaries
         uses: actions/cache@v2
         env:
@@ -191,22 +183,33 @@ jobs:
           # files are not meant to be shipped to the public website.
           rm -rf frontend/build/__DELETE_ME__
 
+      - name: Build backend dependencies
+        if: steps.cache-stack-dependencies.cache-hit != 'true'
+        run: |
+          stack build \
+            --ghc-options='-O2' \
+            --jobs 4 \
+            --no-run-tests \
+            --no-terminal \
+            --only-dependencies \
+            --pedantic \
+            --test
+
       - name: Build backend
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
           mkdir bin
           stack build \
             --copy-bins \
-            --test \
+            --ghc-options='-O2' \
+            --jobs 4 \
+            --local-bin-path bin \
             --no-run-tests \
             --no-terminal \
-            --jobs 4 \
             --pedantic \
-            --ghc-options='-O2' \
-            --local-bin-path bin
+            --test
 
       - name: Run backend tests
-        if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
           HASHIDS_SALT='secret-salt' ./bin/migrate-database $PGDATABASE migrate
 
@@ -254,6 +257,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [web-build]
     env:
+      AWS_REGION: "us-east-2"
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ZH_AWS_ACCOUNT_ID: ${{ secrets.ZH_AWS_ACCOUNT_ID }}

@@ -1,5 +1,5 @@
 name:                zoomhub
-version:             3.0.0.2
+version:             4.0.0.0
 synopsis:            Share and view full-resolution images easily
 description:         Please see README.md
 homepage:            http://github.com/zoomhub/zoomhub#readme
@@ -7,7 +7,7 @@ license:             MIT
 license-file:        LICENSE
 author:              ZoomHub
 maintainer:          zoomhub@googlegroups.com
-copyright:           2013–2021 ZoomHub
+copyright:           2013–2024 ZoomHub
 category:            Web
 build-type:          Simple
 -- extra-source-files:
@@ -23,8 +23,10 @@ library
     , Database.PostgreSQL.Simple.Instances
     , Network.HTTP.Client.Instances
     , Network.URI.Instances
+    , URI.ByteString.Instances
     , ZoomHub.API
     , ZoomHub.API.ContentTypes.JavaScript
+    , ZoomHub.API.Cookie
     , ZoomHub.API.Errors
     , ZoomHub.API.JSONP.Errors
     , ZoomHub.API.Types.Callback
@@ -35,7 +37,14 @@ library
     , ZoomHub.API.Types.DeepZoomImageWithoutURL
     , ZoomHub.API.Types.JSONP
     , ZoomHub.API.Types.NonRESTfulResponse
-    , ZoomHub.Authentication
+    , ZoomHub.Authentication.Basic
+    , ZoomHub.Authentication.Cookie
+    , ZoomHub.Authentication.OAuth
+    , ZoomHub.Authentication.OAuth.Kinde
+    , ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse
+    , ZoomHub.Authentication.OAuth.Kinde.Prompt
+    , ZoomHub.Authentication.OAuth.Kinde.TokenCollection
+    , ZoomHub.Authentication.Session
     , ZoomHub.AWS
     , ZoomHub.AWS.S3
     , ZoomHub.AWS.S3.POSTPolicy
@@ -43,6 +52,7 @@ library
     , ZoomHub.AWS.S3.POSTPolicy.Error
     , ZoomHub.Config
     , ZoomHub.Config.AWS
+    , ZoomHub.Config.Kinde
     , ZoomHub.Config.ProcessContent
     , ZoomHub.Config.Uploads
     , ZoomHub.Debug
@@ -54,6 +64,7 @@ library
     , ZoomHub.Servant.RequiredQueryParam
     , ZoomHub.Storage.PostgreSQL
     , ZoomHub.Storage.PostgreSQL.ConnectInfo
+    , ZoomHub.Storage.PostgreSQL.Dashboard
     , ZoomHub.Storage.PostgreSQL.GetRecent
     , ZoomHub.Storage.PostgreSQL.Internal
     , ZoomHub.Storage.PostgreSQL.Schema
@@ -63,6 +74,7 @@ library
     , ZoomHub.Storage.PostgreSQL.Schema.Schema3
     , ZoomHub.Storage.PostgreSQL.Schema.Schema4
     , ZoomHub.Storage.PostgreSQL.Schema.Schema5
+    , ZoomHub.Storage.PostgreSQL.Schema.Schema6
     , ZoomHub.Types.APIUser
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content
@@ -86,6 +98,7 @@ library
     , ZoomHub.Web.Main
     , ZoomHub.Web.MainDevelopment
     , ZoomHub.Web.Page
+    , ZoomHub.Web.Page.Dashboard
     , ZoomHub.Web.Page.EmbedContent
     , ZoomHub.Web.Page.ExploreRecentContent
     , ZoomHub.Web.Page.VerifyContent
@@ -122,8 +135,11 @@ library
     , blaze-builder
     , bytestring
     , case-insensitive
+    , clientsession
     , conduit
     , containers
+    , cookie
+    , crypton
     , data-default
     , directory
     , enclosed-exceptions
@@ -131,15 +147,18 @@ library
     , exceptions
     , fast-logger
     , filepath
+    , flow
     , foreign-store
     , generics-sop
     , hashids
+    , hoauth2
     , hostname
     , http-api-data
     , http-client
     , http-media
     , http-types
     , iproute
+    , jose
     , lens
     , lens-aeson
     , lucid
@@ -154,6 +173,7 @@ library
     , product-profunctors
     , random
     , raw-strings-qq
+    , regex-pcre
     , resource-pool
     , retry
     , safe
@@ -177,6 +197,7 @@ library
     , unix
     , unliftio
     , unordered-containers
+    , uri-bytestring
     , uri-encode
     , utf8-string
     , uuid
@@ -230,10 +251,13 @@ test-suite tests
     , amazonka-s3
     , base64
     , bytestring
+    , clientsession
+    , flow
     , generics-sop
     , hspec == 2.*
     , hspec-wai
     , http-types
+    , jose
     , network-uri
     , postgresql-simple
     , process

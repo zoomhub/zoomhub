@@ -1,5 +1,25 @@
 # ZoomHub
 
+## unreleased
+
+- Web:
+
+  - Integrate with Kinde to enable user account registration using OAuth2.
+    - New environment variables:
+      - `KINDE_CLIENT_ID`
+      - `KINDE_CLIENT_SECRET`
+      - `KINDE_DOMAIN`
+      - `KINDE_JWK`
+  - Introduce `Session` stored in encrypted cookie.
+    - New environment variable:
+      - `CLIENT_SESSION_KEY_BASE64`
+
+- Infrastructure:
+  - Update `haskell-actions` `ghc-version` from `8.6.5` to `9.6.3`.
+  - Set `AWS_REGION` explicitly via environment variable.
+  - Improve shutdown of `./zh run`.
+  - Switch from custom `lenientDecodeUtf8` to `decodeUtf8Lenient`.
+
 ## 2024-04-25-1
 
 - Infrastructure: Adopt `dotenvx` for environment variable management.
