@@ -794,7 +794,7 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
     Right session -> liftIO $ API.sessionCookieHeader clientSessionKey session
   let redirectPath = case eSession of
         Left message -> "/?errorMessage=" <> (message |> URIEncode.encodeText)
-        Right _ -> "/auth/session/debug"
+        Right _ -> "/dashboard"
   return $
     addHeader redirectPath $
       addHeader (Cookie.empty API.oauth2StateCookieName) $
