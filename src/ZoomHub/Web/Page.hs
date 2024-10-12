@@ -9,6 +9,7 @@ module ZoomHub.Web.Page
     Title (..),
     Path (..),
     title,
+    titleShort,
     analyticsScript,
   )
 where
@@ -23,6 +24,9 @@ import ZoomHub.Web.Types.ViteManifest (AssetPath (..))
 
 title :: Text
 title = "ZoomHub · Share and view full-resolution images easily"
+
+titleShort :: Text
+titleShort = "ZoomHub"
 
 newtype Title = Title Text
 
@@ -64,7 +68,8 @@ layout Page {..} = do
       analyticsScript
 
       forM_ pageHeadStyles id
-    H.body_ [H.class_ (fromMaybe "h-full bg-black m-0 p-0" pageBodyClassName)] $
+    H.body_
+      [H.class_ (fromMaybe "h-full bg-black m-0 p-0" pageBodyClassName)]
       pageBody
 
 --- TODO: Improve how we represent analytics code.
