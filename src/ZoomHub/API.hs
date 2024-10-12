@@ -340,7 +340,7 @@ server config =
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Dashboard
-    :<|> webDashboard dbConnPool
+    :<|> webDashboard baseURI contentBaseURI dbConnPool
     -- Web: Auth
     :<|> webRegister config.kinde config.clientSessionKey
     :<|> webLogin config.kinde config.clientSessionKey
@@ -813,14 +813,22 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
       let config = JWT.defaultJWTValidationSettings (== aud)
       JWT.verifyJWT config jwk jwt
 
-webDashboard :: Pool Connection -> Maybe Session -> Handler Page.Dashboard
-webDashboard dbConnPool mSession = case mSession of
+webDashboard ::
+  BaseURI ->
+  ContentBaseURI ->
+  Pool Connection ->
+  Maybe Session ->
+  Handler Page.Dashboard
+webDashboard baseURI contentBaseURI dbConnPool mSession = case mSession of
   Just session -> do
-    content <- liftIO $ usingConnectionPool dbConnPool (PG.getByEmail (session |> Session.currentUser |> User.email))
+    content <- liftIO $ usingConnectionPool dbConnPool
+      (PG.getByEmail (session |> Session.currentUser |> User.email))
     return $
       Page.Dashboard
         { Page.session = session,
-          Page.content = content
+          Page.content = content,
+          Page.baseURI = baseURI,
+          Page.contentBaseURI = contentBaseURI
         }
   Nothing ->
     throwError . Web.error401 $ "No session"
