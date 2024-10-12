@@ -38,9 +38,9 @@ import ZoomHub.Utils (hush, tshow)
 mkIdp :: Domain -> Idp "kinde"
 mkIdp domain =
   Idp
-    { idpAuthorizeEndpoint = uriFromText $ "https://" <> domain' <> ".us.kinde.com/oauth2/auth",
-      idpTokenEndpoint = uriFromText $ "https://" <> domain' <> ".us.kinde.com/oauth2/token",
-      idpUserInfoEndpoint = uriFromText $ "https://" <> domain' <> ".us.kinde.com/oauth2/v2/user_profile",
+    { idpAuthorizeEndpoint = uriFromText $ "https://" <> domain' <> "/oauth2/auth",
+      idpTokenEndpoint = uriFromText $ "https://" <> domain' <> "/oauth2/token",
+      idpUserInfoEndpoint = uriFromText $ "https://" <> domain' <> "/oauth2/v2/user_profile",
       idpDeviceAuthorizationEndpoint = Nothing
     }
   where
@@ -81,7 +81,7 @@ logoutURI config =
     strictURIParserOptions
     ( ( "https://"
           <> (config.domain |> unDomain)
-          <> ".us.kinde.com/logout?redirect="
+          <> "/logout?redirect="
           <> (config.logoutRedirectURI |> tshow)
       )
         |> T.encodeUtf8
