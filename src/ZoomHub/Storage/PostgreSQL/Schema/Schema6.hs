@@ -15,22 +15,25 @@ where
 import Squeal.PostgreSQL
   ( Definition,
     IsoQ (..),
+    Join,
     NP ((:*)),
     NullType (NotNull, Null),
     Optionality (Def, NoDef),
-    PGType (PGint8, PGtext),
+    PGType (PGint8, PGtext, PGtimestamptz),
     Public,
     SchemumType (Table),
     TableConstraint (PrimaryKey, Unique),
     as,
-    Join,
     bigserial,
     createTable,
+    currentTimestamp,
+    default_,
     dropTable,
     notNullable,
     nullable,
     primaryKey,
     text,
+    timestampWithTimeZone,
     unique,
     (&),
     (:::),
@@ -39,7 +42,7 @@ import Squeal.PostgreSQL
 import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import ZoomHub.Storage.PostgreSQL.Schema.Schema5 (Schema5, Schemas5)
 
-type Schema6 = Join Schema5 '[ UsersTable0 ]
+type Schema6 = Join Schema5 '[UsersTable0]
 
 type Schemas6 = Public Schema6
 
@@ -52,7 +55,10 @@ type UsersTable0 =
               :=> '[ "id" ::: 'Def :=> 'NotNull 'PGint8,
                      "email" ::: 'NoDef :=> 'NotNull 'PGtext,
                      "given_name" ::: 'NoDef :=> 'Null 'PGtext,
-                     "family_name" ::: 'NoDef :=> 'Null 'PGtext
+                     "family_name" ::: 'NoDef :=> 'Null 'PGtext,
+                     "image_url" ::: 'NoDef :=> 'Null 'PGtext,
+                     "updated_at" ::: 'NoDef :=> 'NotNull 'PGtimestamptz,
+                     "created_at" ::: 'Def :=> 'NotNull 'PGtimestamptz
                    ]
           )
 
@@ -73,6 +79,9 @@ migration =
             :* ((text & notNullable) `as` #email)
             :* ((text & nullable) `as` #given_name)
             :* ((text & nullable) `as` #family_name)
+            :* ((text & nullable) `as` #image_url)
+            :* ((timestampWithTimeZone & notNullable) `as` #updated_at)
+            :* ((timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at)
         )
         ( (primaryKey #id `as` #pk_users)
             :* (unique #email `as` #users_unique_email)
