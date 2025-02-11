@@ -823,8 +823,11 @@ webDashboard ::
   Handler Page.Dashboard
 webDashboard baseURI contentBaseURI dbConnPool mSession = case mSession of
   Just session -> do
-    content <- liftIO $ usingConnectionPool dbConnPool
-      (PG.getByEmail (session |> Session.currentUser |> User.email))
+    content <-
+      liftIO $
+        usingConnectionPool
+          dbConnPool
+          (PG.getByEmail (session |> Session.currentUser |> User.email))
     return $
       Page.Dashboard
         { Page.session = session,
