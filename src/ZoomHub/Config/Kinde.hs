@@ -14,16 +14,16 @@ where
 import Control.Monad (guard)
 import Crypto.JOSE (JWK)
 import Data.Aeson (ToJSON, object, toJSON, (.=))
+import qualified Data.Aeson as JSON
 import Data.Functor ((<&>))
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Flow
 import Network.URI (URI, parseRelativeReference, relativeTo)
-import qualified Data.Aeson as JSON
-import qualified Data.Text as T
 import System.Environment (getEnvironment)
 import Text.Regex.PCRE ((=~))
-import ZoomHub.Types.BaseURI (BaseURI(..))
+import ZoomHub.Types.BaseURI (BaseURI (..))
 
 newtype Domain = Domain {unDomain :: Text}
   deriving (ToJSON)
