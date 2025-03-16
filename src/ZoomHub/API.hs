@@ -822,22 +822,23 @@ webDashboard ::
   Pool Connection ->
   Maybe Session ->
   Handler Page.Dashboard
-webDashboard baseURI contentBaseURI dbConnPool mSession = case mSession of
-  Just session -> do
-    content <-
-      liftIO $
-        usingConnectionPool
-          dbConnPool
-          (PG.getByEmail (session |> Session.currentUser |> User.email))
-    return $
-      Page.Dashboard
-        { Page.session = session,
-          Page.content = content,
-          Page.baseURI = baseURI,
-          Page.contentBaseURI = contentBaseURI
-        }
-  Nothing ->
-    throwError . Web.error401 $ "No session"
+webDashboard baseURI contentBaseURI dbConnPool mSession =
+  case mSession of
+    Nothing ->
+      throwError . Web.error401 $ "No session"
+    Just session -> do
+      content <-
+        liftIO $
+          usingConnectionPool
+            dbConnPool
+            (PG.getByEmail (session |> Session.currentUser |> User.email))
+      return $
+        Page.Dashboard
+          { Page.session = session,
+            Page.content = content,
+            Page.baseURI = baseURI,
+            Page.contentBaseURI = contentBaseURI
+          }
 
 webAuthSessionDebug ::
   AuthResult BasicAuthentication.AuthenticatedUser -> Maybe Session -> Handler Text
