@@ -753,10 +753,6 @@ webAuthKindeCallback ::
   Maybe OAuth.Scope ->
   Handler KindeCallback
 webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scope = do
-  let mExpectedState = do
-        cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8 . Cookie.unHeader)
-        Cookie.value clientSessionKey API.oauth2StateCookieName cookies
-      actualState = state |> unState |> TL.fromStrict |> NOA2.AuthorizeState |> AuthorizeState
   eResponse <-
     case mExpectedState of
       Just expectedState | expectedState == actualState -> do
@@ -803,6 +799,14 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
       addHeader clearOAuth2StateCookieHeader $
         addHeader sessionSetCookieHeader NoContent
   where
+    mExpectedState :: Maybe AuthorizeState
+    mExpectedState = do
+      cookies <- mCookieHeader <&> (parseCookiesText . T.encodeUtf8 . Cookie.unHeader)
+      Cookie.value clientSessionKey API.oauth2StateCookieName cookies
+
+    actualState :: AuthorizeState
+    actualState = state |> unState |> TL.fromStrict |> NOA2.AuthorizeState |> AuthorizeState
+
     verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
     verifyJWT jwk jwt = JWT.runJOSE $ do
       -- NOTE: The `aud` parameter used to be the URL but now it’s only the
