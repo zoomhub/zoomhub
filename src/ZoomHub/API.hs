@@ -83,7 +83,6 @@ import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData, mkAuthHand
 import Squeal.PostgreSQL.Session.Pool (Pool, usingConnectionPool)
 import System.Random (randomRIO)
 import URI.ByteString.Instances ()
-import Web.ClientSession (Key)
 import qualified Web.ClientSession as ClientSession
 import Web.Cookie
   ( CookiesText,
@@ -711,13 +710,13 @@ type KindeCallback =
      ]
     NoContent
 
-webRegister :: Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webRegister :: Kinde.Config -> ClientSession.Key -> Handler SetCookieAndRedirect
 webRegister = webAuthRedirect Prompt.Create
 
-webLogin :: Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webLogin :: Kinde.Config -> ClientSession.Key -> Handler SetCookieAndRedirect
 webLogin = webAuthRedirect Prompt.Login
 
-webAuthRedirect :: Prompt -> Kinde.Config -> Key -> Handler SetCookieAndRedirect
+webAuthRedirect :: Prompt -> Kinde.Config -> ClientSession.Key -> Handler SetCookieAndRedirect
 webAuthRedirect prompt kindeConfig clientSessionKey = do
   state <- liftIO generateState
   setCookieHeader <- liftIO $ API.oauth2StateCookieHeader clientSessionKey state
@@ -745,7 +744,7 @@ webLogout kindeConfig = do
       throwError $ Web.error503 "Invalid logout URL"
 
 webAuthKindeCallback ::
-  Key ->
+  ClientSession.Key ->
   Kinde.Config ->
   Maybe Cookie.Header ->
   OAuth.AuthorizationCode ->
