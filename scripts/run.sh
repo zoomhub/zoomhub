@@ -58,9 +58,6 @@ else
   ngrok_pid=$!
 fi
 
-ngrok http 8000 --log=stdout > ngrok.log &
-ngrok_pid=$!
-
 echo -n "Get ngrok public URL."
 NGROK_PUBLIC_URL=""
 while [ -z "$NGROK_PUBLIC_URL" ]; do
