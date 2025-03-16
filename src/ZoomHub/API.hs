@@ -797,9 +797,10 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
   let redirectPath = case eSession of
         Left message -> "/?errorMessage=" <> (message |> URIEncode.encodeText)
         Right _ -> "/dashboard"
+      clearOAuth2StateCookieHeader = Cookie.empty API.oauth2StateCookieName
   return $
     addHeader redirectPath $
-      addHeader (Cookie.empty API.oauth2StateCookieName) $
+      addHeader clearOAuth2StateCookieHeader $
         addHeader sessionSetCookieHeader NoContent
   where
     verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
