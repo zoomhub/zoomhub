@@ -8,7 +8,6 @@
       - `KINDE_CLIENT_ID`
       - `KINDE_CLIENT_SECRET`
       - `KINDE_DOMAIN`
-      - `KINDE_JWK`
   - Introduce `Session` stored in encrypted cookie.
     - New environment variable:
       - `CLIENT_SESSION_KEY_BASE64`

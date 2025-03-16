@@ -11,16 +11,19 @@ module ZoomHub.Config.Kinde
   )
 where
 
+import Control.Lens ((^.))
 import Control.Monad (guard)
-import Crypto.JOSE (JWK)
+import Crypto.JOSE (JWK, JWKSet (JWKSet))
 import Data.Aeson (ToJSON, object, toJSON, (.=))
 import qualified Data.Aeson as JSON
 import Data.Functor ((<&>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (encodeUtf8)
 import Flow
 import Network.URI (URI, parseRelativeReference, relativeTo)
+import Network.Wreq (responseBody)
+import qualified Network.Wreq as Wreq
+import Safe (headMay)
 import System.Environment (getEnvironment)
 import Text.Regex.PCRE ((=~))
 import ZoomHub.Types.BaseURI (BaseURI (..))
@@ -53,15 +56,29 @@ data Config = Config
 fromEnv :: BaseURI -> IO (Maybe Config)
 fromEnv baseURI = do
   env <- getEnvironment
+  let mDomain = (env |> lookup "KINDE_DOMAIN") <&> T.pack .> Domain
+  mJWK <- case mDomain of
+    Just domain -> fetchJWK domain
+    Nothing -> pure Nothing
   return $ do
-    domain <- (env |> lookup "KINDE_DOMAIN") <&> T.pack .> Domain
+    domain <- mDomain
     clientId <- (env |> lookup "KINDE_CLIENT_ID") <&> T.pack .> ClientId
     clientSecret <- (env |> lookup "KINDE_CLIENT_SECRET") >>= mkClientSecret . T.pack
     callbackPath <- parseRelativeReference "/auth/kinde/callback"
     let redirectURI = callbackPath `relativeTo` unBaseURI baseURI
     let logoutRedirectURI = unBaseURI baseURI
-    jwk <- (env |> lookup "KINDE_JWK") <&> T.pack .> encodeUtf8 >>= JSON.decodeStrict
+    jwk <- mJWK
     pure Config {..}
+  where
+    fetchJWK :: Domain -> IO (Maybe JWK)
+    fetchJWK (Domain domain) = do
+      let url = "https://" <> T.unpack domain <> "/.well-known/jwks"
+      response <- Wreq.get url
+      let body = response ^. responseBody
+          mKeySet = JSON.decode body :: Maybe JWKSet
+      pure $ case mKeySet of
+        Just (JWKSet keys) -> headMay keys
+        Nothing -> Nothing
 
 instance ToJSON Config where
   toJSON (Config {..}) =

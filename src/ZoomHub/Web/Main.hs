@@ -111,7 +111,7 @@ webMain = do
         Nothing ->
           toBaseURI $ "http://" <> hostname
   aws <- AWSConfig.fromEnv <&> fromMaybe (error "ZoomHub.Main: Failed to parse AWS configuration.")
-  kinde <- Kinde.fromEnv baseURI <&> fromMaybe (error "ZoomHub.Main: Failed to parse Kinde configuration.")
+  kinde <- Kinde.fromEnv baseURI <&> fromMaybe (error "ZoomHub.Main: Failed to parse Kinde configuration or load JWK.")
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env
