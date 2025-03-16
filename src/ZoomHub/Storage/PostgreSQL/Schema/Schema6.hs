@@ -8,7 +8,9 @@
 
 module ZoomHub.Storage.PostgreSQL.Schema.Schema6
   ( Schema6,
+    Schemas6,
     migration,
+    UsersTable0,
   )
 where
 
