@@ -67,6 +67,7 @@ library
     , ZoomHub.Storage.PostgreSQL.Dashboard
     , ZoomHub.Storage.PostgreSQL.GetRecent
     , ZoomHub.Storage.PostgreSQL.Internal
+    , ZoomHub.Storage.PostgreSQL.Internal.User
     , ZoomHub.Storage.PostgreSQL.Schema
     , ZoomHub.Storage.PostgreSQL.Schema.Schema0
     , ZoomHub.Storage.PostgreSQL.Schema.Schema1
@@ -75,6 +76,7 @@ library
     , ZoomHub.Storage.PostgreSQL.Schema.Schema4
     , ZoomHub.Storage.PostgreSQL.Schema.Schema5
     , ZoomHub.Storage.PostgreSQL.Schema.Schema6
+    , ZoomHub.Storage.PostgreSQL.User
     , ZoomHub.Types.APIUser
     , ZoomHub.Types.BaseURI
     , ZoomHub.Types.Content

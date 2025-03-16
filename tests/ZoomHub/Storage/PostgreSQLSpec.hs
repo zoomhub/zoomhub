@@ -191,7 +191,7 @@ spec =
           case mContent of
             Just content -> do
               -- HACK: Hard-coded content ID set by database trigger
-              contentId content `shouldBe` (unsafeContentId "X75")
+              contentId content `shouldBe` unsafeContentId "X75"
               contentType content `shouldBe` Unknown
               contentURL content `shouldBe` testURL
               contentState content `shouldBe` Initialized

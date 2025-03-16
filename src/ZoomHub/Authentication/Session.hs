@@ -9,7 +9,7 @@
 
 module ZoomHub.Authentication.Session
   ( Session (..),
-    User (..),
+    KindeUser (..),
     DecodedIdToken (..),
   )
 where
@@ -23,48 +23,52 @@ import ZoomHub.Authentication.OAuth (AccessToken, RefreshToken)
 import Prelude hiding (id)
 
 data Session = Session
-  { currentUser :: !User,
+  { kindeUser :: !KindeUser,
     accessToken :: !AccessToken,
     refreshToken :: !RefreshToken
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON, Binary)
 
-data User = User
-  { picture :: !(Maybe Text),
-    familyName :: !(Maybe Text),
-    givenName :: !(Maybe Text),
+--
+data KindeUser = KindeUser
+  { id :: !Text,
     email :: !Text,
     isEmailVerified :: !Bool,
-    kindeUserId :: !(Maybe Text)
+    givenName :: !(Maybe Text),
+    familyName :: !(Maybe Text),
+    picture :: !(Maybe Text)
   }
   deriving (Show, Generic)
 
-instance Binary User
+instance Binary KindeUser
 
-instance FromJSON User where
+instance FromJSON KindeUser where
   parseJSON = withObject "User" $ \v -> do
     picture <- v .:? "picture"
     familyName <- v .:? "family_name"
     givenName <- v .:? "given_name"
     email <- v .: "email"
     isEmailVerified <- v .: "email_verified"
-    kindeUserId <- v .:? "sub"
-    return User {..}
+    id <- v .: "sub"
+    return KindeUser {..}
 
 -- For debugging only
-instance ToJSON User where
-  toJSON (User {..}) =
+instance ToJSON KindeUser where
+  toJSON (KindeUser {..}) =
     object
       [ "picture" .= picture,
         "family_name" .= familyName,
         "given_name" .= givenName,
         "email" .= email,
         "email_verified" .= isEmailVerified,
-        "sub" .= kindeUserId
+        "sub" .= id
       ]
 
-data DecodedIdToken = DecodedIdToken {jwtClaims :: ClaimsSet, user :: User}
+data DecodedIdToken = DecodedIdToken
+  { jwtClaims :: ClaimsSet,
+    user :: KindeUser
+  }
   deriving (Show)
 
 instance HasClaimsSet DecodedIdToken where

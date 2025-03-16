@@ -10,7 +10,9 @@ import qualified Generics.SOP as SOP
 --   deriving (Eq, GHC.Generic, Show)
 
 data User = User
-  { email :: !Text,
+  { kindeUserId :: !Text,
+    email :: !Text,
+    isEmailVerified :: !Bool,
     givenName :: !(Maybe Text),
     familyName :: !(Maybe Text),
     imageURL :: !(Maybe Text)

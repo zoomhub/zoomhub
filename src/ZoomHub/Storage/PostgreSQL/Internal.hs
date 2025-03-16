@@ -34,9 +34,7 @@ import Database.PostgreSQL.Simple (ConnectInfo (..))
 import Generics.SOP.BasicFunctors (K)
 import Squeal.PostgreSQL
   ( Condition,
-    ConflictAction (DoNothing),
-    ConflictClause (OnConflict, OnConflictDoRaise),
-    ConflictTarget (OnConstraint),
+    ConflictClause (OnConflictDoRaise),
     DecodeRow,
     EncodeParams,
     GenericParams (genericParams),
@@ -106,8 +104,6 @@ import ZoomHub.Types.ContentState (ContentState (..))
 import ZoomHub.Types.ContentType (ContentType (..))
 import ZoomHub.Types.ContentURI (ContentURI)
 import ZoomHub.Types.DeepZoomImage (DeepZoomImage (..), mkDeepZoomImage)
-import ZoomHub.Types.User (User (User))
-import qualified ZoomHub.Types.User as User
 
 -- Connection
 type Connection = K Connection.Connection Schemas
@@ -731,56 +727,6 @@ deleteImage =
           .&& (#image ! #content_id .== #content ! #id)
       )
       (Returning_ Nil)
-
--- user
-type UserRow =
-  '[ "id" ::: 'NotNull 'PGint8,
-     "email" ::: 'NotNull 'PGtext,
-     "given_name" ::: 'Null 'PGtext,
-     "family_name" ::: 'Null 'PGtext,
-     "image_url" ::: 'Null 'PGtext,
-     "updated_at" ::: 'NotNull 'PGtimestamptz,
-     "created_at" ::: 'NotNull 'PGtimestamptz
-   ]
-
-findOrCreateUser :: Statement Schemas User User
-findOrCreateUser = Manipulation encode decode sql
-  where
-    encode = genericParams
-    decode = decodeUser
-    sql =
-      insertInto
-        #users
-        ( Values_
-            ( (Default `as` #id)
-                :* (Set (param @1) `as` #email)
-                :* (Set (param @2) `as` #given_name)
-                :* (Set (param @3) `as` #family_name)
-                :* (Set (param @4) `as` #image_url)
-                :* (Set currentTimestamp `as` #updated_at)
-                :* (Default `as` #created_at)
-            )
-        )
-        (OnConflict (OnConstraint #users_unique_email) DoNothing)
-        ( Returning_
-            ( #id
-                :* #email
-                :* #given_name
-                :* #family_name
-                :* #image_url
-                :* #updated_at
-                :* #created_at
-            )
-        )
-
-decodeUser :: DecodeRow UserRow User
-decodeUser = do
-  email <- #email
-  givenName <- #given_name
-  familyName <- #family_name
-  imageURL <- #image_url
-
-  return User {..}
 
 -- Unsafe
 unsafeCreateContent ::

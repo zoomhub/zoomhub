@@ -120,9 +120,9 @@ import qualified ZoomHub.Authentication.OAuth.Kinde as Kinde
 import qualified ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse as OAuth2CodeExchangeResponse
 import ZoomHub.Authentication.OAuth.Kinde.Prompt (Prompt)
 import qualified ZoomHub.Authentication.OAuth.Kinde.Prompt as Prompt
-import ZoomHub.Authentication.Session (DecodedIdToken (..), Session (..))
+import ZoomHub.Authentication.Session (Session (Session))
+import qualified ZoomHub.Authentication.Session as KindeUser
 import qualified ZoomHub.Authentication.Session as Session
-import qualified ZoomHub.Authentication.Session as User
 import ZoomHub.Config (Config)
 import qualified ZoomHub.Config as Config
 import qualified ZoomHub.Config.AWS as AWS
@@ -136,6 +136,7 @@ import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL as PG
 import ZoomHub.Storage.PostgreSQL.Dashboard as PG
 import ZoomHub.Storage.PostgreSQL.GetRecent as PG
+import qualified ZoomHub.Storage.PostgreSQL.User as User
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
@@ -144,6 +145,8 @@ import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
+import ZoomHub.Types.User (User (User))
+import qualified ZoomHub.Types.User as User
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (appendQueryParams, tshow)
@@ -345,7 +348,7 @@ server config =
     :<|> webRegister config.kinde config.clientSessionKey
     :<|> webLogin config.kinde config.clientSessionKey
     :<|> webLogout config.kinde
-    :<|> webAuthKindeCallback config.clientSessionKey config.kinde
+    :<|> webAuthKindeCallback config.clientSessionKey config.kinde dbConnPool
     :<|> webAuthSessionDebug
     -- Web: Explore: Recent
     :<|> webExploreRecent baseURI contentBaseURI stylesheetPath dbConnPool
@@ -747,12 +750,13 @@ webLogout kindeConfig = do
 webAuthKindeCallback ::
   ClientSession.Key ->
   Kinde.Config ->
+  Pool Connection ->
   Maybe Cookie.Header ->
   OAuth.AuthorizationCode ->
   OAuth.State ->
   Maybe OAuth.Scope ->
   Handler KindeCallback
-webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scope = do
+webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code state _scope = do
   eResponse <-
     case mExpectedState of
       Just expectedState | expectedState == actualState -> do
@@ -783,9 +787,9 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
                     return $
                       Right
                         Session
-                          { currentUser = decodedIdToken.user,
-                            accessToken = response.accessToken,
-                            refreshToken = response.refreshToken
+                          { Session.kindeUser = decodedIdToken.user,
+                            Session.accessToken = response.accessToken,
+                            Session.refreshToken = response.refreshToken
                           }
   sessionSetCookieHeader <- case eSession of
     Left _ -> pure $ Cookie.empty API.sessionCookieName
@@ -794,6 +798,23 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
         Left message -> "/?errorMessage=" <> (message |> URIEncode.encodeText)
         Right _ -> "/dashboard"
       clearOAuth2StateCookieHeader = Cookie.empty API.oauth2StateCookieName
+
+  _ <- case eSession of
+    Left _ -> pure ()
+    Right session -> do
+      let user =
+            User
+              { User.kindeUserId = session.kindeUser.id,
+                User.email = session.kindeUser.email,
+                User.isEmailVerified = session.kindeUser.isEmailVerified,
+                User.familyName = session.kindeUser.familyName,
+                User.givenName = session.kindeUser.givenName,
+                User.imageURL = session.kindeUser.picture
+              }
+
+      _ <- liftIO $ usingConnectionPool dbConnPool (User.findOrCreate user)
+      return ()
+
   return $
     addHeader redirectPath $
       addHeader clearOAuth2StateCookieHeader $
@@ -807,7 +828,7 @@ webAuthKindeCallback clientSessionKey kindeConfig mCookieHeader code state _scop
     actualState :: AuthorizeState
     actualState = state |> unState |> TL.fromStrict |> NOA2.AuthorizeState |> AuthorizeState
 
-    verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError DecodedIdToken)
+    verifyJWT :: JWT.JWK -> JWT.SignedJWT -> IO (Either JWT.JWTError Session.DecodedIdToken)
     verifyJWT jwk jwt = JWT.runJOSE $ do
       -- NOTE: The `aud` parameter used to be the URL but now it’s only the
       -- client ID:
@@ -835,7 +856,7 @@ webDashboard baseURI contentBaseURI dbConnPool mSession =
         liftIO $
           usingConnectionPool
             dbConnPool
-            (PG.getByEmail (session |> Session.currentUser |> User.email))
+            (PG.getByEmail (session |> Session.kindeUser |> KindeUser.email))
       return $
         Page.Dashboard
           { Page.session = session,
