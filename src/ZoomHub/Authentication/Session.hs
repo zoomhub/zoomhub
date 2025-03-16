@@ -35,7 +35,8 @@ data User = User
     familyName :: !(Maybe Text),
     givenName :: !(Maybe Text),
     email :: !Text,
-    id :: !(Maybe Text)
+    isEmailVerified :: !Bool,
+    kindeUserId :: !(Maybe Text)
   }
   deriving (Show, Generic)
 
@@ -47,9 +48,11 @@ instance FromJSON User where
     familyName <- v .:? "family_name"
     givenName <- v .:? "given_name"
     email <- v .: "email"
-    id <- v .:? "id"
+    isEmailVerified <- v .: "email_verified"
+    kindeUserId <- v .:? "sub"
     return User {..}
 
+-- For debugging only
 instance ToJSON User where
   toJSON (User {..}) =
     object
@@ -57,7 +60,8 @@ instance ToJSON User where
         "family_name" .= familyName,
         "given_name" .= givenName,
         "email" .= email,
-        "id" .= id
+        "email_verified" .= isEmailVerified,
+        "sub" .= kindeUserId
       ]
 
 data DecodedIdToken = DecodedIdToken {jwtClaims :: ClaimsSet, user :: User}
