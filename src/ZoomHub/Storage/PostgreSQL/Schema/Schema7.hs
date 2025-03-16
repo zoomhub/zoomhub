@@ -19,21 +19,28 @@ import Squeal.PostgreSQL
     IndexType (Btree),
     IsoQ (..),
     NullType (NotNull, Null),
+    OnDeleteClause (OnDelete),
+    OnUpdateClause (OnUpdate),
     Optionality (Def, NoDef),
     PGType (PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
     Public,
+    ReferentialAction (Cascade),
     SchemumType (Index, Table),
-    TableConstraint (PrimaryKey, Unique),
+    TableConstraint (ForeignKey, PrimaryKey, Unique),
     addColumn,
+    addConstraint,
     alterTable,
     bigint,
     default_,
     dropColumn,
+    dropConstraint,
+    foreignKey,
     null_,
     nullable,
     (&),
     (:::),
     (:=>),
+    (>>>),
   )
 import Squeal.PostgreSQL.Session.Migration (Migration (..))
 import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, FlickrTable0, ImageTable0)
@@ -61,8 +68,8 @@ type ContentTable4 =
     ::: 'Table
           ( '[ "pk_content" ::: 'PrimaryKey '["id"],
                "content_unique_hash_id" ::: 'Unique '["hash_id"],
-               "content_unique_url" ::: 'Unique '["url"]
-               --  "fk_user_id" ::: 'ForeignKey '["user_id"] "public" "users" '["id"]
+               "content_unique_url" ::: 'Unique '["url"],
+               "fk_user_id" ::: 'ForeignKey '["user_id"] "public" "users" '["id"]
              ]
               :=> '[ "id" ::: 'Def :=> 'NotNull 'PGint8,
                      "hash_id" ::: 'NoDef :=> 'NotNull 'PGtext,
@@ -100,7 +107,22 @@ migration =
       }
 
 setup :: Definition Schemas6 Schemas7
-setup = alterTable #content (addColumn #user_id (bigint & nullable & default_ null_))
+setup =
+  alterTable #content (addColumn #user_id (bigint & nullable & default_ null_))
+    >>> alterTable
+      #content
+      ( addConstraint
+          #fk_user_id
+          ( foreignKey
+              #user_id
+              #users
+              #id
+              (OnDelete Cascade)
+              (OnUpdate Cascade)
+          )
+      )
 
 teardown :: Definition Schemas7 Schemas6
-teardown = alterTable #content (dropColumn #user_id)
+teardown =
+  alterTable #content (dropColumn #user_id)
+    >>> alterTable #content (dropConstraint #fk_user_id)

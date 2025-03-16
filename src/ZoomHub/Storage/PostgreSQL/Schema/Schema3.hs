@@ -88,7 +88,13 @@ migration =
       }
 
 setup :: Definition _ Schemas3
-setup = alterTable #content (addColumn #verified_at (timestampWithTimeZone & nullable & default_ null_))
+setup =
+  alterTable
+    #content
+    ( addColumn
+        #verified_at
+        (timestampWithTimeZone & nullable & default_ null_)
+    )
 
 teardown :: Definition Schemas3 _
 teardown = alterTable #content (dropColumn #verified_at)
