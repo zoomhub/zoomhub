@@ -199,7 +199,8 @@ type ContentWithImageRowTuple =
          "version" ::: NotNull PGint4,
          "submitter_email" ::: Null PGtext,
          "verification_token" ::: Null PGtext,
-         "verified_at" ::: Null PGtimestamptz
+         "verified_at" ::: Null PGtimestamptz,
+         "user_id" ::: Null PGint8
        ]
      ),
     "image"
@@ -249,6 +250,7 @@ selectContentBy clauses = Query encode decode sql
             :* (#content ! #submitter_email)
             :* (#content ! #verification_token)
             :* (#content ! #verified_at)
+            :* (#content ! #user_id)
             :* (#image ! #width)
             :* (#image ! #height)
             :* (#image ! #tile_size)
@@ -283,7 +285,8 @@ type ContentRow =
      "version" ::: 'NotNull 'PGint4,
      "submitter_email" ::: 'Null 'PGtext,
      "verification_token" ::: 'Null 'PGtext,
-     "verified_at" ::: 'Null 'PGtimestamptz
+     "verified_at" ::: 'Null 'PGtimestamptz,
+     "user_id" ::: 'Null 'PGint8
    ]
 
 type ContentWithImageRow = Join ContentRow (NullifyRow ImageRow)
@@ -310,7 +313,8 @@ encodeContent =
     .* const Content.version -- contentVersion
     .* contentSubmitterEmail
     .* contentVerificationToken
-    *. contentVerifiedAt
+    .* contentVerifiedAt
+    *. const (Nothing :: Maybe Int64) -- contentUserId
 
 decodeContent :: DecodeRow ContentRow Content
 decodeContent = do
@@ -329,6 +333,7 @@ decodeContent = do
   contentSubmitterEmail <- #submitter_email
   contentVerificationToken <- #verification_token
   contentVerifiedAt <- #verified_at
+  contentUserId <- #user_id
 
   let contentDZI = Nothing
   return Content {..}
@@ -350,6 +355,7 @@ decodeContentWithImage = do
   contentSubmitterEmail <- #submitter_email
   contentVerificationToken <- #verification_token
   contentVerifiedAt <- #verified_at
+  contentUserId <- #user_id
 
   mWidth <- #width
   mHeight <- #height
@@ -446,6 +452,7 @@ insertContent = Manipulation encode decode sql
                 :* (Set (param @2) `as` #submitter_email)
                 :* (Set (param @3) `as` #verification_token)
                 :* (Default `as` #verified_at)
+                :* (Default `as` #user_id)
             )
         )
         OnConflictDoRaise
@@ -471,6 +478,7 @@ insertContent = Manipulation encode decode sql
                 :* #submitter_email
                 :* #verification_token
                 :* #verified_at
+                :* #user_id
             )
         )
 
@@ -518,6 +526,7 @@ markContentAsActive = Manipulation encode decode sql
                 :* #submitter_email
                 :* #verification_token
                 :* #verified_at
+                :* #user_id
             )
         )
 
@@ -564,6 +573,7 @@ markContentAsFailure = Manipulation encode decode sql
                 :* #submitter_email
                 :* #verification_token
                 :* #verified_at
+                :* #user_id
             )
         )
 
@@ -608,6 +618,7 @@ markContentAsSuccess = Manipulation encode decode sql
                 :* #submitter_email
                 :* #verification_token
                 :* #verified_at
+                :* #user_id
             )
         )
 
@@ -646,6 +657,7 @@ markContentAsVerified = Manipulation encode decode sql
                 :* #submitter_email
                 :* #verification_token
                 :* #verified_at
+                :* #user_id
             )
         )
 
@@ -690,6 +702,7 @@ resetContentAsInitialized = Manipulation encode decode sql
                 :* #submitter_email
                 :* #verification_token
                 :* #verified_at
+                :* #user_id
             )
         )
 
@@ -769,6 +782,7 @@ unsafeInsertContent = Manipulation encode decode sql
                 :* (Set (param @19) `as` #submitter_email)
                 :* (Set (param @20) `as` #verification_token)
                 :* (Set (param @21) `as` #verified_at)
+                :* (Set (param @22) `as` #user_id)
             )
         )
         OnConflictDoRaise
@@ -794,6 +808,7 @@ unsafeInsertContent = Manipulation encode decode sql
                 :* #submitter_email
                 :* #verification_token
                 :* #verified_at
+                :* #user_id
             )
         )
 

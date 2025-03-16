@@ -26,7 +26,7 @@ import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema4 as Schema4
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema5 as Schema5
 import qualified ZoomHub.Storage.PostgreSQL.Schema.Schema6 as Schema6
 
-type Schemas = Public Schema6.Schema6
+type Schemas = Schema6.Schemas6
 
 migrations :: String -> Path (Migration (IsoQ Definition)) (Public '[]) Schemas
 migrations hashidsSecret =
