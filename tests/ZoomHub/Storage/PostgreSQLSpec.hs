@@ -86,6 +86,7 @@ import ZoomHub.Types.Content
     contentSubmitterEmail,
     contentType,
     contentURL,
+    contentUserId,
     contentVerificationToken,
     contentVerifiedAt,
   )
@@ -472,7 +473,8 @@ spec =
           contentDZI = Nothing,
           contentSubmitterEmail = Nothing,
           contentVerificationToken = Just nullVerificationToken,
-          contentVerifiedAt = Just initializedAt
+          contentVerifiedAt = Just initializedAt,
+          contentUserId = Nothing
         }
       where
         initializedAt = addUTCTime (-age) currentTime
@@ -494,7 +496,8 @@ spec =
           contentDZI = Nothing,
           contentSubmitterEmail = Nothing,
           contentVerificationToken = Just nullVerificationToken,
-          contentVerifiedAt = Just initializedAt
+          contentVerifiedAt = Just initializedAt,
+          contentUserId = Nothing
         }
       where
         initializedAt = addUTCTime (-1) activeAt
@@ -520,7 +523,8 @@ spec =
               contentDZI = Just dzi,
               contentSubmitterEmail = Nothing,
               contentVerificationToken = Just nullVerificationToken,
-              contentVerifiedAt = Just initializedAt
+              contentVerifiedAt = Just initializedAt,
+              contentUserId = Nothing
             }
       where
         activeAt = addUTCTime (-age) currentTime
