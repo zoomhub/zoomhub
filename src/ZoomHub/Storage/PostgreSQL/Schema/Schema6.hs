@@ -130,7 +130,7 @@ type ContentTable4 =
 migration :: Migration (IsoQ Definition) Schemas5 Schemas6
 migration =
   Migration
-    "2025-03-16-1-add-users-table"
+    "2025-03-16-1: Add users table"
     IsoQ
       { up = setup,
         down = teardown
