@@ -799,6 +799,7 @@ webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code 
         Right _ -> "/dashboard"
       clearOAuth2StateCookieHeader = Cookie.empty API.oauth2StateCookieName
 
+  -- create user
   _ <- case eSession of
     Left _ -> pure ()
     Right session -> do
