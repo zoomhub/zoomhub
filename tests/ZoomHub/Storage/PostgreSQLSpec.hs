@@ -176,6 +176,7 @@ withDatabaseConnection = bracket acquire release
           )
           conn
       pure conn'
+
     release :: SOP.K Connection Schemas -> IO ()
     release conn = do
       (_, conn') <- runPQ (migrateDown (migrations hashidsSecret)) conn

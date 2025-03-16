@@ -170,6 +170,6 @@ setup =
 
 teardown :: Definition Schemas6 Schemas5
 teardown =
-  alterTable #content (dropColumn #user_id)
-    >>> alterTable #content (dropConstraint #fk_user_id)
+  alterTable #content (dropConstraint #fk_user_id)
+    >>> alterTable #content (dropColumn #user_id)
     >>> dropTable #users
