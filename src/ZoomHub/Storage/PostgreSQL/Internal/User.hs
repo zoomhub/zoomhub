@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- Simplify Squeal query type signatures
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -23,15 +24,25 @@ import Squeal.PostgreSQL
     ConflictTarget (OnConstraint),
     DecodeRow,
     GenericParams (genericParams),
-    NP ((:*)),
+    NP (Nil, (:*)),
     NullType (NotNull, Null),
     Optional (Default, Set),
     PGType (PGbool, PGint8, PGtext, PGtimestamptz),
     Statement (Manipulation),
+    UsingClause (Using),
     as,
     currentTimestamp,
+    ilike,
     insertInto,
+    isNotNull,
+    just_,
+    manipulation,
+    null_,
     param,
+    table,
+    update,
+    (!),
+    (.&&),
     (:::),
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
@@ -53,6 +64,7 @@ type UserRow =
      "created_at" ::: 'NotNull 'PGtimestamptz
    ]
 
+-- Returns existing user based on `email` or create a new one.
 findOrCreate :: Statement Schemas User User
 findOrCreate = Manipulation encode decode sql
   where
@@ -86,6 +98,22 @@ findOrCreate = Manipulation encode decode sql
                 :* #created_at
             )
         )
+
+-- Links all existing verified content for this user.
+linkVerifiedContent :: Statement Schemas () ()
+linkVerifiedContent = manipulation sql
+  where
+    sql =
+      update
+        (#content `as` #c)
+        ( (Set (just_ (#u ! #id)) `as` #user_id)
+            :* (Set null_ `as` #submitter_email)
+        )
+        (Using (table (#users `as` #u)))
+        ( ((#c ! #submitter_email) `ilike` just_ (#u ! #email))
+            .&& isNotNull (#c ! #verified_at)
+        )
+        (Returning_ Nil)
 
 decodeUser :: DecodeRow UserRow User
 decodeUser = do
