@@ -8,6 +8,19 @@
 module ZoomHub.Storage.PostgreSQLSpec
   ( main,
     spec,
+    -- database
+    setupDatabase,
+    withDatabaseConnection,
+    -- utils
+    isWithinSecondsOf,
+    safeGetCurrentTime,
+    -- content
+    mkUnprocessedContent,
+    mkActiveContent,
+    mkSucceededContent,
+    unsafeContentId,
+    testEmail,
+    testURL,
   )
 where
 
@@ -466,107 +479,112 @@ spec =
               c1 = mkActiveContent "X75" currentTime (15 & minutes)
               c2 = mkActiveContent "yOJ" currentTime (45 & minutes)
               c3 = mkActiveContent "yJL" currentTime (60 & minutes)
-              c4 = mkSucceededContent "foo" currentTime (90 & minutes)
+              c4 = mkSucceededContent "foo" Nothing currentTime (90 & minutes)
           void . forM_ [c1, c2, c3, c4] $ \c ->
             runPQ (I.unsafeCreateContent c) conn
           (results, _) <- runPQ (getExpiredActive (30 :: Minute)) conn
           results `shouldBe` [c2, c3]
+
+-- utils
+mkUnprocessedContent :: String -> UTCTime -> NominalDiffTime -> Int64 -> I.Content
+mkUnprocessedContent id_ currentTime age numViews =
+  I.Content
+    { contentId = unsafeContentId id_,
+      contentType = Unknown,
+      contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
+      contentState = Initialized,
+      contentInitializedAt = initializedAt,
+      contentActiveAt = Nothing,
+      contentCompletedAt = Nothing,
+      contentMIME = Nothing,
+      contentSize = Nothing,
+      contentProgress = 0.0,
+      contentNumViews = numViews,
+      contentError = Nothing,
+      contentDZI = Nothing,
+      contentSubmitterEmail = Nothing,
+      contentVerificationToken = Just nullVerificationToken,
+      contentVerifiedAt = Just initializedAt,
+      contentUserId = Nothing
+    }
   where
-    mkUnprocessedContent :: String -> UTCTime -> NominalDiffTime -> Int64 -> I.Content
-    mkUnprocessedContent id_ currentTime age numViews =
-      I.Content
+    initializedAt = addUTCTime (-age) currentTime
+
+mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
+mkActiveContent id_ currentTime age =
+  I.Content
+    { contentId = unsafeContentId id_,
+      contentType = Unknown,
+      contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
+      contentState = Active,
+      contentInitializedAt = addUTCTime (-1) activeAt,
+      contentActiveAt = Just activeAt,
+      contentCompletedAt = Nothing,
+      contentMIME = Nothing,
+      contentSize = Nothing,
+      contentProgress = 0.0,
+      contentNumViews = 0,
+      contentError = Nothing,
+      contentDZI = Nothing,
+      contentSubmitterEmail = Nothing,
+      contentVerificationToken = Just nullVerificationToken,
+      contentVerifiedAt = Just initializedAt,
+      contentUserId = Nothing
+    }
+  where
+    initializedAt = addUTCTime (-1) activeAt
+    activeAt = addUTCTime (-age) currentTime
+
+testURL :: ContentURI
+testURL = ContentURI "https://example.com/1"
+
+testEmail :: Text
+testEmail = "test@example.com"
+
+safeGetCurrentTime :: IO UTCTime
+safeGetCurrentTime = do
+  ct@UTCTime {utctDayTime} <- getCurrentTime
+  let newDayTime =
+        picosecondsToDiffTime $
+          (diffTimeToPicoseconds utctDayTime `div` 1000000) * 1000000
+  return $ ct {utctDayTime = newDayTime}
+
+isWithinSecondsOf :: UTCTime -> NominalDiffTime -> UTCTime -> Bool
+isWithinSecondsOf pivot interval t =
+  let upperBound = addUTCTime interval pivot
+      lowerBound = addUTCTime (-interval) pivot
+   in lowerBound <= t && t <= upperBound
+
+nullVerificationToken :: VerificationToken
+nullVerificationToken =
+  fromJust $ VerificationToken.fromText "00000000-0000-0000-0000-000000000000"
+
+mkSucceededContent :: String -> Maybe Email -> UTCTime -> NominalDiffTime -> I.Content
+mkSucceededContent id_ submitterEmail currentTime age =
+  let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
+      mMIME = ContentMIME.fromText "image/jpeg"
+      mSize = Just 1234
+   in I.Content
         { contentId = unsafeContentId id_,
-          contentType = Unknown,
+          contentType = Image,
           contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
-          contentState = Initialized,
+          contentState = CompletedSuccess,
           contentInitializedAt = initializedAt,
-          contentActiveAt = Nothing,
-          contentCompletedAt = Nothing,
-          contentMIME = Nothing,
-          contentSize = Nothing,
-          contentProgress = 0.0,
-          contentNumViews = numViews,
-          contentError = Nothing,
-          contentDZI = Nothing,
-          contentSubmitterEmail = Nothing,
-          contentVerificationToken = Just nullVerificationToken,
-          contentVerifiedAt = Just initializedAt,
-          contentUserId = Nothing
-        }
-      where
-        initializedAt = addUTCTime (-age) currentTime
-    mkActiveContent :: String -> UTCTime -> NominalDiffTime -> I.Content
-    mkActiveContent id_ currentTime age =
-      I.Content
-        { contentId = unsafeContentId id_,
-          contentType = Unknown,
-          contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
-          contentState = Active,
-          contentInitializedAt = addUTCTime (-1) activeAt,
           contentActiveAt = Just activeAt,
-          contentCompletedAt = Nothing,
-          contentMIME = Nothing,
-          contentSize = Nothing,
-          contentProgress = 0.0,
+          contentCompletedAt = Just (addUTCTime 1 activeAt),
+          contentMIME = mMIME,
+          contentSize = mSize,
+          contentProgress = 1.0,
           contentNumViews = 0,
           contentError = Nothing,
-          contentDZI = Nothing,
-          contentSubmitterEmail = Nothing,
+          contentDZI = Just dzi,
+          contentSubmitterEmail = case submitterEmail of
+            Just (Email email) -> Just email
+            Nothing -> Nothing,
           contentVerificationToken = Just nullVerificationToken,
           contentVerifiedAt = Just initializedAt,
           contentUserId = Nothing
         }
-      where
-        initializedAt = addUTCTime (-1) activeAt
-        activeAt = addUTCTime (-age) currentTime
-    mkSucceededContent :: String -> UTCTime -> NominalDiffTime -> I.Content
-    mkSucceededContent id_ currentTime age =
-      let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
-          mMIME = ContentMIME.fromText "image/jpeg"
-          mSize = Just 1234
-       in I.Content
-            { contentId = unsafeContentId id_,
-              contentType = Image,
-              contentURL = ContentURI $ "https://example.com/" <> T.pack id_,
-              contentState = CompletedSuccess,
-              contentInitializedAt = initializedAt,
-              contentActiveAt = Just activeAt,
-              contentCompletedAt = Just (addUTCTime 1 activeAt),
-              contentMIME = mMIME,
-              contentSize = mSize,
-              contentProgress = 1.0,
-              contentNumViews = 0,
-              contentError = Nothing,
-              contentDZI = Just dzi,
-              contentSubmitterEmail = Nothing,
-              contentVerificationToken = Just nullVerificationToken,
-              contentVerifiedAt = Just initializedAt,
-              contentUserId = Nothing
-            }
-      where
-        activeAt = addUTCTime (-age) currentTime
-        initializedAt = addUTCTime (-1) activeAt
-
-    testURL :: ContentURI
-    testURL = ContentURI "https://example.com/1"
-
-    testEmail :: Text
-    testEmail = "test@example.com"
-
-    isWithinSecondsOf :: UTCTime -> NominalDiffTime -> UTCTime -> Bool
-    isWithinSecondsOf pivot interval t =
-      let upperBound = addUTCTime interval pivot
-          lowerBound = addUTCTime (-interval) pivot
-       in lowerBound <= t && t <= upperBound
-
-    safeGetCurrentTime :: IO UTCTime
-    safeGetCurrentTime = do
-      ct@UTCTime {utctDayTime} <- getCurrentTime
-      let newDayTime =
-            picosecondsToDiffTime $
-              (diffTimeToPicoseconds utctDayTime `div` 1000000) * 1000000
-      return $ ct {utctDayTime = newDayTime}
-
-    nullVerificationToken :: VerificationToken
-    nullVerificationToken =
-      fromJust $ VerificationToken.fromText "00000000-0000-0000-0000-000000000000"
+  where
+    activeAt = addUTCTime (-age) currentTime
+    initializedAt = addUTCTime (-1) activeAt

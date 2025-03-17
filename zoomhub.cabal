@@ -243,6 +243,7 @@ test-suite tests
     ZoomHub.API.Types.ContentCompletionSpec
     ZoomHub.APISpec
     ZoomHub.AWSSpec
+    ZoomHub.Storage.PostgreSQL.UserSpec
     ZoomHub.Storage.PostgreSQLSpec
     ZoomHub.Types.ContentIdSpec
     ZoomHub.Types.ContentURISpec
