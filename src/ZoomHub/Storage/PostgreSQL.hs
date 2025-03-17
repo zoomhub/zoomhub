@@ -16,6 +16,7 @@ module ZoomHub.Storage.PostgreSQL
     -- ** Read operations
     getById,
     getByURL,
+    getAllByUserId,
     getNextUnprocessed,
     getExpiredActive,
 
@@ -75,6 +76,7 @@ import ZoomHub.Storage.PostgreSQL.Internal
   ( Connection,
     createConnectionPool,
     deleteImage,
+    getAllBy,
     getBy,
     getBy',
     insertContent,
@@ -106,6 +108,9 @@ getById = getBy ((#content ! #hash_id) .== param @1)
 
 getByURL :: (MonadUnliftIO m, MonadPQ Schemas m) => ContentURI -> m (Maybe Content)
 getByURL = getBy ((#content ! #url) .== param @1)
+
+getAllByUserId :: (MonadUnliftIO m, MonadPQ Schemas m) => Int64 -> m [Content]
+getAllByUserId = getAllBy ((#content ! #user_id) .== param @1)
 
 getNextUnprocessed :: (MonadUnliftIO m, MonadPQ Schemas m) => m (Maybe Content)
 getNextUnprocessed = do

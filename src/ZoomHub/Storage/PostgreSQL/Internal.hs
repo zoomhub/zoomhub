@@ -53,6 +53,8 @@ import Squeal.PostgreSQL
     PGType (PGfloat8, PGint4, PGint8, PGtext, PGtimestamptz),
     PQ,
     QueryClause (Subquery),
+    Result,
+    SortExpression (Asc),
     Statement (Manipulation, Query),
     TableExpression,
     ToPG,
@@ -65,6 +67,7 @@ import Squeal.PostgreSQL
     deleteFrom,
     firstRow,
     from,
+    getRows,
     inline,
     insertInto,
     insertInto_,
@@ -72,6 +75,7 @@ import Squeal.PostgreSQL
     manipulateParams_,
     manipulation,
     null_,
+    orderBy,
     param,
     select_,
     table,
@@ -132,9 +136,32 @@ getBy ::
   Condition 'Ungrouped '[] '[] Schemas '[NullPG hsty] _ ->
   hsty ->
   m (Maybe Content)
-getBy condition parameter = do
-  result <- executeParams (selectContentBy (\t -> t & where_ condition)) parameter
-  firstRow result
+getBy condition parameter =
+  getResultBy condition parameter >>= firstRow
+
+getAllBy ::
+  forall hsty m.
+  (ToParam Schemas (NullPG hsty) hsty) =>
+  (ToPG Schemas hsty) =>
+  (OidOfNull Schemas (NullPG hsty)) =>
+  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  Condition 'Ungrouped '[] '[] Schemas '[NullPG hsty] _ ->
+  hsty ->
+  m [Content]
+getAllBy condition parameter =
+  getResultBy condition parameter >>= getRows
+
+getResultBy ::
+  forall hsty m.
+  (ToParam Schemas (NullPG hsty) hsty) =>
+  (ToPG Schemas hsty) =>
+  (OidOfNull Schemas (NullPG hsty)) =>
+  (MonadUnliftIO m, MonadPQ Schemas m) =>
+  Condition 'Ungrouped '[] '[] Schemas '[NullPG hsty] _ ->
+  hsty ->
+  m (Result Content)
+getResultBy condition parameter = do
+  executeParams (selectContentBy (\t -> t & where_ condition)) parameter
 
 getBy' ::
   forall hsty m.
@@ -261,6 +288,7 @@ selectContentBy clauses = Query encode decode sql
             ( table #content
                 & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
             )
+            & orderBy [#content ! #id & Asc]
             & clauses
         )
 

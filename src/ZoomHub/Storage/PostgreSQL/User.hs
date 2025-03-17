@@ -6,6 +6,7 @@
 module ZoomHub.Storage.PostgreSQL.User
   ( findOrCreate,
     linkVerifiedContent,
+    Internal.CreateUser (..),
   )
 where
 
@@ -23,7 +24,7 @@ import ZoomHub.Types.User (Email, User)
 
 findOrCreate ::
   (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
-  User ->
+  Internal.CreateUser ->
   m User
 findOrCreate user = do
   result <- executeParams Internal.findOrCreate user

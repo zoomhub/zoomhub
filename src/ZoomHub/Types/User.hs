@@ -11,6 +11,7 @@
 
 module ZoomHub.Types.User where
 
+import Data.Int (Int64)
 import Data.Text (Text)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
@@ -18,7 +19,8 @@ import Squeal.PostgreSQL (FromPG (fromPG), IsPG, ToPG)
 
 -- user
 data User = User
-  { kindeUserId :: !Text,
+  { id :: Int64,
+    kindeUserId :: !Text,
     email :: !Email,
     isEmailVerified :: !Bool,
     givenName :: !(Maybe Text),

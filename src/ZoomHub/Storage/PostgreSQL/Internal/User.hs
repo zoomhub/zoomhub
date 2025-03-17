@@ -1,5 +1,9 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- Simplify Squeal query type signatures
@@ -8,7 +12,9 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -O0 #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -18,18 +24,21 @@
 
 module ZoomHub.Storage.PostgreSQL.Internal.User where
 
+import Data.Text (Text)
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL
   ( ConflictAction (DoNothing),
     ConflictClause (OnConflict),
     ConflictTarget (OnConstraint),
     DecodeRow,
+    Definition (UnsafeDefinition),
     GenericParams (genericParams),
     NP (Nil, (:*)),
     NullType (NotNull, Null),
     Only,
     Optional (Default, Set),
-    PGType (PGbool, PGint8, PGtext, PGtimestamptz),
-    QueryClause (Select),
+    PGType (PGbool, PGint8, PGtext, PGtimestamptz, UnsafePGType),
     Statement (Manipulation),
     UsingClause (Using),
     as,
@@ -53,6 +62,7 @@ import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.User (Email, User (User))
 import qualified ZoomHub.Types.User as User
+import Prelude hiding (id)
 
 -- user
 type UserRow =
@@ -67,8 +77,23 @@ type UserRow =
      "created_at" ::: 'NotNull 'PGtimestamptz
    ]
 
+data CreateUser = CreateUser
+  { kindeUserId :: !Text,
+    email :: !Email,
+    isEmailVerified :: !Bool,
+    givenName :: !(Maybe Text),
+    familyName :: !(Maybe Text),
+    imageURL :: !(Maybe Text)
+  }
+  deriving (Eq, GHC.Generic, Show)
+
+-- PostgreSQL / Squeal
+instance SOP.Generic CreateUser
+
+instance SOP.HasDatatypeInfo CreateUser
+
 -- Returns existing user based on `email` or create a new one.
-findOrCreate :: Statement Schemas User User
+findOrCreate :: Statement Schemas CreateUser User
 findOrCreate = Manipulation encode decode sql
   where
     encode = genericParams
@@ -121,6 +146,7 @@ linkVerifiedContent = manipulation sql
 
 decodeUser :: DecodeRow UserRow User
 decodeUser = do
+  id <- #id
   kindeUserId <- #kinde_user_id
   email <- #email
   isEmailVerified <- #is_email_verified

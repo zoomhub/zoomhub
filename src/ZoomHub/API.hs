@@ -136,6 +136,7 @@ import ZoomHub.Servant.RequiredQueryParam (RequiredQueryParam)
 import ZoomHub.Storage.PostgreSQL as PG
 import ZoomHub.Storage.PostgreSQL.Dashboard as PG
 import ZoomHub.Storage.PostgreSQL.GetRecent as PG
+import qualified ZoomHub.Storage.PostgreSQL.User as CreateUser
 import qualified ZoomHub.Storage.PostgreSQL.User as User
 import ZoomHub.Types.BaseURI (BaseURI, unBaseURI)
 import qualified ZoomHub.Types.Content as Internal
@@ -145,7 +146,6 @@ import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
-import ZoomHub.Types.User (User (User))
 import qualified ZoomHub.Types.User as User
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
@@ -804,13 +804,13 @@ webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code 
     Left _ -> pure ()
     Right session -> do
       let user =
-            User
-              { User.kindeUserId = session.kindeUser.id,
-                User.email = User.Email session.kindeUser.email,
-                User.isEmailVerified = session.kindeUser.isEmailVerified,
-                User.familyName = session.kindeUser.familyName,
-                User.givenName = session.kindeUser.givenName,
-                User.imageURL = session.kindeUser.picture
+            User.CreateUser
+              { CreateUser.kindeUserId = session.kindeUser.id,
+                CreateUser.email = User.Email session.kindeUser.email,
+                CreateUser.isEmailVerified = session.kindeUser.isEmailVerified,
+                CreateUser.familyName = session.kindeUser.familyName,
+                CreateUser.givenName = session.kindeUser.givenName,
+                CreateUser.imageURL = session.kindeUser.picture
               }
 
       _ <- liftIO $ usingConnectionPool dbConnPool (User.findOrCreate user)
