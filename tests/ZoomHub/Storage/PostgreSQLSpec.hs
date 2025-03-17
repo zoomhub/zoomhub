@@ -236,6 +236,7 @@ spec =
                     }
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "markAsSuccess" do
       it "should mark content as successful" do
         \conn -> do
@@ -267,6 +268,7 @@ spec =
                     }
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "markAsFailure" do
       it "should mark content as failure" do
         \conn -> do
@@ -294,6 +296,7 @@ spec =
                     }
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "resetAsInitialized" do
       it "should reset content as initialized" do
         \conn -> do
@@ -308,6 +311,7 @@ spec =
               result `shouldBe` Just content
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "unsafeResetAsInitializedWithVerification" do
       it "should reset content as initialized and verify it" do
         \conn -> do
@@ -323,6 +327,7 @@ spec =
               result {contentVerifiedAt = Nothing} `shouldBe` content
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "dequeueNextUnprocessed" do
       context "when two content were initialized at the same time" do
         it "should return the one that is more popular (more views) and mark active" do
@@ -350,6 +355,7 @@ spec =
                       contentActiveAt = result >>= contentActiveAt
                     }
             result `shouldBe` Just dequeued
+
       context "when there is no initialized content" do
         it "should return nothing" do
           \conn -> do
@@ -358,11 +364,13 @@ spec =
             void $ runPQ (I.unsafeCreateContent c1) conn
             (result, _) <- runPQ dequeueNextUnprocessed conn
             result `shouldBe` Nothing
+
       context "when there is no content" do
         it "should return nothing" do
           \conn -> do
             (result, _) <- runPQ dequeueNextUnprocessed conn
             result `shouldBe` Nothing
+
     describe "getById" do
       it "should return item by hash ID" do
         \conn -> do
@@ -373,6 +381,7 @@ spec =
               result `shouldBe` Just content
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "getById'" do
       it "should increase number of views" do
         \conn -> do
@@ -387,6 +396,7 @@ spec =
               result `shouldBe` Just (content {contentNumViews = 3})
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "getByURL" do
       it "should return item by URL" do
         \conn -> do
@@ -397,6 +407,7 @@ spec =
               result `shouldBe` Just content
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "getByURL'" do
       it "should increase number of views" do
         \conn -> do
@@ -411,6 +422,7 @@ spec =
               result `shouldBe` Just (content {contentNumViews = 3})
             Nothing ->
               expectationFailure "expected content to be initialized"
+
     describe "getNextUnprocessed" do
       context "when two content were initialized at the same time" do
         it "should return the one that is more popular (more views)" do
@@ -428,6 +440,7 @@ spec =
             void $ runPQ (I.unsafeCreateContent u4) conn
             (results, _) <- runPQ getNextUnprocessed conn
             results `shouldBe` Just u2
+
       context "when there is no initialized content" do
         it "should return nothing" do
           \conn -> do
@@ -436,11 +449,13 @@ spec =
             void $ runPQ (I.unsafeCreateContent c1) conn
             (results, _) <- runPQ getNextUnprocessed conn
             results `shouldBe` Nothing
+
       context "when there is no content" do
         it "should return nothing" do
           \conn -> do
             (results, _) <- runPQ getNextUnprocessed conn
             results `shouldBe` Nothing
+
     describe "getExpiredActive" do
       it "should return active content that has expired" do
         \conn -> do
