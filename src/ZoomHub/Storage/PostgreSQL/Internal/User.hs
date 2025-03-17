@@ -26,8 +26,10 @@ import Squeal.PostgreSQL
     GenericParams (genericParams),
     NP (Nil, (:*)),
     NullType (NotNull, Null),
+    Only,
     Optional (Default, Set),
     PGType (PGbool, PGint8, PGtext, PGtimestamptz),
+    QueryClause (Select),
     Statement (Manipulation),
     UsingClause (Using),
     as,
@@ -43,12 +45,13 @@ import Squeal.PostgreSQL
     update,
     (!),
     (.&&),
+    (.==),
     (:::),
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
-import ZoomHub.Types.User (User (User))
+import ZoomHub.Types.User (Email, User (User))
 import qualified ZoomHub.Types.User as User
 
 -- user
@@ -100,7 +103,7 @@ findOrCreate = Manipulation encode decode sql
         )
 
 -- Links all existing verified content for this user.
-linkVerifiedContent :: Statement Schemas () ()
+linkVerifiedContent :: Statement Schemas (Only Email) ()
 linkVerifiedContent = manipulation sql
   where
     sql =
@@ -110,7 +113,8 @@ linkVerifiedContent = manipulation sql
             :* (Set null_ `as` #submitter_email)
         )
         (Using (table (#users `as` #u)))
-        ( ((#c ! #submitter_email) `ilike` just_ (#u ! #email))
+        ( (#u ! #email .== param @1)
+            .&& (#c ! #submitter_email `ilike` just_ (#u ! #email))
             .&& isNotNull (#c ! #verified_at)
         )
         (Returning_ Nil)

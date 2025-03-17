@@ -806,7 +806,7 @@ webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code 
       let user =
             User
               { User.kindeUserId = session.kindeUser.id,
-                User.email = session.kindeUser.email,
+                User.email = User.Email session.kindeUser.email,
                 User.isEmailVerified = session.kindeUser.isEmailVerified,
                 User.familyName = session.kindeUser.familyName,
                 User.givenName = session.kindeUser.givenName,

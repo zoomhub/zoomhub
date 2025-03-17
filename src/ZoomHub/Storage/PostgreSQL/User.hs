@@ -5,18 +5,21 @@
 
 module ZoomHub.Storage.PostgreSQL.User
   ( findOrCreate,
+    linkVerifiedContent,
   )
 where
 
 import Control.Monad.Catch (MonadMask)
 import Squeal.PostgreSQL
   ( MonadPQ (executeParams),
+    Only (Only),
     firstRow,
   )
+import Squeal.PostgreSQL.Session.Monad (MonadPQ (executeParams_))
 import UnliftIO (MonadUnliftIO)
 import qualified ZoomHub.Storage.PostgreSQL.Internal.User as Internal
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
-import ZoomHub.Types.User (User)
+import ZoomHub.Types.User (Email, User)
 
 findOrCreate ::
   (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
@@ -28,3 +31,8 @@ findOrCreate user = do
   case mUser of
     Nothing -> error "Unexpected error: Could not create user with `findOrCreate`"
     Just user' -> pure user'
+
+linkVerifiedContent ::
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) => Email -> m ()
+linkVerifiedContent email =
+  executeParams_ Internal.linkVerifiedContent (Only email)

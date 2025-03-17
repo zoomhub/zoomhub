@@ -101,6 +101,7 @@ import ZoomHub.Types.DeepZoomImage (mkDeepZoomImage)
 import ZoomHub.Types.DeepZoomImage.TileFormat (TileFormat (JPEG))
 import ZoomHub.Types.DeepZoomImage.TileOverlap (TileOverlap (TileOverlap1))
 import ZoomHub.Types.DeepZoomImage.TileSize (TileSize (TileSize254))
+import ZoomHub.Types.User (Email (Email))
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import qualified ZoomHub.Types.VerificationToken as VerificationToken
 
