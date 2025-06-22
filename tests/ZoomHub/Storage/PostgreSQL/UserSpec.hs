@@ -19,7 +19,8 @@ import Data.Int (Int64)
 import Data.Text (Text)
 import Flow
 import Squeal.PostgreSQL
-  ( runPQ,
+  ( Only (Only),
+    runPQ,
   )
 import Test.Hspec
   ( Spec,
@@ -47,7 +48,43 @@ main = hspec spec
 spec :: Spec
 spec =
   beforeAll_ setupDatabase $ around withDatabaseConnection do
-    focus $ describe "linkVerifiedContent" do
+    describe "findByEmail" do
+      it "should return existing user when email matches" do
+        \conn -> do
+          let testEmail = CI.mk "test@example.com"
+          let createUser = mkCreateUserFromEmail testEmail
+
+          -- Create a user first
+          (createdUser, _) <- runPQ (PGUser.findOrCreate createUser) conn
+
+          -- Find the user by email
+          (foundUser, _) <- runPQ (PGUser.findByEmail testEmail) conn
+
+          foundUser `shouldBe` Just createdUser
+
+      it "should return Nothing when email does not exist" do
+        \conn -> do
+          let nonExistentEmail = CI.mk "nonexistent@example.com"
+
+          (foundUser, _) <- runPQ (PGUser.findByEmail nonExistentEmail) conn
+
+          foundUser `shouldBe` Nothing
+
+      it "should find user with case-insensitive email matching" do
+        \conn -> do
+          let originalEmail = CI.mk "CaseTest@Example.COM"
+          let searchEmail = CI.mk "casetest@example.com"
+          let createUser = mkCreateUserFromEmail originalEmail
+
+          -- Create user with mixed case email
+          (createdUser, _) <- runPQ (PGUser.findOrCreate createUser) conn
+
+          -- Search with different case
+          (foundUser, _) <- runPQ (PGUser.findByEmail searchEmail) conn
+
+          foundUser `shouldBe` Just createdUser
+
+    describe "linkVerifiedContent" do
       it "should return verified content that matches email of user" do
         \conn -> do
           let canonicalEmail = Email (CI.mk "user-1@example.com")
@@ -94,6 +131,17 @@ spec =
 
     mkCreateUser :: Email -> PGUser.CreateUser
     mkCreateUser (Email ciEmail) =
+      PGUser.CreateUser
+        { CreateUser.kindeUserId = "kp_" <> CI.original ciEmail,
+          CreateUser.email = ciEmail,
+          CreateUser.isEmailVerified = True,
+          CreateUser.givenName = Nothing,
+          CreateUser.familyName = Nothing,
+          CreateUser.imageURL = Nothing
+        }
+
+    mkCreateUserFromEmail :: CI.CI Text -> PGUser.CreateUser
+    mkCreateUserFromEmail ciEmail =
       PGUser.CreateUser
         { CreateUser.kindeUserId = "kp_" <> CI.original ciEmail,
           CreateUser.email = ciEmail,
