@@ -30,7 +30,7 @@ import Data.Text (Text)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL
-  ( ConflictAction (DoNothing),
+  ( ConflictAction (DoUpdate),
     ConflictClause (OnConflict),
     ConflictTarget (OnConstraint),
     DecodeRow,
@@ -142,7 +142,7 @@ findOrCreate = Manipulation encode decode sql
                 :* (Default `as` #created_at)
             )
         )
-        (OnConflict (OnConstraint #users_unique_email) DoNothing)
+        (OnConflict (OnConstraint #users_unique_email) (DoUpdate (Set currentTimestamp `as` #updated_at) []))
         ( Returning_
             ( #id
                 :* #kinde_user_id
