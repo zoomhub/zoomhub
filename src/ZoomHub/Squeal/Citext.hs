@@ -37,7 +37,7 @@ createCitextExtensionIfNotExists =
   UnsafeDefinition "CREATE EXTENSION IF NOT EXISTS \"citext\";"
 
 citext :: TypeExpression db (null PGcitext)
-citext = UnsafeTypeExpression "text"
+citext = UnsafeTypeExpression "citext"
 
 instance PGTyped db PGcitext where pgtype = citext
 
