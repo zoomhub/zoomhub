@@ -18,6 +18,7 @@ module ZoomHub.Storage.PostgreSQLSpec
     mkUnprocessedContent,
     mkActiveContent,
     mkSucceededContent,
+    mkUnverifiedContent,
     unsafeContentId,
     testEmail,
     testURL,
@@ -560,8 +561,10 @@ nullVerificationToken :: VerificationToken
 nullVerificationToken =
   fromJust $ VerificationToken.fromText "00000000-0000-0000-0000-000000000000"
 
-mkSucceededContent :: String -> Maybe Email -> UTCTime -> NominalDiffTime -> I.Content
-mkSucceededContent id_ submitterEmail currentTime age =
+data VerificationStatus = Verified | Unverified
+
+mkCompletedContent :: String -> Maybe Email -> UTCTime -> NominalDiffTime -> VerificationStatus -> I.Content
+mkCompletedContent id_ submitterEmail currentTime age verificationStatus =
   let dzi = mkDeepZoomImage 300 400 TileSize254 TileOverlap1 JPEG
       mMIME = ContentMIME.fromText "image/jpeg"
       mSize = Just 1234
@@ -583,9 +586,19 @@ mkSucceededContent id_ submitterEmail currentTime age =
             Just (Email email) -> Just (CI.original email)
             Nothing -> Nothing,
           contentVerificationToken = Just nullVerificationToken,
-          contentVerifiedAt = Just initializedAt,
+          contentVerifiedAt = case verificationStatus of
+            Verified -> Just initializedAt
+            Unverified -> Nothing,
           contentUserId = Nothing
         }
   where
     activeAt = addUTCTime (-age) currentTime
     initializedAt = addUTCTime (-1) activeAt
+
+mkSucceededContent :: String -> Maybe Email -> UTCTime -> NominalDiffTime -> I.Content
+mkSucceededContent id_ submitterEmail currentTime age =
+  mkCompletedContent id_ submitterEmail currentTime age Verified
+
+mkUnverifiedContent :: String -> Maybe Email -> UTCTime -> NominalDiffTime -> I.Content
+mkUnverifiedContent id_ submitterEmail currentTime age =
+  mkCompletedContent id_ submitterEmail currentTime age Unverified
