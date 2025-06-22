@@ -24,6 +24,8 @@
 
 module ZoomHub.Storage.PostgreSQL.Internal.User where
 
+import Data.CaseInsensitive (CI)
+import Data.Function ((&))
 import Data.Text (Text)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
@@ -32,16 +34,16 @@ import Squeal.PostgreSQL
     ConflictClause (OnConflict),
     ConflictTarget (OnConstraint),
     DecodeRow,
-    Definition (UnsafeDefinition),
     GenericParams (genericParams),
     NP (Nil, (:*)),
     NullType (NotNull, Null),
     Only,
     Optional (Default, Set),
-    PGType (PGbool, PGint8, PGtext, PGtimestamptz, UnsafePGType),
+    PGType (PGbool, PGint8, PGtext, PGtimestamptz),
     Statement (Manipulation),
     UsingClause (Using),
     as,
+    cast,
     currentTimestamp,
     ilike,
     insertInto,
@@ -51,6 +53,7 @@ import Squeal.PostgreSQL
     null_,
     param,
     table,
+    text,
     update,
     (!),
     (.&&),
@@ -59,8 +62,9 @@ import Squeal.PostgreSQL
   )
 import Squeal.PostgreSQL.Manipulation (pattern Returning_)
 import Squeal.PostgreSQL.Manipulation.Insert (pattern Values_)
+import ZoomHub.Squeal.Citext (PGcitext)
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
-import ZoomHub.Types.User (Email, User (User))
+import ZoomHub.Types.User (User (User))
 import qualified ZoomHub.Types.User as User
 import Prelude hiding (id)
 
@@ -68,7 +72,7 @@ import Prelude hiding (id)
 type UserRow =
   '[ "id" ::: 'NotNull 'PGint8,
      "kinde_user_id" ::: 'NotNull 'PGtext,
-     "email" ::: 'NotNull 'PGtext,
+     "email" ::: 'NotNull PGcitext,
      "is_email_verified" ::: 'NotNull 'PGbool,
      "given_name" ::: 'Null 'PGtext,
      "family_name" ::: 'Null 'PGtext,
@@ -79,7 +83,7 @@ type UserRow =
 
 data CreateUser = CreateUser
   { kindeUserId :: !Text,
-    email :: !Email,
+    email :: !(CI Text),
     isEmailVerified :: !Bool,
     givenName :: !(Maybe Text),
     familyName :: !(Maybe Text),
@@ -91,6 +95,7 @@ data CreateUser = CreateUser
 instance SOP.Generic CreateUser
 
 instance SOP.HasDatatypeInfo CreateUser
+
 
 -- Returns existing user based on `email` or create a new one.
 findOrCreate :: Statement Schemas CreateUser User
@@ -128,7 +133,7 @@ findOrCreate = Manipulation encode decode sql
         )
 
 -- Links all existing verified content for this user.
-linkVerifiedContent :: Statement Schemas (Only Email) ()
+linkVerifiedContent :: Statement Schemas (Only (CI Text)) ()
 linkVerifiedContent = manipulation sql
   where
     sql =
@@ -139,7 +144,7 @@ linkVerifiedContent = manipulation sql
         )
         (Using (table (#users `as` #u)))
         ( (#u ! #email .== param @1)
-            .&& (#c ! #submitter_email `ilike` just_ (#u ! #email))
+            .&& (#c ! #submitter_email `ilike` just_ (#u ! #email & cast text))
             .&& isNotNull (#c ! #verified_at)
         )
         (Returning_ Nil)

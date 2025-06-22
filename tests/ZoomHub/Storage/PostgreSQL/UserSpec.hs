@@ -12,6 +12,7 @@ module ZoomHub.Storage.PostgreSQL.UserSpec
 where
 
 import Control.Monad (forM_, void)
+import qualified Data.CaseInsensitive as CI
 import Data.Function ((&))
 import Data.Functor ((<&>))
 import Data.Int (Int64)
@@ -49,9 +50,9 @@ spec =
     focus $ describe "linkVerifiedContent" do
       it "should return verified content that matches email of user" do
         \conn -> do
-          let canonicalEmail = Email "user-1@example.com"
-          let alternativeEmail = Email "USER-1@example.com"
-          let mismatchingEmail = Email "user-2@example.com"
+          let canonicalEmail = Email (CI.mk "user-1@example.com")
+          let alternativeEmail = Email (CI.mk "USER-1@example.com")
+          let mismatchingEmail = Email (CI.mk "user-2@example.com")
 
           (canonicalUser, _) <- runPQ (PGUser.findOrCreate (mkCreateUser canonicalEmail)) conn
           -- TODO: Test that this doesn’t create a different user, i.e. use `citext`:
@@ -68,7 +69,8 @@ spec =
               c3 = mkSucceededContent "yJL" (Just mismatchingEmail) currentTime (60 & minutes)
           void . forM_ [c1, c2, c3] $ \c ->
             runPQ (I.unsafeCreateContent c) conn
-          void $ runPQ (PGUser.linkVerifiedContent canonicalEmail) conn
+          let (Email canonicalEmailCI) = canonicalEmail
+          void $ runPQ (PGUser.linkVerifiedContent canonicalEmailCI) conn
           (results, _) <- runPQ (getAllByUserId canonicalUser.id) conn
           (results <&> toTuple)
             `shouldBe` ( [ c1
@@ -91,10 +93,10 @@ spec =
       )
 
     mkCreateUser :: Email -> PGUser.CreateUser
-    mkCreateUser (Email email) =
+    mkCreateUser (Email ciEmail) =
       PGUser.CreateUser
-        { CreateUser.kindeUserId = "kp_" <> email,
-          CreateUser.email = Email email,
+        { CreateUser.kindeUserId = "kp_" <> CI.original ciEmail,
+          CreateUser.email = ciEmail,
           CreateUser.isEmailVerified = True,
           CreateUser.givenName = Nothing,
           CreateUser.familyName = Nothing,

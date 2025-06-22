@@ -62,6 +62,7 @@ library
     , ZoomHub.Log.LogLevel
     , ZoomHub.Log.RequestLogger
     , ZoomHub.Servant.RequiredQueryParam
+    , ZoomHub.Squeal.Citext
     , ZoomHub.Storage.PostgreSQL
     , ZoomHub.Storage.PostgreSQL.ConnectInfo
     , ZoomHub.Storage.PostgreSQL.Dashboard
@@ -256,6 +257,7 @@ test-suite tests
     , amazonka-s3
     , base64
     , bytestring
+    , case-insensitive
     , clientsession
     , flow
     , generics-sop

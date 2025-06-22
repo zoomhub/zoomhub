@@ -54,6 +54,7 @@ import Squeal.PostgreSQL
     (>>>),
   )
 import Squeal.PostgreSQL.Session.Migration (Migration (..))
+import ZoomHub.Squeal.Citext (PGcitext, citext, createCitextExtensionIfNotExists)
 import ZoomHub.Storage.PostgreSQL.Schema.Schema0 (ConfigTable0, FlickrTable0, ImageTable0)
 import ZoomHub.Storage.PostgreSQL.Schema.Schema5 (Schemas5)
 
@@ -83,7 +84,7 @@ type UsersTable0 =
              ]
               :=> '[ "id" ::: 'Def :=> 'NotNull 'PGint8,
                      "kinde_user_id" ::: 'NoDef :=> 'NotNull 'PGtext,
-                     "email" ::: 'NoDef :=> 'NotNull 'PGtext,
+                     "email" ::: 'NoDef :=> 'NotNull PGcitext,
                      "is_email_verified" ::: 'NoDef :=> 'NotNull 'PGbool,
                      "given_name" ::: 'NoDef :=> 'Null 'PGtext,
                      "family_name" ::: 'NoDef :=> 'Null 'PGtext,
@@ -138,22 +139,23 @@ migration =
 
 setup :: Definition Schemas5 Schemas6
 setup =
-  createTable
-    #users
-    ( (bigserial `as` #id)
-        :* ((text & notNullable) `as` #kinde_user_id)
-        :* ((text & notNullable) `as` #email)
-        :* ((bool & notNullable) `as` #is_email_verified)
-        :* ((text & nullable) `as` #given_name)
-        :* ((text & nullable) `as` #family_name)
-        :* ((text & nullable) `as` #image_url)
-        :* ((timestampWithTimeZone & notNullable) `as` #updated_at)
-        :* ((timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at)
-    )
-    ( (primaryKey #id `as` #pk_users)
-        :* (unique #kinde_user_id `as` #users_unique_kinde_user_id)
-        :* (unique #email `as` #users_unique_email)
-    )
+  createCitextExtensionIfNotExists
+    >>> createTable
+      #users
+      ( (bigserial `as` #id)
+          :* ((text & notNullable) `as` #kinde_user_id)
+          :* ((citext & notNullable) `as` #email)
+          :* ((bool & notNullable) `as` #is_email_verified)
+          :* ((text & nullable) `as` #given_name)
+          :* ((text & nullable) `as` #family_name)
+          :* ((text & nullable) `as` #image_url)
+          :* ((timestampWithTimeZone & notNullable) `as` #updated_at)
+          :* ((timestampWithTimeZone & notNullable & default_ currentTimestamp) `as` #created_at)
+      )
+      ( (primaryKey #id `as` #pk_users)
+          :* (unique #kinde_user_id `as` #users_unique_kinde_user_id)
+          :* (unique #email `as` #users_unique_email)
+      )
     >>> alterTable #content (addColumn #user_id (bigint & nullable & default_ null_))
     >>> alterTable
       #content

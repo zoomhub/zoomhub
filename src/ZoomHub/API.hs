@@ -20,6 +20,7 @@ import Data.Aeson ((.=))
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.CaseInsensitive as CI
 import Data.Foldable (fold, for_)
 import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
@@ -146,7 +147,6 @@ import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
-import qualified ZoomHub.Types.User as User
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (appendQueryParams, tshow)
@@ -806,7 +806,7 @@ webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code 
       let user =
             User.CreateUser
               { CreateUser.kindeUserId = session.kindeUser.id,
-                CreateUser.email = User.Email session.kindeUser.email,
+                CreateUser.email = CI.mk session.kindeUser.email,
                 CreateUser.isEmailVerified = session.kindeUser.isEmailVerified,
                 CreateUser.familyName = session.kindeUser.familyName,
                 CreateUser.givenName = session.kindeUser.givenName,

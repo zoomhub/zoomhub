@@ -27,6 +27,7 @@ where
 import Control.Exception (bracket)
 import Control.Monad (forM_, void)
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.CaseInsensitive as CI
 import Data.Function ((&))
 import Data.Int (Int64)
 import Data.Maybe (fromJust, isJust)
@@ -579,7 +580,7 @@ mkSucceededContent id_ submitterEmail currentTime age =
           contentError = Nothing,
           contentDZI = Just dzi,
           contentSubmitterEmail = case submitterEmail of
-            Just (Email email) -> Just email
+            Just (Email email) -> Just (CI.original email)
             Nothing -> Nothing,
           contentVerificationToken = Just nullVerificationToken,
           contentVerifiedAt = Just initializedAt,

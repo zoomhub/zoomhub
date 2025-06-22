@@ -11,17 +11,20 @@
 
 module ZoomHub.Types.User where
 
+import Data.CaseInsensitive (CI)
+import qualified Data.CaseInsensitive as CI
 import Data.Int (Int64)
 import Data.Text (Text)
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Squeal.PostgreSQL (FromPG (fromPG), IsPG, ToPG)
+import ZoomHub.Squeal.Citext ()
 
 -- user
 data User = User
   { id :: Int64,
     kindeUserId :: !Text,
-    email :: !Email,
+    email :: !(CI Text),
     isEmailVerified :: !Bool,
     givenName :: !(Maybe Text),
     familyName :: !(Maybe Text),
@@ -35,7 +38,7 @@ instance SOP.Generic User
 instance SOP.HasDatatypeInfo User
 
 -- email
-newtype Email = Email Text
+newtype Email = Email (CI Text)
   deriving (Eq, GHC.Generic, Show)
   deriving newtype (IsPG, ToPG db)
 
@@ -45,4 +48,4 @@ instance SOP.Generic Email
 instance SOP.HasDatatypeInfo Email
 
 instance FromPG Email where
-  fromPG = Email <$> (fromPG @Text)
+  fromPG = Email . CI.mk <$> (fromPG @Text)
