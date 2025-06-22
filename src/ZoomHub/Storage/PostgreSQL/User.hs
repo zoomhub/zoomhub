@@ -4,7 +4,8 @@
 {-# OPTIONS_GHC -fomit-interface-pragmas #-}
 
 module ZoomHub.Storage.PostgreSQL.User
-  ( findOrCreate,
+  ( findByEmail,
+    findOrCreate,
     linkVerifiedContent,
     Internal.CreateUser (..),
   )
@@ -23,6 +24,14 @@ import UnliftIO (MonadUnliftIO)
 import qualified ZoomHub.Storage.PostgreSQL.Internal.User as Internal
 import ZoomHub.Storage.PostgreSQL.Schema (Schemas)
 import ZoomHub.Types.User (User)
+
+findByEmail ::
+  (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
+  CI Text ->
+  m (Maybe User)
+findByEmail email = do
+  result <- executeParams Internal.findByEmail (Only email)
+  firstRow result
 
 findOrCreate ::
   (MonadUnliftIO m, MonadPQ Schemas m, MonadMask m) =>
