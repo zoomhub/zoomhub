@@ -14,11 +14,13 @@ import Control.Monad (when)
 import Crypto.JOSE (JWK)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.CaseInsensitive as CI
 import Data.Maybe (fromJust)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Base64 as T
+import Data.Time (getCurrentTime)
 import Data.Time.Units (Second)
 import Flow
 import Network.HTTP.Types (hAuthorization, hContentType, methodGet, methodPut)
@@ -50,15 +52,17 @@ import qualified ZoomHub.Config.Kinde as Kinde
 import ZoomHub.Config.ProcessContent (ProcessContent (ProcessExistingAndNewContent))
 import ZoomHub.Config.Uploads (Uploads (UploadsDisabled))
 import qualified ZoomHub.Log.LogLevel as LogLevel
-import ZoomHub.Storage.PostgreSQL (createConnectionPool, getById, getAllByUserId)
+import ZoomHub.Storage.PostgreSQL (createConnectionPool, getAllByUserId, getById)
 import qualified ZoomHub.Storage.PostgreSQL as ConnectInfo (fromEnv)
-import qualified ZoomHub.Storage.PostgreSQL.Internal as I
 import ZoomHub.Storage.PostgreSQL.Internal (destroyConnectionPool, usingConnectionPool)
+import qualified ZoomHub.Storage.PostgreSQL.Internal as I
 import qualified ZoomHub.Storage.PostgreSQL.User as CreateUser
 import qualified ZoomHub.Storage.PostgreSQL.User as User
+import ZoomHub.Storage.PostgreSQLSpec (mkUnverifiedContent, safeGetCurrentTime)
 import ZoomHub.Types.APIUser (APIUser (..))
 import ZoomHub.Types.BaseURI (BaseURI (..))
 import ZoomHub.Types.Content (contentNumViews, contentSubmitterEmail, contentVerificationToken)
+import qualified ZoomHub.Types.Content as Internal
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
@@ -66,10 +70,6 @@ import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
 import ZoomHub.Types.User (Email (Email))
 import qualified ZoomHub.Types.User as User
-import qualified ZoomHub.Types.Content as Internal
-import qualified Data.CaseInsensitive as CI
-import Data.Time (getCurrentTime)
-import ZoomHub.Storage.PostgreSQLSpec (mkUnverifiedContent, safeGetCurrentTime)
 import ZoomHub.Web.Types.ViteManifest (AssetPath (AssetPath))
 
 main :: IO ()
@@ -307,15 +307,18 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
 
     it "should link verified content to existing user account" do
       let userEmail = CI.mk (T.pack testEmail)
-      existingUser <- liftIO $ usingConnectionPool (Config.dbConnPool config) $ 
-        User.findOrCreate $ CreateUser.CreateUser
-          { CreateUser.kindeUserId = "test_integration_user"
-          , CreateUser.email = userEmail
-          , CreateUser.isEmailVerified = True
-          , CreateUser.givenName = Nothing  
-          , CreateUser.familyName = Nothing
-          , CreateUser.imageURL = Nothing
-          }
+      existingUser <-
+        liftIO $
+          usingConnectionPool (Config.dbConnPool config) $
+            User.findOrCreate $
+              CreateUser.CreateUser
+                { CreateUser.kindeUserId = "test_integration_user",
+                  CreateUser.email = userEmail,
+                  CreateUser.isEmailVerified = True,
+                  CreateUser.givenName = Nothing,
+                  CreateUser.familyName = Nothing,
+                  CreateUser.imageURL = Nothing
+                }
 
       mContent <- liftIO $ usingConnectionPool (Config.dbConnPool config) (getById newContentId)
       case mContent of
@@ -324,15 +327,19 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
           case contentVerificationToken content of
             Nothing -> liftIO $ expectationFailure "Content has no verification token"
             Just verificationToken -> do
-              userContentBefore <- liftIO $ usingConnectionPool (Config.dbConnPool config) $ 
-                getAllByUserId (User.id existingUser)
+              userContentBefore <-
+                liftIO $
+                  usingConnectionPool (Config.dbConnPool config) $
+                    getAllByUserId (User.id existingUser)
 
               put ("/v1/content/Xar/verification/" <> BC.pack (show verificationToken)) ""
                 `shouldRespondWith` restRedirect newContentId
-              
-              userContentAfter <- liftIO $ usingConnectionPool (Config.dbConnPool config) $ 
-                getAllByUserId (User.id existingUser)
-              
+
+              userContentAfter <-
+                liftIO $
+                  usingConnectionPool (Config.dbConnPool config) $
+                    getAllByUserId (User.id existingUser)
+
               liftIO $ do
                 length userContentAfter `shouldBe` (length userContentBefore + 1)
                 when (not (null userContentAfter)) $ do

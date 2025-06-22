@@ -160,16 +160,16 @@ spec =
       it "should link content to existing user when submitter email matches" do
         \conn -> do
           let userEmail = Email (CI.mk "existing@example.com")
-          
+
           (existingUser, _) <- runPQ (PGUser.findOrCreate (mkCreateUser userEmail)) conn
-          
+
           currentTime <- safeGetCurrentTime
           let content = mkSucceededContent "DEF" (Just userEmail) currentTime (15 * 60)
           void $ runPQ (I.unsafeCreateContent content) conn
-          
+
           let (Email userEmailCI) = userEmail
           void $ runPQ (PGUser.linkVerifiedContent userEmailCI) conn
-          
+
           (results, _) <- runPQ (getAllByUserId existingUser.id) conn
           length results `shouldBe` 1
           let linkedContent = head results
