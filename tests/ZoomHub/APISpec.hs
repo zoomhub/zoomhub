@@ -342,9 +342,8 @@ spec = with (app config) $ afterAll_ (closeDatabaseConnection config) do
 
               liftIO $ do
                 length userContentAfter `shouldBe` (length userContentBefore + 1)
-                when (not (null userContentAfter)) $ do
-                  let linkedContent = head userContentAfter
-                  Internal.contentUserId linkedContent `shouldBe` Just (User.id existingUser)
+                let linkedContent = head userContentAfter
+                Internal.contentUserId linkedContent `shouldBe` Just (User.id existingUser)
 
     describe "Complete content by ID (PUT /v1/content/:id/completion)" do
       context "without auth" do
