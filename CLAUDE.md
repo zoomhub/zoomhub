@@ -90,3 +90,10 @@ The application uses environment variables and is configured for AWS deployment:
 - **Frontend**: npm with Snowpack bundler
 - **Dependencies**: Defined in `zoomhub.cabal` and `package.json`
 - **Executables**: Main server and database migration tool
+
+## Code style
+
+### Haskell
+
+- Avoid 'boolean trap', i.e. positional boolean arguments. Prefer sum types
+  instead.
