@@ -49,3 +49,14 @@ instance SOP.HasDatatypeInfo Email
 
 instance FromPG Email where
   fromPG = Email . CI.mk <$> (fromPG @Text)
+
+-- User creation result
+data UserCreationResult
+  = UserCreated User
+  | UserFound User
+  deriving (Eq, GHC.Generic, Show)
+
+-- PostgreSQL / Squeal
+instance SOP.Generic UserCreationResult
+
+instance SOP.HasDatatypeInfo UserCreationResult

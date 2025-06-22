@@ -19,15 +19,14 @@ import Data.Int (Int64)
 import Data.Text (Text)
 import Flow
 import Squeal.PostgreSQL
-  ( Only (Only),
-    runPQ,
+  ( runPQ,
   )
 import Test.Hspec
   ( Spec,
     around,
     beforeAll_,
     describe,
-    focus,
+    expectationFailure,
     hspec,
     it,
     shouldBe,
@@ -39,7 +38,7 @@ import qualified ZoomHub.Storage.PostgreSQL.User as PGUser
 import ZoomHub.Storage.PostgreSQLSpec (mkSucceededContent, safeGetCurrentTime, setupDatabase, withDatabaseConnection)
 import ZoomHub.Types.Content (Content (contentId, contentSubmitterEmail, contentUserId))
 import ZoomHub.Types.ContentId (ContentId)
-import ZoomHub.Types.User (Email (Email))
+import ZoomHub.Types.User (Email (Email), UserCreationResult (UserCreated, UserFound))
 import qualified ZoomHub.Types.User as User
 
 main :: IO ()
@@ -84,6 +83,42 @@ spec =
 
           foundUser `shouldBe` Just createdUser
 
+    describe "findOrCreateWithResult" do
+      it "should return UserCreated when creating new user" do
+        \conn -> do
+          let testEmail = CI.mk "newuser@example.com"
+          let createUser = mkCreateUserFromEmail testEmail
+
+          (userResult, _) <- runPQ (PGUser.findOrCreateWithResult createUser) conn
+
+          case userResult of
+            UserCreated user -> do
+              user.email `shouldBe` testEmail
+            UserFound _ ->
+              expectationFailure "Expected UserCreated, got UserFound"
+
+      it "should return UserFound when user already exists" do
+        \conn -> do
+          let testEmail = CI.mk "existinguser@example.com"
+          let createUser = mkCreateUserFromEmail testEmail
+
+          -- Create user first
+          (firstResult, _) <- runPQ (PGUser.findOrCreateWithResult createUser) conn
+          firstUserId <- case firstResult of
+            UserCreated user -> pure user.id
+            UserFound _ -> do
+              expectationFailure "Expected UserCreated on first call"
+              pure 0 -- This won't be reached but satisfies type checker
+
+          -- Call again - should find existing user
+          (secondResult, _) <- runPQ (PGUser.findOrCreateWithResult createUser) conn
+          case secondResult of
+            UserFound user -> do
+              user.id `shouldBe` firstUserId
+              user.email `shouldBe` testEmail
+            UserCreated _ ->
+              expectationFailure "Expected UserFound, got UserCreated"
+
     describe "linkVerifiedContent" do
       it "should return verified content that matches email of user" do
         \conn -> do
@@ -92,7 +127,6 @@ spec =
           let mismatchingEmail = Email (CI.mk "user-2@example.com")
 
           (canonicalUser, _) <- runPQ (PGUser.findOrCreate (mkCreateUser canonicalEmail)) conn
-          -- TODO: Test that this doesn’t create a different user, i.e. use `citext`:
           (alternativeUser, _) <-
             runPQ (PGUser.findOrCreate (mkCreateUser alternativeEmail)) conn
           void $

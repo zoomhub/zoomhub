@@ -147,6 +147,7 @@ import qualified ZoomHub.Types.ContentState as ContentState
 import ZoomHub.Types.ContentURI (ContentURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
+import ZoomHub.Types.User (UserCreationResult (UserCreated, UserFound))
 import qualified ZoomHub.Types.VerificationError as VerificationError
 import ZoomHub.Types.VerificationToken (VerificationToken)
 import ZoomHub.Utils (appendQueryParams, tshow)
@@ -813,8 +814,12 @@ webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code 
                 CreateUser.imageURL = session.kindeUser.picture
               }
 
-      _ <- liftIO $ usingConnectionPool dbConnPool (User.findOrCreate user)
-      return ()
+      userResult <- liftIO $ usingConnectionPool dbConnPool (User.findOrCreateWithResult user)
+      case userResult of
+        UserFound _ -> return ()
+        UserCreated _ -> do
+          liftIO $ usingConnectionPool dbConnPool (User.linkVerifiedContent (CreateUser.email user))
+          return ()
 
   return $
     addHeader redirectPath $
