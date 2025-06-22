@@ -40,11 +40,12 @@ import Squeal.PostgreSQL
     Only,
     Optional (Default, Set),
     PGType (PGbool, PGint8, PGtext, PGtimestamptz),
-    Statement (Manipulation),
+    Statement (Manipulation, Query),
     UsingClause (Using),
     as,
     cast,
     currentTimestamp,
+    from,
     ilike,
     insertInto,
     isNotNull,
@@ -52,9 +53,11 @@ import Squeal.PostgreSQL
     manipulation,
     null_,
     param,
+    select_,
     table,
     text,
     update,
+    where_,
     (!),
     (.&&),
     (.==),
@@ -96,6 +99,27 @@ instance SOP.Generic CreateUser
 
 instance SOP.HasDatatypeInfo CreateUser
 
+-- Returns existing user based on `email`.
+findByEmail :: Statement Schemas (Only (CI Text)) User
+findByEmail = Query encode decode sql
+  where
+    encode = genericParams
+    decode = decodeUser
+    sql =
+      select_
+        ( #id
+            :* #kinde_user_id
+            :* #email
+            :* #is_email_verified
+            :* #given_name
+            :* #family_name
+            :* #image_url
+            :* #updated_at
+            :* #created_at
+        )
+        ( from (table #users)
+            & where_ (#email .== param @1)
+        )
 
 -- Returns existing user based on `email` or create a new one.
 findOrCreate :: Statement Schemas CreateUser User
