@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository.
 
 ## Development Commands
 
@@ -8,7 +9,8 @@ ZoomHub uses a custom `./zh` script for all development tasks:
 
 - `./zh init` - Initial setup (installs Haskell Stack, PostgreSQL, VIPS, jq)
 - `./zh run` - Build and run frontend + backend with hot reload
-- `./zh test` - Run all tests (creates test database, runs migrations, executes test suite)
+- `./zh test` - Run all tests (creates test database, runs migrations, executes
+  test suite)
 - `./zh test "ModuleName"` - Run specific test module
 - `./zh lint` - Lint Haskell code with HLint
 - `./zh format` - Format Haskell code with Ormolu
@@ -20,21 +22,25 @@ ZoomHub uses a custom `./zh` script for all development tasks:
 
 - Do not add all files, i.e. `git add .`. Make sure to only add files relevant
   to the current commit.
-- Do not mention Claude AI in commits, link to claude.ai, or any other promotional destination.
+- Do not mention Claude AI in commits, link to claude.ai, or any other
+  promotional destination.
 - Ensure commits have titles no longer than 54 characters and a body that is
   wrapped at or below 72 characters.
 
 ## Architecture
 
-ZoomHub is a Haskell web service for creating and serving zoomable images (Deep Zoom Images). The system has several key components:
+ZoomHub is a Haskell web service for creating and serving zoomable images (Deep
+Zoom Images). The system has several key components:
 
 ### Backend (Haskell)
 
 - **API Server** (`src/ZoomHub/API.hs`) - REST API using Servant framework
 - **Web Server** (`src/ZoomHub/Web/Main.hs`) - Web interface and viewer pages
 - **Worker** (`src/ZoomHub/Worker.hs`) - Background processing
-- **Storage** (`src/ZoomHub/Storage/PostgreSQL/`) - PostgreSQL database layer using Squeal
-- **Authentication** (`src/ZoomHub/Authentication/`) - OAuth (Kinde), Basic auth, sessions
+- **Storage** (`src/ZoomHub/Storage/PostgreSQL/`) - PostgreSQL database layer
+  using Squeal
+- **Authentication** (`src/ZoomHub/Authentication/`) - OAuth (Kinde), Basic
+  auth, sessions
 - **AWS Integration** (`src/ZoomHub/AWS/`) - S3 storage and Lambda processing
 
 ### Frontend (TypeScript/React)
@@ -45,7 +51,8 @@ ZoomHub is a Haskell web service for creating and serving zoomable images (Deep 
 
 ### Content Processing
 
-- **Lambda Function**: `process-content/` (Node.js with Sharp for image processing)
+- **Lambda Function**: `process-content/` (Node.js with Sharp for image
+  processing)
 - **Deep Zoom Generation**: Creates DZI (Deep Zoom Images) with tile pyramids
 - **Supported Formats**: Images, PDFs, SVGs (extensible architecture)
 
