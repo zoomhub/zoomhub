@@ -566,7 +566,6 @@ restContentVerificationById baseURI dbConnPool contentId verificationToken = do
   result <- liftIO $ usingConnectionPool dbConnPool (PG.markAsVerified contentId verificationToken)
   case result of
     Right content -> do
-      -- Link content to existing user if submitter email matches
       case Internal.contentSubmitterEmail content of
         Just submitterEmail -> do
           liftIO $ usingConnectionPool dbConnPool (User.linkVerifiedContent (CI.mk submitterEmail))
