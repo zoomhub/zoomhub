@@ -75,7 +75,7 @@ done
 echo ''
 
 BASE_URI="$NGROK_PUBLIC_URL" \
-PUBLIC_PATH='frontend/build' \
+PUBLIC_PATH='frontend/dist' \
   npx concurrently \
     --kill-others \
     --names "api,web" \
