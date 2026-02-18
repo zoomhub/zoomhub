@@ -6,6 +6,7 @@ module ZoomHub.Authentication.OAuth.Kinde
   ( mkApp,
     mkIdp,
     fetchTokensFor,
+    refreshTokensFor,
     logoutURI,
     TokenCollection (..),
   )
@@ -29,7 +30,7 @@ import qualified Network.Wreq as Wreq
 import Servant (ToHttpApiData (toUrlPiece))
 import URI.ByteString (URI, parseURI, strictURIParserOptions)
 import URI.ByteString.Instances ()
-import ZoomHub.Authentication.OAuth (AuthorizationCode (unAuthorizationCode))
+import ZoomHub.Authentication.OAuth (AuthorizationCode (unAuthorizationCode), RefreshToken (unRefreshToken))
 import ZoomHub.Authentication.OAuth.Kinde.OAuth2CodeExchangeResponse (OAuth2CodeExchangeResponse)
 import ZoomHub.Authentication.OAuth.Kinde.TokenCollection (TokenCollection (TokenCollection))
 import ZoomHub.Config.Kinde (ClientId (unClientId), ClientSecret (unClientSecret), Domain (unDomain))
@@ -94,7 +95,34 @@ fetchTokensFor ::
   Kinde.Config ->
   AuthorizationCode ->
   IO (Maybe OAuth2CodeExchangeResponse)
-fetchTokensFor idp config authCode = do
+fetchTokensFor idp config authCode =
+  requestTokens
+    idp
+    config
+    [ "grant_type" := ("authorization_code" :: Text),
+      "redirect_uri" := (config.redirectURI |> show),
+      "code" := (authCode |> unAuthorizationCode)
+    ]
+
+refreshTokensFor ::
+  Idp "kinde" ->
+  Kinde.Config ->
+  RefreshToken ->
+  IO (Maybe OAuth2CodeExchangeResponse)
+refreshTokensFor idp config refreshToken =
+  requestTokens
+    idp
+    config
+    [ "grant_type" := ("refresh_token" :: Text),
+      "refresh_token" := (refreshToken |> unRefreshToken)
+    ]
+
+requestTokens ::
+  Idp "kinde" ->
+  Kinde.Config ->
+  [FormParam] ->
+  IO (Maybe OAuth2CodeExchangeResponse)
+requestTokens idp config grantParams = do
   let opts =
         defaults
           |> header "Content-Type" .~ ["application/x-www-form-urlencoded; charset=UTF-8"]
@@ -102,12 +130,8 @@ fetchTokensFor idp config authCode = do
       tokenUrl = idp |> idpTokenEndpoint |> toUrlPiece |> T.unpack
       payload =
         [ "client_id" := (config.clientId |> unClientId),
-          "client_secret" := (config.clientSecret |> unClientSecret),
-          "grant_type" := ("authorization_code" :: Text),
-          "redirect_uri" := (config.redirectURI |> show),
-          "code" := (authCode |> unAuthorizationCode)
+          "client_secret" := (config.clientSecret |> unClientSecret)
         ]
-
+          <> grantParams
   response <- Wreq.postWith opts tokenUrl payload
-  -- TODO: Handle errors
   return $ response ^? responseBody >>= JSON.decode
