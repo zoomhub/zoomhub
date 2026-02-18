@@ -27,16 +27,6 @@ is_leader=$(if [[ -f "/tmp/is_leader" ]]; then echo 'true'; else echo 'false'; f
 
 echo "{$(json_log_time), \"message\": \"Run startup script\", \"script\": \"run.sh\", \"environmentType\": \"$eb_environment_type\", \"isLeader\": $is_leader, \"env\": {\"PGHOST\": \"$PGHOST\", \"PGPORT\": \"$PGPORT\", \"PGDATABASE\": \"$PGDATABASE\", \"PGUSER\": \"$PGUSER\"}}"
 if [[  "$eb_environment_type" == "SingleInstance" || ("$eb_environment_type" == "LoadBalanced" && "$is_leader" == "true" ) ]]; then
-  # # IMPORTANT: Explicitly hard-coded to `zoomhub_staging` to ensure we never
-  # # accidentally run this on the production database (zoomhub_production).
-  # if [[ "$ZH_ENV" == "staging" && "$PGDATABASE" == "zoomhub_staging" ]]; then
-  #   echo "{$(json_log_time), \"message\": \"Drop staging database\", \"script\": \"run.sh\"}"
-  #   psql --command "DROP DATABASE IF EXISTS zoomhub_staging"
-
-  #   echo "{$(json_log_time), \"message\": \"Create staging database\", \"script\": \"run.sh\"}"
-  #   psql --command "CREATE DATABASE zoomhub_staging"
-  # fi
-
   echo "{$(json_log_time), \"message\": \"Migrate database\", \"script\": \"run.sh\"}"
   /opt/zoomhub/migrate-database "$PGDATABASE" migrate
 fi

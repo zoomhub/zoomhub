@@ -1,6 +1,4 @@
-// IMPORTANT: Required to make `__SNOWPACK_ENV__` available.
-// See: https://github.com/snowpackjs/snowpack/issues/3621#issuecomment-907731004
-import.meta.hot
+/// <reference types="vite/client" />
 
 import * as React from "react"
 import { useRef, useState } from "react"
@@ -278,7 +276,7 @@ const CancelButton = ({ onClick }) => (
 
 const submitURL = async ({ url, email }) =>
   await axios.get(
-    `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/content`,
+    `${import.meta.env.VITE_API_BASE_URI}/v1/content`,
     { params: { url, email } }
   )
 

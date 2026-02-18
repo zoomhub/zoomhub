@@ -16,7 +16,7 @@ main = do
   args <- getArgs
   mHashidsSecret <- lookupEnv "HASHIDS_SALT"
   case (args, mHashidsSecret) of
-    ((database : rest), Just hashidsSecret) -> do
+    (database : rest, Just hashidsSecret) -> do
       connectInfo <- ConnectInfo.fromEnv database
       let program =
             mainMigrateIso

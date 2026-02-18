@@ -62,13 +62,32 @@ yum makecache fast
 # Source: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-linux-ami-basics.html
 log_debug "yum: Install EPEL"
 if ! yum list installed epel-release; then
-    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    # Detect the Amazon Linux version
+    if grep -q 'Amazon Linux 2023' /etc/os-release; then
+        # Amazon Linux 2023 doesn't need EPEL for certbot
+        log_debug "Amazon Linux 2023 detected, skipping EPEL installation"
+    elif grep -q 'Amazon Linux 2' /etc/os-release; then
+        # Amazon Linux 2
+        amazon-linux-extras install -y epel
+    else
+        # Fallback to EPEL 7 for older systems
+        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    fi
 fi
 
 # Install certbot
 log_debug "yum: Install certbot"
-if yum list installed epel-release && ! command -v certbot &>/dev/null; then
-    yum install -y certbot python2-certbot-nginx
+if ! command -v certbot &>/dev/null; then
+    if grep -q 'Amazon Linux 2023' /etc/os-release; then
+        # Amazon Linux 2023 uses dnf and has certbot in the main repo
+        dnf install -y certbot python3-certbot-nginx
+    elif grep -q 'Amazon Linux 2' /etc/os-release; then
+        # Amazon Linux 2 with EPEL
+        yum install -y certbot python2-certbot-nginx
+    else
+        # Older systems
+        yum install -y certbot python2-certbot-nginx
+    fi
 fi
 
 HTTP_STRING='^http\s*{$'

@@ -13,6 +13,7 @@ where
 
 import Data.Aeson (ToJSON, object, toJSON, (.=))
 import qualified Data.Aeson.Key as Key
+import Data.Text.Encoding (decodeUtf8Lenient)
 import Network.HTTP.Types.Status
   ( Status,
     badRequest400,
@@ -24,7 +25,6 @@ import Network.HTTP.Types.Status
     statusMessage,
   )
 import Network.URI (URI)
-import ZoomHub.Utils (lenientDecodeUtf8)
 
 data NonRESTfulResponse a = (ToJSON a) =>
   NonRESTfulResponse
@@ -84,7 +84,7 @@ instance (ToJSON a) => ToJSON (NonRESTfulResponse a) where
   toJSON r =
     object
       [ "status" .= statusCode status,
-        "statusText" .= lenientDecodeUtf8 (statusMessage status),
+        "statusText" .= decodeUtf8Lenient (statusMessage status),
         bodyKey .= toJSON (nrrBody r),
         "redirectLocation" .= redirectLocation
       ]

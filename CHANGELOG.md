@@ -1,5 +1,40 @@
 # ZoomHub
 
+## unreleased
+
+## 2026-02-18-1
+
+- Build:
+  - Migrate frontend build from Snowpack to Vite with TypeScript, PostCSS,
+    and Tailwind CSS support.
+  - Backend reads `.vite/manifest.json` at startup to resolve hashed CSS paths,
+    replacing the hardcoded `/styles/global.css` reference.
+  - Scan Haskell sources (`../src/**/*.hs`) for Tailwind classes directly,
+    replacing the `__DELETE_ME__` Snowpack workaround.
+- CI/CD:
+  - Update `haskell-actions` `ghc-version` from `8.6.5` to `9.6.3`.
+  - Update GitHub Actions to v4 (checkout, cache, upload/download-artifact).
+  - Split cache into restore/save steps so caches persist even when later
+    steps fail.
+  - Skip backend tests when binaries are cached.
+  - Target `staging-3` EB environment in CI.
+- AWS & deployment:
+  - Set `AWS_REGION` explicitly via environment variable instead of hardcoding.
+  - Fix certbot nginx plugin package name (`python2-certbot-nginx`) for
+    Amazon Linux 2.
+  - Add `AWS_REGION` validation to deploy script.
+- Code quality:
+  - Switch from custom `lenientDecodeUtf8` to `decodeUtf8Lenient`.
+  - Add utility functions: `hush`, `appendQueryParams`.
+  - Add environment variable template (`.env.template`).
+- Development:
+  - Improve `./zh run` with proper signal handling and initial Vite build
+    before starting concurrent processes.
+  - Add `reset-db.sh` database utility script.
+  - Update npm dependencies (axios 0.23→1.10, deepmerge 4.3.1) fixing
+    security vulnerabilities.
+  - Update `concurrently` from `6.3.0` to `8.2.2`.
+
 ## 2024-04-25-1
 
 - Infrastructure: Adopt `dotenvx` for environment variable management.
@@ -92,7 +127,6 @@
 - Embed: Add `background` parameter
 
   Customize embed background to be:
-
   - `none` (transparent)
   - `white`
   - `black` (default)
@@ -147,7 +181,6 @@
 ## 2022-02-18
 
 - Embed: Add new features to `<script>` embeds:
-
   - `border=none`: Disable black border.
   - `fit=contain|cover`:
     - `contain` (default): Contain image within canvas.

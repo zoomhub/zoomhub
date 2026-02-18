@@ -18,11 +18,13 @@ import ZoomHub.API.Types.Content (Content, contentId, contentShareUrl)
 import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentId (ContentId, unContentId)
 import ZoomHub.Web.Page (Page (Page), Title (Title))
+import ZoomHub.Web.Types.ViteManifest (AssetPath)
 import qualified ZoomHub.Web.Page as Page
 
 data VerifyContent = VerifyContent
   { vcResult :: VerificationResult,
-    vcBaseURI :: BaseURI
+    vcBaseURI :: BaseURI,
+    vcStylesheetPath :: AssetPath
   }
   deriving (Eq, Show)
 
@@ -31,8 +33,8 @@ data VerificationResult
   | Error Text
   deriving (Eq, Show)
 
-mkVerifyContent :: BaseURI -> VerificationResult -> VerifyContent
-mkVerifyContent vcBaseURI vcResult = VerifyContent {..}
+mkVerifyContent :: BaseURI -> AssetPath -> VerificationResult -> VerifyContent
+mkVerifyContent vcBaseURI vcStylesheetPath vcResult = VerifyContent {..}
 
 progressScript :: ContentId -> Text
 progressScript cId =
@@ -61,6 +63,7 @@ instance H.ToHtml VerifyContent where
       Page
         { pageTitle = Title Page.title,
           pageCanonicalPath = Nothing,
+          pageStylesheetPath = vcStylesheetPath,
           pageBody =
             H.div_
               [H.class_ "h-screen flex flex-col items-center justify-center"]

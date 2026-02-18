@@ -7,11 +7,11 @@ jobs:
   process-content-build:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Cache process-content Node.js dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         env:
-          cache-name: process-content-node-dependencies
+          cache-name: process-content-node-dependencies-v2
         with:
           path: process-content/.npm
           key: process-content-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('process-content/package-lock.json') }}
@@ -39,7 +39,7 @@ jobs:
         run: tar --create --verbose --gzip --file process-content-workspace.tar.gz workspace
 
       - name: Upload workspace
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: process-content-workspace
           path: process-content-workspace.tar.gz
@@ -60,7 +60,7 @@ jobs:
       ZH_API_USERNAME_PRODUCTION: ${{ secrets.ZH_API_USERNAME_PRODUCTION }}
     steps:
       - name: Download process-content-workspace
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: process-content-workspace
 
@@ -110,10 +110,10 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: haskell/actions/setup@v1
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2
         with:
-          ghc-version: "8.6.5"
+          ghc-version: "9.6.3"
           cabal-version: "latest"
           enable-stack: true
           stack-version: "latest"
@@ -132,78 +132,136 @@ jobs:
           echo "ZH_STATIC_BASE_URI=https://static.zoomhub.net" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
-      - name: Cache ~/.stack
-        uses: actions/cache@v2
+      - name: Restore Haskell Stack dependencies cache
+        id: cache-stack-dependencies
+        uses: actions/cache/restore@v4
         env:
-          cache-name: cache-stack
+          cache-name: cache-stack-dependencies-v5
         with:
-          path: ~/.stack
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
+          path: |
+            ~/.stack
+            .stack-work
+          key: web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/stack.yaml.lock') }}
           restore-keys: |
-            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
-            web-build-v1-${{ runner.os }}-
+            web-build-v2-${{ runner.os }}-${{ env.cache-name }}-
+            web-build-v2-${{ runner.os }}-
 
-      - name: Cache .stack-work
-        uses: actions/cache@v2
+      - name: Restore Node.js dependencies cache
+        id: cache-node_modules
+        uses: actions/cache/restore@v4
         env:
-          cache-name: cache-stack-work
-        with:
-          path: .stack-work
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
-          restore-keys: |
-            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
-            web-build-v1-${{ runner.os }}-
-
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-node_modules
+          cache-name: cache-node_modules-v3
         with:
           path: node_modules
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
+          key: web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-
-            web-build-v1-${{ runner.os }}-
+            web-build-v2-${{ runner.os }}-${{ env.cache-name }}-
+            web-build-v2-${{ runner.os }}-
 
-      - name: Cache binaries
+      - name: Restore app binaries cache
         id: cache-stack-binaries
-        uses: actions/cache@v2
+        uses: actions/cache/restore@v4
         env:
-          cache-name: cache-stack-binaries-v4
+          cache-name: cache-stack-binaries-v5
         with:
           path: |
             bin/zoomhub
             bin/migrate-database
-          key: web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}-${{ hashFiles('**/*.hs') }}
+          key: web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/*.hs') }}
           restore-keys: |
-            web-build-v1-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}-${{ hashFiles('data/*') }}-${{ hashFiles('**/*.hs') }}
+            web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml.lock') }}-
+            web-build-v2-${{ runner.os }}-${{ env.cache-name }}-
+
+      - name: Install Node.js dependencies
+        if: steps.cache-node_modules.outputs.cache-hit != 'true'
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+
+          echo "Installing Node.js dependencies..."
+          npm ci --prefer-offline --no-audit --progress=false
+
+          echo "Node.js dependencies installed with exit code: $?"
+
+      - name: Save Node.js dependencies cache
+        if: steps.cache-node_modules.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        env:
+          cache-name: cache-node_modules-v3
+        with:
+          path: node_modules
+          key: web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
 
       - name: Build frontend
+        working-directory: frontend
         run: |
-          npm ci
-          SNOWPACK_PUBLIC_API_BASE_URI="$ZH_API_BASE_URI" \
-          SNOWPACK_PUBLIC_WEB_BASE_URI="$ZH_WEB_BASE_URI" \
-          SNOWPACK_PUBLIC_STATIC_BASE_URI="$ZH_STATIC_BASE_URI" \
-            npx snowpack build
+          echo "Current directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
 
-          # NOTE: Delete Haskell source code. This directory is only mounted in
-          # Snowpack configuration to enable Tailwind CSS ’purge’ feature. These
-          # files are not meant to be shipped to the public website.
-          rm -rf frontend/build/__DELETE_ME__
+          echo "Vite version:"
+          npx vite --version
+
+          echo "Running vite build..."
+          VITE_API_BASE_URI="$ZH_API_BASE_URI" \
+          VITE_WEB_BASE_URI="$ZH_WEB_BASE_URI" \
+          VITE_STATIC_BASE_URI="$ZH_STATIC_BASE_URI" \
+            npx vite build
+
+          echo "Build exit code: $?"
+
+          echo "Checking if dist exists:"
+          ls -laR dist
+
+      - name: Build backend dependencies
+        if: steps.cache-stack-dependencies.outputs.cache-hit != 'true'
+        run: |
+          stack build \
+            --ghc-options='-O2' \
+            --jobs 4 \
+            --no-run-tests \
+            --no-terminal \
+            --only-dependencies \
+            --pedantic \
+            --test
+
+      - name: Save Haskell Stack dependencies cache
+        if: steps.cache-stack-dependencies.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        env:
+          cache-name: cache-stack-dependencies-v5
+        with:
+          path: |
+            ~/.stack
+            .stack-work
+          key: web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/stack.yaml.lock') }}
 
       - name: Build backend
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
         run: |
-          mkdir bin
+          mkdir --parents bin
+
           stack build \
             --copy-bins \
-            --test \
+            --ghc-options='-O2' \
+            --jobs 4 \
+            --local-bin-path bin \
             --no-run-tests \
             --no-terminal \
-            --jobs 4 \
             --pedantic \
-            --ghc-options='-O2' \
-            --local-bin-path bin
+            --test
+
+      - name: Save app binaries cache
+        if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        env:
+          cache-name: cache-stack-binaries-v5
+        with:
+          path: |
+            bin/zoomhub
+            bin/migrate-database
+          key: web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/*.hs') }}
 
       - name: Run backend tests
         if: steps.cache-stack-binaries.outputs.cache-hit != 'true'
@@ -220,7 +278,7 @@ jobs:
             --ghc-options='-O2'
 
       - name: Create workspace directory
-        run: mkdir workspace
+        run: mkdir --parents workspace
 
       - name: Copy AWS ops files to workspace
         run: |
@@ -235,7 +293,7 @@ jobs:
             workspace
 
       - name: Copy public files to workspace
-        run: cp --recursive frontend/build workspace/public
+        run: cp --recursive frontend/dist workspace/public
 
       - name: Copy binaries workspace
         run: cp bin/* workspace
@@ -245,7 +303,7 @@ jobs:
         run: tar --create --verbose --gzip --file web-workspace.tar.gz workspace
 
       - name: Upload workspace
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: web-workspace
           path: web-workspace.tar.gz
@@ -254,6 +312,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [web-build]
     env:
+      AWS_REGION: "us-east-2"
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ZH_AWS_ACCOUNT_ID: ${{ secrets.ZH_AWS_ACCOUNT_ID }}
@@ -267,11 +326,11 @@ jobs:
 
       - name: Sets ZH_AWS_EB_ENVIRONMENT for staging
         run: |
-          echo "ZH_AWS_EB_ENVIRONMENT=staging-2" >> $GITHUB_ENV
+          echo "ZH_AWS_EB_ENVIRONMENT=staging-3" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/main'
 
       - name: Download web-workspace
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: web-workspace
 

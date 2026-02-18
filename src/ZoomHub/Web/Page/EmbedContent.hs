@@ -23,6 +23,7 @@ import ZoomHub.Types.DeepZoomImage (TileOverlap (TileOverlap1), TileSize (TileSi
 import qualified ZoomHub.Types.DeepZoomImage as TileFormat
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI, unStaticBaseURI)
 import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
+import ZoomHub.Web.Types.ViteManifest (AssetPath)
 import qualified ZoomHub.Web.Page as Page
 import ZoomHub.Web.Types.EmbedBackground (EmbedBackground)
 import qualified ZoomHub.Web.Types.EmbedBackground as EmbedBackground
@@ -37,7 +38,8 @@ data EmbedContent = EmbedContent
     ecBaseURI :: BaseURI,
     ecConstraint :: Maybe EmbedConstraint,
     ecObjectFit :: Maybe EmbedObjectFit,
-    ecStaticBaseURI :: StaticBaseURI
+    ecStaticBaseURI :: StaticBaseURI,
+    ecStylesheetPath :: AssetPath
   }
   deriving (Eq, Show)
 
@@ -47,6 +49,7 @@ instance H.ToHtml EmbedContent where
       ( Page
           { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
             pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
+            pageStylesheetPath = ecStylesheetPath,
             pageBody = do
               H.script_ [H.src_ (T.pack $ show openSeadragonScriptURI)] ("" :: Text)
               H.div_

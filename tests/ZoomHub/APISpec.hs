@@ -9,7 +9,6 @@ module ZoomHub.APISpec
   )
 where
 
-import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities)
 import qualified Data.ByteString.Char8 as BC
 import Data.Maybe (fromJust)
@@ -55,6 +54,7 @@ import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
+import ZoomHub.Web.Types.ViteManifest (AssetPath (AssetPath))
 
 main :: IO ()
 main = hspec spec
@@ -144,7 +144,7 @@ config =
   Config
     { apiUser = authorizedUser,
       -- TODO: How can we avoid `unsafePerformIO`?
-      aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv AWS.Ohio,
+      aws = fromJust $ unsafePerformIO $ AWSConfig.fromEnv,
       baseURI = BaseURI (toURI "http://localhost:8000"),
       contentBaseURI = case mkContentBaseURI (toURI "http://localhost:9000/_dzis_") of
         Just uri -> uri
@@ -163,6 +163,7 @@ config =
       port = 8000,
       processContent = ProcessExistingAndNewContent,
       publicPath = "./public",
+      stylesheetPath = AssetPath "/assets/global.css",
       staticBaseURI = StaticBaseURI (toURI "https://static.zoomhub.net"),
       uploads = UploadsDisabled,
       version = "test"

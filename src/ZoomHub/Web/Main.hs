@@ -6,7 +6,6 @@ module ZoomHub.Web.Main
   )
 where
 
-import qualified Amazonka as AWS
 import Control.Concurrent (getNumCapabilities, threadDelay)
 import Control.Concurrent.Async (async)
 import Control.Exception (SomeException, tryJust)
@@ -61,6 +60,7 @@ import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
+import qualified ZoomHub.Web.Types.ViteManifest as Vite
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 
 -- Environment variables
@@ -91,6 +91,7 @@ webMain = do
         </> "openseadragon"
         </> "openseadragon.min.js"
   error404 <- BL.readFile $ publicPath </> "404.html"
+  stylesheetPath <- Vite.readAssetPath publicPath "src/styles/global.css"
   version <- readVersion currentDirectory
   logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors
@@ -98,7 +99,7 @@ webMain = do
   aws <-
     fromMaybe
       (error "ZoomHub.Main: Failed to parse AWS configuration.")
-      <$> AWSConfig.fromEnv AWS.Ohio -- TODO: Grab AWS region from environment?
+      <$> AWSConfig.fromEnv
   let logLevel = fromMaybe LogLevel.Debug $ lookup "LOG_LEVEL" env >>= LogLevel.parse
   let port = fromMaybe defaultPort (lookup "PORT" env >>= readMaybe)
       maybeProcessContent = ProcessContent.parse <$> lookup "PROCESS_CONTENT" env

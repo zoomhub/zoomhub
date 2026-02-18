@@ -18,6 +18,7 @@ import Data.Text (Text)
 import qualified Lucid as H
 import NeatInterpolation (text)
 import qualified ZoomHub.Config as Config
+import ZoomHub.Web.Types.ViteManifest (AssetPath (..))
 
 title :: Text
 title = "ZoomHub · Share and view full-resolution images easily"
@@ -37,6 +38,7 @@ instance H.ToHtml Path where
 data Page m a = Page
   { pageTitle :: Title,
     pageCanonicalPath :: Maybe Path,
+    pageStylesheetPath :: AssetPath,
     pageBody :: H.HtmlT m a
   }
 
@@ -54,7 +56,7 @@ layout Page {..} = do
       appleTouchIcons
 
       H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ "https://rsms.me/inter/inter.css"]
-      H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ "/styles/global.css"]
+      H.link_ [H.rel_ "stylesheet", H.type_ "text/css", H.href_ (unAssetPath pageStylesheetPath)]
 
       analyticsScript
     H.body_ [H.class_ "h-full bg-black m-0 p-0"] pageBody

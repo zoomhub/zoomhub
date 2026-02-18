@@ -16,7 +16,7 @@ import qualified Data.HashMap.Strict as H
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
 import qualified Data.Time as Time
 import Data.Time.Clock (UTCTime (UTCTime, utctDay), getCurrentTime)
 import ZoomHub.AWS.S3.POSTPolicy (POSTPolicy)
@@ -52,7 +52,7 @@ presignPOSTPolicy accessKey secretKey region policy = do
           POSTPolicyCondition.Equals "x-amz-algorithm" "AWS4-HMAC-SHA256",
           POSTPolicyCondition.Equals
             "x-amz-credential"
-            ( T.intercalate "/" [toText accessKey, decodeUtf8 $ AWS.toBS scope]
+            ( T.intercalate "/" [toText accessKey, decodeUtf8Lenient $ AWS.toBS scope]
             )
         ]
       policyWithCredentials =

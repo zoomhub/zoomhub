@@ -1,6 +1,4 @@
-// IMPORTANT: Required to make `__SNOWPACK_ENV__` available.
-// See: https://github.com/snowpackjs/snowpack/issues/3621#issuecomment-907731004
-import.meta.hot
+/// <reference types="vite/client" />
 
 import axios from "axios"
 import { PresignedPOSTData } from "../types/PresignedPOSTData"
@@ -18,7 +16,7 @@ export const submitFile: ({
   let presignedPOSTData: PresignedPOSTData
   try {
     presignedPOSTData = await fetch(
-      `${__SNOWPACK_ENV__.SNOWPACK_PUBLIC_API_BASE_URI}/v1/content/upload?email=${email}`
+      `${import.meta.env.VITE_API_BASE_URI}/v1/content/upload?email=${email}`
     ).then((response) => response.json())
   } catch (innerError) {
     throw new UploadError({

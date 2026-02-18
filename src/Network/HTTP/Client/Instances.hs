@@ -9,8 +9,7 @@ import Data.CaseInsensitive (original)
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8With)
-import Data.Text.Encoding.Error (lenientDecode)
+import Data.Text.Encoding (decodeUtf8Lenient)
 import Network.HTTP.Client
   ( HttpException (HttpExceptionRequest, InvalidUrlException),
     HttpExceptionContent (ConnectionFailure, StatusCodeException),
@@ -39,11 +38,11 @@ instance ToJSON HttpException where
   toJSON (HttpExceptionRequest r (ConnectionFailure e)) =
     object
       [ "type" .= ("ConnectionFailure" :: Text),
-        "host" .= lenientDecodeUtf8 (host r),
+        "host" .= decodeUtf8Lenient (host r),
         "method" .= show (method r),
         "port" .= port r,
-        "path" .= lenientDecodeUtf8 (path r),
-        "query" .= lenientDecodeUtf8 (queryString r),
+        "path" .= decodeUtf8Lenient (path r),
+        "query" .= decodeUtf8Lenient (queryString r),
         "exception" .= toJSONString (show e)
       ]
   toJSON (HttpExceptionRequest _ (StatusCodeException res _)) =
@@ -67,12 +66,9 @@ headersToJSON = toObject . map headerToJSON'
     headerToJSON' ("Cookie", _) = ("Cookie" :: Text, "<redacted>" :: Text)
     headerToJSON' ("X-Response-Body-Start", v) =
       ( "X-Response-Body-Start" :: Text,
-        lenientDecodeUtf8 $ BS.take maxBodyBytes v
+        decodeUtf8Lenient $ BS.take maxBodyBytes v
       )
     headerToJSON' hd = headerToJSON hd
     headerToJSON :: Header -> (Text, Text)
     headerToJSON (headerName, header) =
-      (lenientDecodeUtf8 . original $ headerName, lenientDecodeUtf8 header)
-
-lenientDecodeUtf8 :: BS.ByteString -> Text
-lenientDecodeUtf8 = decodeUtf8With lenientDecode
+      (decodeUtf8Lenient . original $ headerName, decodeUtf8Lenient header)

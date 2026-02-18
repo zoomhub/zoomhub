@@ -17,3 +17,6 @@ flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []
+
+# Stack cache optimization settings
+work-dir: .stack-work
