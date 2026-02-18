@@ -288,8 +288,8 @@ selectContentBy clauses = Query encode decode sql
             ( table #content
                 & leftOuterJoin (table #image) (#content ! #id .== #image ! #content_id)
             )
-            & orderBy [#content ! #id & Asc]
             & clauses
+            & orderBy [#content ! #id & Asc]
         )
 
 type ContentRow =
