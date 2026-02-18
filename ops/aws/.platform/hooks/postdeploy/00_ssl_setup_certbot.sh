@@ -83,7 +83,7 @@ if ! command -v certbot &>/dev/null; then
         dnf install -y certbot python3-certbot-nginx
     elif grep -q 'Amazon Linux 2' /etc/os-release; then
         # Amazon Linux 2 with EPEL
-        yum install -y certbot python3-certbot-nginx
+        yum install -y certbot python2-certbot-nginx
     else
         # Older systems
         yum install -y certbot python2-certbot-nginx
