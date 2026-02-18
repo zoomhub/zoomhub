@@ -194,6 +194,7 @@ jobs:
           key: web-build-v2-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
 
       - name: Build frontend
+        working-directory: frontend
         run: |
           echo "Current directory: $(pwd)"
           echo "Node version: $(node --version)"
@@ -203,7 +204,6 @@ jobs:
           npx vite --version
 
           echo "Running vite build..."
-          cd frontend && \
           VITE_API_BASE_URI="$ZH_API_BASE_URI" \
           VITE_WEB_BASE_URI="$ZH_WEB_BASE_URI" \
           VITE_STATIC_BASE_URI="$ZH_STATIC_BASE_URI" \
@@ -211,22 +211,22 @@ jobs:
 
           echo "Build exit code: $?"
 
-          echo "Checking if frontend/dist exists:"
-          ls -laR frontend/dist
+          echo "Checking if dist exists:"
+          ls -laR dist
 
           echo '=========================================================='
           echo 'PRE: Haskell file deletion'
-          ls -laR frontend/
+          ls -laR .
           echo '=========================================================='
 
           # NOTE: Delete Haskell source code. This directory is only mounted in
-          # Vite configuration to enable Tailwind CSS ’purge’ feature. These
+          # Vite configuration to enable Tailwind CSS 'purge' feature. These
           # files are not meant to be shipped to the public website.
-          rm -rf frontend/dist/__DELETE_ME__
+          rm -rf dist/__DELETE_ME__
 
           echo '=========================================================='
           echo 'POST: Haskell file deletion'
-          ls -laR frontend/
+          ls -laR .
           echo '=========================================================='
 
       - name: Build backend dependencies
