@@ -29,6 +29,7 @@ import ZoomHub.Types.BaseURI (BaseURI)
 import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.Environment (Environment)
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI)
+import ZoomHub.Web.Types.ViteManifest (AssetPath)
 
 defaultPort :: Integer
 defaultPort = 8000
@@ -52,6 +53,7 @@ data Config = Config
     logLevel :: LogLevel,
     maxUploadSizeMegabytes :: Integer,
     openSeadragonScript :: String,
+    stylesheetPath :: AssetPath,
     port :: Integer,
     processContent :: ProcessContent,
     publicPath :: FilePath,

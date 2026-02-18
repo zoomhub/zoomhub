@@ -10,6 +10,15 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.js',
   },
+  build: {
+    manifest: true,
+    rollupOptions: {
+      input: {
+        index: 'index.html',
+        globalStyles: 'src/styles/global.css',
+      },
+    },
+  },
   resolve: {
     alias: {
       // Map the Haskell source for Tailwind purging

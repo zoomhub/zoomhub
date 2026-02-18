@@ -60,6 +60,7 @@ import ZoomHub.Types.BaseURI (BaseURI (BaseURI))
 import ZoomHub.Types.ContentBaseURI (mkContentBaseURI)
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
+import qualified ZoomHub.Web.Types.ViteManifest as Vite
 import ZoomHub.Worker (processExistingContent, processExpiredActiveContent)
 
 -- Environment variables
@@ -90,6 +91,7 @@ webMain = do
         </> "openseadragon"
         </> "openseadragon.min.js"
   error404 <- BL.readFile $ publicPath </> "404.html"
+  stylesheetPath <- Vite.readAssetPath publicPath "src/styles/global.css"
   version <- readVersion currentDirectory
   logger <- mkRequestLogger $ def {outputFormat = CustomOutputFormatWithDetails formatAsJSON}
   numProcessors <- getNumProcessors

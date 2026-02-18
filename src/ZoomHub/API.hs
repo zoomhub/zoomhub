@@ -114,6 +114,7 @@ import qualified ZoomHub.Web.Page.VerifyContent as VerificationResult
 import ZoomHub.Web.Page.ViewContent (ViewContent (..))
 import qualified ZoomHub.Web.Page.ViewContent as Page
 import ZoomHub.Web.Static (serveDirectory)
+import ZoomHub.Web.Types.ViteManifest (AssetPath)
 import ZoomHub.Web.Types.Embed (Embed (..))
 import ZoomHub.Web.Types.EmbedBackground (EmbedBackground)
 import ZoomHub.Web.Types.EmbedBorder (EmbedBorder)
@@ -274,14 +275,14 @@ server config =
     :<|> restContentByURL config baseURI dbConnPool processContent
     :<|> restInvalidRequest
     -- Web: Explore: Recent
-    :<|> webExploreRecent baseURI contentBaseURI dbConnPool
+    :<|> webExploreRecent baseURI contentBaseURI stylesheetPath dbConnPool
     -- Web: Embed (iframe)
-    :<|> webEmbedIFrame baseURI staticBaseURI contentBaseURI dbConnPool
+    :<|> webEmbedIFrame baseURI staticBaseURI contentBaseURI stylesheetPath dbConnPool
     -- Web: Embed (JavaScript)
     :<|> webEmbed baseURI contentBaseURI staticBaseURI dbConnPool viewerScript
     -- Web: View
-    :<|> webContentVerificationById baseURI contentBaseURI dbConnPool
-    :<|> webContentById baseURI contentBaseURI (AWS.configSourcesS3Bucket awsConfig) dbConnPool
+    :<|> webContentVerificationById baseURI contentBaseURI stylesheetPath dbConnPool
+    :<|> webContentById baseURI contentBaseURI stylesheetPath (AWS.configSourcesS3Bucket awsConfig) dbConnPool
     :<|> webContentByURL baseURI dbConnPool
     :<|> webInvalidURLParam
     -- Web: Static files
@@ -294,6 +295,7 @@ server config =
     processContent = Config.processContent config
     publicPath = Config.publicPath config
     staticBaseURI = Config.staticBaseURI config
+    stylesheetPath = Config.stylesheetPath config
     uploads = Config.uploads config
     viewerScript = Config.openSeadragonScript config
 
@@ -625,11 +627,12 @@ restInvalidRequest maybeURL = case maybeURL of
 webExploreRecent ::
   BaseURI ->
   ContentBaseURI ->
+  AssetPath ->
   Pool Connection ->
   AuthResult Authentication.AuthenticatedUser ->
   Maybe Int ->
   Handler Page.ExploreRecentContent
-webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
+webExploreRecent baseURI contentBaseURI stylesheetPath dbConnPool authResult mNumItems =
   case authResult of
     Authenticated _ -> do
       let minItems = 1
@@ -648,7 +651,8 @@ webExploreRecent baseURI contentBaseURI dbConnPool authResult mNumItems =
         Page.ExploreRecentContent
           { ercContent = content,
             ercBaseURI = baseURI,
-            ercContentBaseURI = contentBaseURI
+            ercContentBaseURI = contentBaseURI,
+            ercStylesheetPath = stylesheetPath
           }
     NoSuchUser ->
       throwError . Web.error401 $ "Invalid auth"
@@ -662,6 +666,7 @@ webEmbedIFrame ::
   BaseURI ->
   StaticBaseURI ->
   ContentBaseURI ->
+  AssetPath ->
   Pool Connection ->
   ContentId ->
   Maybe EmbedObjectFit ->
@@ -672,6 +677,7 @@ webEmbedIFrame
   baseURI
   staticBaseURI
   contentBaseURI
+  stylesheetPath
   dbConnPool
   contentId
   mObjectFit
@@ -690,7 +696,8 @@ webEmbedIFrame
               ecConstraint = mEmbedConstraint,
               ecContent = content,
               ecObjectFit = mObjectFit,
-              ecStaticBaseURI = staticBaseURI
+              ecStaticBaseURI = staticBaseURI,
+              ecStylesheetPath = stylesheetPath
             }
 
 -- Web: Embed
@@ -755,20 +762,21 @@ webEmbed
 webContentVerificationById ::
   BaseURI ->
   ContentBaseURI ->
+  AssetPath ->
   Pool Connection ->
   ContentId ->
   VerificationToken ->
   Handler Page.VerifyContent
-webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificationToken = do
+webContentVerificationById baseURI contentBaseURI stylesheetPath dbConnPool contentId verificationToken = do
   result <- liftIO $ usingConnectionPool dbConnPool (PG.markAsVerified contentId verificationToken)
   case result of
     Right internalContent | ContentState.isCompleted (Internal.contentState internalContent) -> do
       redirectToView baseURI (Internal.contentId internalContent)
     Right internalContent -> do
       let content = Content.fromInternal baseURI contentBaseURI internalContent
-      return $ Page.mkVerifyContent baseURI (VerificationResult.Success content)
+      return $ Page.mkVerifyContent baseURI stylesheetPath (VerificationResult.Success content)
     Left VerificationError.TokenMismatch ->
-      return $ Page.mkVerifyContent baseURI (VerificationResult.Error "Cannot verify submission :(")
+      return $ Page.mkVerifyContent baseURI stylesheetPath (VerificationResult.Error "Cannot verify submission :(")
     Left VerificationError.ContentNotFound ->
       throwError . Web.error404 $ contentNotFoundMessage contentId
 
@@ -776,11 +784,12 @@ webContentVerificationById baseURI contentBaseURI dbConnPool contentId verificat
 webContentById ::
   BaseURI ->
   ContentBaseURI ->
+  AssetPath ->
   AWS.S3BucketName ->
   Pool Connection ->
   ContentId ->
   Handler Page.ViewContent
-webContentById baseURI contentBaseURI awsSourcesS3BucketName dbConnPool contentId = do
+webContentById baseURI contentBaseURI stylesheetPath awsSourcesS3BucketName dbConnPool contentId = do
   maybeContent <- liftIO $ usingConnectionPool dbConnPool (PG.getById contentId)
   case maybeContent of
     Nothing ->
@@ -791,7 +800,8 @@ webContentById baseURI contentBaseURI awsSourcesS3BucketName dbConnPool contentI
         ViewContent
           { vcBaseURI = baseURI,
             vcContent = content,
-            vcAWSSourcesS3BucketName = awsSourcesS3BucketName
+            vcAWSSourcesS3BucketName = awsSourcesS3BucketName,
+            vcStylesheetPath = stylesheetPath
           }
 
 -- TODO: Add support for submission, i.e. create content in the background:

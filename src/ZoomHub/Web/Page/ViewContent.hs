@@ -24,12 +24,14 @@ import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Types.ContentURI (ContentURI (unContentURI))
 import ZoomHub.Utils (tshow)
 import ZoomHub.Web.Page (Page (Page), Path (..), Title (..))
+import ZoomHub.Web.Types.ViteManifest (AssetPath)
 import qualified ZoomHub.Web.Page as Page
 
 data ViewContent = ViewContent
   { vcContent :: Content,
     vcBaseURI :: BaseURI,
-    vcAWSSourcesS3BucketName :: AWS.S3BucketName
+    vcAWSSourcesS3BucketName :: AWS.S3BucketName,
+    vcStylesheetPath :: AssetPath
   }
   deriving (Eq, Show)
 
@@ -39,6 +41,7 @@ instance H.ToHtml ViewContent where
       Page
         { pageTitle = Title $ T.pack cId <> " — " <> Page.title,
           pageCanonicalPath = Just $ Path $ "/" <> T.pack cId,
+          pageStylesheetPath = vcStylesheetPath vc,
           pageBody = do
             H.script_ [H.src_ scriptURI] ("" :: Text)
             H.div_

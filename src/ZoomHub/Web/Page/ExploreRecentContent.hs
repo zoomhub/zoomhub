@@ -19,12 +19,14 @@ import ZoomHub.Types.ContentBaseURI (ContentBaseURI)
 import ZoomHub.Types.ContentId (unContentId)
 import ZoomHub.Utils (tshow)
 import ZoomHub.Web.Page (Page (Page), Title (..))
+import ZoomHub.Web.Types.ViteManifest (AssetPath)
 import qualified ZoomHub.Web.Page as Page
 
 data ExploreRecentContent = ExploreRecentContent
   { ercContent :: [Internal.Content],
     ercBaseURI :: BaseURI,
-    ercContentBaseURI :: ContentBaseURI
+    ercContentBaseURI :: ContentBaseURI,
+    ercStylesheetPath :: AssetPath
   }
 
 instance H.ToHtml ExploreRecentContent where
@@ -33,6 +35,7 @@ instance H.ToHtml ExploreRecentContent where
       ( Page
           { pageTitle = Title $ "Explore: Recent — " <> Page.title,
             pageCanonicalPath = Nothing,
+            pageStylesheetPath = ercStylesheetPath,
             pageBody =
               H.div_ [H.class_ "flex flex-col justify-center max-w-max mx-auto py-6"] do
                 H.h1_ [H.class_ "text-3xl text-white font-bold mb-2"] "Explore: Recent"

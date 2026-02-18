@@ -74,6 +74,14 @@ while [ -z "$NGROK_PUBLIC_URL" ]; do
 done
 echo ''
 
+echo "Building frontend..."
+cd frontend && \
+VITE_API_BASE_URI="$NGROK_PUBLIC_URL" \
+VITE_STATIC_BASE_URI="https://static.zoomhub.net" \
+VITE_WEB_BASE_URI="$NGROK_PUBLIC_URL" \
+  npx vite build
+cd ..
+
 BASE_URI="$NGROK_PUBLIC_URL" \
 PUBLIC_PATH='frontend/dist' \
   npx concurrently \
