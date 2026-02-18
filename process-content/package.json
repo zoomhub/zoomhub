@@ -19,7 +19,7 @@
     "replace-ext": "^2.0.0",
     "rmfr": "^2.0.0",
     "sharp": "^0.33.3",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.5.0"
   },
   "devDependencies": {
     "aws-sdk": "^2.1089.0"
