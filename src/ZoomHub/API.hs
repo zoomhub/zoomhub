@@ -788,13 +788,15 @@ webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code 
                 case jwtResult of
                   Left jwtError ->
                     return $ Left $ "Failed to verify JWT: " <> tshow jwtError
-                  Right decodedIdToken ->
+                  Right decodedIdToken -> do
+                    tokenExpiresAt <- liftIO $ Session.tokenExpiresAtFromExpiresIn response.expiresIn
                     return $
                       Right
                         Session
                           { Session.kindeUser = decodedIdToken.user,
                             Session.accessToken = response.accessToken,
-                            Session.refreshToken = response.refreshToken
+                            Session.refreshToken = response.refreshToken,
+                            Session.tokenExpiresAt = tokenExpiresAt
                           }
   sessionSetCookieHeader <- case eSession of
     Left _ -> pure $ Cookie.empty API.sessionCookieName

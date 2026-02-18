@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -11,13 +12,17 @@ module ZoomHub.Authentication.Session
   ( Session (..),
     KindeUser (..),
     DecodedIdToken (..),
+    isTokenExpired,
+    tokenExpiresAtFromExpiresIn,
   )
 where
 
 import Crypto.JWT (ClaimsSet, HasClaimsSet (claimsSet))
 import Data.Aeson (FromJSON, ToJSON (toJSON), Value (Object), object, parseJSON, withObject, (.:), (.:?), (.=))
 import Data.Binary (Binary)
+import Data.Int (Int64)
 import Data.Text (Text)
+import Data.Time.Clock.POSIX (getPOSIXTime)
 import GHC.Generics (Generic)
 import ZoomHub.Authentication.OAuth (AccessToken, RefreshToken)
 import Prelude hiding (id)
@@ -25,10 +30,24 @@ import Prelude hiding (id)
 data Session = Session
   { kindeUser :: !KindeUser,
     accessToken :: !AccessToken,
-    refreshToken :: !RefreshToken
+    refreshToken :: !RefreshToken,
+    tokenExpiresAt :: !Int64
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON, Binary)
+
+-- | Check if the access token has expired (with 5-minute buffer)
+isTokenExpired :: Session -> IO Bool
+isTokenExpired session = do
+  now <- getPOSIXTime
+  let bufferSeconds = 5 * 60
+  return $ round now + bufferSeconds >= session.tokenExpiresAt
+
+-- | Compute token expiry timestamp from `expires_in` seconds
+tokenExpiresAtFromExpiresIn :: Int -> IO Int64
+tokenExpiresAtFromExpiresIn expiresIn = do
+  now <- getPOSIXTime
+  return $ round now + fromIntegral expiresIn
 
 --
 data KindeUser = KindeUser
