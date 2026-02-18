@@ -19,10 +19,4 @@ export default defineConfig({
       },
     },
   },
-  resolve: {
-    alias: {
-      // Map the Haskell source for Tailwind purging
-      '/__DELETE_ME__/haskell': '../src',
-    },
-  },
 })

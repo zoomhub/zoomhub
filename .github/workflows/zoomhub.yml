@@ -214,21 +214,6 @@ jobs:
           echo "Checking if dist exists:"
           ls -laR dist
 
-          echo '=========================================================='
-          echo 'PRE: Haskell file deletion'
-          ls -laR .
-          echo '=========================================================='
-
-          # NOTE: Delete Haskell source code. This directory is only mounted in
-          # Vite configuration to enable Tailwind CSS 'purge' feature. These
-          # files are not meant to be shipped to the public website.
-          rm -rf dist/__DELETE_ME__
-
-          echo '=========================================================='
-          echo 'POST: Haskell file deletion'
-          ls -laR .
-          echo '=========================================================='
-
       - name: Build backend dependencies
         if: steps.cache-stack-dependencies.outputs.cache-hit != 'true'
         run: |

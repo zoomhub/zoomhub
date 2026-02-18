@@ -7,6 +7,7 @@ module.exports = {
     "./public/**/*.html",
     "./src/**/*.{js,jsx,ts,tsx}",
     "./index.html",
+    "../src/**/*.hs",
   ],
   darkMode: false, // or 'media' or 'class'
   theme: {
