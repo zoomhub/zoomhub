@@ -33,9 +33,9 @@ instance FromJSON TokenCollection where
     return TokenCollection {..}
 
 instance ToJSON TokenCollection where
-  toJSON (TokenCollection refresh access idT) =
+  toJSON (TokenCollection {..}) =
     object
-      [ "refresh_token" .= refresh,
-        "access_token" .= access,
-        "id_token" .= idT
+      [ "access_token" .= accessToken,
+        "id_token" .= idToken,
+        "refresh_token" .= refreshToken
       ]
