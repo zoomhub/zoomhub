@@ -3,7 +3,6 @@ module ZoomHub.Utils
     tshow,
     hush,
     appendQueryParams,
-    uriByteStringToURI,
   )
 where
 
