@@ -271,9 +271,11 @@ type API =
       :> "kinde"
       :> "callback"
       :> Header "Cookie" Cookie.Header
-      :> RequiredQueryParam "code" OAuth.AuthorizationCode
+      :> QueryParam "code" OAuth.AuthorizationCode
       :> RequiredQueryParam "state" OAuth.State
       :> QueryParam "scope" OAuth.Scope
+      :> QueryParam "error" Text
+      :> QueryParam "error_description" Text
       :> Verb 'GET 302 '[HTML] KindeCallback
     :<|> Auth '[BasicAuth] BasicAuthentication.AuthenticatedUser
       :> AuthProtect "cookie-session"
@@ -757,24 +759,34 @@ webAuthKindeCallback ::
   Kinde.Config ->
   Pool Connection ->
   Maybe Cookie.Header ->
-  OAuth.AuthorizationCode ->
+  Maybe OAuth.AuthorizationCode ->
   OAuth.State ->
   Maybe OAuth.Scope ->
+  Maybe Text ->
+  Maybe Text ->
   Handler KindeCallback
-webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader code state _scope = do
+webAuthKindeCallback clientSessionKey kindeConfig dbConnPool mCookieHeader mCode state _scope mError mErrorDescription = do
   eResponse <-
-    case mExpectedState of
-      Just expectedState | expectedState == actualState -> do
-        mTokens <- liftIO $ Kinde.fetchTokensFor (Kinde.mkIdp kindeConfig.domain) kindeConfig code
-        case mTokens of
-          Just tokens' ->
-            pure $ Right tokens'
-          Nothing ->
-            pure $ Left "Failed to fetch tokens."
-      Just _ ->
-        pure $ Left "OAuth2 state does not match."
-      Nothing ->
-        pure $ Left "OAuth2 state is missing."
+    case mError of
+      Just err ->
+        let description = fromMaybe err mErrorDescription
+         in pure $ Left $ "Authentication error: " <> description
+      Nothing -> case mCode of
+        Nothing ->
+          pure $ Left "Missing authorization code."
+        Just code ->
+          case mExpectedState of
+            Just expectedState | expectedState == actualState -> do
+              mTokens <- liftIO $ Kinde.fetchTokensFor (Kinde.mkIdp kindeConfig.domain) kindeConfig code
+              case mTokens of
+                Just tokens' ->
+                  pure $ Right tokens'
+                Nothing ->
+                  pure $ Left "Failed to fetch tokens."
+            Just _ ->
+              pure $ Left "OAuth2 state does not match."
+            Nothing ->
+              pure $ Left "OAuth2 state is missing."
   eSession <- do
     case eResponse of
       Left message -> pure $ Left message
