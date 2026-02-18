@@ -54,6 +54,7 @@ import ZoomHub.Types.ContentId (ContentId, unContentId)
 import qualified ZoomHub.Types.ContentId as ContentId
 import qualified ZoomHub.Types.Environment as Environment
 import ZoomHub.Types.StaticBaseURI (StaticBaseURI (StaticBaseURI))
+import ZoomHub.Web.Types.ViteManifest (AssetPath (AssetPath))
 
 main :: IO ()
 main = hspec spec
@@ -162,6 +163,7 @@ config =
       port = 8000,
       processContent = ProcessExistingAndNewContent,
       publicPath = "./public",
+      stylesheetPath = AssetPath "/assets/global.css",
       staticBaseURI = StaticBaseURI (toURI "https://static.zoomhub.net"),
       uploads = UploadsDisabled,
       version = "test"
